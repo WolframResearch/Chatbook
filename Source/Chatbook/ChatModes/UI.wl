@@ -130,8 +130,9 @@ makeSidebarChatDockedCell[ ] :=
             Framed[
                 Grid[
                     { {
-                        Item[ sidebarEditingSwitches @ Dynamic @ Typeset`sidebarCell, Alignment -> Left ],
-                        SpanFromLeft, SpanFromLeft, SpanFromLeft, SpanFromLeft, SpanFromLeft
+                        Item[ sidebarEditingSwitch @ Dynamic @ Typeset`sidebarCell, Alignment -> Left ],
+                        SpanFromLeft, SpanFromLeft, SpanFromLeft, SpanFromLeft,
+                        sidebarEditingSettingsButton @ Dynamic @ Typeset`sidebarCell
                     }, {
                         sidebarNewChatButton[ Typeset`thisNotebook, Typeset`sidebarCell ],
                         Item[ Spacer[ 0 ], ItemSize -> Fit ],
@@ -178,56 +179,34 @@ makeSidebarChatDockedCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*sidebarEditingSwitches*)
+(*sidebarEditingSwitch*)
 
-(* The sidebar chat's Notebook editing switch, and below it, while editing is on, its Re-evaluate switch: chat settings
-   of the sidebar cell (Tools/Common.wl's selectNotebookEditingTools reads them) *)
-sidebarEditingSwitches // beginDefinition;
+(* The sidebar chat's Notebook editing switch, and at the right of its row, the gear that opens the editing settings:
+   chat settings of the sidebar cell (Tools/Common.wl's selectNotebookEditingTools and the sidebar agent read them) *)
+sidebarEditingSwitch // beginDefinition;
 
-sidebarEditingSwitches[ Dynamic[ cell_ ] ] := Dynamic @ If[ MatchQ[ cell, _CellObject ],
-    With[
-        {
-            editing    = TrueQ @ CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "NotebookEditing" } ],
-            reEvaluate = CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "NotebookReEvaluate" } ] =!= False
-        },
-        Column[
-            {
-                sidebarSwitch[
-                    editing,
-                    "Notebook editing",
-                    "The assistant can change the notebook's cells. You review its changes before they're kept.",
-                    0,
-                    CurrentChatSettings[ cell, "NotebookEditing" ] = ! editing
-                ],
-                If[ editing,
-                    sidebarSwitch[
-                        reEvaluate,
-                        "Re-evaluate",
-                        If[ reEvaluate,
-                            "Runs the notebook from the top for real outputs. They're grayed until you evaluate them yourself.",
-                            "The assistant writes outputs itself, without evaluating. They're grayed until you evaluate them yourself."
-                        ],
-                        14,
-                        CurrentChatSettings[ cell, "NotebookReEvaluate" ] = ! reEvaluate
-                    ],
-                    Nothing
-                ]
-            },
-            Spacings -> 0.4
+sidebarEditingSwitch[ Dynamic[ cell_ ] ] := Dynamic @ If[ MatchQ[ cell, _CellObject ],
+    With[ { editing = TrueQ @ CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "NotebookEditing" } ] },
+        sidebarSwitch[
+            editing,
+            "Notebook editing",
+            "The assistant can change the notebook's cells. You review its changes before they're kept.",
+            CurrentChatSettings[ cell, "NotebookEditing" ] = ! editing
         ]
     ],
     ""
 ];
 
-sidebarEditingSwitches // endDefinition;
+sidebarEditingSwitch // endDefinition;
 
 
 sidebarSwitch // beginDefinition;
 
-sidebarSwitch[ on_, label_, tooltip_, indent_, action_ ] := Tooltip[
+sidebarSwitch[ on_, label_, tooltip_, action_ ] := Tooltip[
     Button[
-        Row[ { Spacer[ indent ], switchGraphic @ on, Spacer[ 5 ], label }, BaselinePosition -> Baseline ],
+        Row[ { switchGraphic @ on, Spacer[ 5 ], label }, BaselinePosition -> Baseline ],
         action,
+        Alignment        -> Left,
         Appearance       -> "Suppressed",
         BaseStyle        -> { "Text", FontSize -> 12.35, FontColor -> color @ "NA_ChatInputFieldFocusFont" },
         BaselinePosition -> Baseline,
@@ -241,6 +220,129 @@ sidebarSwitch[ on_, label_, tooltip_, indent_, action_ ] := Tooltip[
 sidebarSwitch // Attributes = { HoldRest };
 
 sidebarSwitch // endDefinition;
+
+
+(* The gear: attaches the editing settings below itself, right-aligned with it, removed by a click outside *)
+sidebarEditingSettingsButton // beginDefinition;
+
+sidebarEditingSettingsButton[ Dynamic[ cell_ ] ] := Dynamic @ If[ MatchQ[ cell, _CellObject ], sidebarEditingSettingsButton @ cell, "" ];
+
+sidebarEditingSettingsButton[ cell_CellObject ] := Tooltip[
+    Button[
+        blueHueButtonAppearance[ chatbookIcon[ "SidebarSettingsGearIcon", False, color @ "NA_ChatInputFieldFocusFont" ], { 24, 20 } ],
+        AttachCell[
+            EvaluationBox[ ],
+            Cell[
+                BoxData @ ToBoxes @ sidebarEditingSettingsPanel @ cell,
+                CellTags      -> "SidebarEditingSettings",
+                Magnification -> AbsoluteCurrentValue[ EvaluationNotebook[ ], Magnification ]
+            ],
+            { Right, Bottom },
+            0,
+            { Right, Top },
+            RemovalConditions -> { "MouseClickOutside" }
+        ],
+        Appearance -> "Suppressed",
+        BoxID      -> "NASidebarEditingSettingsButton",
+        Method     -> "Queued"
+    ],
+    "Notebook editing settings",
+    TooltipDelay -> 0.3
+];
+
+sidebarEditingSettingsButton // endDefinition;
+
+
+(* The settings of notebook editing, each with a tooltip: whether edits re-evaluate the outputs they change, and the
+   agent's model and reasoning effort *)
+sidebarEditingSettingsPanel // beginDefinition;
+
+sidebarEditingSettingsPanel[ cell_CellObject ] := Framed[
+    Grid[
+        {
+            {
+                Dynamic @ With[ { reEvaluate = CurrentChatSettings[ cell, "NotebookReEvaluate" ] =!= False },
+                    sidebarSwitch[
+                        reEvaluate,
+                        "Re-evaluate changed outputs",
+                        If[ reEvaluate,
+                            "Runs the notebook from the top for real outputs. They're grayed until you evaluate them yourself.",
+                            "The assistant writes outputs itself, without evaluating. They're grayed until you evaluate them yourself."
+                        ],
+                        CurrentChatSettings[ cell, "NotebookReEvaluate" ] = ! reEvaluate
+                    ]
+                ],
+                SpanFromLeft
+            },
+            Tooltip[ #, "The model that edits the notebook. A change applies from your next message.", TooltipDelay -> 0.3 ] & /@ {
+                "Model",
+                PopupMenu[
+                    Dynamic[
+                        CurrentChatSettings[ cell, "NotebookEditingModel" ],
+                        (CurrentChatSettings[ cell, "NotebookEditingModel" ] = #) &
+                    ],
+                    $notebookEditingModels,
+                    ImageSize -> { 120, Automatic }
+                ]
+            },
+            Tooltip[
+                #,
+                "How much the model thinks before it acts: more effort, more careful edits, but slower. A change applies from \
+your next message.",
+                TooltipDelay -> 0.3
+            ] & /@ {
+                "Effort",
+                Row[ {
+                    Slider[
+                        Dynamic[
+                            notebookEditingEffortIndex @ cell,
+                            (CurrentChatSettings[ cell, "NotebookEditingEffort" ] = Keys[ $notebookEditingEfforts ][[ # ]]) &
+                        ],
+                        { 1, Length @ $notebookEditingEfforts, 1 },
+                        ImageSize -> 90
+                    ],
+                    Spacer[ 6 ],
+                    Pane[
+                        Dynamic @ Values[ $notebookEditingEfforts ][[ notebookEditingEffortIndex @ cell ]],
+                        ImageSize -> 70
+                    ]
+                } ]
+            }
+        },
+        Alignment -> { Left, Center },
+        BaseStyle -> { "Text", FontSize -> 12.35, FontColor -> color @ "NA_ChatInputFieldFocusFont" },
+        Spacings  -> { 0.8, 0.8 }
+    ],
+    Background     -> color @ "NA_RaftMenuBackground",
+    FrameMargins   -> { { 10, 10 }, { 8, 8 } },
+    FrameStyle     -> color @ "NA_RaftMenuFrame",
+    RoundingRadius -> 4
+];
+
+sidebarEditingSettingsPanel // endDefinition;
+
+
+$notebookEditingModels = {
+    "openai/gpt-6.1-sol"   -> "Sol 6.1",
+    "openai/gpt-6.1-terra" -> "Terra 6.1",
+    "openai/gpt-6-astra"   -> "Astra 6"
+};
+
+$notebookEditingEfforts = <|
+    "low"    -> "Light",
+    "medium" -> "Medium",
+    "high"   -> "High",
+    "xhigh"  -> "Extra High",
+    "max"    -> "Ultra"
+|>;
+
+
+notebookEditingEffortIndex // beginDefinition;
+notebookEditingEffortIndex[ cell_CellObject ] := Replace[
+    FirstPosition[ Keys @ $notebookEditingEfforts, CurrentChatSettings[ cell, "NotebookEditingEffort" ], { 2 }, { 1 } ],
+    { i_ } :> i
+];
+notebookEditingEffortIndex // endDefinition;
 
 
 switchGraphic // beginDefinition;
