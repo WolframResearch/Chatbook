@@ -258,8 +258,8 @@ VerificationTest[
     $mcpTestThrow = "acp-mcp-test-throw";
 
     $mcpToolNames = {
-        "ListNotebooks", "OpenNotebook", "GetOutline", "ReadCells", "SearchNotebook", "EditInCell", "SetCells", "InsertCells",
-        "DeleteCells", "SaveNotebook", "ShowChanges", "CloseNotebook"
+        "ListNotebooks", "OpenNotebook", "GetOutline", "ReadCells", "SearchNotebook", "GetSelection", "EditInCell", "SetCells",
+        "InsertCells", "DeleteCells", "SaveNotebook", "ShowChanges", "CloseNotebook"
     };
 
     $mcpEntryPattern = KeyValuePattern @ {

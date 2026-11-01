@@ -65,6 +65,7 @@ $searchLimit       = 50;    (* matches that SearchNotebook shows by default *)
 $maxSearchLimit    = 500;   (* at most *)
 $searchTimeLimit   = 10;    (* seconds that one search may take *)
 $snippetLength     = 160;   (* characters of the line of a match that SearchNotebook shows *)
+$selectionContextLength = 400; (* characters of a cell's text that GetSelection shows on each side of a selection *)
 $maxQuotedLength   = 80;    (* characters of an argument that an error message repeats *)
 $codeCheckSeconds  = 30;    (* seconds that the code check of an edit may take; later cells are not checked *)
 $cellCheckSeconds  = 10;    (* seconds that one cell may take in the code check *)
@@ -231,7 +232,9 @@ Workflow: OpenNotebook (by its file when the user names one; otherwise ListNoteb
 notebook's cells too (for a long notebook, an outline of its headings: then read the sections you change with \
 ReadCells, as ranges of cells) -> EditInCell, SetCells, InsertCells, DeleteCells -> ShowChanges, which saves the snapshot and \
 shows the user their notebook as a diff against it, to accept or reject change by change (when OpenNotebook says that \
-the chat window shows the changes, end your turn instead). CloseNotebook discards a snapshot instead. Edit \
+the chat window shows the changes, end your turn instead). CloseNotebook discards a snapshot instead. When the \
+user refers to their selection or to where they are (\"the selected cells\", \"this paragraph\", \"here\"), \
+GetSelection gives it in the snapshot's ids. Edit \
 independent cells in one turn: one SetCells call for all the cells you rewrite (its delete deletes the outputs they \
 make stale in the same call), parallel calls for the rest. For a \
 cell that changes only in part, use EditInCell with short oldText and newText instead of rewriting the cell. A \
@@ -300,6 +303,12 @@ $searchNotebookDescription = "\
 Finds text in the cells of a snapshot: a literal string, or with regex true a regular expression (PCRE), in each \
 cell's content as ReadCells shows it, so a match can be copied into EditInCell's oldText. cells and styles limit the \
 search. Gives one line per match: #id (Style) line:column: the line of the match.";
+
+$getSelectionDescription = "\
+Gives the user's selection in the notebook a snapshot was made from, as it is now, in the snapshot's cell ids: \
+selected cells, an insertion point between cells, or text in a cell, shown in the cell's text between <selection> and \
+</selection> (a cursor is <cursor/>; the marks are not part of the content). Call it when the user refers to the \
+selection or to where they are in the notebook (\"the selected cells\", \"this paragraph\", \"here\").";
 
 $editInCellDescription = "\
 Edits the content of one cell of a snapshot by exact text replacement, like a file edit tool: each edit replaces \
@@ -414,6 +423,12 @@ omit it for a new, empty notebook",
             parameter[ "styles", "String", "Cell styles to search, separated by commas, e.g. \"Input, Text\"", False ],
             parameter[ "limit", "Integer", "The largest number of matches to show (default 50)", False ]
         }
+    |>,
+    "GetSelection" -> <|
+        "DisplayName" -> "Get Selection",
+        "Description" -> $getSelectionDescription,
+        "Function"    -> getSelectionTool,
+        "Parameters"  -> { $snapshotParameter }
     |>,
     "EditInCell" -> <|
         "DisplayName" -> "Edit In Cell",
@@ -541,6 +556,10 @@ readCellsTool      // endDefinition;
 searchNotebookTool // beginDefinition;
 searchNotebookTool[ args_ ] := toolResult[ "SearchNotebook", searchNotebook @ toolArguments @ args ];
 searchNotebookTool // endDefinition;
+
+getSelectionTool   // beginDefinition;
+getSelectionTool[ args_ ] := toolResult[ "GetSelection", getSelection @ toolArguments @ args ];
+getSelectionTool   // endDefinition;
 
 editInCellTool     // beginDefinition;
 editInCellTool[ args_ ] := toolResult[ "EditInCell", editInCell @ toolArguments @ args ];
@@ -1428,6 +1447,9 @@ withoutStrings // endDefinition;
      notebookFrontEnd[ "Save", nb ]                              Null, or $Failed
      notebookFrontEnd[ "Close", nb ]                             closes the snapshot; the front end deletes its file
      notebookFrontEnd[ "ShowDiff", source, snapshot, edited ]    CellDiff's ShowNotebookDiff[ source, snapshot, "Lines", edited ]
+     notebookFrontEnd[ "Selection", source, snapshot ]           <| "Type", "Cells", "Position" | "Text" |>: the selection
+                                                                 in source (FrontEnd`NotebookSelectionText), in the
+                                                                 snapshot's cells (None for one it doesn't have)
    The packets are the front end's (FrontEnd docs/NotebookMCP/Plan.md, "FE packets"). *)
 notebookFrontEnd // beginDefinition;
 
@@ -1463,6 +1485,8 @@ frontEndOperation[ "FileName", nb_NotebookObject ] := Quiet @ NotebookFileName @
 frontEndOperation[ "Save", nb_NotebookObject ] := Quiet @ NotebookSave @ nb;
 frontEndOperation[ "Close", nb_NotebookObject ] := Quiet @ NotebookClose @ nb;
 frontEndOperation[ "ShowDiff", source_, snapshot_NotebookObject, edited_ ] := showNotebookDiff[ source, snapshot, edited ];
+frontEndOperation[ "Selection", source_NotebookObject, snapshot_NotebookObject ] :=
+    Quiet @ MathLink`CallFrontEnd @ FrontEnd`NotebookSelectionText[ source, snapshot ];
 
 frontEndOperation // endDefinition;
 
@@ -2472,6 +2496,122 @@ snippet[ text_String, lineStart_Integer, lineEnd_Integer, start_Integer, end_Int
 ];
 
 snippet // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*GetSelection*)
+
+(* The user's selection in the notebook a snapshot was made from, as the front end reads it (FrontEnd`NotebookSelectionText:
+   the selection, or the remnant of it that the notebook shows while the selection is elsewhere, such as in the sidebar
+   chat's input field, read without changing either), in the snapshot's cell ids: the front end gives the snapshot's
+   cells with the ExpressionUUIDs of the selected ones. Text in a cell is that cell's text in the user's notebook, cut
+   around the selection, which is marked <selection>...</selection> (<cursor/> for a cursor), with the cell's text
+   around it as context. *)
+getSelection // beginDefinition;
+
+getSelection[ args_Association ] := Module[ { handle, source, result },
+    handle = resolveSnapshot @ args[ "notebook" ];
+    source = $snapshots[ handle, "Source" ];
+    If[ ! MatchQ[ source, _NotebookObject ],
+        toolError[ "`1` was not made from a notebook that is open in the front end, so it has no selection.", snapshotLabel @ handle ]
+    ];
+    result = notebookFrontEnd[ "Selection", source, $snapshots[ handle, "Notebook" ] ];
+    If[ ! MatchQ[ result, KeyValuePattern @ { "Type" -> _String, "Cells" -> _List } ],
+        toolError[ "The front end could not read the selection in the notebook of `1`; it may have been closed.", snapshotLabel @ handle ]
+    ];
+    selectionText[ handle, result ]
+];
+
+getSelection // endDefinition;
+
+
+selectionText // beginDefinition;
+
+selectionText[ handle_String, KeyValuePattern[ "Type" -> "None" ] ] :=
+    "Nothing is selected in the user's notebook.";
+
+selectionText[ handle_String, KeyValuePattern @ { "Type" -> "InsertionPoint", "Cells" -> { } } ] :=
+    "The selection is an insertion point in the user's notebook, which has no cells.";
+
+selectionText[ handle_String, KeyValuePattern @ { "Type" -> "InsertionPoint", "Cells" -> { cell_ }, "Position" -> position_String } ] :=
+    StringJoin[
+        "The selection is an insertion point between cells, ",
+        ToLowerCase @ position,
+        " ",
+        selectionCellsText[ handle, { cell } ],
+        "; InsertCells with that cell and position inserts there."
+    ];
+
+selectionText[ handle_String, KeyValuePattern @ { "Type" -> "Cells", "Cells" -> cells: { __ } } ] := StringJoin[
+    "The selection is ",
+    If[ Length @ cells === 1, "the cell ", ToString @ Length @ cells <> " cells: " ],
+    selectionCellsText[ handle, cells ],
+    "."
+];
+
+selectionText[ handle_String, KeyValuePattern @ { "Type" -> "Text", "Cells" -> { cell_ }, "Text" -> parts: { _String, _String, _String } } ] :=
+    Module[ { before, range, after, id, entry },
+        { before, range, after } = texReadTexts @ parts;
+        id = selectionCellsText[ handle, { cell } ];
+        If[ ! MatchQ[ cell, _CellObject ],
+            Return[ "The selection is text in " <> id <> ":\n" <> markedSelection[ before, range, after ], Module ]
+        ];
+        entry = First @ cellTexts[ handle, { cell }, All, True ];
+        StringJoin[
+            "The selection is ",
+            If[ range === "", "a cursor", "text" ],
+            " in ",
+            id,
+            ", marked ",
+            If[ range === "", "<cursor/>", "<selection>...</selection>" ],
+            " (the marks are not part of the cell):\n",
+            cellMarker @ entry,
+            "\n",
+            markedSelection[ before, range, after ],
+            If[ cellContent @ entry === before <> range <> after,
+                "",
+                "\n(This is the cell in the user's notebook; it has changed in " <> handle <> ", where ReadCells shows it.)"
+            ]
+        ]
+    ];
+
+selectionText // endDefinition;
+
+
+(* The cell's text with the selection marked; the text around it cut to $selectionContextLength characters on each side *)
+markedSelection // beginDefinition;
+
+markedSelection[ before_String, range_String, after_String ] := StringJoin[
+    If[ StringLength @ before > $selectionContextLength, "\[Ellipsis]" <> StringTake[ before, -$selectionContextLength ], before ],
+    If[ range === "", "<cursor/>", "<selection>" <> range <> "</selection>" ],
+    If[ StringLength @ after > $selectionContextLength, StringTake[ after, $selectionContextLength ] <> "\[Ellipsis]", after ]
+];
+
+markedSelection // endDefinition;
+
+
+(* The ids of the snapshot's cells, consecutive ones as ranges such as #c12-#c18; a cell the snapshot doesn't have (one
+   the user added after it was made) is said to be missing *)
+selectionCellsText // beginDefinition;
+
+selectionCellsText[ handle_String, cells_List ] := Module[ { ids, missing, numbers, runs },
+    ids     = numberCells[ handle, Cases[ cells, _CellObject ] ];
+    missing = Count[ cells, Except[ _CellObject ] ];
+    numbers = ToExpression @ StringDrop[ ids, 1 ];
+    runs    = Split[ Transpose @ { numbers, ids }, #2[[ 1 ]] === #1[[ 1 ]] + 1 & ];
+    StringRiffle[
+        Join[
+            Replace[ runs, { { { _, id_ } } :> "#" <> id, run_ :> "#" <> run[[ 1, 2 ]] <> "-#" <> run[[ -1, 2 ]] }, { 1 } ],
+            If[ missing > 0,
+                { If[ missing === 1, "a cell", ToString @ missing <> " cells" ] <> " that " <> handle <> " does not have (added after it was opened)" },
+                { }
+            ]
+        ],
+        ", "
+    ]
+];
+
+selectionCellsText // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

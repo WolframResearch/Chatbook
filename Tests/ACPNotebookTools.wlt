@@ -249,6 +249,7 @@ VerificationTest[
     fakeFE0[ "Save", _ ] := If[ TrueQ @ $fakeSaveFails, $Failed, Null ];
     fakeFE0[ "Close", nbo_ ] := (KeyDropFrom[ $fakeNotebooks, nbo ]; Null);
     fakeFE0[ "ShowDiff", __ ] := $fakeDiffResult;
+    fakeFE0[ "Selection", _NotebookObject, _NotebookObject ] := $fakeSelection;
 
     fakePosition[ cells_List, cell_, i_Integer ] := Replace[
         FirstPosition[ Lookup[ cells, "Cell" ], cell, None, { 1 } ],
@@ -273,7 +274,8 @@ VerificationTest[
             $fakeCalls      = { },
             $fakeCount      = 0,
             $fakeSaveFails  = False,
-            $fakeDiffResult = Null
+            $fakeDiffResult = Null,
+            $fakeSelection  = <| "Type" -> "None", "Cells" -> { } |>
         },
         eval
     ];
@@ -304,8 +306,8 @@ VerificationTest[
     { Keys @ $nbtTools, AllTrue[ $nbtTools, MatchQ[ _LLMTool ] ] },
     {
         {
-            "ListNotebooks", "OpenNotebook", "GetOutline", "ReadCells", "SearchNotebook", "EditInCell", "SetCells",
-            "InsertCells", "DeleteCells", "SaveNotebook", "ShowChanges", "CloseNotebook"
+            "ListNotebooks", "OpenNotebook", "GetOutline", "ReadCells", "SearchNotebook", "GetSelection", "EditInCell",
+            "SetCells", "InsertCells", "DeleteCells", "SaveNotebook", "ShowChanges", "CloseNotebook"
         },
         True
     },
@@ -316,8 +318,8 @@ VerificationTest[
 VerificationTest[
     Map[ #[ "Data" ][ "DisplayName" ] &, Values @ $nbtTools ],
     {
-        "List Notebooks", "Open Notebook", "Get Outline", "Read Cells", "Search Notebook", "Edit In Cell", "Set Cells",
-        "Insert Cells", "Delete Cells", "Save Notebook", "Show Changes", "Close Notebook"
+        "List Notebooks", "Open Notebook", "Get Outline", "Read Cells", "Search Notebook", "Get Selection", "Edit In Cell",
+        "Set Cells", "Insert Cells", "Delete Cells", "Save Notebook", "Show Changes", "Close Notebook"
     },
     SameTest -> MatchQ,
     TestID   -> "ACPNotebookTools-DisplayNames"
@@ -338,6 +340,7 @@ VerificationTest[
             "GetOutline"     -> { "object", { "notebook", "preview", "offset", "limit" }, { "notebook" } },
             "ReadCells"      -> { "object", { "notebook", "cells", "full" }, { "notebook" } },
             "SearchNotebook" -> { "object", { "notebook", "query", "regex", "cells", "styles", "limit" }, { "notebook", "query" } },
+            "GetSelection"   -> { "object", { "notebook" }, { "notebook" } },
             "EditInCell"     -> { "object", { "notebook", "cell", "edits", "evaluate" }, { "notebook", "cell", "edits" } },
             "SetCells"       -> { "object", { "notebook", "cells", "delete", "evaluate" }, { "notebook", "cells" } },
             "InsertCells"    -> { "object", { "notebook", "newCells", "cell", "position", "evaluate" }, { "notebook", "newCells" } },
@@ -959,6 +962,50 @@ VerificationTest[
     },
     SameTest -> MatchQ,
     TestID   -> "ACPNotebookTools-SearchNotebook-Lines"
+]
+
+(* The user's selection in the snapshot's ids: none; cells, consecutive ones as ranges, and one the snapshot doesn't
+   have; an insertion point; text and a cursor in a cell, marked in its text with its marker line, and a note when the
+   snapshot's copy of the cell has changed; a front end that can't read it; a new notebook, which has no selection *)
+VerificationTest[
+    withFakeFE @ Module[ { selection },
+        nbtCall[ "OpenNotebook", <| "notebook" -> "abcdef11" |> ];
+        selection[ spec_ ] := Block[ { $fakeSelection = spec }, nbtText @ nbtCall[ "GetSelection", <| "notebook" -> "s1" |> ] ];
+        {
+            selection @ <| "Type" -> "None", "Cells" -> { } |>,
+            selection @ <| "Type" -> "Cells", "Cells" -> { CellObject[ "fake-1-2" ], CellObject[ "fake-1-3" ], CellObject[ "fake-1-4" ], CellObject[ "fake-1-6" ] } |>,
+            selection @ <| "Type" -> "Cells", "Cells" -> { CellObject[ "fake-1-3" ], None } |>,
+            selection @ <| "Type" -> "InsertionPoint", "Cells" -> { CellObject[ "fake-1-4" ] }, "Position" -> "After" |>,
+            selection @ <|
+                "Type"  -> "Text",
+                "Cells" -> { CellObject[ "fake-1-3" ] },
+                "Text"  -> { "(*The Hamiltonian of a ", "pendulum", " of length l and mass m:*)" }
+            |>,
+            selection @ <| "Type" -> "Text", "Cells" -> { CellObject[ "fake-1-3" ] }, "Text" -> { "(*The ", "", "Hamiltonian of a pendulum of length l and mass m:*)" } |>,
+            nbtCall[ "EditInCell", <| "notebook" -> "s1", "cell" -> "c3", "edits" -> { <| "oldText" -> "pendulum", "newText" -> "swing" |> } |> ];
+            selection @ <|
+                "Type"  -> "Text",
+                "Cells" -> { CellObject[ "fake-1-3" ] },
+                "Text"  -> { "(*The Hamiltonian of a ", "pendulum", " of length l and mass m:*)" }
+            |>,
+            selection @ $Failed,
+            nbtCall[ "OpenNotebook", <| |> ];
+            nbtText @ nbtCall[ "GetSelection", <| "notebook" -> "s2" |> ]
+        }
+    ],
+    {
+        "Nothing is selected in the user's notebook.",
+        "The selection is 4 cells: #c2-#c4, #c6.",
+        "The selection is 2 cells: #c3, a cell that s1 does not have (added after it was opened).",
+        "The selection is an insertion point between cells, after #c4; InsertCells with that cell and position inserts there.",
+        "The selection is text in #c3, marked <selection>...</selection> (the marks are not part of the cell):\n(* ::Text:: #c3 *)\n(*The Hamiltonian of a <selection>pendulum</selection> of length l and mass m:*)",
+        "The selection is a cursor in #c3, marked <cursor/> (the marks are not part of the cell):\n(* ::Text:: #c3 *)\n(*The <cursor/>Hamiltonian of a pendulum of length l and mass m:*)",
+        "The selection is text in #c3, marked <selection>...</selection> (the marks are not part of the cell):\n(* ::Text:: #c3 *)\n(*The Hamiltonian of a <selection>pendulum</selection> of length l and mass m:*)\n(This is the cell in the user's notebook; it has changed in s1, where ReadCells shows it.)",
+        "The front end could not read the selection in the notebook of s1 (\"Hamiltonian Mechanics\"); it may have been closed.",
+        _String? (StringContainsQ[ "was not made from a notebook that is open in the front end, so it has no selection." ])
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPNotebookTools-GetSelection"
 ]
 
 (* EditInCell: the edits go to the front end as one "Edit" operation, in order, and the result shows the cell's new
