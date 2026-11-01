@@ -275,6 +275,7 @@
 "WorkspaceHistoryLastPage" -> "\[CapitalUAcute]ltima p\[AAcute]gina",
 "WorkspaceHistoryTitle" -> "Historial",
 "WorkspaceHistoryFieldHint" -> "Buscar",
+"WorkspaceHistoryLoadFailed" -> "That chat could not be loaded.",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "Copiar respuesta al portapapeles\[Ellipsis]",
 "WorkspaceOutputRaftCopyAs" -> "Copiar respuesta como\[Ellipsis]",

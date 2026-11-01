@@ -659,7 +659,7 @@ showNotebookAssistanceWindow[ source_, input_, evaluate_, new_, settings_Associa
     ];
 
 showNotebookAssistanceWindow[ source_NotebookObject, input_, evaluate_, new_ ] := Enclose[
-    Module[ { current, nbo, movedLastChatToSourcesIndicatorQ },
+    Module[ { current, nbo, movedToHistoryQ },
 
         current = ConfirmMatch[
             LogChatTiming @ findCurrentWorkspaceChat[ "NotebookAssistance" ],
@@ -667,7 +667,8 @@ showNotebookAssistanceWindow[ source_NotebookObject, input_, evaluate_, new_ ] :
             "Existing"
         ];
 
-        movedLastChatToSourcesIndicatorQ = MatchQ[ current, _NotebookObject ] && Cells[ current ] =!= {};
+        (* only checked when the window is replaced, since the notice is only shown in a new window: *)
+        movedToHistoryQ = TrueQ @ new && TrueQ @ previousChatSavedQ @ current;
 
         If[ TrueQ @ new,
             (* keep any unsent text of the input field for the new window: *)
@@ -681,41 +682,7 @@ showNotebookAssistanceWindow[ source_NotebookObject, input_, evaluate_, new_ ] :
                   ConfirmMatch[ LogChatTiming @ attachToLeft[ source, current ], _NotebookObject, "Attached" ]
               ];
 
-        If[ movedLastChatToSourcesIndicatorQ && TrueQ @ new,
-            With[ { nbo = nbo },
-                AttachCell[
-                    nbo,
-                    Cell[ BoxData @ ToBoxes @
-                        Framed[
-                            Button[
-                                MouseAppearance[
-                                    Style[
-                                        Row[ { trExprTemplate["WorkspaceToolbarSourcesSubTitleMoved"][ <| "1" -> chatbookIcon[ "WorkspaceToolbarIconHistorySmall", False ] |> ] } ],
-                                        "WorkspaceChatToolbarTitle",
-                                        FontColor  -> LightDarkSwitched[ RGBColor["#898989"], RGBColor["#898989"] ],
-                                        FontFamily -> "Source Sans Pro",
-                                        FontSlant  -> Italic,
-                                        FontWeight -> Plain
-                                    ],
-                                    "LinkHand"
-                                ], (* using LinkHand to indicate the sub-docked cell is clickable *)
-                                toggleOverlayMenu[ nbo, None, "History" ],
-                                Appearance -> "Suppressed"
-                            ],
-                            Alignment    -> { Center, Center },
-                            Background   -> LightDarkSwitched[ RGBColor["#E5E5E5"], RGBColor["#2C2C2C"] ],
-                            FrameMargins -> { { 7, 7 }, { 4, 4 } },
-                            FrameStyle   -> LightDarkSwitched[ RGBColor["#E5E5E5"], RGBColor["#2C2C2C"] ],
-                            ImageMargins -> 0,
-                            ImageSize    -> Scaled[ 1. ]
-                        ],
-                        "AttachedOverlayMenu",
-                        CellTags -> "MovedLastChatToSourcesIndicator"
-                    ],
-                    { Left, Top }, 0, { Left, Top }
-                ]
-            ]
-        ];
+        If[ movedToHistoryQ, writeWorkspaceChatMovedToHistoryDockedCell @ nbo ];
 
         setNotebookAssistanceEvaluator @ nbo;
 
@@ -755,6 +722,23 @@ showNotebookAssistanceWindow[ None, input_, evaluate_, new_ ] := Enclose[
 
 
 showNotebookAssistanceWindow // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*previousChatSavedQ*)
+(* Whether the chat of a window that is being replaced is in History, so it's not lost (it isn't saved when
+   AutoSaveConversations is False or it has fewer than MinimumResponsesToSave responses, and "New Chat" gives the window
+   a new ConversationUUID): *)
+previousChatSavedQ // beginDefinition;
+
+previousChatSavedQ[ nbo_NotebookObject ] :=
+    Cells @ nbo =!= { } &&
+        savedChatQ[ CurrentChatSettings[ nbo, "AppName" ], CurrentChatSettings[ nbo, "ConversationUUID" ] ];
+
+previousChatSavedQ[ _Missing ] :=
+    False;
+
+previousChatSavedQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

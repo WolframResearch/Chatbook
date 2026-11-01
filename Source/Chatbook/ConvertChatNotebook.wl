@@ -16,6 +16,8 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (*Configuration*)
 $popOutSettings = { "LLMEvaluator", "MaxContextTokens", "MaxToolResponses", "Model" };
 
+$chatOutputOptionNames = { TaggingRules, GeneratedCell, CellAutoOverwrite };
+
 $$convertible        = _Notebook | _NotebookObject;
 $$convertChatOptions = OptionsPattern[ { ConvertChatNotebook, Notebook } ];
 $$conversionType     = "CloudPublish" | "CloudSave" | "ChatNotebook" | "DefaultNotebook";
@@ -276,25 +278,47 @@ $evaluatedChatInputDingbat = Cell[
 (*$fromWorkspaceChatConversionRules*)
 $fromWorkspaceChatConversionRules := {
     (* Workspace chat *)
-    Cell[ BoxData @ TemplateBox[ { Cell[ TextData[ text_ ], ___ ] }, "UserMessageBox", ___ ], "ChatInput", ___ ] :>
-        Cell[ Flatten @ TextData @ text, "ChatInput" ]
+    Cell[ BoxData @ TemplateBox[ { content_ }, "UserMessageBox", ___ ], "ChatInput", ___ ] :>
+        Cell[ toChatInputContent @ content, "ChatInput" ]
     ,
-    Cell[ BoxData @ TemplateBox[ { text_ }, "UserMessageBox", ___ ], "ChatInput", ___ ] :>
-        Cell[ Flatten @ TextData @ text, "ChatInput" ]
-    ,
-    Cell[ BoxData @ TemplateBox[ { Cell[ text_, ___ ] }, "AssistantMessageBox", ___ ], "ChatOutput", ___ ] :>
-        Cell[ Flatten @ TextData @ text, "ChatOutput" ]
+    Cell[ BoxData @ TemplateBox[ { Cell[ text_, ___ ] }, "AssistantMessageBox", ___ ], "ChatOutput", opts___ ] :>
+        Cell[ Flatten @ TextData @ text, "ChatOutput", Sequence @@ chatOutputOptions @ opts ]
     ,
     (* side bar chat *)
-    Cell[ BoxData @ TemplateBox[ { Cell[ TextData[ text_ ], ___ ] }, "NotebookAssistant`Sidebar`UserMessageBox", ___ ], "NotebookAssistant`Sidebar`ChatInput", ___ ] :>
-        Cell[ Flatten @ TextData @ text, "ChatInput" ]
+    Cell[
+        BoxData @ TemplateBox[ { content_ }, "NotebookAssistant`Sidebar`UserMessageBox", ___ ],
+        "NotebookAssistant`Sidebar`ChatInput",
+        ___
+    ] :> Cell[ toChatInputContent @ content, "ChatInput" ]
     ,
-    Cell[ BoxData @ TemplateBox[ { text_ }, "NotebookAssistant`Sidebar`UserMessageBox", ___ ], "NotebookAssistant`Sidebar`ChatInput", ___ ] :>
-        Cell[ Flatten @ TextData @ text, "ChatInput" ]
-    ,
-    Cell[ BoxData @ TemplateBox[ { Cell[ text_, ___ ] }, "NotebookAssistant`Sidebar`AssistantMessageBox", ___ ], "NotebookAssistant`Sidebar`ChatOutput", ___ ] :>
-        Cell[ Flatten @ TextData @ text, "ChatOutput" ]
+    Cell[
+        BoxData @ TemplateBox[ { Cell[ text_, ___ ] }, "NotebookAssistant`Sidebar`AssistantMessageBox", ___ ],
+        "NotebookAssistant`Sidebar`ChatOutput",
+        opts___
+    ] :> Cell[ Flatten @ TextData @ text, "ChatOutput", Sequence @@ chatOutputOptions @ opts ]
 };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toChatInputContent*)
+toChatInputContent // beginDefinition;
+toChatInputContent[ Cell[ content_, ___ ] ] := toChatInputContent0 @ content;
+toChatInputContent[ content_ ] := toChatInputContent0 @ content;
+toChatInputContent // endDefinition;
+
+
+toChatInputContent0 // beginDefinition;
+toChatInputContent0[ text_String ] := text;
+toChatInputContent0[ TextData[ text_ ] ] := Flatten @ TextData @ text;
+toChatInputContent0[ content_ ] := Flatten @ TextData @ content;
+toChatInputContent0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatOutputOptions*)
+chatOutputOptions // beginDefinition;
+chatOutputOptions[ opts___ ] := FilterRules[ Cases[ { opts }, _Rule|_RuleDelayed ], $chatOutputOptionNames ];
+chatOutputOptions // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

@@ -24,8 +24,12 @@ $inputFieldBox               = None;
 $inlineChatScrollPosition    = 0.0;
 $lastScrollPosition          = 0.0;
 $maxHistoryItems             = 20;
+$historyNotice               = None; (* shown above the History overlay, e.g. after a chat failed to load *)
 $messageAuthorImagePadding   = { { 0, 0 }, { 0, 6 } };
 $sidebarScrollPosition;        (* never has a value, uses Unique to create variables per sidebar *)
+
+(* the docked cells below the window's top stripe (see writeWorkspaceChatSubDockedCell): *)
+$$workspaceChatSubDockedCellTag = "WorkspaceChatTitleDockedCell" | "WorkspaceChatMovedToHistoryDockedCell";
 
 $inputFieldOptions = Sequence[
     Alignment  -> { Automatic, Baseline },
@@ -431,7 +435,7 @@ sidebarOpenAsAssistantWindowButton[ nbo_, sidebarCell_ ] := Button[
         toolbarButtonLabel[ "WorkspaceToolbarIconOpenAsChatbook", None, "SidebarToolbarButtonTooltipOpenAsWindowedAssistant" ],
         { 24, 24 }
     ],
-    Module[ { newNB, cells, chatTitle },
+    Module[ { newNB, cells, chatTitle, settings },
         cells = ReplaceRepeated[
             NotebookRead @ Cells[ First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], { } ], CellTags -> "SidebarTopCell" ], (* fail gracefully *)
             (* so far there's only one TemplateBox that needs to be unconverted *)
@@ -447,6 +451,8 @@ sidebarOpenAsAssistantWindowButton[ nbo_, sidebarCell_ ] := Button[
             }
         ];
         chatTitle = CurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" } ];
+        (* read before the sidebar gets a new UUID, so the window keeps the conversation's UUID *)
+        settings = KeyDrop[ CurrentValue[ sidebarCell, { TaggingRules, "ChatNotebookSettings" } ], "SidebarChat" ];
 
         FrontEndTokenExecute[ nbo, "HideSidebar" ]; (* not displaying the sidebar should reduce dynamics *)
 
@@ -457,16 +463,21 @@ sidebarOpenAsAssistantWindowButton[ nbo_, sidebarCell_ ] := Button[
         CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = createUUID[ ];
         setCurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" }, "" ];
         
-        (* open a new workspace window *)
-        newNB = ShowNotebookAssistance[ nbo, "Window", "ChatNotebookSettings" -> KeyDrop[ CurrentValue[ sidebarCell, { TaggingRules, "ChatNotebookSettings" } ], "SidebarChat" ] ];
-
-        If[ chatTitle =!= "",
-            setCurrentValue[ newNB, { TaggingRules, "ConversationTitle" }, chatTitle ];
-            writeWorkspaceChatTitleDockedCell[ newNB, WindowTitle ]
-        ];
-        SelectionMove[ newNB, Before, Notebook ];
-        NotebookWrite[ newNB, cells ];
-        attachWorkspaceChatInput @ newNB; (* reveal the written cells by moving the chat input field to the bottom of the window *)
+        If[ MatchQ[ cells, { __Cell } ],
+            (* always open a new workspace window, so the conversation isn't merged into one that's already open: *)
+            newNB = ShowNotebookAssistance[ nbo, "Window", "NewChat" -> True, "ChatNotebookSettings" -> settings ];
+            If[ chatTitle =!= "",
+                setCurrentValue[ newNB, { TaggingRules, "ConversationTitle" }, chatTitle ];
+                writeWorkspaceChatTitleDockedCell[ newNB, WindowTitle ]
+            ];
+            SelectionMove[ newNB, After, Notebook ];
+            NotebookWrite[ newNB, cells ];
+            (* reveal the written cells by moving the chat input field to the bottom of the window: *)
+            attachWorkspaceChatInput @ newNB
+            ,
+            (* there is nothing to move, so just show the assistant window: *)
+            ShowNotebookAssistance[ nbo, "Window" ]
+        ]
     ],
     Appearance -> "Suppressed",
     BoxID      -> "NASidebarOpenAsAssistantWindowButton",
@@ -2455,8 +2466,7 @@ makeWorkspaceChatDockedCell[ ] := With[ { nbo = EvaluationNotebook[ ] },
                             ]
                         },
                         FrontEnd`MoveCursorToInputField[ nbo, "AttachedChatInputField", chatInputCell, chatInputCell ]
-                    ];
-                    restoreVerticalScrollbar @ nbo
+                    ]
                 );
                 (* then initialize chat (most costly step) without the loading overlay, showing progress in the top stripe *)
                 If[ Not @ TrueQ @ $workspaceChatInitialized, withWorkspaceGlobalProgress[ nbo, initializeWorkspaceChat[ ] ] ]
@@ -2497,59 +2507,78 @@ makeWorkspaceChatSubDockedCellExpression // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*writeWorkspaceChatSourcesDockedCell*)
-writeWorkspaceChatSourcesDockedCell // beginDefinition;
+(*writeWorkspaceChatSubDockedCell*)
+(* The window has a single docked cell below the top stripe, which shows either the chat's title or the notice that the
+   previous chat was moved to History, so writing one replaces the other: *)
+writeWorkspaceChatSubDockedCell // beginDefinition;
 
-writeWorkspaceChatSourcesDockedCell[ nbo_NotebookObject, content_ ] := (
-setCurrentValue[ nbo, DockedCells,
-    Replace[
-        DeleteCases[ AbsoluteCurrentValue[ nbo, DockedCells ], Cell[ ___, CellTags -> "WorkspaceChatSourcesDockedCell", ___ ] ],
-        { a:Cell[ ___, "NotebookAssistant`TopStripe", ___ ], b__Cell } :> {
-            a,
-            makeWorkspaceChatSubDockedCellExpression[
-                content,
-                color @ "NA_ToolbarTitleBackground",
-                "WorkspaceChatSourcesDockedCell"
-            ],
-            b
-        }
-    ]
-]
-);
+writeWorkspaceChatSubDockedCell[ nbo_NotebookObject, content_, tag_String ] :=
+    setCurrentValue[ nbo, DockedCells,
+        Replace[
+            DeleteCases[ AbsoluteCurrentValue[ nbo, DockedCells ], Cell[ ___, CellTags -> $$workspaceChatSubDockedCellTag, ___ ] ],
+            { a:Cell[ ___, "NotebookAssistant`TopStripe", ___ ], b__Cell } :> {
+                a,
+                makeWorkspaceChatSubDockedCellExpression[ content, color @ "NA_ToolbarTitleBackground", tag ],
+                b
+            }
+        ]
+    ];
 
-writeWorkspaceChatSourcesDockedCell // endDefinition;
+writeWorkspaceChatSubDockedCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*writeWorkspaceChatTitleDockedCell*)
 writeWorkspaceChatTitleDockedCell // beginDefinition;
 
-writeWorkspaceChatTitleDockedCell[ nbo_NotebookObject, WindowTitle ] := (
-setCurrentValue[ nbo, DockedCells,
-    Replace[
-        DeleteCases[ AbsoluteCurrentValue[ nbo, DockedCells ], Cell[ ___, CellTags -> "WorkspaceChatTitleDockedCell", ___ ] ],
-        { a:Cell[ ___, "NotebookAssistant`TopStripe", ___ ], b__Cell } :> {
-            a,
-            makeWorkspaceChatSubDockedCellExpression[
-                Style[
-                    FE`Evaluate @ FEPrivate`TruncateStringToWidth[
-                        CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ],
-                        "WorkspaceChatToolbarTitle",
-                        #,
-                        Right
-                    ]&[ AbsoluteCurrentValue[ nbo, { WindowSize, 1 } ] - 10 ],
-                    "WorkspaceChatToolbarTitle"
-                ],
-                color @ "NA_ToolbarTitleBackground",
-                "WorkspaceChatTitleDockedCell"
-            ],
-            b
-        }
-    ]
-]
-);
+writeWorkspaceChatTitleDockedCell[ nbo_NotebookObject, WindowTitle ] :=
+    writeWorkspaceChatSubDockedCell[
+        nbo,
+        Style[
+            FE`Evaluate @ FEPrivate`TruncateStringToWidth[
+                CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ],
+                "WorkspaceChatToolbarTitle",
+                #,
+                Right
+            ]&[ AbsoluteCurrentValue[ nbo, { WindowSize, 1 } ] - 10 ],
+            "WorkspaceChatToolbarTitle"
+        ],
+        "WorkspaceChatTitleDockedCell"
+    ];
 
 writeWorkspaceChatTitleDockedCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*writeWorkspaceChatMovedToHistoryDockedCell*)
+(* Shown in a new window when it replaces one whose chat was saved, until the new chat gets a title: *)
+writeWorkspaceChatMovedToHistoryDockedCell // beginDefinition;
+
+writeWorkspaceChatMovedToHistoryDockedCell[ nbo_NotebookObject ] :=
+    writeWorkspaceChatSubDockedCell[
+        nbo,
+        Button[
+            MouseAppearance[
+                Style[
+                    Row @ {
+                        trExprTemplate[ "WorkspaceToolbarSourcesSubTitleMoved" ][
+                            <| "1" -> chatbookIcon[ "WorkspaceToolbarIconHistorySmall", False ] |>
+                        ]
+                    },
+                    "WorkspaceChatToolbarTitle",
+                    FontSlant  -> Italic,
+                    FontWeight -> Plain
+                ],
+                "LinkHand" (* indicates that the docked cell is clickable *)
+            ],
+            toggleOverlayMenu[ nbo, None, "History" ],
+            Appearance -> "Suppressed",
+            BoxID      -> "NAMovedLastChatToHistory"
+        ],
+        "WorkspaceChatMovedToHistoryDockedCell"
+    ];
+
+writeWorkspaceChatMovedToHistoryDockedCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -4047,21 +4076,29 @@ popOutChatNB // endDefinition;
 
 popOutChatNB0 // beginDefinition;
 
-popOutChatNB0[ id_, settings_Association ] := Enclose[
+(* a chat that can't be loaded (deleted since History was shown, or unreadable) returns its Missing *)
+popOutChatNB0[ id_, settings_Association ] := Catch[ popOutChatNB1[ id, settings ], $loadFailedTag ];
+
+popOutChatNB0 // endDefinition;
+
+
+popOutChatNB1 // beginDefinition;
+
+popOutChatNB1[ id_, settings_Association ] := Enclose[
     Module[ { loaded, uuid, title, messages, dingbat, cells, options },
-        loaded = ConfirmBy[ LoadChat @ id, AssociationQ, "Loaded" ];
+        loaded = ConfirmBy[ loadSavedChat @ id, AssociationQ, "Loaded" ];
         uuid = ConfirmBy[ loaded[ "ConversationUUID" ], StringQ, "UUID" ];
         title = ConfirmBy[ loaded[ "ConversationTitle" ], StringQ, "Title" ];
         messages = ConfirmBy[ loaded[ "Messages" ], ListQ, "Messages" ];
         dingbat = Cell[ BoxData @ makeOutputDingbat @ settings, Background -> None ];
         cells = ConfirmMatch[ updateCellDingbats[ ChatMessageToCell @ messages, dingbat ], { __Cell }, "Cells" ];
-        options = Sequence @@ Normal[ settings, Association ];
+        options = Sequence @@ Normal[ KeyTake[ settings, $popOutSettings ], Association ];
         ConfirmMatch[ CreateChatNotebook[ cells, options ], _NotebookObject, "Notebook" ]
     ],
     throwInternalFailure
 ];
 
-popOutChatNB0 // endDefinition;
+popOutChatNB1 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -4286,7 +4323,9 @@ withLoadingOverlay[ { nbo_NotebookObject, appContainer_ }, eval_ ] :=
         WithCleanup[
             attached = attachOverlayMenu[ nbo, appContainer, "Loading" ],
             eval,
-            NotebookDelete @ attached
+            NotebookDelete @ attached;
+            (* the window overlay hides the vertical scrollbar, so it's restored even if eval fails or is aborted *)
+            If[ appContainer === None, restoreVerticalScrollbar @ nbo ]
         ]
     ];
 
@@ -4458,14 +4497,20 @@ inclusionCheckbox // endDefinition;
 historyOverlay // beginDefinition;
 
 historyOverlay[ nbo_NotebookObject, appContainer_ ] :=
+    historyOverlay[ nbo, appContainer, $historyNotice ];
+
+historyOverlay[ nbo_NotebookObject, appContainer_, notice_ ] :=
     DynamicModule[ { searching = False, query = "", overlayCell },
-        PaneSelector[
-            {
-                True  -> historySearchView[ nbo, appContainer, Dynamic @ searching, Dynamic @ query, Dynamic @ overlayCell ],
-                False -> historyDefaultView[ nbo, appContainer, Dynamic @ searching ]
-            },
-            Dynamic @ searching,
-            ImageSize -> Automatic
+        withHistoryNotice[
+            PaneSelector[
+                {
+                    True  -> historySearchView[ nbo, appContainer, Dynamic @ searching, Dynamic @ query, Dynamic @ overlayCell ],
+                    False -> historyDefaultView[ nbo, appContainer, Dynamic @ searching ]
+                },
+                Dynamic @ searching,
+                ImageSize -> Automatic
+            ],
+            notice
         ],
 
         Initialization   :> (overlayCell = EvaluationCell[ ]),
@@ -4478,6 +4523,26 @@ historyOverlay[ nbo_NotebookObject, appContainer_ ] :=
     ];
 
 historyOverlay // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*withHistoryNotice*)
+withHistoryNotice // beginDefinition;
+
+withHistoryNotice[ view_, None ] := view;
+
+withHistoryNotice[ view_, notice_ ] := Column[
+    {
+        Pane[
+            Style[ notice, "Text", FontSize -> 13, FontColor -> color @ "NA_OverlayMenuFontSubtle", FontSlant -> Italic ],
+            FrameMargins -> { { 5, 5 }, { 0, 3 } }
+        ],
+        view
+    },
+    Spacings -> 0.5
+];
+
+withHistoryNotice // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -4519,8 +4584,10 @@ historySearchView // endDefinition;
 (*makeHistorySearchResults*)
 makeHistorySearchResults // beginDefinition;
 
-makeHistorySearchResults[ nbo_NotebookObject, appContainer_, appName_String, Dynamic[ query_ ] ] := Dynamic[
+(* the results are searched again when saved chats change, e.g. after a chat was deleted or saved elsewhere *)
+makeHistorySearchResults[ nbo_NotebookObject, appContainer_, appName_String, Dynamic[ query_ ] ] := trackedDynamic[
     showSearchResults[ nbo, appContainer, appName, query ],
+    "SavedChats",
     SynchronousUpdating -> False, (* searching should not block typing in the search field *)
     TrackedSymbols      :> { query }
 ];
@@ -4745,40 +4812,64 @@ makeDefaultHistoryView // endDefinition;
 makeDefaultHistoryView0 // beginDefinition;
 
 makeDefaultHistoryView0[ nbo_NotebookObject, appContainer_, Dynamic[ page_ ], Dynamic[ totalPages_ ] ] := Enclose[
-    DynamicModule[ { appName, chats, display },
+    DynamicModule[ { appName, chats = None, display },
         display = Pane[ ProgressIndicator[ Appearance -> { "Percolate", color @ "NA_OverlayMenuPercolate" } ], ImageMargins -> 25 ];
         appName = ConfirmBy[ CurrentChatSettings[ If[ appContainer === None, nbo, appContainer ], "AppName" ], StringQ, "AppName" ];
-        chats = ConfirmMatch[ ListSavedChats @ appName, { ___Association }, "Chats" ];
 
-        DynamicWrapper[
-            Dynamic @ display,
-            display =
-                Grid[
-                    With[ { pages = Partition[ chats, UpTo @ $maxHistoryItems ] },
-                        totalPages = Length @ pages;
-                        If[ totalPages == 0,
-                            { {
-                                Item[
-                                    Style[ tr @ "WorkspaceHistoryNone", FontFamily -> "Source Sans Pro", FontSlant  -> Italic ],
-                                    Alignment          -> { Center, Center },
-                                    System`ItemMargins -> 10
-                                ] } }
-                            ,
-                            If[ Not[ IntegerQ @ page && page >= 1 && page <= totalPages ], page = 1 ];
-                            makeHistoryMenuItem[ Dynamic @ chats, nbo, appContainer ] /@ pages[[ page ]]
+        (* chats are read from storage when shown and again whenever saved chats change, e.g. after a chat was deleted
+           in the search view or in another History overlay, or a new chat was saved *)
+        trackedDynamicWrapper[
+            DynamicWrapper[
+                Dynamic @ display,
+                If[ ListQ @ chats,
+                    display =
+                        Grid[
+                            With[ { pages = Partition[ chats, UpTo @ $maxHistoryItems ] },
+                                totalPages = Length @ pages;
+                                If[ totalPages == 0,
+                                    { {
+                                        Item[
+                                            Style[ tr @ "WorkspaceHistoryNone", FontFamily -> "Source Sans Pro", FontSlant  -> Italic ],
+                                            Alignment          -> { Center, Center },
+                                            System`ItemMargins -> 10
+                                        ] } }
+                                    ,
+                                    (* stay on the last page if deleting chats removed the current one *)
+                                    If[ Not[ IntegerQ @ page && page >= 1 && page <= totalPages ],
+                                        page = If[ IntegerQ @ page && page > totalPages, totalPages, 1 ]
+                                    ];
+                                    makeHistoryMenuItem[ Dynamic @ chats, nbo, appContainer ] /@ pages[[ page ]]
+                                ]
+                            ],
+                            Alignment -> { Left, Center },
+                            Dividers  -> { False, { False, { color @ "NA_OverlayMenuFrame" }, False } },
+                            Spacings  -> { Automatic, { 0, { 1 }, 0 } }
                         ]
-                    ],
-                    Alignment -> { Left, Center },
-                    Dividers  -> { False, { False, { color @ "NA_OverlayMenuFrame" }, False } },
-                    Spacings  -> { Automatic, { 0, { 1 }, 0 } }
                 ],
-            TrackedSymbols :> { page, chats }
+                TrackedSymbols :> { page, chats }
+            ],
+            chats = readHistoryChats[ appName, chats ],
+            "SavedChats",
+            SynchronousUpdating -> False
         ]
     ],
     throwInternalFailure
 ];
 
 makeDefaultHistoryView0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*readHistoryChats*)
+readHistoryChats // beginDefinition;
+
+(* if storage can't be read, the rows that are already shown are kept *)
+readHistoryChats[ appName_String, current_ ] := Replace[
+    catchAlways @ ListSavedChats @ appName,
+    Except[ { ___Association } ] :> If[ ListQ @ current, current, { } ]
+];
+
+readHistoryChats // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -4857,7 +4948,7 @@ makeHistoryMenuItem[ Dynamic[ chats_ ], nbo_NotebookObject, appContainer_, chat_
                     { {
                         Button[
                             chatbookIcon[ "WorkspaceHistoryPopOutIcon", False ],
-                            popOutChatNB[ chat, CurrentChatSettings @ If[ appContainer === None, nbo, appContainer ] ],
+                            popOutFromHistory[ nbo, appContainer, chat ],
                             Appearance       -> "Suppressed",
                             BaselinePosition -> Center -> Center,
                             BoxID            -> "NAHistoryPopOutConversation" <> title,
@@ -4905,13 +4996,38 @@ removeChatFromRows // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*popOutFromHistory*)
+popOutFromHistory // beginDefinition;
+
+popOutFromHistory[ nbo_NotebookObject, appContainer_, chat_Association ] := Replace[
+    popOutChatNB[ chat, CurrentChatSettings @ If[ appContainer === None, nbo, appContainer ] ],
+    missing_Missing :> historyLoadFailed[ nbo, appContainer, missing ]
+];
+
+popOutFromHistory // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*loadConversation*)
 loadConversation // beginDefinition;
 
-loadConversation[ nbo_NotebookObject, None, id_ ] := Enclose[
+(* a chat that can't be loaded (deleted since History was shown, or unreadable) throws its Missing to $loadFailedTag
+   from inside withLoadingOverlay, so History is only reopened after the loading overlay is gone *)
+loadConversation[ nbo_NotebookObject, appContainer_, id_ ] := Catch[
+    loadConversation0[ nbo, appContainer, id ],
+    $loadFailedTag,
+    historyLoadFailed[ nbo, appContainer, #1 ] &
+];
+
+loadConversation // endDefinition;
+
+
+loadConversation0 // beginDefinition;
+
+loadConversation0[ nbo_NotebookObject, None, id_ ] := Enclose[
     Module[ { loaded, uuid, title, messages, cells, cellObjects },
 
-        loaded = ConfirmBy[ LoadChat @ id, AssociationQ, "Loaded" ];
+        loaded = ConfirmBy[ loadSavedChat @ id, AssociationQ, "Loaded" ];
         uuid = ConfirmBy[ loaded[ "ConversationUUID" ], StringQ, "UUID" ];
         title = ConfirmBy[ loaded[ "ConversationTitle" ], StringQ, "Title" ];
         messages = ConfirmBy[ loaded[ "Messages" ], ListQ, "Messages" ];
@@ -4940,10 +5056,10 @@ loadConversation[ nbo_NotebookObject, None, id_ ] := Enclose[
 ];
 
 (* if we need to distinguish this further then condition on TrueQ @ CurrentValue[ sidebarCell, { TaggingRules, "ChatNotebookSettings", "SidebarChat" } ] *)
-loadConversation[ nbo_NotebookObject, sidebarCell_CellObject, id_ ] := Enclose[
+loadConversation0[ nbo_NotebookObject, sidebarCell_CellObject, id_ ] := Enclose[
     Module[ { loaded, uuid, title, messages, cells, lastDockedCell, scrollablePaneCell },
         (* load new cells *)
-        loaded = ConfirmBy[ LoadChat @ id, AssociationQ, "Loaded" ];
+        loaded = ConfirmBy[ loadSavedChat @ id, AssociationQ, "Loaded" ];
         uuid = ConfirmBy[ loaded[ "ConversationUUID" ], StringQ, "UUID" ];
         title = ConfirmBy[ loaded[ "ConversationTitle" ], StringQ, "Title" ];
         messages = ConfirmBy[ loaded[ "Messages" ], ListQ, "Messages" ];
@@ -4966,7 +5082,27 @@ loadConversation[ nbo_NotebookObject, sidebarCell_CellObject, id_ ] := Enclose[
     throwInternalFailure
 ];
 
-loadConversation // endDefinition;
+loadConversation0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*loadSavedChat*)
+loadSavedChat // beginDefinition;
+loadSavedChat[ id_ ] := Replace[ LoadChat @ id, missing_Missing :> Throw[ missing, $loadFailedTag ] ];
+loadSavedChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*historyLoadFailed*)
+historyLoadFailed // beginDefinition;
+
+(* History is reopened from storage, so a chat that no longer exists isn't listed anymore *)
+historyLoadFailed[ nbo_NotebookObject, appContainer_, _Missing ] := (
+    Block[ { $historyNotice = tr[ "WorkspaceHistoryLoadFailed" ] }, attachOverlayMenu[ nbo, appContainer, "History" ] ];
+    Null
+);
+
+historyLoadFailed // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
