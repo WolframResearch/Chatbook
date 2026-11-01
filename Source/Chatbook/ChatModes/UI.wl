@@ -253,8 +253,8 @@ sidebarEditingSettingsButton[ cell_CellObject ] := Tooltip[
 sidebarEditingSettingsButton // endDefinition;
 
 
-(* The settings of notebook editing, each with a tooltip: whether edits re-evaluate the outputs they change, and the
-   agent's model and reasoning effort *)
+(* The settings of notebook editing, each with a tooltip: whether edits re-evaluate the outputs they change, whether the
+   agent can search the documentation, and the agent's model and reasoning effort *)
 sidebarEditingSettingsPanel // beginDefinition;
 
 sidebarEditingSettingsPanel[ cell_CellObject ] := Framed[
@@ -270,6 +270,18 @@ sidebarEditingSettingsPanel[ cell_CellObject ] := Framed[
                             "The assistant writes outputs itself, without evaluating. They're grayed until you evaluate them yourself."
                         ],
                         CurrentChatSettings[ cell, "NotebookReEvaluate" ] = ! reEvaluate
+                    ]
+                ],
+                SpanFromLeft
+            },
+            {
+                Dynamic @ With[ { lookup = TrueQ @ CurrentChatSettings[ cell, "NotebookDocumentationLookup" ] },
+                    sidebarSwitch[
+                        lookup,
+                        "Look up documentation",
+                        "Let the agent read documentation examples while it edits. Helps with unusual options; slows each \
+edit.",
+                        CurrentChatSettings[ cell, "NotebookDocumentationLookup" ] = ! lookup
                     ]
                 ],
                 SpanFromLeft

@@ -233,8 +233,7 @@ notebook edit needs no todo list. SetCells, EditInCell and InsertCells check the
 edit of code, their result ends with a code check of every Input cell, evaluated in order in a fresh context (results \
 and messages), so the code needs no other check. Output cells hold real results and are never written by hand: with \
 evaluate: true, SetCells, EditInCell and InsertCells evaluate the Input cells they write and every Input cell after \
-them, and replace their outputs with the results: code that needs no change is not rewritten to update its outputs. \
-WolframLanguageContext is not needed for notebook edits.";
+them, and replace their outputs with the results: code that needs no change is not rewritten to update its outputs.";
 
 (* The notebook tools' part of a chat's system prompt when a chat edits notebooks (the sidebar chat's Notebook editing
    switch): the workflow, with outputs as $acpNotebookReEvaluate decides, and the notation *)

@@ -599,7 +599,8 @@ pruneTokens // endDefinition;
 (* The "mcpServers" parameter of session/new, session/load and session/resume (the same entry for all three). Pure, so
    it can be used in reader handlers: { } for a remote window, with the setting off, without a server or a token for the
    window's connection, or when the agent does not support HTTP MCP servers (agentCapabilities.mcpCapabilities.http is
-   true or an object). *)
+   true or an object). A window with "ACPDocumentationServer" -> True also offers the documentation server, once
+   acpEnsureDocumentationServer has made its entry. *)
 acpMCPServersParam // beginDefinition;
 
 acpMCPServersParam[ nbo_NotebookObject ] := acpMCPServersParam @ acpWindowGet @ nbo;
@@ -608,19 +609,58 @@ acpMCPServersParam[ window_Association ] := Module[ { token },
     If[ ! AssociationQ @ $mcpServer || ! mcpWindowQ @ window || ! httpCapableQ @ window, Return[ { }, Module ] ];
     token = windowToken @ window;
     If[ ! StringQ @ token, Return[ { }, Module ] ];
-    {
-        <|
-            "type"    -> "http",
-            "name"    -> $acpMCPServerName,
-            "url"     -> $mcpServer[ "URL" ],
-            "headers" -> { <| "name" -> "Authorization", "value" -> "Bearer " <> token |> }
-        |>
-    }
+    Join[
+        {
+            <|
+                "type"    -> "http",
+                "name"    -> $acpMCPServerName,
+                "url"     -> $mcpServer[ "URL" ],
+                "headers" -> { <| "name" -> "Authorization", "value" -> "Bearer " <> token |> }
+            |>
+        },
+        If[ TrueQ @ Lookup[ Lookup[ window, "Settings", <| |> ], "ACPDocumentationServer", False ] &&
+                AssociationQ @ $acpDocumentationServer,
+            { $acpDocumentationServer },
+            { }
+        ]
+    ]
 ];
 
 acpMCPServersParam[ _ ] := { };
 
 acpMCPServersParam // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*acpEnsureDocumentationServer*)
+
+(* The documentation server a window can offer its agent next to the notebook tools (the sidebar's Look up
+   documentation switch): AgentTools' WolframLanguage server, whose WolframLanguageContext searches the Wolfram
+   documentation, as an ACP stdio entry. Made once, outside reader handlers, which only read it; None until then or if
+   AgentTools can't describe it. *)
+If[ ! AssociationQ @ $acpDocumentationServer, $acpDocumentationServer = None ];
+
+acpEnsureDocumentationServer // beginDefinition;
+
+acpEnsureDocumentationServer[ ] := Replace[ $acpDocumentationServer, None :> ($acpDocumentationServer = Quiet @ Enclose[
+    Module[ { config },
+        config = ConfirmBy[
+            Developer`ReadRawJSONString[ Wolfram`AgentTools`MCPServerObject[ "WolframLanguage" ][ "JSONConfiguration" ] ][
+                "mcpServers", "WolframLanguage" ],
+            AssociationQ,
+            "Configuration"
+        ];
+        <|
+            "name"    -> "WolframLanguage",
+            "command" -> ConfirmBy[ config[ "command" ], StringQ, "Command" ],
+            "args"    -> Lookup[ config, "args", { } ],
+            "env"     -> KeyValueMap[ <| "name" -> #1, "value" -> #2 |> &, Lookup[ config, "env", <| |> ] ]
+        |>
+    ],
+    None &
+]) ];
+
+acpEnsureDocumentationServer // endDefinition;
 
 
 httpCapableQ // beginDefinition;

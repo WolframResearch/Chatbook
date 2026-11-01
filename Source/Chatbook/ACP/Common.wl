@@ -441,6 +441,7 @@ HoldComplete[
     (* ::**************************************************************************************************************:: *)
     (* MCP.wl *)
     `$acpMCPServerName,
+    `acpEnsureDocumentationServer, (* used by ChatModes/Evaluate.wl (the sidebar's Look up documentation switch) *)
     `acpMCPAuthorizedQ,       (* the server's "Authentication" function (SocketListen handler) *)
     `acpMCPAvailableQ,
     `acpMCPConnectionStarted, (* used by Connection.wl (acpConnect) *)
@@ -515,6 +516,7 @@ HoldComplete[
     `acpActionCode,
     `acpCannotSendNotice, (* used by PromptNotebook.wl (Send of a prompt notebook) *)
     `acpChangeProjectDirectory,
+    `acpCloseWindow, (* used by ChatModes/Evaluate.wl (a sidebar agent window whose settings changed) *)
     `acpEnsureWindowRecord,
     `acpFinalizeTurn,
     `acpMarkOrphanCells,

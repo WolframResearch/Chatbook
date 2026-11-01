@@ -58,6 +58,7 @@ $defaultChatSettings = <|
     "MinimumResponsesToSave"         -> 1,
     "Model"                          :> $DefaultModel,
     "Multimodal"                     -> Automatic,
+    "NotebookDocumentationLookup"    -> False,
     "NotebookEditing"                -> False,
     "NotebookEditingEffort"          -> "medium",
     "NotebookEditingModel"           -> "openai/gpt-6.1-sol",

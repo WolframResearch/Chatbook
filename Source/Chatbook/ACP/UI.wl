@@ -746,9 +746,11 @@ persistedPrompt // endDefinition;
 (*acpPersistedWindowSettings*)
 
 (* The explicit agent settings of a window. They are also stored in the notebook's TaggingRules ({"ACP", "Settings"}),
-   so a window rebuilt after a kernel restart connects with the same command line, model, MCP server setting and host
+   so a window rebuilt after a kernel restart connects with the same command line, model, MCP server settings and host
    ("SSHSettings", in its canonical form: it holds no secrets, at most the path of a key file). *)
-$acpPersistedSettingNames = { "ACPAgent", "ACPAgentCommandLine", "ACPMCPServer", "ACPModel", "SSHSettings" };
+$acpPersistedSettingNames = {
+    "ACPAgent", "ACPAgentCommandLine", "ACPDocumentationServer", "ACPMCPServer", "ACPModel", "SSHSettings"
+};
 
 acpPersistedWindowSettings // beginDefinition;
 acpPersistedWindowSettings[ settings_Association ] := KeyTake[ settings, $acpPersistedSettingNames ];

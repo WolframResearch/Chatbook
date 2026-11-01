@@ -236,7 +236,7 @@ If[ ! AssociationQ @ $sidebarAgentMessages, $sidebarAgentMessages = <| |> ]; (* 
 evaluateSidebarAgent // beginDefinition;
 
 evaluateSidebarAgent[ nbo_NotebookObject, sidebarCell_CellObject, input_ ] := Enclose[
-    Module[ { text, uuid, prompt, model, window, id },
+    Module[ { text, uuid, prompt, model, docs, window, id },
         text = makeBoxesInputMoreTextLike @ input;
         uuid = ConfirmBy[ createUUID[ ], StringQ, "UUID" ];
         appendCellToSidebarChat[
@@ -254,16 +254,18 @@ evaluateSidebarAgent[ nbo_NotebookObject, sidebarCell_CellObject, input_ ] := En
         ];
         prompt = ConfirmBy[ CellToString @ Cell[ text, "Text" ], StringQ, "Prompt" ];
         model  = CurrentChatSettings[ sidebarCell, "NotebookEditingModel" ];
-        window = ConfirmMatch[ sidebarAgentWindow[ nbo, model ], _NotebookObject, "Window" ];
+        docs   = TrueQ @ CurrentChatSettings[ sidebarCell, "NotebookDocumentationLookup" ];
+        window = ConfirmMatch[ sidebarAgentWindow[ nbo, model, docs ], _NotebookObject, "Window" ];
         id     = ConfirmBy[ createUUID[ ], StringQ, "AgentCellUUID" ];
         $sidebarAgentMessages[ id ] = <|
-            "Window"     -> window,
-            "Notebook"   -> nbo,
-            "Prompt"     -> prompt,
-            "Model"      -> model,
-            "Effort"     -> CurrentChatSettings[ sidebarCell, "NotebookEditingEffort" ],
-            "ConfigSent" -> { },
-            "ReEvaluate" -> CurrentChatSettings[ sidebarCell, "NotebookReEvaluate" ] =!= False,
+            "Window"        -> window,
+            "Notebook"      -> nbo,
+            "Prompt"        -> prompt,
+            "Model"         -> model,
+            "Effort"        -> CurrentChatSettings[ sidebarCell, "NotebookEditingEffort" ],
+            "ConfigSent"    -> { },
+            "ReEvaluate"    -> CurrentChatSettings[ sidebarCell, "NotebookReEvaluate" ] =!= False,
+            "Documentation" -> docs,
             "State"      -> "Starting the agent\[Ellipsis]",
             "TurnID"     -> None,
             "Created"    -> AbsoluteTime[ ]
@@ -281,26 +283,38 @@ evaluateSidebarAgent // endDefinition;
 (* ::Subsection::Closed:: *)
 (*sidebarAgentWindow*)
 
-(* The notebook's hidden ACP window, made the first time with the given model: its agent works in the notebook's folder *)
+(* The notebook's hidden ACP window, made the first time with the given model: its agent works in the notebook's folder.
+   Its session has the documentation server too when docs is True (the Look up documentation switch); a session's
+   servers are fixed, so a change of the switch closes the window and the next message starts a new session. *)
 sidebarAgentWindow // beginDefinition;
 
-sidebarAgentWindow[ nbo_NotebookObject, model_ ] := Replace[
+sidebarAgentWindow[ nbo_NotebookObject, model_, docs_ ] := Replace[
     Lookup[ $sidebarAgentWindows, nbo, None ],
-    Except[ w_NotebookObject /; MemberQ[ Notebooks[ ], w ] ] :> Module[ { window },
-        sidebarAgentSetup[ ];
-        window = ShowNotebookAssistance[ None, "ACPWindow", "ChatNotebookSettings" -> <|
-            "ProjectDirectory"    -> $sidebarAgentLLMEditing,
-            "ACPModel"            -> model,
-            "ACPAgentCommandLine" -> $sidebarAgentCommand,
-            "ACPMCPServer"        -> True
-        |> ];
-        If[ MatchQ[ window, _NotebookObject ],
-            SetOptions[ window, Visible -> False ];
-            SetSelectedNotebook @ nbo;
-            $sidebarAgentWindows[ nbo ] = window
-        ];
-        window
-    ]
+    {
+        w_NotebookObject /; MemberQ[ Notebooks[ ], w ] &&
+            TrueQ @ Lookup[ acpWindowGet[ w, "Settings", <| |> ], "ACPDocumentationServer", False ] =!= docs :> (
+            acpCloseWindow @ w;
+            KeyDropFrom[ $sidebarAgentWindows, nbo ];
+            sidebarAgentWindow[ nbo, model, docs ]
+        ),
+        Except[ w_NotebookObject /; MemberQ[ Notebooks[ ], w ] ] :> Module[ { window },
+            sidebarAgentSetup[ ];
+            If[ docs, acpEnsureDocumentationServer[ ] ];
+            window = ShowNotebookAssistance[ None, "ACPWindow", "ChatNotebookSettings" -> <|
+                "ProjectDirectory"       -> $sidebarAgentLLMEditing,
+                "ACPModel"               -> model,
+                "ACPAgentCommandLine"    -> $sidebarAgentCommand,
+                "ACPMCPServer"           -> True,
+                "ACPDocumentationServer" -> docs
+            |> ];
+            If[ MatchQ[ window, _NotebookObject ],
+                SetOptions[ window, Visible -> False ];
+                SetSelectedNotebook @ nbo;
+                $sidebarAgentWindows[ nbo ] = window
+            ];
+            window
+        ]
+    }
 ];
 
 sidebarAgentWindow // endDefinition;
@@ -373,12 +387,21 @@ sidebarAgentStep[ id_String ] := Module[ { msg = $sidebarAgentMessages[ id ], wi
 sidebarAgentStep // endDefinition;
 
 
-(* The prompt as the agent gets it: with Re-evaluate off it is told to write the outputs itself *)
+(* The prompt as the agent gets it: the user's words, then a note for each switch that needs one: with Re-evaluate off
+   it is told to write the outputs itself, with Look up documentation on when to use the documentation search *)
 sidebarAgentPrompt // beginDefinition;
-sidebarAgentPrompt[ msg_Association ] := If[ TrueQ @ msg[ "ReEvaluate" ],
+sidebarAgentPrompt[ msg_Association ] := StringJoin[
     msg[ "Prompt" ],
-    msg[ "Prompt" ] <> "\n\n(Nothing is evaluated: write the outputs your edits change yourself, exactly as the code would \
-give them, with InsertCells (style Output) after their Input cell, and delete the old ones.)"
+    If[ TrueQ @ msg[ "ReEvaluate" ],
+        "",
+        "\n\n(Nothing is evaluated: write the outputs your edits change yourself, exactly as the code would give them, \
+with InsertCells (style Output) after their Input cell, and delete the old ones.)"
+    ],
+    If[ TrueQ @ msg[ "Documentation" ],
+        "\n\n(Before you write code with functions or options you are not sure of, look them up with \
+WolframLanguageContext, in one call that describes everything the edit needs.)",
+        ""
+    ]
 ];
 sidebarAgentPrompt // endDefinition;
 
