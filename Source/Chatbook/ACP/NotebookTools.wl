@@ -3035,6 +3035,13 @@ showChanges[ args_Association ] := Module[ { handle, record, result },
         Return[ "There are no changes to show: " <> handle <> " was not edited. Close it with CloseNotebook.", Module ]
     ];
     If[ TrueQ @ record[ "Unsaved" ], saveSnapshot @ handle ];
+    (* the cells CellDiff pairs by their uuids, for the debug log: the edited ones and those of both notebooks *)
+    acpLog[ "ShowChangesCells", <|
+        "Handle"      -> handle,
+        "Edited"      -> Lookup[ record, "EditedCells", { } ],
+        "SourceIDs"   -> If[ MatchQ[ record[ "Source" ], _NotebookObject ], Quiet @ Cells @ record[ "Source" ], None ],
+        "SnapshotIDs" -> Quiet @ Cells @ record[ "Notebook" ]
+    |> ];
     result = notebookFrontEnd[ "ShowDiff", record[ "Source" ], record[ "Notebook" ], Lookup[ record, "EditedCells", { } ] ];
     If[ FailureQ @ result,
         toolError[ "The changes of `1` could not be shown: `2`", snapshotLabel @ handle, diffFailureText @ result ]
