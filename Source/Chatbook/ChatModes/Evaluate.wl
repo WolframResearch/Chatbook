@@ -427,12 +427,15 @@ sidebarAgentConfigChange // endDefinition;
 
 sidebarAgentFinish // beginDefinition;
 
+(* A write the front end refused while formatting the sidebar (acpReplaceCellRefusedQ) keeps the step task, whose next
+   step finishes the message again *)
 sidebarAgentFinish[ id_String, failure_ ] := With[ { cell = $sidebarAgentMessages[ id, "Cell" ] },
-    Quiet @ TaskRemove @ $sidebarAgentMessages[ id, "Task" ];
     $sidebarAgentMessages[ id, "State" ] = Replace[ failure, None -> "Done" ];
     $sidebarAgentMessages[ id, "Failure" ] = failure;
     $sidebarAgentMessages[ id, "Elapsed" ] = AbsoluteTime[ ] - $sidebarAgentMessages[ id, "Created" ];
-    If[ MatchQ[ cell, _CellObject ], NotebookWrite[ cell, sidebarAgentCell[ "SidebarTopCell", sidebarAgentView @ id ] ] ]
+    If[ ! TrueQ[ MatchQ[ cell, _CellObject ] && acpReplaceCellRefusedQ[ cell, sidebarAgentCell[ "SidebarTopCell", sidebarAgentView @ id ] ] ],
+        Quiet @ TaskRemove @ $sidebarAgentMessages[ id, "Task" ]
+    ]
 ];
 
 sidebarAgentFinish // endDefinition;

@@ -35,6 +35,8 @@ $acpFreezeTimeout     = 5;    (* seconds after which the final cell is written w
 $acpFreezePoll        = Quantity[ 50, "Milliseconds" ];
 $acpFinalizeFallback  = 1.0;  (* seconds after which housekeeping finalizes a turn that ended but was not finalized *)
 $acpFinalizeTimeout   = 30;   (* seconds after which housekeeping finishes a turn whose finalization never completed *)
+(* The first front end whose NotebookWrite takes "ReportResultAndFailIfFormatting" (acpReplaceCellRefusedQ) *)
+$acpReportResultFrontEndVersion = 15.1;
 $acpMaxRecentModels   = 3;
 $acpPreferencesPath   = { PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "ACP" };
 $acpMaxPathLength     = 42;  (* acpAbbreviatePath's default *)
@@ -3794,7 +3796,7 @@ acpFinalizeTurn // endDefinition;
    A frozen view that was shown has no Dynamic the front end could ask for, so it is replaced in the same evaluation. *)
 acpWriteFinalCell // beginDefinition;
 
-acpWriteFinalCell[ turnID_String ] := Catch @ Module[ { turn, nbo, cell, final },
+acpWriteFinalCell[ turnID_String ] := Catch @ Module[ { turn, nbo, cell, final, refused },
 
     turn = acpTurnGet @ turnID;
     If[ ! AssociationQ @ turn || ! TrueQ @ turn[ "FinalizeClaimed" ] || TrueQ @ turn[ "FinalWriteClaimed" ], Throw @ Null ];
@@ -3827,8 +3829,14 @@ acpWriteFinalCell[ turnID_String ] := Catch @ Module[ { turn, nbo, cell, final }
 
     If[ final === None, final = Replace[ acpCatchAll @ acpRenderFinalCell @ turnID, Except[ _Cell ] :> acpStaticFinalCell[ ] ] ];
 
-    AbortProtect @ WithCleanup[
-        acpCatchAll[ contextBlock @ NotebookWrite[ cell, final, None, AutoScroll -> False ], (acpLog[ "FinalCellWriteFailed", { turnID, ## } ]; $Failed) & ],
+    (* A write the front end refused while formatting (acpReplaceCellRefusedQ) is tried again with the same final cell *)
+    AbortProtect[
+        refused = acpCatchAll[ contextBlock @ acpReplaceCellRefusedQ[ cell, final ], (acpLog[ "FinalCellWriteFailed", { turnID, ## } ]; False) & ];
+        If[ TrueQ @ refused,
+            acpTurnUpdate[ turnID, <| "Turn" -> <| #, "FinalCell" -> final, "FinalWriteClaimed" -> False |>, "Changed" -> { }, "Layout" -> False |> & ];
+            acpSchedule[ acpWriteFinalCell @ turnID, $acpFreezePoll ];
+            Throw @ Null
+        ];
         acpFinishTurnState[ turnID, nbo ]
     ];
 
@@ -4564,10 +4572,13 @@ acpForceFinishTurn[ turnID_String ] := Module[ { turn, nbo, cell },
     acpLog[ "FinalizeTimeout", turnID ];
     nbo  = Lookup[ turn, "Notebook", None ];
     cell = Lookup[ turn, "OutputCell", None ];
-    AbortProtect @ WithCleanup[
+    AbortProtect[
+        (* A write the front end refused while formatting is left to the next housekeeping *)
         If[ acpCellExistsQ @ cell,
-            acpCatchAll @ contextBlock @ NotebookWrite[ cell, Replace[ acpCatchAll @ acpFallbackFinalCell @ turnID, Except[ _Cell ] :> acpStaticFinalCell[ ] ], None, AutoScroll -> False ]
-        ],
+            If[ TrueQ @ acpCatchAll @ contextBlock @ acpReplaceCellRefusedQ[ cell, Replace[ acpCatchAll @ acpFallbackFinalCell @ turnID, Except[ _Cell ] :> acpStaticFinalCell[ ] ] ],
+                Return[ Null, Module ]
+            ]
+        ];
         acpFinishTurnState[ turnID, nbo ]
     ]
 ];
@@ -4648,6 +4659,24 @@ acpCellExistsQ // beginDefinition;
 acpCellExistsQ[ cell_CellObject ] := MatchQ[ Quiet @ ParentNotebook @ cell, _NotebookObject ];
 acpCellExistsQ[ _ ] := False;
 acpCellExistsQ // endDefinition;
+
+(* Replaces cell with new, unless the front end is formatting cell or a cell around it: a write from a scheduled task (the
+   pump, a sidebar agent's step) can arrive while the front end waits for the kernel in the middle of such a format (for a
+   Dynamic, or the ScrollPosition of the sidebar's scrolling cell), and replacing the cell then fails an assertion in the
+   front end. Gives True when the front end refused and the cell is still there, to be written again later; a front end
+   older than $acpReportResultFrontEndVersion always writes. *)
+acpReplaceCellRefusedQ // beginDefinition;
+
+acpReplaceCellRefusedQ[ cell_CellObject, new_Cell ] /; $acpFrontEndReportsWriteResult :=
+    MathLink`CallFrontEnd @ FrontEnd`NotebookWrite[ cell, new, None, AutoScroll -> False, "ReportResultAndFailIfFormatting" -> True ] === $Failed &&
+        acpCellExistsQ @ cell;
+
+acpReplaceCellRefusedQ[ cell_CellObject, new_Cell ] := ( NotebookWrite[ cell, new, None, AutoScroll -> False ]; False );
+
+acpReplaceCellRefusedQ // endDefinition;
+
+$acpFrontEndReportsWriteResult := $acpFrontEndReportsWriteResult =
+    TrueQ[ MathLink`CallFrontEnd @ FrontEnd`VersionNumber[ ] >= $acpReportResultFrontEndVersion ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

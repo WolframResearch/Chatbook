@@ -524,6 +524,7 @@ HoldComplete[
     `acpNewChat,
     `acpPreparedPrompt, (* used by Attachments.wl (the result of the main link job of a message with attachments) *)
     `acpQueuedPromptOf, (* used by PromptNotebook.wl (the prompt notebooks of the queued messages) *)
+    `acpReplaceCellRefusedQ, (* used by ChatModes/Evaluate.wl (the last write of a sidebar agent message) *)
     `acpReturnPendingMessages, (* used by Sessions.wl (a session restored from the same folder) *)
     `acpSendPreparedMessage, (* used by PromptNotebook.wl (a prompt notebook's message) *)
     `acpSendQueuedPrompt,
