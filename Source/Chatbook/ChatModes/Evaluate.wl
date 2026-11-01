@@ -265,6 +265,7 @@ evaluateSidebarAgent[ nbo_NotebookObject, sidebarCell_CellObject, input_ ] := En
             "Effort"        -> CurrentChatSettings[ sidebarCell, "NotebookEditingEffort" ],
             "ConfigSent"    -> { },
             "ReEvaluate"    -> CurrentChatSettings[ sidebarCell, "NotebookReEvaluate" ] =!= False,
+            "GraphicsCheck" -> CurrentChatSettings[ sidebarCell, "NotebookGraphicsCheck" ] =!= False,
             "Documentation" -> docs,
             "State"      -> "Starting the agent\[Ellipsis]",
             "TurnID"     -> None,
@@ -364,6 +365,7 @@ sidebarAgentStep[ id_String ] := Module[ { msg = $sidebarAgentMessages[ id ], wi
                     Null,
                 True,
                     $acpNotebookReEvaluate = msg[ "ReEvaluate" ];
+                    $acpNotebookGraphicsCheck = msg[ "GraphicsCheck" ];
                     acpSetDraftAttachments[ window, { acpNotebookAttachmentRef @ msg[ "Notebook" ] } ];
                     CurrentValue[ window, { TaggingRules, "ACP", "Input" } ] = sidebarAgentPrompt @ msg;
                     evaluateACPChat @ window;

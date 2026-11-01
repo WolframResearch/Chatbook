@@ -62,6 +62,7 @@ $defaultChatSettings = <|
     "NotebookEditing"                -> False,
     "NotebookEditingEffort"          -> "medium",
     "NotebookEditingModel"           -> "openai/gpt-6.1-sol",
+    "NotebookGraphicsCheck"          -> True,
     "NotebookReEvaluate"             -> True,
     "NotebookWriteMethod"            -> Automatic,
     "OpenAIAPICompletionURL"         -> "https://api.openai.com/v1/chat/completions",

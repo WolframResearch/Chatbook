@@ -685,15 +685,18 @@ resolveTools // endDefinition;
 (*selectNotebookEditingTools*)
 
 (* A chat that edits notebooks (the sidebar chat's Notebook editing switch) has the ACP notebook tools, and their
-   outputs follow its Re-evaluate switch; any other chat leaves the choice to the tools' agent *)
+   outputs follow its Re-evaluate switch; any other chat leaves the choice to the tools' agent. The tools give this
+   chat's model text only (the "String" of a result), so they make no pictures of graphics. *)
 selectNotebookEditingTools // beginDefinition;
 
-selectNotebookEditingTools[ settings_Association ] :=
+selectNotebookEditingTools[ settings_Association ] := (
+    $acpNotebookGraphicsCheck = False;
     If[ TrueQ @ settings[ "NotebookEditing" ],
         $acpNotebookReEvaluate = settings[ "NotebookReEvaluate" ] =!= False;
         Scan[ ($selectedTools[ toolName @ # ] = #) &, acpNotebookTools[ ] ],
         $acpNotebookReEvaluate = None
-    ];
+    ]
+);
 
 selectNotebookEditingTools // endDefinition;
 

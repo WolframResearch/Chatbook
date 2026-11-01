@@ -275,6 +275,21 @@ sidebarEditingSettingsPanel[ cell_CellObject ] := Framed[
                 SpanFromLeft
             },
             {
+                Dynamic @ With[ { check = CurrentChatSettings[ cell, "NotebookGraphicsCheck" ] =!= False },
+                    sidebarSwitch[
+                        check,
+                        "Visually check graphics",
+                        If[ CurrentChatSettings[ cell, "NotebookReEvaluate" ] =!= False,
+                            "The agent looks at a picture of each graphic it draws and fixes labels, overlaps and colors. \
+Adds a few seconds to each edit.",
+                            "Needs Re-evaluate changed outputs: graphics are only drawn when the code is evaluated."
+                        ],
+                        CurrentChatSettings[ cell, "NotebookGraphicsCheck" ] = ! check
+                    ]
+                ],
+                SpanFromLeft
+            },
+            {
                 Dynamic @ With[ { lookup = TrueQ @ CurrentChatSettings[ cell, "NotebookDocumentationLookup" ] },
                     sidebarSwitch[
                         lookup,

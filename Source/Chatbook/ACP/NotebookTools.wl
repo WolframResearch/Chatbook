@@ -156,8 +156,8 @@ $acpToolWindow = None;
 If[ ! MemberQ[ { None, True, False }, $acpNotebookReEvaluate ], $acpNotebookReEvaluate = None ];
 
 (* Whether an edit that evaluates the Input cells it writes also gives the agent a picture of each graphics result of
-   those cells, as image content after its text (an experiment; off unless set or CHATBOOK_PLOT_PICTURES is 1) *)
-If[ ! BooleanQ @ $acpNotebookPlotPictures, $acpNotebookPlotPictures = Environment[ "CHATBOOK_PLOT_PICTURES" ] === "1" ];
+   those cells, as image content after its text (the sidebar chat's Visually check graphics switch) *)
+If[ ! BooleanQ @ $acpNotebookGraphicsCheck, $acpNotebookGraphicsCheck = False ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -2636,7 +2636,7 @@ codeCheck[ handle_String, changed_List, evaluate_ ] := Module[ { code, cells, ta
     (* the cells written and every one after the first of them, whose results may depend on it *)
     targets = If[ TrueQ @ evaluate, Range[ First @ FirstPosition[ cells, Alternatives @@ changed, { 1 }, { 1 }, Heads -> False ], Length @ cells ], { } ];
     (* pictures of the graphics of the evaluated cells that were written, not of those after them *)
-    pictured = If[ TrueQ @ $acpNotebookPlotPictures, Flatten @ Position[ cells, Alternatives @@ changed, { 1 }, Heads -> False ], { } ];
+    pictured = If[ TrueQ @ $acpNotebookGraphicsCheck, Flatten @ Position[ cells, Alternatives @@ changed, { 1 }, Heads -> False ], { } ];
     results = If[ targets === { },
         sandboxCheckCells[ Lookup[ code, "Boxes" ], $cellCheckSeconds, $codeCheckSeconds ],
         sandboxCheckCells[ Lookup[ code, "Boxes" ], $cellCheckSeconds, $codeCheckSeconds, targets, pictured, $pictureWidth ]
@@ -2658,7 +2658,7 @@ codeCheck // endDefinition;
    Message and Echo cells right after it are deleted and an Output cell with the result's boxes (from the sandbox kernel,
    checked like the agent's text) is inserted after it; a cell whose result is Null loses its outputs. A cell whose
    result can't be written (aborted, too large, or content that would run code when shown) keeps its old outputs, and
-   the result says so. The pictures of the cells' graphics (with $acpNotebookPlotPictures; also of results not written)
+   the result says so. The pictures of the cells' graphics (with $acpNotebookGraphicsCheck; also of results not written)
    go to $toolPictures, and the result names their cells. *)
 evaluatedOutputs // beginDefinition;
 

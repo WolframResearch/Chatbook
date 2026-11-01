@@ -1713,7 +1713,7 @@ VerificationTest[
     TestID   -> "ACPNotebookTools-EvaluateOutputs"
 ]
 
-(* With $acpNotebookPlotPictures, the code check asks for pictures of the evaluated cells that the edit wrote, and the
+(* With $acpNotebookGraphicsCheck, the code check asks for pictures of the evaluated cells that the edit wrote, and the
    result is the text and a PNG image for each picture (AgentTools' MCP content), also when the outputs are not written;
    outputs that the front end refuses keep the old ones, and the tool still succeeds (the cells' edit is done). Without
    it, no pictures are asked for and the result is text. *)
@@ -1731,18 +1731,18 @@ VerificationTest[
                 <| "Result" -> "", "Messages" -> { }, "Aborted" -> False, "Boxes" -> { "GraphicsBox[{}]" }, "Pictures" -> { "iVBORw0KGgo=" } |>,
                 <| "Result" -> "", "Messages" -> { }, "Aborted" -> False, "Boxes" -> None, "Pictures" -> { } |>
             };
-            pictured = Block[ { Wolfram`Chatbook`Common`$acpNotebookPlotPictures = True },
+            pictured = Block[ { Wolfram`Chatbook`Common`$acpNotebookGraphicsCheck = True },
                 nbtCall[ "EditInCell", <| "notebook" -> "s1", "cell" -> "c4", "edits" -> { <| "oldText" -> "Cos", "newText" -> "Sin" |> }, "evaluate" -> True |> ]
             ];
             $checkResults = {
                 <| "Result" -> "", "Messages" -> { }, "Aborted" -> False |>,
                 <| "Result" -> "", "Messages" -> { }, "Aborted" -> False, "Boxes" -> { "GraphicsBox[PARSEERROR]" }, "Pictures" -> { "iVBORw0KGgo=", "not base64!" } |>
             };
-            refused = Block[ { Wolfram`Chatbook`Common`$acpNotebookPlotPictures = True },
+            refused = Block[ { Wolfram`Chatbook`Common`$acpNotebookGraphicsCheck = True },
                 nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c7", "text" -> "sol = 1" |> }, "evaluate" -> True |> ]
             ];
             $checkResults = { <| "Result" -> "", "Messages" -> { }, "Aborted" -> False |>, <| "Result" -> "", "Messages" -> { }, "Aborted" -> False, "Boxes" -> { "GraphicsBox[{}]" } |> };
-            plain = Block[ { Wolfram`Chatbook`Common`$acpNotebookPlotPictures = False },
+            plain = Block[ { Wolfram`Chatbook`Common`$acpNotebookGraphicsCheck = False },
                 nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c7", "text" -> "sol = 2" |> }, "evaluate" -> True |> ]
             ];
             {
