@@ -1036,18 +1036,31 @@ $$sandboxInput = KeyValuePattern @ { "Segments" -> { __Association }, "Definitio
    "KernelQuit"). With the positions of cells to evaluate for their outputs (evaluated), each of those also gets
    "Boxes" -> for each of the cell's statements with a result other than Null (the front end's outputs: one each), its
    StandardForm boxes as InputForm text (graphics made static: their DynamicBoxes, such as a plot's highlighting, are
-   left out), "" for boxes over $sandboxOutputLength characters; None for no such result or $Aborted. Nothing that the
-   kernel gives back is evaluated here but those strings. *)
+   left out), "" for boxes over $sandboxOutputLength characters; None for no such result or $Aborted. With the positions
+   of evaluated cells to picture and a width, each of those also gets "Pictures" -> a PNG (base64) of each of its results
+   that has graphics in it, rasterized by the sandbox kernel's front end at most that many pixels wide and high (whether
+   or not its boxes can be shown). Nothing that the kernel gives back is evaluated here but those strings. *)
 sandboxCheckCells // beginDefinition;
 
 sandboxCheckCells[ boxes_List, cellSeconds_? Positive, seconds_? Positive ] := sandboxCheckCells[ boxes, cellSeconds, seconds, { } ];
 
-sandboxCheckCells[ boxes_List, cellSeconds_? Positive, seconds_? Positive, evaluated: { ___Integer } ] := Catch @ Module[
+sandboxCheckCells[ boxes_List, cellSeconds_? Positive, seconds_? Positive, evaluated: { ___Integer } ] :=
+    sandboxCheckCells[ boxes, cellSeconds, seconds, evaluated, { }, 0 ];
+
+sandboxCheckCells[
+    boxes_List,
+    cellSeconds_? Positive,
+    seconds_? Positive,
+    evaluated: { ___Integer },
+    pictured: { ___Integer },
+    width_Integer
+] := Catch @ Module[
     { kernel, context, packet },
     kernel = Quiet @ getSandboxKernel[ ];
     If[ ! MatchQ[ kernel, _LinkObject ], Throw @ Failure[ "NoSandboxKernel", <| |> ] ];
     context = "CodeCheck" <> StringDelete[ createUUID[ ], "-" ] <> "`";
-    With[ { cells = boxes, ctx = context, cs = cellSeconds, s = seconds, out = evaluated, max = $sandboxOutputLength },
+    With[ { cells = boxes, ctx = context, cs = cellSeconds, s = seconds, out = evaluated, max = $sandboxOutputLength,
+            pics = pictured, w = width, ps = $sandboxPictureSeconds },
         LinkWrite[ kernel, Unevaluated @ EvaluatePacket @ Module[ { end, results, result, values, shown, outBoxes },
             end = AbsoluteTime[ ] + s;
             results = Block[ { $Context = ctx, $ContextPath = { "System`" }, $Messages = { } },
@@ -1093,6 +1106,20 @@ sandboxCheckCells[ boxes_List, cellSeconds_? Positive, seconds_? Positive, evalu
                                         ] /@ values
                                     ],
                                     Nothing
+                                ],
+                                If[ MemberQ[ out, i ] && MemberQ[ pics, i ],
+                                    "Pictures" -> Select[
+                                        Quiet @ TimeConstrained[
+                                            BaseEncode @ ExportByteArray[
+                                                ImageResize[ Rasterize[ #, ImageResolution -> 144 ], { UpTo[ w ], UpTo[ w ] } ],
+                                                "PNG"
+                                            ],
+                                            ps,
+                                            $Failed
+                                        ] & /@ Select[ values, ! FreeQ[ #, _Graphics | _Graphics3D | _Image ] & ],
+                                        StringQ
+                                    ],
+                                    Nothing
                                 ]
                             |>
                         ]
@@ -1104,12 +1131,13 @@ sandboxCheckCells[ boxes_List, cellSeconds_? Positive, seconds_? Positive, evalu
             results
         ] ]
     ];
-    packet = TimeConstrained[ readReturnPacket @ kernel, seconds + cellSeconds + 5, $TimedOut ];
+    packet = TimeConstrained[ readReturnPacket @ kernel, seconds + cellSeconds + 5 + 2 * $sandboxPictureSeconds * Length @ pictured, $TimedOut ];
     Replace[ packet, {
         $TimedOut :> (Quiet @ LinkClose @ kernel; Failure[ "TimedOut", <| |> ]),
         (* held, the associations are Association[...] expressions: only this form is evaluated *)
         HoldComplete[ ReturnPacket[ list: { Association[
-            "Result" -> _String, "Messages" -> { ___String }, "Aborted" -> True | False, Repeated[ "Boxes" -> { __String } | None, { 0, 1 } ]
+            "Result" -> _String, "Messages" -> { ___String }, "Aborted" -> True | False, Repeated[ "Boxes" -> { __String } | None, { 0, 1 } ],
+            Repeated[ "Pictures" -> { ___String }, { 0, 1 } ]
         ] ... } ] ] :> list,
         HoldComplete[ _ReturnPacket ] :> Failure[ "KernelQuit", <| |> ],
         _ :> (Quiet @ LinkClose @ kernel; Failure[ "KernelQuit", <| |> ])
@@ -1119,6 +1147,7 @@ sandboxCheckCells[ boxes_List, cellSeconds_? Positive, seconds_? Positive, evalu
 sandboxCheckCells // endDefinition;
 
 $sandboxOutputLength = 2000000;
+$sandboxPictureSeconds = 15;
 
 
 (* The next ReturnPacket of the kernel, held, or $Failed once the link is gone (the code quit the kernel) *)

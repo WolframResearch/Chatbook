@@ -422,4 +422,28 @@ VerificationTest[
     TestID   -> "CheckCells-Outputs"
 ]
 
+(* Of the evaluated cells to picture, each result with graphics in it gives a PNG (base64) at most the given width wide
+   and high, whatever its boxes; other results and cells not to picture give none *)
+VerificationTest[
+    Module[ { checked, images },
+        checked = Wolfram`Chatbook`Common`sandboxCheckCells[
+            {
+                RowBox[ { "Plot", "[", RowBox[ { "x", ",", RowBox[ { "{", RowBox[ { "x", ",", "0", ",", "1" } ], "}" } ] } ], "]" } ],
+                RowBox[ { "Plot", "[", RowBox[ { "x", ",", RowBox[ { "{", RowBox[ { "x", ",", "0", ",", "1" } ], "}" } ] } ], "]" } ],
+                { RowBox[ { "1", "+", "1" } ], "\n", RowBox[ { "Graphics", "[", RowBox[ { "Disk", "[", "]" } ], "]" } ] }
+            },
+            20,
+            60,
+            { 1, 2, 3 },
+            { 1, 3 },
+            200
+        ];
+        images = ImportByteArray[ BaseDecode @ #, "PNG" ] & /@ Catenate @ Lookup[ checked, "Pictures", { } ];
+        { Lookup[ checked, "Pictures", Missing[ ] ][[ All, 0 ]], Length /@ Lookup[ checked, "Pictures", { } ], Max[ ImageDimensions /@ images ] }
+    ],
+    { { List, Missing, List }, { 1, 0, 1 }, 200 },
+    SameTest -> MatchQ,
+    TestID   -> "CheckCells-Pictures"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)

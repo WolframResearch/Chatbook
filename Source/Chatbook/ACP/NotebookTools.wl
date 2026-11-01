@@ -69,6 +69,8 @@ $maxQuotedLength   = 80;    (* characters of an argument that an error message r
 $codeCheckSeconds  = 30;    (* seconds that the code check of an edit may take; later cells are not checked *)
 $cellCheckSeconds  = 10;    (* seconds that one cell may take in the code check *)
 $texSeconds        = 10;    (* seconds that reading the LaTeX formulas of one text may take *)
+$pictureWidth      = 600;   (* pixels of a plot's picture at most, wide and high *)
+$maxPictures       = 4;     (* pictures in one result at most *)
 
 (* The tools that change notebooks the user has open: ShowChanges shows the diff in the user's notebook (or opens the
    source file visibly). The edit tools only change snapshots. OpenCode asks before these (MCP.wl's
@@ -152,6 +154,10 @@ $acpToolWindow = None;
 (* Who decides whether edits evaluate their Input cells: None the agent (evaluate: true), True always, False never, in
    which case the agent writes new Output cells itself, grayed (the sidebar chat's Re-evaluate switch) *)
 If[ ! MemberQ[ { None, True, False }, $acpNotebookReEvaluate ], $acpNotebookReEvaluate = None ];
+
+(* Whether an edit that evaluates the Input cells it writes also gives the agent a picture of each graphics result of
+   those cells, as image content after its text (an experiment; off unless set or CHATBOOK_PLOT_PICTURES is 1) *)
+If[ ! BooleanQ @ $acpNotebookPlotPictures, $acpNotebookPlotPictures = Environment[ "CHATBOOK_PLOT_PICTURES" ] === "1" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -580,20 +586,40 @@ toolArguments // endDefinition;
 
 (* The result of a tool: the text that eval gives, or a Failure with an error text, thrown by toolError or given for an
    internal failure (Chatbook's failures are caught by catchAlways, anything else thrown by acpCatchAll). Aborts are
-   not caught: the caller decides what an aborted tool call gives. *)
+   not caught: the caller decides what an aborted tool call gives. With pictures of plots (evaluatedOutputs adds them
+   to $toolPictures), the text and the pictures as MCP content (AgentTools' tool result), and the text as "String". *)
 toolResult // beginDefinition;
 toolResult // Attributes = { HoldRest };
 
-toolResult[ name_String, eval_ ] := Replace[
-    acpCatchAll[ catchAlways @ eval, thrownResult[ name, #1, #2 ] & ],
-    {
-        text_String            :> text,
-        failure: $$toolFailure :> failure,
-        other_                 :> internalToolFailure[ name, other ]
-    }
+toolResult[ name_String, eval_ ] := Block[ { $toolPictures = { } },
+    Replace[
+        acpCatchAll[ catchAlways @ eval, thrownResult[ name, #1, #2 ] & ],
+        {
+            text_String            :> withPictures[ text, $toolPictures ],
+            failure: $$toolFailure :> failure,
+            other_                 :> internalToolFailure[ name, other ]
+        }
+    ]
 ];
 
 toolResult // endDefinition;
+
+$toolPictures = { };
+
+
+withPictures // beginDefinition;
+
+withPictures[ text_String, { } ] := text;
+
+withPictures[ text_String, pictures: { __String } ] := <|
+    "String"  -> text,
+    "Content" -> Prepend[
+        <| "type" -> "image", "data" -> #, "mimeType" -> "image/png" |> & /@ pictures,
+        <| "type" -> "text", "text" -> text |>
+    ]
+|>;
+
+withPictures // endDefinition;
 
 $$toolFailure = Failure[ "NotebookToolError", _Association ];
 
@@ -2603,15 +2629,17 @@ codeCheck // beginDefinition;
 
 codeCheck[ handle_String, changed_List ] := codeCheck[ handle, changed, False ];
 
-codeCheck[ handle_String, changed_List, evaluate_ ] := Module[ { code, cells, targets, results },
+codeCheck[ handle_String, changed_List, evaluate_ ] := Module[ { code, cells, targets, pictured, results },
     code = notebookFrontEnd[ "CodeCells", $snapshots[ handle, "Notebook" ] ];
     If[ ! MatchQ[ code, { __Association } ] || ! IntersectingQ[ Lookup[ code, "Cell" ], changed ], Return[ "", Module ] ];
     cells   = Lookup[ code, "Cell" ];
     (* the cells written and every one after the first of them, whose results may depend on it *)
     targets = If[ TrueQ @ evaluate, Range[ First @ FirstPosition[ cells, Alternatives @@ changed, { 1 }, { 1 }, Heads -> False ], Length @ cells ], { } ];
+    (* pictures of the graphics of the evaluated cells that were written, not of those after them *)
+    pictured = If[ TrueQ @ $acpNotebookPlotPictures, Flatten @ Position[ cells, Alternatives @@ changed, { 1 }, Heads -> False ], { } ];
     results = If[ targets === { },
         sandboxCheckCells[ Lookup[ code, "Boxes" ], $cellCheckSeconds, $codeCheckSeconds ],
-        sandboxCheckCells[ Lookup[ code, "Boxes" ], $cellCheckSeconds, $codeCheckSeconds, targets ]
+        sandboxCheckCells[ Lookup[ code, "Boxes" ], $cellCheckSeconds, $codeCheckSeconds, targets, pictured, $pictureWidth ]
     ];
     If[ ! ListQ @ results,
         Return[ "\n\nCode check: the code could not be checked (" <> codeCheckFailureText @ results <> ").", Module ]
@@ -2630,10 +2658,11 @@ codeCheck // endDefinition;
    Message and Echo cells right after it are deleted and an Output cell with the result's boxes (from the sandbox kernel,
    checked like the agent's text) is inserted after it; a cell whose result is Null loses its outputs. A cell whose
    result can't be written (aborted, too large, or content that would run code when shown) keeps its old outputs, and
-   the result says so. *)
+   the result says so. The pictures of the cells' graphics (with $acpNotebookPlotPictures; also of results not written)
+   go to $toolPictures, and the result names their cells. *)
 evaluatedOutputs // beginDefinition;
 
-evaluatedOutputs[ handle_String, cells_List, results_List ] := Module[ { entries, plans, deleted, inserts, kept, result, inserted },
+evaluatedOutputs[ handle_String, cells_List, results_List ] := Module[ { entries, plans, deleted, inserts, kept, result, inserted, pictures },
     entries = notebookFrontEnd[ "CellText", $snapshots[ handle, "Notebook" ], All, 1, True ];
     If[ ! MatchQ[ entries, { KeyValuePattern[ "Cell" -> _CellObject ]... } ], Return[ "", Module ] ];
     plans   = MapThread[ outputPlan, { cells, results } ];
@@ -2642,18 +2671,41 @@ evaluatedOutputs[ handle_String, cells_List, results_List ] := Module[ { entries
     kept    = Cases[ Transpose @ { cells, plans }, { cell_, { "Kept", why_ } } :> "#" <> $snapshots[ handle, "IDs", cell ] <> " (" <> why <> ")" ];
     result  = If[ inserts === { } && deleted === { },
         <| |>,
-        applyEdit[ handle, Join[ If[ deleted === { }, { }, { { "Delete", deleted } } ], inserts ] ]
+        Catch[ applyEdit[ handle, Join[ If[ deleted === { }, { }, { { "Delete", deleted } } ], inserts ] ], $toolErrorTag ]
+    ];
+    (* the front end refused the outputs (e.g. boxes its parser can't read): the batch changed nothing, and the cells'
+       edit is done, so the tool still succeeds *)
+    If[ StringQ @ result,
+        kept = Join[ kept, Cases[ Transpose @ { cells, plans }, { cell_, { "Insert" | "Delete", ___ } } :>
+            "#" <> $snapshots[ handle, "IDs", cell ] <> " (the front end refused the outputs: " <> First @ StringSplit[ result, ":" ] <> ")" ] ];
+        deleted = { };
+        result  = <| |>
     ];
     inserted = Cases[ Lookup[ result, "Inserted", { } ], _CellObject ];
     forgetCells[ handle, deleted ];
     numberCells[ handle, inserted ];
+    pictures = Take[
+        Catenate @ MapThread[
+            Function[ { cell, result },
+                { "#" <> $snapshots[ handle, "IDs", cell ], # } & /@
+                    Select[ Lookup[ result, "Pictures", { } ], StringMatchQ[ #, RegularExpression[ "[A-Za-z0-9+/=]+" ] ] & ]
+            ],
+            { cells, results }
+        ],
+        UpTo @ $maxPictures
+    ];
+    $toolPictures = Join[ $toolPictures, Last /@ pictures ];
     StringJoin[
         "\n\nEvaluated ", StringRiffle[ "#" <> $snapshots[ handle, "IDs", # ] & /@ cells, ", " ], ": ",
         If[ inserted === { },
             "no new outputs.",
             "new Output cells " <> outputIDs[ handle, inserts, inserted ] <> " (their results are in the code check)."
         ],
-        If[ kept === { }, "", "\nNot written, so the old outputs are kept: " <> StringRiffle[ kept, ", " ] <> "." ]
+        If[ kept === { }, "", "\nNot written, so the old outputs are kept: " <> StringRiffle[ kept, ", " ] <> "." ],
+        If[ pictures === { },
+            "",
+            "\nPictures of the graphics as evaluated follow, in order: " <> StringRiffle[ First /@ pictures, ", " ] <> "."
+        ]
     ]
 ];
 

@@ -206,6 +206,9 @@ VerificationTest[
                             ],
                         "Insert",
                             Module[ { at, new },
+                                If[ AnyTrue[ op[[ 4 ]], StringContainsQ[ #[[ 2 ]], "PARSEERROR" ] & ],
+                                    Throw[ Failure[ "ParseError", <| "MessageTemplate" -> "Wrapper 1 is not one box expression in FullForm.", "Operation" -> i |> ], $fakeTag ]
+                                ];
                                 at = Which[
                                     op[[ 2 ]] === None && op[[ 3 ]] === "Before", 1,
                                     op[[ 2 ]] === None                           , Length @ cells + 1,
@@ -1710,6 +1713,62 @@ VerificationTest[
     TestID   -> "ACPNotebookTools-EvaluateOutputs"
 ]
 
+(* With $acpNotebookPlotPictures, the code check asks for pictures of the evaluated cells that the edit wrote, and the
+   result is the text and a PNG image for each picture (AgentTools' MCP content), also when the outputs are not written;
+   outputs that the front end refuses keep the old ones, and the tool still succeeds (the cells' edit is done). Without
+   it, no pictures are asked for and the result is text. *)
+VerificationTest[
+    withFakeFE @ Block[
+        {
+            $fakeCodeCells = True,
+            $checkArgs     = { },
+            $checkResults  = { },
+            Wolfram`Chatbook`Common`sandboxCheckCells = (AppendTo[ $checkArgs, { ## } ]; $checkResults) &
+        },
+        Module[ { pictured, refused, plain },
+            nbtCall[ "OpenNotebook", <| "notebook" -> "abcdef11" |> ];
+            $checkResults = {
+                <| "Result" -> "", "Messages" -> { }, "Aborted" -> False, "Boxes" -> { "GraphicsBox[{}]" }, "Pictures" -> { "iVBORw0KGgo=" } |>,
+                <| "Result" -> "", "Messages" -> { }, "Aborted" -> False, "Boxes" -> None, "Pictures" -> { } |>
+            };
+            pictured = Block[ { Wolfram`Chatbook`Common`$acpNotebookPlotPictures = True },
+                nbtCall[ "EditInCell", <| "notebook" -> "s1", "cell" -> "c4", "edits" -> { <| "oldText" -> "Cos", "newText" -> "Sin" |> }, "evaluate" -> True |> ]
+            ];
+            $checkResults = {
+                <| "Result" -> "", "Messages" -> { }, "Aborted" -> False |>,
+                <| "Result" -> "", "Messages" -> { }, "Aborted" -> False, "Boxes" -> { "GraphicsBox[PARSEERROR]" }, "Pictures" -> { "iVBORw0KGgo=", "not base64!" } |>
+            };
+            refused = Block[ { Wolfram`Chatbook`Common`$acpNotebookPlotPictures = True },
+                nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c7", "text" -> "sol = 1" |> }, "evaluate" -> True |> ]
+            ];
+            $checkResults = { <| "Result" -> "", "Messages" -> { }, "Aborted" -> False |>, <| "Result" -> "", "Messages" -> { }, "Aborted" -> False, "Boxes" -> { "GraphicsBox[{}]" } |> };
+            plain = Block[ { Wolfram`Chatbook`Common`$acpNotebookPlotPictures = False },
+                nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c7", "text" -> "sol = 2" |> }, "evaluate" -> True |> ]
+            ];
+            {
+                pictured[ "Content" ][[ 2 ]],
+                StringEndsQ[ pictured[ "String" ], "\nPictures of the graphics as evaluated follow, in order: #c4." ],
+                pictured[ "Content" ][[ 1, "text" ]] === pictured[ "String" ],
+                Length @ refused[ "Content" ],
+                StringContainsQ[ refused[ "String" ], "Not written, so the old outputs are kept: #c7 (the front end refused the outputs: ParseError).\nPictures of the graphics as evaluated follow, in order: #c7." ],
+                StringQ @ plain,
+                $checkArgs[[ All, 5 ;; ]]
+            }
+        ]
+    ],
+    {
+        <| "type" -> "image", "data" -> "iVBORw0KGgo=", "mimeType" -> "image/png" |>,
+        True,
+        True,
+        2,
+        True,
+        True,
+        { { { 1 }, 600 }, { { 2 }, 600 }, { { }, 600 } }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ACPNotebookTools-EvaluatePictures"
+]
+
 (* The sidebar chat's Re-evaluate switch ($acpNotebookReEvaluate): on, every edit evaluates, whatever the agent's
    evaluate says; off, nothing is evaluated, the agent inserts Output cells itself, which are grayed, and an Output cell
    is still not edited by hand. The editing prompt says which. *)
@@ -1753,7 +1812,7 @@ VerificationTest[
         ]
     ],
     {
-        4,
+        6,
         3,
         { { { "Output", "EvaluationUnmatched" }, "3" } },
         "An Output cell is not edited: delete it and insert its new content with InsertCells (style Output) after its Input cell.",

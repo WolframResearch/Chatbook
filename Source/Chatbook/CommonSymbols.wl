@@ -3,6 +3,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$$attachmentURI;
 `$$ignoredBox;
 `$absoluteCurrentSettingsCache;
+`$acpNotebookPlotPictures;
 `$acpNotebookReEvaluate;
 `$allowConnectionDialog;
 `$alwaysOpen;
