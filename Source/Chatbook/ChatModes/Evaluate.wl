@@ -429,6 +429,7 @@ sidebarAgentFinish[ id_String, failure_ ] := With[ { cell = $sidebarAgentMessage
     Quiet @ TaskRemove @ $sidebarAgentMessages[ id, "Task" ];
     $sidebarAgentMessages[ id, "State" ] = Replace[ failure, None -> "Done" ];
     $sidebarAgentMessages[ id, "Failure" ] = failure;
+    $sidebarAgentMessages[ id, "Elapsed" ] = AbsoluteTime[ ] - $sidebarAgentMessages[ id, "Created" ];
     If[ MatchQ[ cell, _CellObject ], NotebookWrite[ cell, sidebarAgentCell[ "SidebarTopCell", sidebarAgentView @ id ] ] ]
 ];
 
@@ -486,11 +487,22 @@ sidebarAgentView // endDefinition;
 sidebarAgentStatus // beginDefinition;
 sidebarAgentStatus[ msg_, turn_Association ] /; msg[ "State" ] === "Done" := Replace[
     turn[ "Error" ],
-    { None -> "Done: the changes are shown in the notebook.", e_ :> "The agent stopped: " <> ToString @ Short[ e, 2 ] }
+    {
+        None -> "Done: the changes are shown in the notebook (" <> sidebarAgentDuration @ msg <> ").",
+        e_ :> "The agent stopped after " <> sidebarAgentDuration @ msg <> ": " <> ToString @ Short[ e, 2 ]
+    }
 ];
-sidebarAgentStatus[ msg_, turn_Association ] := msg[ "State" ] <> " " <> ToString @ Round[ AbsoluteTime[ ] - msg[ "Created" ] ] <> " s";
+sidebarAgentStatus[ msg_, turn_Association ] := msg[ "State" ] <> " " <> sidebarAgentDuration @ msg;
 sidebarAgentStatus[ msg_, _ ] := msg[ "State" ];
 sidebarAgentStatus // endDefinition;
+
+
+(* How long the turn took, or has taken so far: 23s, 2m15s *)
+sidebarAgentDuration // beginDefinition;
+sidebarAgentDuration[ msg_ ] := With[ { s = Round @ Lookup[ msg, "Elapsed", AbsoluteTime[ ] - msg[ "Created" ] ] },
+    If[ s < 60, ToString @ s <> "s", ToString @ Quotient[ s, 60 ] <> "m" <> ToString @ Mod[ s, 60 ] <> "s" ]
+];
+sidebarAgentDuration // endDefinition;
 
 
 sidebarAgentEntityView // beginDefinition;
