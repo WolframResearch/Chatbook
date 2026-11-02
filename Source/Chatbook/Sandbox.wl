@@ -1035,8 +1035,10 @@ $$sandboxInput = KeyValuePattern @ { "Segments" -> { __Association }, "Definitio
    "Aborted" |>, or a Failure ("NoSandboxKernel", "TimedOut": the kernel is closed and the next use starts another one,
    "KernelQuit"). With the positions of cells to evaluate for their outputs (evaluated), each of those also gets
    "Boxes" -> for each of the cell's statements with a result other than Null (the front end's outputs: one each), its
-   StandardForm boxes as InputForm text (graphics made static: their DynamicBoxes, such as a plot's highlighting, are
-   left out), "" for boxes over $sandboxOutputLength characters; None for no such result or $Aborted. With the positions
+   StandardForm boxes as FullForm text (graphics made static: their DynamicBoxes, such as a plot's highlighting, are
+   left out), "" for boxes over $sandboxOutputLength characters; None for no such result or $Aborted. FullForm, since
+   the front end reads a box wrapper with its notebook file parser, which has no /@, /. or @@: InputForm would write
+   a StreamPlot's (f &) /@ m that way. With the positions
    of evaluated cells to picture and a width, each of those also gets "Pictures" -> a PNG (base64) of each of its results
    that has graphics in it, rasterized by the sandbox kernel's front end at most that many pixels wide and high (whether
    or not its boxes can be shown). Nothing that the kernel gives back is evaluated here but those strings. *)
@@ -1098,8 +1100,7 @@ sandboxCheckCells[
                                         None,
                                         Function[ value,
                                             outBoxes = Quiet @ ToString[
-                                                ToBoxes[ value, StandardForm ] /. g: (_GraphicsBox | _Graphics3DBox) :> RuleCondition[ g /. _DynamicBox -> { } ],
-                                                InputForm,
+                                                FullForm[ ToBoxes[ value, StandardForm ] /. g: (_GraphicsBox | _Graphics3DBox) :> RuleCondition[ g /. _DynamicBox -> { } ] ],
                                                 CharacterEncoding -> "PrintableASCII"
                                             ];
                                             If[ StringQ @ outBoxes && StringLength @ outBoxes <= max, outBoxes, "" ]

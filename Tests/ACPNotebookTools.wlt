@@ -632,7 +632,8 @@ VerificationTest[
             "StringReplace[s, \"\\\\!\" -> \"\"]",
             "x\:02c42 + \:3014SqrtBox[\"a\"]\:3015 \\[Rule] b",
             "(*see \\\\! here*)",
-            "(*the momentum \:3014$\"p\"\:3015 and \:3014$SuperscriptBox[\"q\", \"2\"]\:3015*)"
+            "(*the momentum \:3014$\"p\"\:3015 and \:3014$SuperscriptBox[\"q\", \"2\"]\:3015*)",
+            "\:3014StyleBox[\"x\", Rule[FontSlant, \"Italic\"]]\:3015"
         },
         nbtResult[ Wolfram`Chatbook`ACP`NotebookTools`Private`requireInertText[ #, "The text" ]; "OK" ] & /@ {
             "a" <> FromCharacterCode[ 63425 ] <> "b",
@@ -642,11 +643,13 @@ VerificationTest[
             "\:3014ButtonBox[\"x\", ButtonFunction :> CreateFile[\"x\"]]\:3015",
             "\:3014Cell[\"x\", \"Text\", CellDynamicExpression \\[RuleDelayed] f]\:3015",
             "\:3014TemplateBox[{\"x\"}, \"T\", InterpretationFunction -> (f &)]\:3015",
-            "(*an inline formula \:3014$DynamicBox[CreateFile[\"x\"]]\:3015*)"
+            "(*an inline formula \:3014$DynamicBox[CreateFile[\"x\"]]\:3015*)",
+            "\:3014ButtonBox[\"x\", RuleDelayed[ButtonFunction, CreateFile[\"x\"]]]\:3015",
+            "\:3014Cell[\"x\", \"Text\", Rule[ CellProlog , f]]\:3015"
         }
     },
     {
-        { "OK", "OK", "OK", "OK", "OK", "OK", "OK" },
+        { "OK", "OK", "OK", "OK", "OK", "OK", "OK", "OK" },
         {
             "The text has linear syntax (\"\\:f7c1\"), which would run code when it is shown; the notebook tools never write it.",
             "The text has linear syntax (\"\\!\"), which would run code when it is shown; the notebook tools never write it.",
@@ -655,7 +658,9 @@ VerificationTest[
             "The text has content that would run code when it is shown (ButtonFunction), which the notebook tools never write.",
             "The text has content that would run code when it is shown (CellDynamicExpression), which the notebook tools never write.",
             "The text has content that would run code when it is shown (InterpretationFunction), which the notebook tools never write.",
-            "The text has content that would run code when it is shown (DynamicBox), which the notebook tools never write."
+            "The text has content that would run code when it is shown (DynamicBox), which the notebook tools never write.",
+            "The text has content that would run code when it is shown (ButtonFunction), which the notebook tools never write.",
+            "The text has content that would run code when it is shown (CellProlog), which the notebook tools never write."
         }
     },
     SameTest -> MatchQ,

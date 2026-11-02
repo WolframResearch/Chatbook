@@ -94,8 +94,9 @@ $$linearSyntaxText = RegularExpression[
     "[\\x{f7c0}-\\x{f7cd}]|(?<!\\\\)(?:\\\\\\\\)*\\\\(?:[!*]|:[fF]7[cC][0-9a-dA-D]|\\|00[fF]7[cC][0-9a-dA-D])"
 ];
 
-(* Inside a box wrapper (strings left out): boxes that run code when shown, and options that hold code; an evaluated
-   output may hold an InterpretationFunction ($$codeShownInWrapper) *)
+(* Inside a box wrapper (strings left out): boxes that run code when shown, and options that hold code, as rules or in
+   FullForm (Rule[option, ...], as evaluated outputs are written); an evaluated output may hold an
+   InterpretationFunction ($$codeShownInWrapper) *)
 codeInWrapperPattern[ options_List ] := RegularExpression[ StringJoin[
     "(?<![\\w`$])(?:",
     "(?:DynamicBox|DynamicModuleBox|DynamicWrapperBox|ActionMenuBox|EventHandlerTag|Dynamic|DynamicModule|DynamicWrapper)",
@@ -103,6 +104,8 @@ codeInWrapperPattern[ options_List ] := RegularExpression[ StringJoin[
     "|",
     "(?:", StringRiffle[ options, "|" ], ")",
     "\\s*(?:->|:>|\\\\\\[Rule\\]|\\\\\\[RuleDelayed\\])",
+    "|",
+    "(?:RuleDelayed|Rule)\\s*\\[\\s*(?:", StringRiffle[ options, "|" ], ")\\s*,",
     ")"
 ] ];
 
@@ -1414,7 +1417,7 @@ requireInertText[ text_String, what_String, code_ ] := Module[ { found },
         toolError[
             "`1` has content that would run code when it is shown (`2`), which the notebook tools never write.",
             what,
-            StringTrim @ StringDelete[ found, "[" | "->" | ":>" | "\\[Rule]" | "\\[RuleDelayed]" ]
+            StringTrim @ StringDelete[ found, (StartOfString ~~ "RuleDelayed" | "Rule") | "[" | "," | "->" | ":>" | "\\[Rule]" | "\\[RuleDelayed]" ]
         ]
     ]
 ];

@@ -422,6 +422,23 @@ VerificationTest[
     TestID   -> "CheckCells-Outputs"
 ]
 
+(* The boxes are FullForm text: the front end reads them with its notebook file parser, which has no /@ (a StreamPlot's
+   boxes hold (f &) /@ m) *)
+VerificationTest[
+    Lookup[
+        Wolfram`Chatbook`Common`sandboxCheckCells[
+            { RowBox[ { "Interpretation", "[", RowBox[ { "1", ",", RowBox[ { "Hold", "[", RowBox[ { "Sin", "/@", "x" } ], "]" } ] } ], "]" } ] },
+            20,
+            60,
+            { 1 }
+        ],
+        "Boxes"
+    ],
+    { { s_String /; StringContainsQ[ s, "Hold[Map[Sin, x]]" ] && ! StringContainsQ[ s, "/@" ] } },
+    SameTest -> MatchQ,
+    TestID   -> "CheckCells-OutputsFullForm"
+]
+
 (* Of the evaluated cells to picture, each result with graphics in it gives a PNG (base64) at most the given width wide
    and high, whatever its boxes; other results and cells not to picture give none *)
 VerificationTest[
