@@ -113,6 +113,7 @@ HoldComplete[
     `acpFitWidthSwitch,
     `acpFreezeLiveView,
     `acpLiveView,
+    `acpMarkdownItems, (* used by ChatModes/Evaluate.wl (the agent's text in the sidebar) *)
     `acpNeutralizeLinearSyntax,
     `acpPermissionDetailsData, (* used by PermissionDetails.wl (what the details window shows) *)
     `acpPermissionKey,         (* used by PermissionDetails.wl (the key of the panel's "View full ..." link) *)

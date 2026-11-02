@@ -223,6 +223,8 @@ releaseSidebarSelections // endDefinition;
    notebook as a diff when the turn ends. *)
 $sidebarAgentCommand = { "/opt/homebrew/bin/opencode", "acp" };
 $sidebarAgentTimeout = 1800;
+(* True while sidebarAgentFinish draws the static view, whose agent text gets finished (not streaming) formatting *)
+$sidebarAgentFinal = False;
 (* the development checkouts the speed trials use: AgentTools (the notebook tools' MCP server), ACPLink, and the folder
    the agent works in *)
 $sidebarAgentLLMEditing = "/System/Volumes/Data/Development/WRI/LLMEditing";
@@ -437,7 +439,7 @@ sidebarAgentFinish[ id_String, failure_ ] := With[ { cell = $sidebarAgentMessage
     $sidebarAgentMessages[ id, "State" ] = Replace[ failure, None -> "Done" ];
     $sidebarAgentMessages[ id, "Failure" ] = failure;
     $sidebarAgentMessages[ id, "Elapsed" ] = AbsoluteTime[ ] - $sidebarAgentMessages[ id, "Created" ];
-    If[ ! TrueQ[ MatchQ[ cell, _CellObject ] && acpReplaceCellRefusedQ[ cell, sidebarAgentCell[ "SidebarTopCell", sidebarAgentView @ id ] ] ],
+    If[ ! TrueQ[ MatchQ[ cell, _CellObject ] && acpReplaceCellRefusedQ[ cell, sidebarAgentCell[ "SidebarTopCell", Block[ { $sidebarAgentFinal = True }, sidebarAgentView @ id ] ] ] ],
         Quiet @ TaskRemove @ $sidebarAgentMessages[ id, "Task" ]
     ]
 ];
@@ -517,7 +519,10 @@ sidebarAgentDuration // endDefinition;
 sidebarAgentEntityView // beginDefinition;
 
 sidebarAgentEntityView[ _, KeyValuePattern @ { "Type" -> "Message", "Text" -> text_String, "Child" -> None } ] /;
-    StringTrim @ text =!= "" := StringTrim @ text;
+    StringTrim @ text =!= "" := RawBoxes @ Cell[
+        TextData @ acpMarkdownItems[ StringTrim @ text, If[ TrueQ @ $sidebarAgentFinal, "Final", "Live" ] ],
+        Background -> None
+    ];
 
 sidebarAgentEntityView[ _, entity: KeyValuePattern[ "Type" -> "Tool" ] ] := Row[
     {

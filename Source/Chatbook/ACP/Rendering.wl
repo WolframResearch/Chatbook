@@ -1008,6 +1008,14 @@ markdownItems[ _, _ ] := { };
 
 markdownItems // endDefinition;
 
+
+(* The agent's markdown as TextData items, for views outside a window's turn cells (the sidebar's agent messages).
+   "Live" makes no front end calls; "Final" is finishedItems. *)
+acpMarkdownItems // beginDefinition;
+acpMarkdownItems[ text_String, "Live" ] := formatStreaming[ None, acpPreprocessAnswer @ acpSafeText @ text, False ];
+acpMarkdownItems[ text_String, "Final" ] := finishedItems @ text;
+acpMarkdownItems // endDefinition;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Streaming (tail-only) formatting*)

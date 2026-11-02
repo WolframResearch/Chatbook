@@ -128,4 +128,26 @@ VerificationTest[
     TestID   -> "Sidebar-EditingSwitch-FrontEndTest-FEOnly@@Tests/NotebookAssistanceSidebar.wlt:112,1-129,2"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Agent Messages*)
+
+(* The agent's text in a sidebar message is formatted markdown, live and final: LaTeX math becomes boxes, not the raw
+   \( ... \) delimiters *)
+VerificationTest[
+    Module[ { entity, boxes },
+        entity = <| "Type" -> "Message", "Text" -> "Added a plot of \\(\\sin x\\) from \\(-2\\pi\\), using **Plot**.\n", "Child" -> None |>;
+        boxes  = Table[
+            Block[ { Wolfram`Chatbook`ChatModes`Evaluate`Private`$sidebarAgentFinal = final },
+                ToBoxes @ Wolfram`Chatbook`ChatModes`Evaluate`Private`sidebarAgentEntityView[ None, entity ]
+            ],
+            { final, { False, True } }
+        ];
+        { FreeQ[ #, s_String /; StringContainsQ[ s, "\\(" | "**" ] ], Count[ #, _FormBox, Infinity ] > 0 } & /@ boxes
+    ],
+    { { True, True }, { True, True } },
+    SameTest -> MatchQ,
+    TestID   -> "Sidebar-AgentMessage-FormattedMarkdown@@Tests/NotebookAssistanceSidebar.wlt:137,1-151,2"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)
