@@ -342,8 +342,12 @@ sidebarAgentSetup // endDefinition;
 
 (* One step of an agent message, every 0.25 s until its turn is over: once the window's agent is ready, its model and
    then its effort are set, one per step, and the prompt is sent with the notebook attached; when the turn has ended and
-   the window's show job (the diff) is done, the message's cell is written once more without its live view. *)
+   the window's show job (the diff) is done, the message's cell is written once more without its live view. A step that
+   interrupts the front end work of a main link evaluation (a notebook tool of the window's agent) does nothing: its
+   Notebooks[] would wait for the front end, which waits for that evaluation (ACP rule R9, acpMainLinkFrontEndCall). *)
 sidebarAgentStep // beginDefinition;
+
+sidebarAgentStep[ _String ] /; acpMainLinkFrontEndCallQ[ ] := Null;
 
 sidebarAgentStep[ id_String ] := Module[ { msg = $sidebarAgentMessages[ id ], window, status, change, turn },
     window = msg[ "Window" ];

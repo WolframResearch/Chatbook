@@ -1455,7 +1455,7 @@ notebookFrontEnd // beginDefinition;
 
 notebookFrontEnd[ op_String, args___ ] := (
     requireFrontEnd[ ];
-    frontEndOperation[ op, args ]
+    acpMainLinkFrontEndCall @ frontEndOperation[ op, args ]
 );
 
 notebookFrontEnd // endDefinition;
@@ -1629,7 +1629,7 @@ cleanID // endDefinition;
 (* The notebooks that the tools can reach, front to back (the first one is the notebook the user is working in), each
    as <| "NotebookObject", "Key", "ID", "Title", "File", "Modified" |> ("Title" and "File" are None if not known) *)
 listedNotebooks // beginDefinition;
-listedNotebooks[ ] := If[ $FrontEnd === Null, { }, listedNotebooks0[ ] ];
+listedNotebooks[ ] := If[ $FrontEnd === Null, { }, acpMainLinkFrontEndCall @ listedNotebooks0[ ] ];
 listedNotebooks // endDefinition;
 
 

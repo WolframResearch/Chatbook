@@ -426,7 +426,15 @@ publisherRunningQ // endDefinition;
 
 pumpTick // beginDefinition;
 
-pumpTick[ ] := acpIsolated[
+(* A tick that interrupts a main link evaluation's front end work does nothing (R9); the next tick runs what is due *)
+pumpTick[ ] := If[ ! acpMainLinkFrontEndCallQ[ ], runPumpTick[ ] ];
+
+pumpTick // endDefinition;
+
+
+runPumpTick // beginDefinition;
+
+runPumpTick[ ] := acpIsolated[
     $pumpTicks++;
     runScheduled[ ];
     If[ Mod[ $pumpTicks, $acpPublishEvery ] === 0, publisherTick[ ] ];
@@ -440,7 +448,7 @@ pumpTick[ ] := acpIsolated[
     ]
 ];
 
-pumpTick // endDefinition;
+runPumpTick // endDefinition;
 
 
 (* Runs the queued evaluations that are due, in order. Evaluations queued while these run wait for a later tick. *)
@@ -567,6 +575,28 @@ acpIsolatedAbortable // beginDefinition;
 acpIsolatedAbortable // Attributes = { HoldFirst };
 acpIsolatedAbortable[ eval_ ] := isolatedCatch @ isolatedBlock @ eval;
 acpIsolatedAbortable // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*acpMainLinkFrontEndCall*)
+
+(* The front end work of a main link evaluation (MCP.wl's drain: the notebook tools' front end operations and the jobs
+   of acpMainLinkRun) runs inside acpMainLinkFrontEndCall, and the scheduled tasks that make front end calls (the pump,
+   the sidebar agent's step) do nothing while it runs (rule R9 in docs/acp-window.md). The kernel runs scheduled tasks
+   while it waits for the front end's answer on the main link, and a task's front end call then goes over the service
+   link and waits for its answer there. The front end answers the service link only once it has written its answer on
+   the main link, and an answer larger than the link's buffer (cell texts, an error that quotes a cell) waits for the
+   kernel to read it: both would wait for good. The flag is Blocked, so an abort unsets it, and the tasks, which
+   interrupt the main link evaluation, see it. *)
+acpMainLinkFrontEndCall // beginDefinition;
+acpMainLinkFrontEndCall // Attributes = { HoldFirst };
+acpMainLinkFrontEndCall[ eval_ ] := Block[ { $mainLinkFrontEndCall = True }, eval ];
+acpMainLinkFrontEndCall // endDefinition;
+
+
+acpMainLinkFrontEndCallQ // beginDefinition;
+acpMainLinkFrontEndCallQ[ ] := TrueQ @ $mainLinkFrontEndCall;
+acpMainLinkFrontEndCallQ // endDefinition;
 
 
 (* Catch[ expr, _, f ] only catches tagged throws, so an outer untagged Catch is needed as well. `normal` tells a regular

@@ -997,7 +997,8 @@ runMainLinkJob // beginDefinition;
 runMainLinkJob[ job_Association, mode_String ] := Module[ { start },
     PreemptProtect[ $mcpJobs = DeleteCases[ $mcpJobs, KeyValuePattern[ "ID" -> job[ "ID" ] ] ] ];
     start = AbsoluteTime[ ];
-    Replace[ job[ "Eval" ], HoldComplete[ eval_ ] :> acpIsolatedAbortable @ eval ];
+    (* the jobs convert notebooks and rasterize graphics, whose answers are large (R9) *)
+    Replace[ job[ "Eval" ], HoldComplete[ eval_ ] :> acpIsolatedAbortable @ acpMainLinkFrontEndCall @ eval ];
     acpLog[ "MainLinkJob", <|
         "Label"   -> job[ "Label" ],
         "Mode"    -> mode,

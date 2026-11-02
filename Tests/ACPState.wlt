@@ -153,12 +153,85 @@ VerificationTest[
     TestID   -> "ACPState-Schedule-PumpStops@@Tests/ACPState.wlt:144,1-154,2"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Main Link Front End Calls*)
+
+(* R9: while a main link evaluation does front end work, pump ticks do nothing (a front end call of theirs would wait
+   on the service link for a front end that waits for the main link); what was due runs once the work is done *)
+VerificationTest[
+    Module[ { results = { }, during, ran },
+        Wolfram`Chatbook`ACP`Common`acpMainLinkFrontEndCall[
+            Wolfram`Chatbook`ACP`Common`acpSchedule[ AppendTo[ results, 1 ] ];
+            Pause[ 0.5 ];
+            during = { results, Length @ pumpTasks[ ], Wolfram`Chatbook`ACP`Common`acpMainLinkFrontEndCallQ[ ] }
+        ];
+        ran = waitUntil[ results === { 1 }, 10 ];
+        { during, ran, Wolfram`Chatbook`ACP`Common`acpMainLinkFrontEndCallQ[ ] }
+    ],
+    { { { }, 1, True }, True, False },
+    SameTest -> MatchQ,
+    TestID   -> "ACPState-MainLinkFrontEndCall-PumpWaits@@Tests/ACPState.wlt:162,1-175,2"
+]
+
+(* An abort in the front end work unsets the flag *)
+VerificationTest[
+    {
+        CheckAbort[ Wolfram`Chatbook`ACP`Common`acpMainLinkFrontEndCall @ Abort[ ], "aborted" ],
+        Wolfram`Chatbook`ACP`Common`acpMainLinkFrontEndCallQ[ ]
+    },
+    { "aborted", False },
+    SameTest -> MatchQ,
+    TestID   -> "ACPState-MainLinkFrontEndCall-Abort@@Tests/ACPState.wlt:178,1-186,2"
+]
+
+(* The sidebar agent's step (a scheduled task that calls Notebooks[]) does nothing meanwhile: it does not even look up
+   its message *)
+VerificationTest[
+    Wolfram`Chatbook`ACP`Common`acpMainLinkFrontEndCall @
+        Wolfram`Chatbook`ChatModes`Evaluate`Private`sidebarAgentStep[ "no-such-message" ],
+    Null,
+    SameTest -> MatchQ,
+    TestID   -> "ACPState-MainLinkFrontEndCall-SidebarStep@@Tests/ACPState.wlt:190,1-196,2"
+]
+
+(* The notebook tools' front end operations and the main link jobs run as main link front end work (listedNotebooks too,
+   but it needs a $FrontEnd, which Block can't give) *)
+VerificationTest[
+    Module[ { job = None },
+        {
+            Block[
+                {
+                    Wolfram`Chatbook`ACP`NotebookTools`Private`requireFrontEnd   = Null &,
+                    Wolfram`Chatbook`ACP`NotebookTools`Private`frontEndOperation =
+                        Wolfram`Chatbook`ACP`Common`acpMainLinkFrontEndCallQ[ ] &
+                },
+                Wolfram`Chatbook`ACP`NotebookTools`Private`notebookFrontEnd[ "FileName", "nb" ]
+            ],
+            Wolfram`Chatbook`ACP`MCP`Private`runMainLinkJob[
+                <|
+                    "ID"       -> CreateUUID[ ],
+                    "Eval"     -> HoldComplete[ job = Wolfram`Chatbook`ACP`Common`acpMainLinkFrontEndCallQ[ ] ],
+                    "Label"    -> "Test",
+                    "QueuedAt" -> AbsoluteTime[ ]
+                |>,
+                "Pump"
+            ];
+            job,
+            Wolfram`Chatbook`ACP`Common`acpMainLinkFrontEndCallQ[ ]
+        }
+    ],
+    { True, True, False },
+    SameTest -> MatchQ,
+    TestID   -> "ACPState-MainLinkFrontEndCall-Callers@@Tests/ACPState.wlt:200,1-227,2"
+]
+
 (* Everything logged after this point is unexpected (checked by ACPState-DebugLog at the end): *)
 VerificationTest[
     $acpLogStart = AbsoluteTime[ ];
     NumberQ @ $acpLogStart,
     True,
-    TestID -> "ACPState-DebugLog-Start@@Tests/ACPState.wlt:157,1-162,2"
+    TestID -> "ACPState-DebugLog-Start@@Tests/ACPState.wlt:230,1-235,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -182,7 +255,7 @@ VerificationTest[
     },
     { 2, $Failed, $Failed, { 1, None }, { 1, "tag" }, $Failed, 3, $Failed },
     SameTest -> MatchQ,
-    TestID   -> "ACPState-CatchAll@@Tests/ACPState.wlt:169,1-186,2"
+    TestID   -> "ACPState-CatchAll@@Tests/ACPState.wlt:242,1-259,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -209,14 +282,14 @@ VerificationTest[
     ],
     { { _String? (StringMatchQ[ "acpChangeSymbol" ~~ Repeated[ LetterCharacter | DigitCharacter, { 6 } ] ~~ "n" ~~ DigitCharacter.. ]), _String }, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPState-ChangeSymbol-Named@@Tests/ACPState.wlt:196,1-213,2"
+    TestID   -> "ACPState-ChangeSymbol-Named@@Tests/ACPState.wlt:269,1-286,2"
 ]
 
 VerificationTest[
     Wolfram`Chatbook`ACP`Common`acpEntitySymbol[ "acp-state-test", { "Message", "m1" } ] ===
         Wolfram`Chatbook`ACP`Common`acpEntitySymbol[ "acp-state-test", { "Message", "m1" } ],
     True,
-    TestID -> "ACPState-ChangeSymbol-Stable@@Tests/ACPState.wlt:215,1-220,2"
+    TestID -> "ACPState-ChangeSymbol-Stable@@Tests/ACPState.wlt:288,1-293,2"
 ]
 
 VerificationTest[
@@ -229,7 +302,7 @@ VerificationTest[
         after - before
     ],
     1,
-    TestID -> "ACPState-ChangeSymbol-Publish@@Tests/ACPState.wlt:222,1-233,2"
+    TestID -> "ACPState-ChangeSymbol-Publish@@Tests/ACPState.wlt:295,1-306,2"
 ]
 
 VerificationTest[
@@ -242,7 +315,7 @@ VerificationTest[
         TrackedSymbols :> { Wolfram`ChatbookTests`Private`x }
     ],
     SameTest -> MatchQ,
-    TestID   -> "ACPState-TrackedDynamic@@Tests/ACPState.wlt:235,1-246,2"
+    TestID   -> "ACPState-TrackedDynamic@@Tests/ACPState.wlt:308,1-319,2"
 ]
 
 VerificationTest[
@@ -267,7 +340,7 @@ VerificationTest[
     ],
     { True, { }, { }, { }, { } },
     SameTest -> MatchQ,
-    TestID   -> "ACPState-TurnDrop-Symbols@@Tests/ACPState.wlt:248,1-271,2"
+    TestID   -> "ACPState-TurnDrop-Symbols@@Tests/ACPState.wlt:321,1-344,2"
 ]
 
 (* Publishing a dirty spec whose symbol was dropped does not create the symbol again *)
@@ -278,7 +351,7 @@ VerificationTest[
         Length @ Wolfram`Chatbook`ACP`State`Private`$symbols - count
     ],
     0,
-    TestID -> "ACPState-Publish-NoResurrection@@Tests/ACPState.wlt:274,1-282,2"
+    TestID -> "ACPState-Publish-NoResurrection@@Tests/ACPState.wlt:347,1-355,2"
 ]
 
 (* A turn's views are frozen while it is finalized (acpFreezeTurnViews): its layout symbol is bumped once more (the
@@ -315,7 +388,7 @@ VerificationTest[
     ],
     { { 1, 0, 0 }, { 1, 0, 1 }, True, False },
     SameTest -> MatchQ,
-    TestID   -> "ACPState-FreezeTurnViews@@Tests/ACPState.wlt:287,1-319,2"
+    TestID   -> "ACPState-FreezeTurnViews@@Tests/ACPState.wlt:360,1-392,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -335,7 +408,7 @@ VerificationTest[
     ],
     { { True, True, True }, 0 },
     SameTest -> MatchQ,
-    TestID   -> "ACPState-LoadACPLink-Cached@@Tests/ACPState.wlt:326,1-339,2"
+    TestID   -> "ACPState-LoadACPLink-Cached@@Tests/ACPState.wlt:399,1-412,2"
 ]
 
 VerificationTest[
@@ -348,7 +421,7 @@ VerificationTest[
     ],
     Failure[ "ACPLinkMissing", _ ],
     SameTest -> MatchQ,
-    TestID   -> "ACPState-LoadACPLink-Missing@@Tests/ACPState.wlt:341,1-352,2"
+    TestID   -> "ACPState-LoadACPLink-Missing@@Tests/ACPState.wlt:414,1-425,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -379,7 +452,7 @@ VerificationTest[
     );
     Null,
     Null,
-    TestID -> "ACPState-Restart-Definitions@@Tests/ACPState.wlt:363,1-383,2"
+    TestID -> "ACPState-Restart-Definitions@@Tests/ACPState.wlt:436,1-456,2"
 ]
 
 (* A window this kernel does not know (a new kernel after a restart): the toolbar's Dynamic shows a placeholder whose
@@ -401,7 +474,7 @@ VerificationTest[
     ],
     { Framed, 0, { False, False }, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPState-Restart-PlaceholderToolbar@@Tests/ACPState.wlt:387,1-405,2"
+    TestID   -> "ACPState-Restart-PlaceholderToolbar@@Tests/ACPState.wlt:460,1-478,2"
 ]
 
 (* A window this kernel knows (created in this session): the toolbar is built in the Dynamic from the symbols that
@@ -423,7 +496,7 @@ VerificationTest[
     ],
     { Framed, 0, False, True },
     SameTest -> MatchQ,
-    TestID   -> "ACPState-Restart-KnownWindowToolbar@@Tests/ACPState.wlt:409,1-427,2"
+    TestID   -> "ACPState-Restart-KnownWindowToolbar@@Tests/ACPState.wlt:482,1-500,2"
 ]
 
 (* acpCheckSession after a kernel restart (the TaggingRules name another kernel session): the record and its change
@@ -447,7 +520,7 @@ VerificationTest[
     ],
     { False, { { True, True } }, True, False, "NoDirectory" },
     SameTest -> MatchQ,
-    TestID   -> "ACPState-Restart-RecordBeforeUI@@Tests/ACPState.wlt:431,1-451,2"
+    TestID   -> "ACPState-Restart-RecordBeforeUI@@Tests/ACPState.wlt:504,1-524,2"
 ]
 
 (* The placeholder's Initialization (acpInitializeWindow, in the pump) without a kernel restart (e.g. a window whose
@@ -480,7 +553,7 @@ VerificationTest[
     ],
     { { { True, True } }, False },
     SameTest -> MatchQ,
-    TestID   -> "ACPState-Restart-PlaceholderReplaced@@Tests/ACPState.wlt:455,1-484,2"
+    TestID   -> "ACPState-Restart-PlaceholderReplaced@@Tests/ACPState.wlt:528,1-557,2"
 ]
 
 (* A window closed while it still shows the placeholder is forgotten with its placeholder note *)
@@ -496,7 +569,7 @@ VerificationTest[
     ],
     { True, False },
     SameTest -> MatchQ,
-    TestID   -> "ACPState-Restart-ForgetDropsPlaceholder@@Tests/ACPState.wlt:487,1-500,2"
+    TestID   -> "ACPState-Restart-ForgetDropsPlaceholder@@Tests/ACPState.wlt:560,1-573,2"
 ]
 
 (* A kernel restart is logged ("KernelRestart"), so that a rebuild that went wrong can be told from one that never ran *)
@@ -524,7 +597,7 @@ VerificationTest[
     ],
     { True },
     SameTest -> MatchQ,
-    TestID   -> "ACPState-Restart-Logged@@Tests/ACPState.wlt:503,1-528,2"
+    TestID   -> "ACPState-Restart-Logged@@Tests/ACPState.wlt:576,1-601,2"
 ]
 
 (* acpRefreshToolbar replaces the toolbar cell among the window's docked cells (also with its tag given in a list, and a
@@ -562,7 +635,7 @@ VerificationTest[
     ],
     { { "Strip", "New" }, { "New" }, None, { { 1, { "Strip" } } } },
     SameTest -> MatchQ,
-    TestID   -> "ACPState-Restart-RefreshToolbar@@Tests/ACPState.wlt:532,1-566,2"
+    TestID   -> "ACPState-Restart-RefreshToolbar@@Tests/ACPState.wlt:605,1-639,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -577,7 +650,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "ACPState-DebugLog@@Tests/ACPState.wlt:573,1-581,2"
+    TestID   -> "ACPState-DebugLog@@Tests/ACPState.wlt:646,1-654,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

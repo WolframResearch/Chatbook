@@ -27,6 +27,8 @@ HoldComplete[
     `acpLinkAvailableQ,
     `acpLoadACPLink,
     `acpLog,
+    `acpMainLinkFrontEndCall,
+    `acpMainLinkFrontEndCallQ,
     `acpMarkDirty,
     `acpMarkLayoutDirty,
     `acpMarkWindowDirty,
