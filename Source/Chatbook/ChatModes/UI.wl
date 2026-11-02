@@ -164,6 +164,10 @@ makeSidebarChatDockedCell[ ] :=
                     setCurrentValue[ Typeset`sidebarCell, TaggingRules, <| "ChatNotebookSettings" -> NotebookAssistanceSidebarSettings[ ], "ConversationTitle" -> "" |> ]
                 ];
 
+                (* settings that ShowNotebookAssistance was given before the sidebar had its TaggingRules, such as Notebook
+                   editing turned on *)
+                applyRequestedSidebarSettings[ Typeset`thisNotebook, Typeset`sidebarCell ];
+
                 (* most costly step of initialization *)
                 If[ Not @ TrueQ @ $workspaceChatInitialized, initializeWorkspaceChat[ ] ];
             )
@@ -182,22 +186,82 @@ makeSidebarChatDockedCell // endDefinition;
 (*sidebarEditingSwitch*)
 
 (* The sidebar chat's Notebook editing switch, and at the right of its row, the gear that opens the editing settings:
-   chat settings of the sidebar cell (Tools/Common.wl's selectNotebookEditingTools and the sidebar agent read them) *)
+   chat settings of the sidebar cell (Tools/Common.wl's selectNotebookEditingTools and the sidebar agent read them).
+   The switch needs the sidebar cell, which the docked cell's Initialization stores: asynchronously, and seconds after
+   the sidebar is drawn the first time in a kernel session, while Chatbook initializes the workspace chat. Until then a
+   front-end-only placeholder (sidebarEditingSwitchLoading) stands in its place; the PaneSelector's test is evaluated by
+   the front end, so it switches without waiting for the kernel. *)
 sidebarEditingSwitch // beginDefinition;
 
-sidebarEditingSwitch[ Dynamic[ cell_ ] ] := Dynamic @ If[ MatchQ[ cell, _CellObject ],
-    With[ { editing = TrueQ @ CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "NotebookEditing" } ] },
-        sidebarSwitch[
-            editing,
-            "Notebook editing",
-            "The assistant can change the notebook's cells. You review its changes before they're kept.",
-            CurrentChatSettings[ cell, "NotebookEditing" ] = ! editing
+sidebarEditingSwitch[ Dynamic[ cell_ ] ] := PaneSelector[
+    {
+        True -> Dynamic @ If[ MatchQ[ cell, _CellObject ],
+            With[ { editing = TrueQ @ CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "NotebookEditing" } ] },
+                sidebarSwitch[
+                    editing,
+                    "Notebook editing",
+                    "The assistant can change the notebook's cells. You review its changes before they're kept.",
+                    CurrentChatSettings[ cell, "NotebookEditing" ] = ! editing
+                ]
+            ],
+            ""
         ]
-    ],
-    ""
+    },
+    Dynamic @ FEPrivate`MatchQ[ cell, _CellObject ],
+    (* the default: the front end leaves the test unevaluated while cell has no value *)
+    sidebarEditingSwitchLoading[ ],
+    ImageSize -> Automatic
 ];
 
 sidebarEditingSwitch // endDefinition;
+
+
+(* The switch's place while it loads: a "Necklace" progress indicator in the switch's 22 x 11 slot and the label in gray,
+   pulsing once every $sidebarEditingPulse seconds, with the switch's style and margins, so that the row keeps its
+   height when the switch replaces it. A hidden Animator drives the pulse's t (seconds) in the front end, and the
+   label's opacity is arithmetic the front end evaluates itself, so the pulse needs no kernel while the sidebar
+   initializes. (The native "Indeterminate" bar animated too, but at a fixed, slow speed that AnimationRate does not
+   change; "Percolate", like "Necklace" a DynamicModuleBox with Dynamics in its graphic, stood still in the sidebar,
+   drawn as a pink error box.) The 1-point Animator takes a point of the spacer, so the label stays where the switch
+   puts it. *)
+$sidebarEditingPulse = 1.2;
+
+sidebarEditingSwitchLoading // beginDefinition;
+
+sidebarEditingSwitchLoading[ ] := With[ { k = N[ 2 Pi / $sidebarEditingPulse ] },
+    DynamicModule[ { Typeset`t = 0 },
+        Tooltip[
+            Pane[
+                Row[
+                    {
+                        Pane[
+                            ProgressIndicator[ Appearance -> "Necklace", ImageSize -> { 22, 11 } ],
+                            ImageSize        -> { 22, 11 },
+                            ImageSizeAction  -> "ShrinkToFit",
+                            Alignment        -> Center,
+                            BaselinePosition -> $switchBaseline
+                        ],
+                        Animator[ Dynamic @ Typeset`t, { 0, Infinity }, AppearanceElements -> { }, ImageSize -> { 1, 1 } ],
+                        Spacer[ 4 ],
+                        Style[
+                            "Notebook editing",
+                            FontColor   -> LightDarkSwitched @ GrayLevel[ 0.6 ],
+                            FontOpacity -> Dynamic[ 0.6 + 0.4 Cos[ k Typeset`t ] ]
+                        ]
+                    },
+                    BaselinePosition -> Baseline
+                ],
+                BaseStyle        -> { "Text", FontSize -> 12.35 },
+                BaselinePosition -> Baseline,
+                ImageMargins     -> { { 4, 0 }, { 2, 4 } }
+            ],
+            "Notebook editing is loading.",
+            TooltipDelay -> 0.3
+        ]
+    ]
+];
+
+sidebarEditingSwitchLoading // endDefinition;
 
 
 sidebarSwitch // beginDefinition;
@@ -374,6 +438,9 @@ notebookEditingEffortIndex // endDefinition;
 
 switchGraphic // beginDefinition;
 
+(* $switchBaseline puts the switch's center on the center of its label (measured: Scaled[0.1] set it 0.9 points high) *)
+$switchBaseline = Scaled[ 0.18 ];
+
 switchGraphic[ on_ ] := Graphics[
     {
         If[ TrueQ @ on, color @ "NA_ChatInputFieldFocusFont", LightDarkSwitched @ GrayLevel[ 0.72 ] ],
@@ -381,7 +448,7 @@ switchGraphic[ on_ ] := Graphics[
         White,
         Disk[ { If[ TrueQ @ on, 1.5, 0.5 ], 0.5 }, 0.36 ]
     },
-    BaselinePosition -> Scaled[ 0.1 ],
+    BaselinePosition -> $switchBaseline,
     ImageSize        -> { 22, 11 },
     PlotRangePadding -> None
 ];

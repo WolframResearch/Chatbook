@@ -516,6 +516,8 @@ showNotebookAssistanceSidebar[ nbo_NotebookObject, input_, evaluate_, toggle_, s
 
         sidebarCell = sidebarCellObject @ nbo; (* if the side bar has been opened once before IN ITS CONTAINING NOTEBOOK than this is a CellObject, else $Failed *)
 
+        requestSidebarSettings[ nbo, sidebarCell, settings0 ];
+
         Which[
             FailureQ @ sidebarCell,
                  (* don't do anything else because this is the first time we've opened the sidebar in this notebook *)
@@ -551,6 +553,55 @@ showNotebookAssistanceSidebar[ nbo_NotebookObject, input_, evaluate_, toggle_, s
 ];
 
 showNotebookAssistanceSidebar // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*requestSidebarSettings*)
+
+(* ShowNotebookAssistance's "ChatNotebookSettings" for the sidebar, such as "NotebookEditing" -> True: chat settings of
+   the sidebar cell. A sidebar that is not initialized yet (the first time in a notebook, or before the Initialization of
+   its docked cell has run, which sets the cell's TaggingRules as a whole) gets them from that Initialization, through
+   applyRequestedSidebarSettings. *)
+If[ ! AssociationQ @ $requestedSidebarSettings, $requestedSidebarSettings = <| |> ];
+
+requestSidebarSettings // beginDefinition;
+
+requestSidebarSettings[ nbo_NotebookObject, sidebarCell_, settings_Association ] := Which[
+    settings === <| |>,
+        Null,
+    sidebarInitializedQ @ sidebarCell,
+        setSidebarSettings[ sidebarCell, settings ],
+    True,
+        $requestedSidebarSettings[ nbo ] = Join[ Lookup[ $requestedSidebarSettings, nbo, <| |> ], settings ];
+];
+
+requestSidebarSettings // endDefinition;
+
+
+sidebarInitializedQ // beginDefinition;
+sidebarInitializedQ[ cell_CellObject ] := CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "SidebarChat" } ] =!= Inherited;
+sidebarInitializedQ[ _ ] := False;
+sidebarInitializedQ // endDefinition;
+
+
+(* The Initialization of the sidebar's docked cell (UI.wl's makeSidebarChatDockedCell) calls this once the sidebar cell
+   has its TaggingRules *)
+applyRequestedSidebarSettings // beginDefinition;
+
+applyRequestedSidebarSettings[ nbo_NotebookObject, sidebarCell_CellObject ] :=
+    With[ { settings = Lookup[ $requestedSidebarSettings, nbo, <| |> ] },
+        KeyDropFrom[ $requestedSidebarSettings, nbo ];
+        setSidebarSettings[ sidebarCell, settings ];
+    ];
+
+applyRequestedSidebarSettings[ _, _ ] := Null;
+
+applyRequestedSidebarSettings // endDefinition;
+
+
+setSidebarSettings // beginDefinition;
+setSidebarSettings[ cell_CellObject, settings_Association ] := KeyValueMap[ (CurrentChatSettings[ cell, #1 ] = #2) &, settings ];
+setSidebarSettings // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

@@ -7,6 +7,7 @@ HoldComplete[
     `$inputFieldOuterBackground,
     `$inputFieldPaneMargins,
     `$notebookAssistanceWorkspaceSettings,
+    `applyRequestedSidebarSettings,
     `attachToLeft,
     `attachedWindowWidth,
     `clearOverlayMenus,
