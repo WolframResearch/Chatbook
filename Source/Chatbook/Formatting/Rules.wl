@@ -183,7 +183,7 @@ $textDataFormatRules = {
     Shortest[ "<think>"~~thoughts___~~"</think>" ] :> thoughtsOpener @ thoughts,
     Shortest[ "<thinking>"~~thoughts___~~"</thinking>" ] :> thoughtsOpener @ thoughts,
     Shortest[ $$thinkTagWithAttributes ~~ thoughts___ ~~ EndOfString ] :> thinkingOpener[ thoughts, attributes ],
-    Shortest[ ("<think>"|"<thinking>")~~thoughts__~~EndOfString ] :> thinkingOpener @ thoughts,
+    Shortest[ ("<think>"|"<thinking>")~~thoughts___~~EndOfString ] :> thinkingOpener @ thoughts,
     speech: Shortest[ "<speech-input>"~~__~~"</speech-input>" ] :> speechCell @ speech,
     math: $$escapedDisplayMath :> mathCell @ StringTake[ math, { 5, -5 } ],
     $$codeFenceOpen ~~ $$codeFenceBody ~~ ("```"|EndOfString) /; toolCallStringFreeQ @ code :>

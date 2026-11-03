@@ -1570,4 +1570,28 @@ VerificationTest[
     TestID   -> "Thinking-Empty-No-Content@@Tests/FormattingThinking.wlt:1554,1-1571,2"
 ]
 
+(* A complete opening tag with nothing after it yet shows the thinking box with no thoughts, as it does after a line
+   break (see Thinking-Unterminated-Just-Opened): *)
+VerificationTest[
+    {
+        thinkingFormat /@ { "<think>", "<thinking>", "Text <think>" },
+        thinkingFormat[ #, "Streaming" ] & /@ { "<think>", "<thinking>" },
+        thinkingRoundTrip[ "<think>" ]
+    },
+    {
+        {
+            { thinkingOpenerCell[ "", $thinkingActiveLabel, $thinkingLiteralMeta ] },
+            { thinkingOpenerCell[ "", $thinkingActiveLabel, $thinkingLiteralMeta ] },
+            { "Text ", thinkingOpenerCell[ "", $thinkingActiveLabel, $thinkingLiteralMeta ] }
+        },
+        {
+            { thinkingOpenerCell[ "", $thinkingActiveLabel, $thinkingLiteralMeta ] },
+            { thinkingOpenerCell[ "", $thinkingActiveLabel, $thinkingLiteralMeta ] }
+        },
+        "<think>\n\n</think>"
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Thinking-Unterminated-Opening-Tag-Only@@Tests/FormattingThinking.wlt:1575,1-1595,2"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)
