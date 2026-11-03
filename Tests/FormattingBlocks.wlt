@@ -1158,11 +1158,11 @@ VerificationTest[
 (* ::Subsection::Closed:: *)
 (*Line Endings*)
 
-(* Headings and bullets are still recognized with "\r\n" line endings. Only the cell styles are checked: the text
-   currently keeps the "\r" characters, which the front end does not display correctly (see the CRLF quirk). *)
+(* Headings and bullets are recognized with "\r\n" line endings, and their text has no "\r" (which the front end
+   doesn't display correctly): *)
 VerificationTest[
-    blocksStyles[ "## Heading\r\n\r\nText\r\n- item\r\n- item2" ],
-    { "InlineSection", "InlineItem", "InlineItem" },
+    blocksNormalized[ "## Heading\r\n\r\nText\r\n- item\r\n- item2" ],
+    { blocksSection @ blocksTextBox[ "Heading" ], "\nText\n", blocksItem[ " item" ], "\n", blocksItem[ " item2" ] },
     SameTest -> MatchQ,
     TestID   -> "Blocks-Paragraph-CRLF-Blocks@@Tests/FormattingBlocks.wlt:1163,1-1168,2"
 ]

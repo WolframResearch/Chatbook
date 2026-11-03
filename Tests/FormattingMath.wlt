@@ -225,22 +225,22 @@ VerificationTest[
     TestID   -> "Math-Delimiters-Multiline@@Tests/FormattingMath.wlt:216,1-226,2"
 ]
 
-(* With "\r\n" line endings, the line breaks around the math are kept. (The exact strings are not checked here: they
-   currently become "\r \n", see the quirks.) *)
+(* With "\r\n" line endings or a lone "\r", the line breaks around the math are kept. They become "\n" before
+   formatting, so the text parts are the same as with "\n" (and joining them doesn't put a space between "\r" and
+   "\n"): *)
 VerificationTest[
-    mathItems /@ { "Text\r\n$$x^2$$\r\nMore", "$x$\r\n$y$" },
-    With[ { crlf = ("\r"|" ")... ~~ "\n" },
+    mathItems /@ { "Text\r\n$$x^2$$\r\nMore", "$x$\r\n$y$", "$x$\r$y$" },
+    {
         {
-            {
-                _String? (StringMatchQ[ "Text" ~~ crlf ]),
-                MathTeX[ "x^2", "Boxes" ],
-                _String? (StringMatchQ[ crlf ~~ "More" ])
-            },
-            { MathTeX[ "x", "Boxes" ], _String? (StringMatchQ[ crlf ]), MathTeX[ "y", "Boxes" ] }
-        }
-    ],
+            "Text\n",
+            MathTeX[ "x^2", "Boxes" ],
+            "\nMore"
+        },
+        { MathTeX[ "x", "Boxes" ], "\n", MathTeX[ "y", "Boxes" ] },
+        { MathTeX[ "x", "Boxes" ], "\n", MathTeX[ "y", "Boxes" ] }
+    },
     SameTest -> MatchQ,
-    TestID   -> "Math-Delimiters-CRLF@@Tests/FormattingMath.wlt:230,1-244,2"
+    TestID   -> "Math-Delimiters-CRLF@@Tests/FormattingMath.wlt:231,1-244,2"
 ]
 
 (* A multi-line environment with "&" and "\\": *)

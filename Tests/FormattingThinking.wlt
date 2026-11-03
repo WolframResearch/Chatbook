@@ -295,13 +295,13 @@ VerificationTest[
     TestID   -> "Thinking-Unicode@@Tests/FormattingThinking.wlt:291,1-296,2"
 ]
 
-(* With "\r\n" line endings, the tags are recognized and the thoughts are trimmed: *)
+(* With "\r\n" line endings, the tags are recognized, and the text around them is the same as with "\n": *)
 VerificationTest[
     thinkingFormat[ "Before\r\n<think>\r\nSome thoughts\r\n</think>\r\nAfter" ],
     {
-        s1_String /; StringTrim @ s1 === "Before",
+        "Before\n",
         thinkingThoughtsCell[ thinkingText[ "Some thoughts" ], $thinkingFallbackLabel, $thinkingLiteralMeta ],
-        s2_String /; StringTrim @ s2 === "After"
+        "\n\nAfter"
     },
     SameTest -> MatchQ,
     TestID   -> "Thinking-CRLF@@Tests/FormattingThinking.wlt:299,1-308,2"
