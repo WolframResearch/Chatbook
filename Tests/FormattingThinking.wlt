@@ -594,7 +594,7 @@ VerificationTest[
 ]
 
 (* Summary tags may have no content at all (a reasoning item without a summary still gets a tag to hold its
-   signature), unlike literal tags (see the report for "<think></think>"): *)
+   signature). For literal tags with no content, see Thinking-Empty-No-Content: *)
 VerificationTest[
     thinkingFormat /@ { "<think type='summary' id='a'></think>\nAnswer", "<think type='summary'>\n</think>\nAnswer" },
     {
@@ -1555,6 +1555,55 @@ VerificationTest[
     ],
     SameTest -> MatchQ,
     TestID   -> "Thinking-Speech-Serialize-Audio@@Tests/FormattingThinking.wlt:1536,1-1558,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Tags With No Content*)
+
+(* A closed literal tag with nothing inside shows only the label, like one with only whitespace inside (see
+   Thinking-Empty-Whitespace): *)
+VerificationTest[
+    {
+        thinkingFormat /@ { "<think></think>\nAnswer", "<thinking></thinking>\nAnswer", "<think></think>" },
+        thinkingFormat[ "<think></think>\nAnswer", "Streaming" ],
+        thinkingRoundTrip[ "<think></think>\nAnswer" ]
+    },
+    {
+        {
+            { thinkingEmptyCell[ $thinkingFallbackLabel, $thinkingLiteralMeta ], "\n\nAnswer" },
+            { thinkingEmptyCell[ $thinkingFallbackLabel, $thinkingLiteralMeta ], "\n\nAnswer" },
+            { thinkingEmptyCell[ $thinkingFallbackLabel, $thinkingLiteralMeta ] }
+        },
+        { thinkingEmptyCell[ $thinkingFallbackLabel, $thinkingLiteralMeta ], "\n\nAnswer" },
+        "<think>\n\n</think>\n\nAnswer"
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Thinking-Empty-No-Content@@Tests/FormattingThinking.wlt:1554,1-1571,2"
+]
+
+(* A complete opening tag with nothing after it yet shows the thinking box with no thoughts, as it does after a line
+   break (see Thinking-Unterminated-Just-Opened): *)
+VerificationTest[
+    {
+        thinkingFormat /@ { "<think>", "<thinking>", "Text <think>" },
+        thinkingFormat[ #, "Streaming" ] & /@ { "<think>", "<thinking>" },
+        thinkingRoundTrip[ "<think>" ]
+    },
+    {
+        {
+            { thinkingOpenerCell[ "", $thinkingActiveLabel, $thinkingLiteralMeta ] },
+            { thinkingOpenerCell[ "", $thinkingActiveLabel, $thinkingLiteralMeta ] },
+            { "Text ", thinkingOpenerCell[ "", $thinkingActiveLabel, $thinkingLiteralMeta ] }
+        },
+        {
+            { thinkingOpenerCell[ "", $thinkingActiveLabel, $thinkingLiteralMeta ] },
+            { thinkingOpenerCell[ "", $thinkingActiveLabel, $thinkingLiteralMeta ] }
+        },
+        "<think>\n\n</think>"
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Thinking-Unterminated-Opening-Tag-Only@@Tests/FormattingThinking.wlt:1575,1-1595,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

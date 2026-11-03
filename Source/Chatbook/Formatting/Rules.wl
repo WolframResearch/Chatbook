@@ -89,7 +89,9 @@ $$headingLine    = $$newlinesBefore ~~ h: "#".. ~~ " " ~~ sec: Longest[ Except[ 
 $$resourceFunctionLink = "[`ResourceFunction[" ~~ name: Except[ "[" ].. ~~ "]`](" ~~ Except[ ")" ].. ~~ ")";
 $$codeLink             = "[`" ~~ label: Except[ "[" ].. ~~ "`](" ~~ url: Except[ ")" ].. ~~ ")";
 
-(* Inline code and math, which are in both $textDataFormatRules and $stringFormatRules: *)
+(* Inline code and math, which are in both $textDataFormatRules and $stringFormatRules. autoCorrect rewrites ```x``` on
+   one line as ``x``, and ````x```` as ```x```, so the triple backtick rules are for code in four backticks: *)
+$$tripleBacktickCode = "```" ~~ code: Except[ "\n" ].. ~~ "```";
 $$doubleBacktickCode = "``" ~~ code__ ~~ "``";
 $$backtickName       = "`" ~~ code: Except[ WhitespaceCharacter ].. ~~ "`";
 $$backtickCode       = "`" ~~ code: Except[ "`"|"\n" ].. ~~ "`";
@@ -144,8 +146,7 @@ $$escapedDisplayMathInline = RegularExpression[ "(?s)(?<=\\s)" <> esc[ "[" ] <> 
 
    #      Rule                                       Token                       Notes
    1-5    think tags: with attributes, <think>,      thoughtsOpener,             Shortest, so the first closing tag wins
-          <thinking>, then the unclosed forms        thinkingOpener (unclosed)   (no nesting); <think>...</think> needs
-                                                                                 at least one character; swallow fences
+          <thinking>, then the unclosed forms        thinkingOpener (unclosed)   (no nesting); swallow fences
    6      <speech-input>...</speech-input>           speechCell
    7      escaped \[...\] between whitespace         mathCell                    only when the text has escapes
    8      code fence                                 codeBlockCell, tableCell    can open mid-line; closes at the next
@@ -164,9 +165,9 @@ $$escapedDisplayMathInline = RegularExpression[ "(?s)(?<=\\s)" <> esc[ "[" ] <> 
    17     block quote                                blockQuoteCell              as many lines as possible
    18-19  [`ResourceFunction[...]`](url),            inlineCodeCell,
           [`label`](url)                             "[label](url)"
-   20-22  ``code``, `name` (inlineSyntaxQ), `code`   inlineCodeCell              code wins over emphasis and link
-                                                                                 labels in plain text
-   23-26  $$...$$, \(...\), \[...\],                 mathCell                    $$...$$ can span blank lines; \[...\]
+   20-23  ```code``` (one line), ``code``,           inlineCodeCell              code wins over emphasis and link
+          `name` (inlineSyntaxQ), `code`                                         labels in plain text
+   24-27  $$...$$, \(...\), \[...\],                 mathCell                    $$...$$ can span blank lines; \[...\]
           $...$ (probablyMathQ)                                                  is only reachable through &#92;
 
    Newlines that the rules take (the others stay in the text around them):
@@ -179,10 +180,10 @@ $$escapedDisplayMathInline = RegularExpression[ "(?s)(?<=\\s)" <> esc[ "[" ] <> 
    before a cell and trims both ends. *)
 $textDataFormatRules = {
     Shortest[ $$thinkTagWithAttributes ~~ thoughts___ ~~ "</think>" ] :> thoughtsOpener[ thoughts, attributes ],
-    Shortest[ "<think>"~~thoughts__~~"</think>" ] :> thoughtsOpener @ thoughts,
-    Shortest[ "<thinking>"~~thoughts__~~"</thinking>" ] :> thoughtsOpener @ thoughts,
+    Shortest[ "<think>"~~thoughts___~~"</think>" ] :> thoughtsOpener @ thoughts,
+    Shortest[ "<thinking>"~~thoughts___~~"</thinking>" ] :> thoughtsOpener @ thoughts,
     Shortest[ $$thinkTagWithAttributes ~~ thoughts___ ~~ EndOfString ] :> thinkingOpener[ thoughts, attributes ],
-    Shortest[ ("<think>"|"<thinking>")~~thoughts__~~EndOfString ] :> thinkingOpener @ thoughts,
+    Shortest[ ("<think>"|"<thinking>")~~thoughts___~~EndOfString ] :> thinkingOpener @ thoughts,
     speech: Shortest[ "<speech-input>"~~__~~"</speech-input>" ] :> speechCell @ speech,
     math: $$escapedDisplayMath :> mathCell @ StringTake[ math, { 5, -5 } ],
     $$codeFenceOpen ~~ $$codeFenceBody ~~ ("```"|EndOfString) /; toolCallStringFreeQ @ code :>
@@ -196,6 +197,7 @@ $textDataFormatRules = {
     quote: $$blockQuote :> blockQuoteCell @ quote,
     $$resourceFunctionLink :> inlineCodeCell[ "ResourceFunction[" <> name <> "]" ],
     $$codeLink :> "[" <> label <> "]("<>url<>")",
+    $$tripleBacktickCode :> inlineCodeCell @ code,
     $$doubleBacktickCode /; StringFreeQ[ code, "``" ] :> inlineCodeCell @ code,
     $$backtickName /; inlineSyntaxQ @ code :> inlineCodeCell @ code,
     $$backtickCode :> inlineCodeCell @ code,
@@ -290,7 +292,7 @@ $dynamicSplitRules = {
 (* The inline rules, for each text part and for the text of list items, headings, quotes and table cells. The order
    works as in $textDataFormatRules: the first match wins, and then the first rule. *)
 $stringFormatRules = {
-    "```" ~~ code: Except[ "\n" ].. ~~ "```" :> inlineCodeCell @ code,
+    $$tripleBacktickCode :> makeResultCell @ inlineCodeCell @ code,
     $$boldItalic /; StringFreeQ[ text, "\n" ] :> styleBox[ text, FontWeight -> Bold, FontSlant -> Italic ],
     $$boldItalicUnderscores /; StringFreeQ[ text, "\n" ] :> styleBox[ text, FontWeight -> Bold, FontSlant -> Italic ],
     $$bold /; StringFreeQ[ text, "\n" ] :> styleBox[ text, FontWeight -> Bold ],
