@@ -634,7 +634,7 @@ VerificationTest[
 ]
 
 (* The LLM may write "\r\n" line breaks, while Chatbook appends the tool result with "\n". The tool call is still
-   recognized, and its result is parsed (so it's labeled "Used"). The stored tool call text is the original text: *)
+   recognized, and its result is parsed (so it's labeled "Used"). The stored tool call text has "\n" line breaks: *)
 VerificationTest[
     With[
         {
@@ -646,7 +646,7 @@ VerificationTest[
         {
             Count[ FormatMarkdown[ "A\r\n\r\n" <> tool <> "\n\nB" ], Cell[ _, "InlineToolCall", ___ ] ],
             tcLabel @ First @ tcCells[ "A\r\n\r\n" <> tool <> "\n\nB" ],
-            tcTags[ "A\r\n\r\n" <> tool <> "\n\nB" ][ "ToolCall" ] === tool
+            tcTags[ "A\r\n\r\n" <> tool <> "\n\nB" ][ "ToolCall" ] === StringReplace[ tool, "\r\n" -> "\n" ]
         }
     ],
     {

@@ -263,7 +263,7 @@ VerificationTest[
     TestID   -> "Inline-Emphasis-Not-Across-Lines@@Tests/FormattingInline.wlt:247,1-264,2"
 ]
 
-(* Emphasis on either side of a line break is formatted separately, and the line break (including "\r\n") is kept: *)
+(* Emphasis on either side of a line break is formatted separately, and the line break is kept (a "\r\n" as "\n"): *)
 VerificationTest[
     {
         formatted[ "**x**\n**y**" ],
@@ -274,7 +274,7 @@ VerificationTest[
     {
         { StyleBox[ "x", FontWeight -> Bold ], "\n", StyleBox[ "y", FontWeight -> Bold ] },
         { "A\nB ", StyleBox[ "it", FontSlant -> Italic ], "\nC" },
-        { "Line one with ", StyleBox[ "it", FontSlant -> Italic ], "\r\nLine two with ", StyleBox[ "bold", FontWeight -> Bold ] },
+        { "Line one with ", StyleBox[ "it", FontSlant -> Italic ], "\nLine two with ", StyleBox[ "bold", FontWeight -> Bold ] },
         { "Text\n\n", StyleBox[ "Bold paragraph", FontWeight -> Bold ], "\n\nMore" }
     },
     SameTest -> MatchQ,

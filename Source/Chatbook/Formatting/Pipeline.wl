@@ -12,7 +12,10 @@ Needs[ "Wolfram`Chatbook`CodeCheck`" ];
 (* ::Subsection::Closed:: *)
 (*reformatTextData*)
 reformatTextData // beginDefinition;
-reformatTextData[ string_String ] := reformatTextData0 @ autoCorrect @ string;
+
+(* The rules only look for "\n", so "\r\n" and a lone "\r" (both line endings in CommonMark) become "\n" first: *)
+reformatTextData[ string_String ] := reformatTextData0 @ autoCorrect @ StringReplace[ string, "\r\n" | "\r" -> "\n" ];
+
 reformatTextData // endDefinition;
 
 
