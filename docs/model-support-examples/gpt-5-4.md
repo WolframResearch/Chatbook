@@ -507,7 +507,7 @@ The fallback change (`combined` instead of `messages`) ensures that if `applyPro
 - **Behavioral issues surface during testing.** Each fix should be as targeted and model-gated as possible to avoid regressions for other models.
 - **The on-demand prompt system** (`$disabledBasePrompts` + `"EnabledBasePrompts"`) enables fine-grained control: prompts can be both content-triggered and model-gated.
 - **Pipeline ordering matters.** When adding dynamic prompt triggers, verify that the prompt assembly happens AFTER all trigger points have executed.
-- **Formatting fixes must update both generation and serialization.** Changes to `Formatting.wl` (how cells are created) need corresponding changes in `Serialization.wl` (how cells are serialized back to markdown) to ensure round-trip correctness.
+- **Formatting fixes must update both generation and serialization.** Changes to the `Formatting/` files (how cells are created) need corresponding changes in `Serialization.wl` (how cells are serialized back to markdown) to ensure round-trip correctness.
 
 ### See Also
 
