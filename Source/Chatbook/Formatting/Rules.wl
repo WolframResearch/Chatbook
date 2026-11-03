@@ -272,8 +272,9 @@ toolCallStringFreeQ // endDefinition;
    they end: a match has to be complete (there's no EndOfString alternative). The tool call rules also leave out the
    code fence line that can come before a tool call (it stays in the static part, where formatTextString drops it) and
    the /retry check, and the TOOLCALL rule adds a newline after its match. The other block rules aren't here, so a
-   split can also happen inside a think tag, list item, heading, table, block quote or unclosed code block, where
-   $textDataFormatRules gives no split (see the Consistency tests in Tests/DynamicSplit.wlt).
+   match can also be found inside a think tag, list item, heading, table, block quote or unclosed code block, where
+   $textDataFormatRules gives no split (see the Consistency tests in Tests/DynamicSplit.wlt). splitDynamicContent
+   declines a split in a think tag (see `thinkTagSplitQ` in SendChat.wl).
 *)
 $dynamicSplitRules = {
     s: ($$codeFenceOpen ~~ $$codeFenceBody ~~ "```") /; toolCallStringFreeQ @ code :> s,

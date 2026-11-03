@@ -1772,7 +1772,8 @@ $maxChunkDebugSize = 1000;
 
 (* Splits dynamic content at completed code blocks, images, and tool calls (see `$dynamicSplitRules`), so that the
    completed parts can be written as static content. The dynamic content can be the entire response so far, so the
-   full split is skipped whenever it's clear that the content has no split points (see `dynamicSplitSkipQ`). *)
+   full split is skipped whenever it's clear that the content has no split points (see `dynamicSplitSkipQ`). A split
+   in a think tag is declined (see `thinkTagSplitQ`). *)
 splitDynamicContent // beginDefinition;
 
 splitDynamicContent[ content_String ] :=
@@ -1781,13 +1782,34 @@ splitDynamicContent[ content_String ] :=
         DeleteCases[ { content }, "" ]
         ,
         With[ { split = StringSplit[ content, $dynamicSplitRules, All ] },
-            (* With All, any match gives at least three parts, so a single part means there are no split points: *)
+            (* With All, any match gives at least three parts, so a single part means there are no split points.
+               A declined split still has split points, so it leaves None here and the next chunk checks again: *)
             $dynamicSplitChecked = If[ Length @ split === 1, content, None ];
-            DeleteCases[ split, "" ]
+            If[ thinkTagSplitQ @ split, { content }, DeleteCases[ split, "" ] ]
         ]
     ];
 
 splitDynamicContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*thinkTagSplitQ*)
+
+(* The split rules don't see think tags, so a split next to a match that starts in an open think tag isn't a boundary
+   between the parts that the formatter gives for the whole text (quirk 202). That's the case when the static part ends
+   in an open think tag, or when a match contains a closing tag (it starts in the thoughts and ends after them, which
+   also pairs the code fences after it differently). `split` is the result of `StringSplit[ content, rules, All ]`. *)
+thinkTagSplitQ // beginDefinition;
+
+thinkTagSplitQ[ split_List ] :=
+    With[ { static = StringJoin @ Most @ split },
+        StringContainsQ[ static, "<think", IgnoreCase -> True ] && Or[
+            StringCount[ static, "<think", IgnoreCase -> True ] > StringCount[ static, "</think", IgnoreCase -> True ],
+            AnyTrue[ split[[ 2 ;; ;; 2 ]], StringContainsQ[ #, "</think", IgnoreCase -> True ] & ]
+        ]
+    ];
+
+thinkTagSplitQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
