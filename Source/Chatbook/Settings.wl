@@ -1890,6 +1890,55 @@ unsetCurrentChatSettings0[ obj: $$feObj, key_? StringQ ] := setCurrentChatSettin
 unsetCurrentChatSettings0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*unsetChatSettingsKeys*)
+(* Removes several explicitly stored settings at once with a single read and a single write,
+   without writing any default values back as explicit settings. *)
+unsetChatSettingsKeys // beginDefinition;
+unsetChatSettingsKeys[ keys: { ___String } ] := unsetChatSettingsKeys[ $FrontEnd, keys ];
+unsetChatSettingsKeys[ obj: $$feObj, keys: { ___String } ] /; $CloudEvaluation := unsetChatSettingsKeys0[ obj, keys ];
+unsetChatSettingsKeys[ obj: $$feObj, keys: { ___String } ] := UsingFrontEnd @ unsetChatSettingsKeys0[ obj, keys ];
+unsetChatSettingsKeys // endDefinition;
+
+
+unsetChatSettingsKeys0 // beginDefinition;
+
+unsetChatSettingsKeys0[ obj_, keys_ ] := Enclose[
+    Module[ { stored, remaining },
+        stored    = ConfirmBy[ storedChatSettings @ obj, AssociationQ, "StoredSettings" ];
+        remaining = KeyDrop[ stored, keys ];
+        If[ remaining =!= stored,
+            setCurrentChatSettings1[ obj, If[ remaining === <| |>, Inherited, remaining ] ]
+        ];
+        remaining
+    ],
+    throwInternalFailure
+];
+
+unsetChatSettingsKeys0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*storedChatSettings*)
+(* The settings explicitly stored at the given scope, without inherited or default values. *)
+storedChatSettings // beginDefinition;
+
+storedChatSettings[ $$frontEndObject ] /; $CloudEvaluation :=
+    getGlobalSettingsFile[ ];
+
+storedChatSettings[ obj: $$feObj ] :=
+    toStoredSettingsAssociation @ CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings" } ];
+
+storedChatSettings // endDefinition;
+
+
+toStoredSettingsAssociation // beginDefinition;
+toStoredSettingsAssociation[ as_Association? AssociationQ ] := as;
+toStoredSettingsAssociation[ rules: { (_Rule|_RuleDelayed)... } ] := Association @ rules;
+toStoredSettingsAssociation[ _ ] := <| |>;
+toStoredSettingsAssociation // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*currentChatSettings*)
 currentChatSettings // beginDefinition;
@@ -1928,10 +1977,10 @@ currentChatSettings // endDefinition;
 
 currentChatSettings0 // beginDefinition;
 
-currentChatSettings0[ fe: $$frontEndObject ] /; $CloudEvaluation :=
+currentChatSettings0[ $$frontEndObject ] /; $CloudEvaluation :=
     getGlobalChatSettings[ ];
 
-currentChatSettings0[ fe: $$frontEndObject, key_String ] /; $CloudEvaluation :=
+currentChatSettings0[ $$frontEndObject, key_String ] /; $CloudEvaluation :=
     getGlobalChatSettings[ key ];
 
 currentChatSettings0[ obj: _NotebookObject|_FrontEndObject|$FrontEndSession ] := (

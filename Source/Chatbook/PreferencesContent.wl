@@ -2270,10 +2270,25 @@ resetButton[ Dynamic[ tab_ ], Dynamic[ dmPrefCache_ ] ] :=
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*resetChatPreferences*)
+$notebooksTabSettingKeys = {
+    "Assistance",
+    "AutoFormat",
+    "ChatHistoryLength",
+    "IncludeHistory",
+    "LLMEvaluator",
+    "MergeMessages",
+    "Multimodal",
+    "OpenAIAPICompletionURL",
+    "Temperature",
+    "ToolCallFrequency",
+    "ToolsEnabled",
+    "UserInstructions"
+};
+
 resetChatPreferences // beginDefinition;
 
 resetChatPreferences[ Dynamic[ dmPrefCache_ ], "Notebooks" ] := (
-    CurrentChatSettings[ $FrontEnd ] = Inherited;
+    unsetChatSettingsKeys[ $FrontEnd, $notebooksTabSettingKeys ];
     dmPrefCache = CurrentChatSettings[ $FrontEnd ];
     updateDynamics[ "Preferences" ];
 );

@@ -417,6 +417,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `trackedDynamic;
 `trackedDynamicWrapper;
 `truncateString;
+`unsetChatSettingsKeys;
 `unsetCV;
 `updateCellDingbats;
 `updateDynamics;
