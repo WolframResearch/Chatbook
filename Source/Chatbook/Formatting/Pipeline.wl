@@ -68,6 +68,9 @@ unescapeMarkdownStrings // endDefinition;
 (*importHTMLEntities*)
 importHTMLEntities // beginDefinition;
 
+(* Thoughts are decoded with the rest of the text, so formatThoughts sets this to avoid decoding them twice: *)
+importHTMLEntities[ string_String ] /; $htmlEntitiesDecoded := string;
+
 (* Named entities (case-sensitive, as in HTML) and numeric ones are decoded in a single pass, so "&amp;lt;" gives
    "&lt;". Anything else is left as it is: *)
 importHTMLEntities[ string_String ] := StringReplace[
@@ -80,6 +83,8 @@ importHTMLEntities[ string_String ] := StringReplace[
 ];
 
 importHTMLEntities // endDefinition;
+
+$htmlEntitiesDecoded = False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
