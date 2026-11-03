@@ -1671,30 +1671,31 @@ chatbarAddServiceCreditsDisplay[ userdata_, tier: "Research", creditChoices_ ] :
 (*chatbarStateSetterBar*)
 
 
+chatbarStateSetterBar // beginDefinition;
+
 chatbarStateSetterBar[ nbo_NotebookObject ] :=
-    DynamicModule[ { localSetting },
-        DynamicWrapper[
-            Pane[
-                Grid[
-                    {
-                        Table[
-                            chatbarStateSetter[ nbo, Dynamic @ localSetting, state ],
-                            { state, { "Full", "Minimized", "Off" } }
-                        ]
-                    }
-                ],
-                ImageMargins -> 0
-            ]
-            ,
-            setChatbarState[ nbo, localSetting ]
-            ,
-            Method         -> "Queued",
-            TrackedSymbols :> { localSetting }
-        ],
-        Initialization   :> (localSetting = "Full") (* the only way to open the menu is from a full state *)
+    DynamicModule[ { localSetting = "Full" }, (* the only way to open the menu is from a full state *)
+        Pane[
+            Grid[
+                {
+                    Table[
+                        chatbarStateSetter[ nbo, Dynamic @ localSetting, state ],
+                        { state, { "Full", "Minimized", "Off" } }
+                    ]
+                }
+            ],
+            ImageMargins -> 0
+        ]
     ];
 
-chatbarStateSetter[ nbo_NotebookObject, Dynamic[ localSetting_ ], state_ ] :=
+chatbarStateSetterBar // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatbarStateSetter*)
+chatbarStateSetter // beginDefinition;
+
+chatbarStateSetter[ nbo_NotebookObject, Dynamic[ localSetting_ ], state_String ] :=
     Button[
         Pane[
             Column[
@@ -1711,7 +1712,7 @@ chatbarStateSetter[ nbo_NotebookObject, Dynamic[ localSetting_ ], state_ ] :=
                     Grid[
                         { {
                             RadioButton[
-                                Dynamic @ localSetting,
+                                Dynamic[ localSetting, (localSetting = #; setChatbarState[ nbo, # ])& ],
                                 state
                             ],
                             tr[ "ChatbarOptions" <> state ]
@@ -1727,13 +1728,16 @@ chatbarStateSetter[ nbo_NotebookObject, Dynamic[ localSetting_ ], state_ ] :=
             BaselinePosition -> Baseline,
             ImageMargins     -> 10
         ],
-        localSetting = state,
+        localSetting = state;
+        setChatbarState[ nbo, state ],
         Appearance       -> "Suppressed",
         BaselinePosition -> Baseline,
         BaseStyle        -> { FontSize -> Inherited-1 },
         BoxID            -> "NAChatbarSetterState" <> state,
         DefaultBaseStyle -> { }
-    ]
+    ];
+
+chatbarStateSetter // endDefinition;
 
 
 setChatbarState[ nbo_NotebookObject, newValue_ ] := With[ { chatbarCell = First[ Cells[ nbo, AttachedCell -> True, CellStyle -> "ChatInputField" ], $Failed ] },
