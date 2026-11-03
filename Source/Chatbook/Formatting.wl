@@ -70,8 +70,8 @@ $externalLanguageRules = Replace[
     { 1 }
 ];
 
-$$ws      = Shortest[ WhitespaceCharacter... ];
-$$mdRow1  = $$ws ~~ "|" ~~ Except[ "\n" ]... ~~ "|" ~~ $$ws ~~ ("\n"|EndOfString);
+$$wsShortest = Shortest[ WhitespaceCharacter... ];
+$$mdRow1  = $$wsShortest ~~ "|" ~~ Except[ "\n" ]... ~~ "|" ~~ $$wsShortest ~~ ("\n"|EndOfString);
 (* The same rows as Except[ "\n" ].. ~~ Repeated[ "|" ~~ Except[ "\n" ]..., { 2, Infinity } ] ~~ ("\n"|EndOfString):
    a character, then at least two "|" before the end of the line. That pattern backtracks through the rest of the line
    at every position the split tries it (1.8 s for a 10 KB line without "|"). This one can't backtrack (40 ms): *)
@@ -79,7 +79,7 @@ $$mdRow2  = RegularExpression[ "[^\\n][^\\n|]*+\\|[^\\n|]*+\\|[^\\n]*+(?:\\n|\\z
 $$mdRow   = $$mdRow1 | $$mdRow2;
 $$mdTable = $$mdRow ~~ $$mdRow ..;
 
-$$blockQuoteLine = StartOfLine ~~ ">" ~~ $$ws ~~ Except[ "\n" ].. ~~ ("\n"|EndOfString);
+$$blockQuoteLine = StartOfLine ~~ ">" ~~ $$wsShortest ~~ Except[ "\n" ].. ~~ ("\n"|EndOfString);
 $$blockQuote     = Longest[ $$blockQuoteLine.. ];
 
 $$hyphenDelimiter     = Repeated[ "-", { 3, Infinity } ];
