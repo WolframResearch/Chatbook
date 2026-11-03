@@ -34,7 +34,7 @@ VerificationTest[
     ClearAll[
         escPair, escSameQ, escCodeBlock, escToolCall, escItem, escSubitem, escSection, escInlineCode, escRefLink,
         escLink, escTeX, escQuote, escThoughts, escDelimiter, escPreformatted, escDiscardedContent, escReformat,
-        escToolCallText, escToolCallText2
+        escToolCallText, escToolCallText2, escSpeechStub
     ];
 
     (* Formats the same document twice, with "{$}" replaced by an escaped dollar sign "\$" and by a plain "$". Both
@@ -930,6 +930,68 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Raw Text*)
+
+(* Code blocks, tool calls, think tags and speech input keep the exact text they were written with, including every
+   escape, when the text has escapes elsewhere: *)
+VerificationTest[
+    escPreformatted[ "Cost \\$5\n\n```\na \\\\ \\` \\$ \\* \\_ \\# \\| \\[ \\] b\n```" ],
+    { "a \\\\ \\` \\$ \\* \\_ \\# \\| \\[ \\] b" },
+    SameTest -> MatchQ,
+    TestID   -> "Escapes-Raw-Text-Code-Block@@Tests/FormattingEscapes.wlt:937,1-942,2"
+]
+
+(* The tool call text is kept in the tagging rules of the tool call cell: *)
+VerificationTest[
+    Cases[
+        FormatMarkdown[ "Cost \\$5\n" <> # ],
+        Cell[ _, "InlineToolCall", ___, TaggingRules -> KeyValuePattern[ "ToolCall" -> s_ ], ___ ] :> s,
+        Infinity
+    ] & /@ {
+        "/wl\nStringJoin[\"a\\\\b\", \"\\$x \\* \\[Alpha]\"]\n/exec\nRESULT\nOut[1]= 2\nENDRESULT(abc123)",
+        "TOOLCALL: wolfram_language_evaluator\n{\"code\":\"\\\\$x \\* \\\\[Alpha]\"}\nENDARGUMENTS\nENDTOOLCALL\nRESULT\n2\nENDRESULT(def456)"
+    },
+    {
+        { "/wl\nStringJoin[\"a\\\\b\", \"\\$x \\* \\[Alpha]\"]\n/exec\nRESULT\nOut[1]= 2\nENDRESULT(abc123)" },
+        { "TOOLCALL: wolfram_language_evaluator\n{\"code\":\"\\\\$x \\* \\\\[Alpha]\"}\nENDARGUMENTS\nENDTOOLCALL\nRESULT\n2\nENDRESULT(def456)" }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Escapes-Raw-Text-Tool-Call@@Tests/FormattingEscapes.wlt:945,1-960,2"
+]
+
+(* The content of a think tag is formatted from its raw text, so a code block in it keeps its escapes: *)
+VerificationTest[
+    escPreformatted[ "Cost \\$5\n<think>a \\* b\n\n```\na \\\\ \\` \\$ \\* \\_ \\# \\| \\[ \\] b\n```\n</think>\n\nAnswer" ],
+    { "a \\\\ \\` \\$ \\* \\_ \\# \\| \\[ \\] b" },
+    SameTest -> MatchQ,
+    TestID   -> "Escapes-Raw-Text-Thoughts@@Tests/FormattingEscapes.wlt:963,1-968,2"
+]
+
+(* The same for an unterminated think tag, when finished and while streaming: *)
+VerificationTest[
+    Cases[
+        FormatMarkdown[ "Cost \\$5\n<think>a \\* b\n\n```\na \\\\ \\` \\$ \\* \\_ \\# \\| \\[ \\] b\n```", # ],
+        Cell[ code_String, "ChatPreformatted", ___ ] :> code,
+        Infinity
+    ] & /@ { "Finished", "Streaming" },
+    { { "a \\\\ \\` \\$ \\* \\_ \\# \\| \\[ \\] b" }, { "a \\\\ \\` \\$ \\* \\_ \\# \\| \\[ \\] b" } },
+    SameTest -> MatchQ,
+    TestID   -> "Escapes-Raw-Text-Thinking@@Tests/FormattingEscapes.wlt:971,1-980,2"
+]
+
+(* A speech input element is passed to formatSpeechInput as written (it's replaced by a stub here, since it fails in
+   tests, see FormattingThinking.wlt): *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Common`formatSpeechInput = escSpeechStub },
+        FormatMarkdown[ "Cost \\$5 <speech-input>a \\\\ \\` \\$ \\* \\_ \\# \\| \\[ \\] b</speech-input>" ]
+    ],
+    { "Cost $5 ", escSpeechStub[ "<speech-input>a \\\\ \\` \\$ \\* \\_ \\# \\| \\[ \\] b</speech-input>" ] },
+    SameTest -> MatchQ,
+    TestID   -> "Escapes-Raw-Text-Speech@@Tests/FormattingEscapes.wlt:984,1-991,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Escaped and Plain Paths*)
 
 (* A key invariant: a document with an escape looks the same as the equivalent document without one. These documents
@@ -961,7 +1023,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "Escapes-Paths-Equivalent@@Tests/FormattingEscapes.wlt:938,1-965,2"
+    TestID   -> "Escapes-Paths-Equivalent@@Tests/FormattingEscapes.wlt:1000,1-1027,2"
 ]
 
 (* A larger document with several block types: *)
@@ -985,7 +1047,67 @@ VerificationTest[
         x_
     },
     SameTest -> MatchQ,
-    TestID   -> "Escapes-Paths-Equivalent-Document@@Tests/FormattingEscapes.wlt:968,1-989,2"
+    TestID   -> "Escapes-Paths-Equivalent-Document@@Tests/FormattingEscapes.wlt:1030,1-1051,2"
+]
+
+(* The same for documents that looked different with an escape before there was a single formatting path for both:
+   line breaks next to code blocks, think tags, fenced tables and tool calls, and whitespace-delimited \[...\] math
+   (compared with the same math written as $$...$$): *)
+VerificationTest[
+    Select[
+        Join[
+            { StringReplace[ #, "{$}" -> "\\$" ], StringReplace[ #, "{$}" -> "$" ] } & /@ {
+                "Cost {$}5\n\n```wl\n1+1\n```\n\n- a",
+                "Cost {$}5\n\n```wl\n1+1\n```\n\nText",
+                "Cost {$}5\n\n```wl\n1+1\n```\n\n## After",
+                "Before {$}5\n\n```python\nx\n```\n\nAfter",
+                "Text {$}5:\n```wl\n1+1\n```",
+                "1. Step {$}5\n   ```wl\n   1+1\n   ```\n2. Next",
+                "Text {$}5:\n\n\n```wl\n1+1\n```",
+                "Line one {$}5\n\n\n\n```wl\n1\n```\n\n\n\nLine two",
+                "Text {$}5\n\n```wl\n1\n```\nText right after",
+                "```wl\n1\n```\n```wl\n2\n```\n{$}5",
+                "Text {$}5\n\n```wl\n1\n```\n\n```wl\n2\n```\n\nEnd",
+                "```wl\n1\n```\n\n   After {$}5",
+                "Text {$}5\r\n\r\n```wl\r\n1+1\r\n```\r\n\r\nAfter",
+                "- item {$}5\n  ```wl\n  1\n  ```\n- next",
+                "## Head {$}5\n```wl\n1\n```\nText",
+                "> quote {$}5\n\n```wl\n1\n```\n\nAfter",
+                "| a | b |\n|---|---|\n| {$}5 | 2 |\n\n```wl\n1\n```\n\nAfter",
+                "Text {$}5\n\n---\n\n```wl\n1\n```",
+                "**Bold {$}5**\n\n```wl\n1\n```",
+                "Text `code` {$}5\n\n```wl\nx\n```\n\nMore `code`",
+                "Intro {$}5\n\n```\n| a | b |\n|---|---|\n| 1 | 2 |\n```\n\nAfter",
+                "Answer {$}5\n\n<think>more</think>\n\nEnd",
+                "<think>thoughts</think>\n\nAnswer {$}5",
+                "<think>a\n```wl\n1\n```\nb {$}5</think>\n\nAnswer",
+                "<think>a {$}5\n\n```wl\n1\n```\n\nb</think>\n\nAnswer",
+                "Price {$}5 <think>x</think> done",
+                "{$}5\n<think>**bold**</think>\nafter",
+                "```wl\n1\n```\n\n<think>t</think>\n\n{$}5",
+                "<think>partial {$}5\n\n```wl\n1",
+                "Before {$}5\n" <> escToolCallText <> "\n\n```wl\n1\n```\n\nAfter",
+                "Text {$}5 and [link](https://example.com)\n\n```wl\n1\n```"
+            },
+            {
+                { "Display \\[x^2\\] here", "Display $$x^2$$ here" },
+                { "Formula:\n\n\\[x^2\\]\n\nDone", "Formula:\n\n$$x^2$$\n\nDone" },
+                { "Here:\n\\[\n\\frac{a}{b}\n\\]\nDone", "Here:\n$$\n\\frac{a}{b}\n$$\nDone" },
+                { "\\[a\\] and \\[b\\]", "$$a$$ and $$b$$" },
+                { "- item \\[x^2\\] end", "- item $$x^2$$ end" },
+                { "## Heading \\[x^2\\]", "## Heading $$x^2$$" }
+            }
+        ],
+        Function[ pair,
+            ! AllTrue[
+                { "Finished", "Streaming" },
+                Function[ status, SameQ @@ Map[ NormalizeTextData @ FormatMarkdown[ #, status ] &, pair ] ]
+            ]
+        ]
+    ],
+    { },
+    SameTest -> MatchQ,
+    TestID   -> "Escapes-Paths-Equivalent-Spacing@@Tests/FormattingEscapes.wlt:1056,1-1111,2"
 ]
 
 (* Both serialize to the same markdown: *)
@@ -1005,7 +1127,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "Escapes-Paths-Same-Serialization@@Tests/FormattingEscapes.wlt:992,1-1009,2"
+    TestID   -> "Escapes-Paths-Same-Serialization@@Tests/FormattingEscapes.wlt:1114,1-1131,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1017,7 +1139,7 @@ VerificationTest[
     FormatMarkdown /@ { "\\$x$ not math", "\\$\\$x\\$\\$ literal", "Escaped \\$x+y\\$ is not math" },
     { { "$x$ not math" }, { "$$x$$ literal" }, { "Escaped $x+y$ is not math" } },
     SameTest -> MatchQ,
-    TestID   -> "Escapes-Math-Escaped-Dollars@@Tests/FormattingEscapes.wlt:1016,1-1021,2"
+    TestID   -> "Escapes-Math-Escaped-Dollars@@Tests/FormattingEscapes.wlt:1138,1-1143,2"
 ]
 
 (* Escaped dollar signs and math in the same text, and an escaped backslash before math: *)
@@ -1028,7 +1150,7 @@ VerificationTest[
         { "\\", escTeX[ "x^2" ], " after backslash" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Escapes-Math-Mixed@@Tests/FormattingEscapes.wlt:1024,1-1032,2"
+    TestID   -> "Escapes-Math-Mixed@@Tests/FormattingEscapes.wlt:1146,1-1154,2"
 ]
 
 (* Inside math, escapes go back to the TeX parser as backslash sequences, while escapes outside are removed: *)
@@ -1040,7 +1162,7 @@ VerificationTest[
         { escTeX[ "\\alpha\\_1" ], " inline" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Escapes-Math-TeX-Escapes@@Tests/FormattingEscapes.wlt:1035,1-1044,2"
+    TestID   -> "Escapes-Math-TeX-Escapes@@Tests/FormattingEscapes.wlt:1157,1-1166,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1052,7 +1174,7 @@ VerificationTest[
     FormatMarkdown /@ { "fish &amp; chips \\$5", "&lt;b&gt; and \\*", "&amp;\\$ mixed" },
     { { "fish & chips $5" }, { "<b> and *" }, { "&$ mixed" } },
     SameTest -> MatchQ,
-    TestID   -> "Escapes-HTML-Entities@@Tests/FormattingEscapes.wlt:1051,1-1056,2"
+    TestID   -> "Escapes-HTML-Entities@@Tests/FormattingEscapes.wlt:1173,1-1178,2"
 ]
 
 (* A backslash from an HTML entity is a literal backslash, also in text with escapes (escapes are replaced before
@@ -1061,7 +1183,7 @@ VerificationTest[
     FormatMarkdown /@ { "&#92;* entity", "&#92;* entity \\$5" },
     { { "\\* entity" }, { "\\* entity $5" } },
     SameTest -> MatchQ,
-    TestID   -> "Escapes-HTML-Entity-Backslash@@Tests/FormattingEscapes.wlt:1060,1-1065,2"
+    TestID   -> "Escapes-HTML-Entity-Backslash@@Tests/FormattingEscapes.wlt:1182,1-1187,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1084,7 +1206,7 @@ VerificationTest[
     },
     { "a \\ b", "a \\` b", "a \\$ b", "a \\* b", "a \\_ b", "a \\# b", "a \\| b", "a [ b", "a ] b" },
     SameTest -> MatchQ,
-    TestID   -> "Escapes-RoundTrip-Each-Character@@Tests/FormattingEscapes.wlt:1073,1-1088,2"
+    TestID   -> "Escapes-RoundTrip-Each-Character@@Tests/FormattingEscapes.wlt:1195,1-1210,2"
 ]
 
 VerificationTest[
@@ -1103,7 +1225,7 @@ VerificationTest[
         "\\*not italic\\* and *italic*"
     },
     SameTest -> MatchQ,
-    TestID   -> "Escapes-RoundTrip-Emphasis@@Tests/FormattingEscapes.wlt:1090,1-1107,2"
+    TestID   -> "Escapes-RoundTrip-Emphasis@@Tests/FormattingEscapes.wlt:1212,1-1229,2"
 ]
 
 VerificationTest[
@@ -1120,7 +1242,7 @@ VerificationTest[
         "[label \\*star\\*](https://example.com) end"
     },
     SameTest -> MatchQ,
-    TestID   -> "Escapes-RoundTrip-Blocks-And-Links@@Tests/FormattingEscapes.wlt:1109,1-1124,2"
+    TestID   -> "Escapes-RoundTrip-Blocks-And-Links@@Tests/FormattingEscapes.wlt:1231,1-1246,2"
 ]
 
 (* Inline code with markdown characters serializes as double-backtick code, and the code looks the same after a round
@@ -1132,7 +1254,7 @@ VerificationTest[
     ],
     { "Use ``x*y`` and ``a|b`` and ``#x`` and ``$y`` here", True },
     SameTest -> MatchQ,
-    TestID   -> "Escapes-RoundTrip-Inline-Code@@Tests/FormattingEscapes.wlt:1129,1-1136,2"
+    TestID   -> "Escapes-RoundTrip-Inline-Code@@Tests/FormattingEscapes.wlt:1251,1-1258,2"
 ]
 
 (* Think tag content is escaped too: *)
@@ -1140,7 +1262,7 @@ VerificationTest[
     MarkdownRoundTrip[ "<think>a \\* b</think>\n\nAnswer \\$5" ],
     "<think>\na \\* b\n</think>\n\nAnswer \\$5",
     SameTest -> MatchQ,
-    TestID   -> "Escapes-RoundTrip-Thoughts@@Tests/FormattingEscapes.wlt:1139,1-1144,2"
+    TestID   -> "Escapes-RoundTrip-Thoughts@@Tests/FormattingEscapes.wlt:1261,1-1266,2"
 ]
 
 (* Code block content is not escaped. Plain text code blocks serialize with their unescaped backslashes and the
@@ -1149,7 +1271,7 @@ VerificationTest[
     MarkdownRoundTrip /@ { "```markdown\n\\*x\\* a\\\\b\n```", "```text\na\\\\b \\* c\n```" },
     { "```markdown\n\\*x\\* a\\\\b\n```", "```Plaintext\na\\b \\* c\n```" },
     SameTest -> MatchQ,
-    TestID   -> "Escapes-RoundTrip-Code-Blocks@@Tests/FormattingEscapes.wlt:1148,1-1153,2"
+    TestID   -> "Escapes-RoundTrip-Code-Blocks@@Tests/FormattingEscapes.wlt:1270,1-1275,2"
 ]
 
 (* Math serializes with its TeX escapes, and the text around it with markdown escapes: *)
@@ -1157,7 +1279,7 @@ VerificationTest[
     MarkdownRoundTrip[ "Math $$a \\_ b$$ and \\_" ],
     "Math $$a \\_ b$$ and \\_",
     SameTest -> MatchQ,
-    TestID   -> "Escapes-RoundTrip-Math@@Tests/FormattingEscapes.wlt:1156,1-1161,2"
+    TestID   -> "Escapes-RoundTrip-Math@@Tests/FormattingEscapes.wlt:1278,1-1283,2"
 ]
 
 (* Formatting the serialized output again gives the same result: *)
@@ -1176,7 +1298,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "Escapes-RoundTrip-Reformat-Stable@@Tests/FormattingEscapes.wlt:1164,1-1180,2"
+    TestID   -> "Escapes-RoundTrip-Reformat-Stable@@Tests/FormattingEscapes.wlt:1286,1-1302,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1196,7 +1318,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "Escapes-Streaming-Same-As-Finished@@Tests/FormattingEscapes.wlt:1187,1-1200,2"
+    TestID   -> "Escapes-Streaming-Same-As-Finished@@Tests/FormattingEscapes.wlt:1309,1-1322,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
