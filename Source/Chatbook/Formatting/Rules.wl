@@ -146,8 +146,7 @@ $$escapedDisplayMathInline = RegularExpression[ "(?s)(?<=\\s)" <> esc[ "[" ] <> 
 
    #      Rule                                       Token                       Notes
    1-5    think tags: with attributes, <think>,      thoughtsOpener,             Shortest, so the first closing tag wins
-          <thinking>, then the unclosed forms        thinkingOpener (unclosed)   (no nesting); <think>...</think> needs
-                                                                                 at least one character; swallow fences
+          <thinking>, then the unclosed forms        thinkingOpener (unclosed)   (no nesting); swallow fences
    6      <speech-input>...</speech-input>           speechCell
    7      escaped \[...\] between whitespace         mathCell                    only when the text has escapes
    8      code fence                                 codeBlockCell, tableCell    can open mid-line; closes at the next
@@ -181,8 +180,8 @@ $$escapedDisplayMathInline = RegularExpression[ "(?s)(?<=\\s)" <> esc[ "[" ] <> 
    before a cell and trims both ends. *)
 $textDataFormatRules = {
     Shortest[ $$thinkTagWithAttributes ~~ thoughts___ ~~ "</think>" ] :> thoughtsOpener[ thoughts, attributes ],
-    Shortest[ "<think>"~~thoughts__~~"</think>" ] :> thoughtsOpener @ thoughts,
-    Shortest[ "<thinking>"~~thoughts__~~"</thinking>" ] :> thoughtsOpener @ thoughts,
+    Shortest[ "<think>"~~thoughts___~~"</think>" ] :> thoughtsOpener @ thoughts,
+    Shortest[ "<thinking>"~~thoughts___~~"</thinking>" ] :> thoughtsOpener @ thoughts,
     Shortest[ $$thinkTagWithAttributes ~~ thoughts___ ~~ EndOfString ] :> thinkingOpener[ thoughts, attributes ],
     Shortest[ ("<think>"|"<thinking>")~~thoughts__~~EndOfString ] :> thinkingOpener @ thoughts,
     speech: Shortest[ "<speech-input>"~~__~~"</speech-input>" ] :> speechCell @ speech,

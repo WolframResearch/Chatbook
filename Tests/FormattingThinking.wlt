@@ -594,7 +594,7 @@ VerificationTest[
 ]
 
 (* Summary tags may have no content at all (a reasoning item without a summary still gets a tag to hold its
-   signature), unlike literal tags (see the report for "<think></think>"): *)
+   signature). For literal tags with no content, see Thinking-Empty-No-Content: *)
 VerificationTest[
     thinkingFormat /@ { "<think type='summary' id='a'></think>\nAnswer", "<think type='summary'>\n</think>\nAnswer" },
     {
@@ -1543,6 +1543,31 @@ VerificationTest[
     ],
     SameTest -> MatchQ,
     TestID   -> "Thinking-Speech-Serialize-Audio@@Tests/FormattingThinking.wlt:1524,1-1546,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Tags With No Content*)
+
+(* A closed literal tag with nothing inside shows only the label, like one with only whitespace inside (see
+   Thinking-Empty-Whitespace): *)
+VerificationTest[
+    {
+        thinkingFormat /@ { "<think></think>\nAnswer", "<thinking></thinking>\nAnswer", "<think></think>" },
+        thinkingFormat[ "<think></think>\nAnswer", "Streaming" ],
+        thinkingRoundTrip[ "<think></think>\nAnswer" ]
+    },
+    {
+        {
+            { thinkingEmptyCell[ $thinkingFallbackLabel, $thinkingLiteralMeta ], "\n\nAnswer" },
+            { thinkingEmptyCell[ $thinkingFallbackLabel, $thinkingLiteralMeta ], "\n\nAnswer" },
+            { thinkingEmptyCell[ $thinkingFallbackLabel, $thinkingLiteralMeta ] }
+        },
+        { thinkingEmptyCell[ $thinkingFallbackLabel, $thinkingLiteralMeta ], "\n\nAnswer" },
+        "<think>\n\n</think>\n\nAnswer"
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Thinking-Empty-No-Content@@Tests/FormattingThinking.wlt:1554,1-1571,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
