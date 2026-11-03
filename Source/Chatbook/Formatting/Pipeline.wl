@@ -77,7 +77,7 @@ importHTMLEntities[ string_String ] := StringReplace[
     string,
     {
         e: ("&#" ~~ ("x"|"X") ~~ hex: HexadecimalCharacter.. ~~ ";") :> codePointString[ FromDigits[ hex, 16 ], e ],
-        e: ("&#" ~~ decimal: DigitCharacter.. ~~ ";")               :> codePointString[ FromDigits @ decimal, e ],
+        e: ("&#" ~~ decimal: CharacterRange[ "0", "9" ].. ~~ ";")    :> codePointString[ FromDigits @ decimal, e ],
         e: ("&" ~~ name: WordCharacter.. ~~ ";")                    :> Lookup[ $htmlEntities, name, e ]
     }
 ];

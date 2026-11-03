@@ -1303,21 +1303,21 @@ VerificationTest[
 ]
 
 (* Long entity names and numbers are decoded, and so is an uppercase "X" in hexadecimal entities. Numbers that aren't
-   Unicode characters are left alone: *)
+   Unicode characters, or that have digits other than 0-9, are left alone: *)
 VerificationTest[
     FormatMarkdown /@ {
         "&#128512; smile",
         "&#x1F600; hex",
         "&epsilon; &thetasym;",
         "&#65;&#x42;&#X43;",
-        "&#0; &#55296; &#x110000; &#x; &#;"
+        "&#0; &#55296; &#x110000; &#x; &#; &#\:0663;"
     },
     {
         { "\|01f600 smile" },
         { "\|01f600 hex" },
         { "\[CurlyEpsilon] \[CurlyTheta]" },
         { "ABC" },
-        { "&#0; &#55296; &#x110000; &#x; &#;" }
+        { "&#0; &#55296; &#x110000; &#x; &#; &#\:0663;" }
     },
     SameTest -> MatchQ,
     TestID   -> "Blocks-HTMLEntities-Long-And-Numeric@@Tests/FormattingBlocks.wlt:1307,1-1324,2"
