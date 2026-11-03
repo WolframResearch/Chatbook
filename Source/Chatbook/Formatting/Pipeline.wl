@@ -77,12 +77,23 @@ importHTMLEntities // endDefinition;
 (*importHTMLEntity*)
 importHTMLEntity // beginDefinition;
 
-importHTMLEntity[ entity_String ] := importHTMLEntity[ entity ] =
-    With[ { str = Quiet @ ImportString[ ToLowerCase @ entity, "HTML" ] },
-        If[ StringQ @ str, str, entity ]
-    ];
+importHTMLEntity[ entity_String ] := Lookup[
+    $htmlEntityCache,
+    entity,
+    addToCache[
+        $htmlEntityCache,
+        $maxHTMLEntityCacheSize,
+        entity,
+        With[ { str = Quiet @ ImportString[ ToLowerCase @ entity, "HTML" ] },
+            If[ StringQ @ str, str, entity ]
+        ]
+    ]
+];
 
 importHTMLEntity // endDefinition;
+
+$htmlEntityCache        = <| |>;
+$maxHTMLEntityCacheSize = 1000;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

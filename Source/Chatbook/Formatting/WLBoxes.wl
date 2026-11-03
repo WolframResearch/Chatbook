@@ -31,23 +31,30 @@ wlStringToBoxes // endDefinition;
 (*autoCorrectWLCodeBlock*)
 autoCorrectWLCodeBlock // beginDefinition;
 
-autoCorrectWLCodeBlock[ code_String ] := Enclose[
-    Module[ { checked, corrected },
-        checked = ConfirmBy[
-            LogChatTiming @ CodeCheckFix[ code, "Target" -> "Assistant" ],
-            AssociationQ,
-            "CodeCheckFix"
-        ];
-        corrected = ConfirmBy[ autoCorrectWLCodeBlock @ checked, StringQ, "Result" ];
-        autoCorrectWLCodeBlock[ code ] = corrected
-    ],
-    throwInternalFailure
+autoCorrectWLCodeBlock[ code_String ] := Lookup[
+    $correctedCodeCache,
+    code,
+    Enclose[
+        Module[ { checked, corrected },
+            checked = ConfirmBy[
+                LogChatTiming @ CodeCheckFix[ code, "Target" -> "Assistant" ],
+                AssociationQ,
+                "CodeCheckFix"
+            ];
+            corrected = ConfirmBy[ autoCorrectWLCodeBlock @ checked, StringQ, "Result" ];
+            addToCache[ $correctedCodeCache, $maxCorrectedCodeCacheSize, code, corrected ]
+        ],
+        throwInternalFailure
+    ]
 ];
 
 autoCorrectWLCodeBlock[ KeyValuePattern @ { "OriginalCode" -> code_String, "FixedCode" -> _Missing } ] := code;
 autoCorrectWLCodeBlock[ KeyValuePattern[ "FixedCode" -> fixed_String ] ] := fixed;
 
 autoCorrectWLCodeBlock // endDefinition;
+
+$correctedCodeCache        = <| |>;
+$maxCorrectedCodeCacheSize = 500;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -185,13 +192,24 @@ $pacletRepositoryPacletSymbolBoxes := $pacletRepositoryPacletSymbolBoxes = (
 (*formatEntityBoxes*)
 formatEntityBoxes // beginDefinition;
 
-formatEntityBoxes[ boxes_RowBox ] :=
+formatEntityBoxes[ boxes_RowBox ] := Lookup[
+    $entityBoxesCache,
+    boxes,
     Quiet @ Module[ { new },
         new = Quiet @ ToExpression[ boxes, StandardForm, MakeBoxes ];
-        formatEntityBoxes[ Verbatim[ boxes ] ] = If[ MatchQ[ new, _TemplateBox ], new, boxes ]
-    ];
+        addToCache[
+            $entityBoxesCache,
+            $maxEntityBoxesCacheSize,
+            boxes,
+            If[ MatchQ[ new, _TemplateBox ], new, boxes ]
+        ]
+    ]
+];
 
 formatEntityBoxes // endDefinition;
+
+$entityBoxesCache        = <| |>;
+$maxEntityBoxesCacheSize = 500;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -298,16 +316,25 @@ formatNLInputSlow[ query_String ] :=
                     query
                 ]
         },
-        (
-            formatNLInputSlow[ query ] =
+        Lookup[
+            $freeformBoxesCache,
+            query,
+            addToCache[
+                $freeformBoxesCache,
+                $maxFreeformBoxesCacheSize,
+                query,
                 ReplaceAll[
                     ToBoxes @ WolframAlpha[ ReleaseHold @ h, "LinguisticAssistant" ],
                     as: KeyValuePattern[ "open" -> { 1, 2 } ] :> RuleCondition @ <| as, "open" -> { 1 } |>
                 ]
-        ) /; MatchQ[ h, HoldComplete[ _String ] ]
+            ]
+        ] /; MatchQ[ h, HoldComplete[ _String ] ]
     ];
 
 formatNLInputSlow // endDefinition;
+
+$freeformBoxesCache        = <| |>;
+$maxFreeformBoxesCacheSize = 100;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

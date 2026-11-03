@@ -277,14 +277,25 @@ contentLanguage[ ___ ] := "Wolfram";
 (*externalLanguageQ*)
 externalLanguageQ[ $$externalLanguage ] := True;
 
-externalLanguageQ[ str_String? StringQ ] := externalLanguageQ[ str ] =
-    StringMatchQ[
-        StringReplace[ StringTrim @ str, $externalLanguageRules, IgnoreCase -> True ],
-        $$externalLanguage,
-        IgnoreCase -> True
-    ];
+externalLanguageQ[ str_String? StringQ ] := Lookup[
+    $externalLanguageCache,
+    str,
+    addToCache[
+        $externalLanguageCache,
+        $maxExternalLanguageCacheSize,
+        str,
+        StringMatchQ[
+            StringReplace[ StringTrim @ str, $externalLanguageRules, IgnoreCase -> True ],
+            $$externalLanguage,
+            IgnoreCase -> True
+        ]
+    ]
+];
 
 externalLanguageQ[ ___ ] := False;
+
+$externalLanguageCache        = <| |>;
+$maxExternalLanguageCacheSize = 100;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

@@ -99,9 +99,17 @@ plaintextLanguageQ // endDefinition;
 (*checkTemplateBoxes*)
 checkTemplateBoxes // beginDefinition;
 checkTemplateBoxes[ boxes_ ] := checkTemplateBoxes[ boxes, $InlineChat ];
-checkTemplateBoxes[ boxes_, True ] := checkTemplateBoxes[ Verbatim @ boxes, True ] = inlineTemplateBoxes @ boxes;
+(* The boxes are usually a list, so they're wrapped in Key, since Lookup would otherwise look up each element: *)
+checkTemplateBoxes[ boxes_, True ] := Lookup[
+    $inlineTemplateBoxesCache,
+    Key @ boxes,
+    addToCache[ $inlineTemplateBoxesCache, $maxInlineTemplateBoxesCacheSize, boxes, inlineTemplateBoxes @ boxes ]
+];
 checkTemplateBoxes[ boxes_, _ ] := boxes;
 checkTemplateBoxes // endDefinition;
+
+$inlineTemplateBoxesCache        = <| |>;
+$maxInlineTemplateBoxesCacheSize = 100;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
