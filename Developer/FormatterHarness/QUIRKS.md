@@ -1147,7 +1147,7 @@ Each item was reproduced against main (375156fb). **[not encoded]** means no tes
 ### ENDRESULT IDs with non-alphanumeric characters leave '(id)' as text [not encoded]
 
 - **Repro:** `FormatChatOutput["TOOLCALL: web_fetcher\n{\"x\":\"1\"}\nRESULT\nok\nENDRESULT(call_abc12)\nDone."]`
-- **Observed:** {InlineToolCall (ToolCall ends with "ENDRESULT"), "(call_abc12)\nDone."}. $$endToolCall only accepts letters and digits. Chatbook's own IDs are alphanumeric (tinyHash), so this only affects external or hand-written text. Low priority.
+- **Observed:** {InlineToolCall (ToolCall ends with "ENDRESULT"), "(call_abc12)\nDone."}. $$toolCallEnd only accepts letters and digits. Chatbook's own IDs are alphanumeric (tinyHash), so this only affects external or hand-written text. Low priority.
 - **Expected:** The whole 'ENDRESULT(...)' is part of the tool call, or the ID charset is documented
 
 ### Unterminated tool call in finished output keeps 'Using' and the spinner [encoded]

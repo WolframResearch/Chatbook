@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions"
+    TestID   -> "GetDefinitions@@Tests/DynamicSplit.wlt:4,1-9,2"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext"
+    TestID   -> "LoadContext@@Tests/DynamicSplit.wlt:11,1-16,2"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -159,7 +159,7 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "Definitions"
+    TestID   -> "Definitions@@Tests/DynamicSplit.wlt:30,1-163,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -185,7 +185,7 @@ VerificationTest[
     },
     { True, True, True, True, False, False, False, False, False, False, False },
     SameTest -> MatchQ,
-    TestID   -> "DynamicSplitSkipQ"
+    TestID   -> "DynamicSplitSkipQ@@Tests/DynamicSplit.wlt:168,1-189,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -221,7 +221,7 @@ VerificationTest[
         { { }, "" }
     },
     SameTest -> MatchQ,
-    TestID   -> "SplitDynamicContent-CheckedContent"
+    TestID   -> "SplitDynamicContent-CheckedContent@@Tests/DynamicSplit.wlt:194,1-225,2"
 ]
 
 (* The checked content is not used after the start of the content changes (e.g. when removeSeverityTag removes a tag): *)
@@ -237,7 +237,7 @@ VerificationTest[
         { "Here is code:\n", "```wl\nx\n```", "\nAnd then more" }
     },
     SameTest -> MatchQ,
-    TestID   -> "SplitDynamicContent-ChangedStart"
+    TestID   -> "SplitDynamicContent-ChangedStart@@Tests/DynamicSplit.wlt:228,1-241,2"
 ]
 
 VerificationTest[
@@ -252,7 +252,7 @@ VerificationTest[
     ],
     { True .. },
     SameTest -> MatchQ,
-    TestID   -> "SplitDynamicContent-Reference"
+    TestID   -> "SplitDynamicContent-Reference@@Tests/DynamicSplit.wlt:243,1-256,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -281,7 +281,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "SplitDynamicContent-RandomChunks"
+    TestID   -> "SplitDynamicContent-RandomChunks@@Tests/DynamicSplit.wlt:263,1-285,2"
 ]
 
 (* Most chunks of long prose should not need a full split: *)
@@ -293,7 +293,7 @@ VerificationTest[
     ],
     { 0, True },
     SameTest -> MatchQ,
-    TestID   -> "SplitDynamicContent-SkipsProse"
+    TestID   -> "SplitDynamicContent-SkipsProse@@Tests/DynamicSplit.wlt:288,1-297,2"
 ]
 
 (* The full writeChunk0 results (static parts and final content) are the same as with the reference implementation: *)
@@ -317,7 +317,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "WriteChunk0-Reference"
+    TestID   -> "WriteChunk0-Reference@@Tests/DynamicSplit.wlt:300,1-321,2"
 ]
 
 (* Static parts are actually written while streaming: *)
@@ -333,7 +333,106 @@ VerificationTest[
     ],
     { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "WriteChunk0-StaticParts"
+    TestID   -> "WriteChunk0-StaticParts@@Tests/DynamicSplit.wlt:324,1-337,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Consistency*)
+
+(* The static part of a split is formatted on its own, so a split point has to be a boundary between the parts that
+   $textDataFormatRules gives for the whole text: formatting the static part and the rest separately gives the same
+   parts as formatting the whole text. Whitespace at the ends of text parts is ignored, since it can move across a split
+   point (bullets, headings and /retry take the newlines before them) and each cell trims it.
+
+   Known exceptions:
+   - A split match that starts inside an open think tag (quirk 202, fixed separately). The split points next to such a
+     match are skipped below.
+   - An image or tool call inside a list item, heading, table row or block quote, or inside a code block that isn't
+     closed yet. The split rules don't see these blocks and split it out of them. The documents here avoid this. *)
+VerificationTest[
+    (* With All, the parts alternate between text and matches: *)
+    splitParts[ text_String ] := StringSplit[ text, Wolfram`Chatbook`Common`$dynamicSplitRules, All ];
+
+    formatParts[ text_String ] := normalizeParts @ StringSplit[
+        text,
+        Wolfram`Chatbook`Formatting`Private`$textDataFormatRules,
+        IgnoreCase -> True
+    ];
+
+    (* Joins adjacent strings, trims them, and drops the empty ones. A ``` at either end of a text is dropped, as
+       formatTextString does, since the split rules leave the code fence line of a tool call written in a code fence in
+       the static part: *)
+    normalizeParts[ parts_List ] := DeleteCases[
+        Flatten @ Replace[ Split[ parts, StringQ[ #1 ] && StringQ[ #2 ] & ], s: { __String } :> normalizeText @ s, { 1 } ],
+        ""
+    ];
+
+    normalizeText[ strings_List ] := StringTrim @ StringDelete[
+        StringJoin @ strings,
+        { StartOfString ~~ "\n"... ~~ "```", "```" ~~ "\n"... ~~ EndOfString }
+    ];
+
+    openThinkTagQ[ text_String ] := StringCount[ text, "<think" ] > StringCount[ text, "</think" ];
+
+    (* The split points (after the i-th part) where formatting the two sides separately gives different parts: *)
+    inconsistentSplits[ text_String ] := Module[ { parts, whole },
+        parts = splitParts @ text;
+        (* The TOOLCALL rule adds a newline after its match, so this isn't always the same as text: *)
+        whole = formatParts @ StringJoin @ parts;
+        Select[
+            Range[ Length @ parts - 1 ],
+            Function[
+                i,
+                And[
+                    (* The text before the match next to the split point: *)
+                    ! openThinkTagQ @ StringJoin @ parts[[ ;; If[ OddQ @ i, i, i - 1 ] ]],
+                    whole =!= normalizeParts @ Join[
+                        formatParts @ StringJoin @ parts[[ ;; i ]],
+                        formatParts @ StringJoin @ parts[[ i + 1 ;; ]]
+                    ]
+                ]
+            ]
+        ]
+    ];
+
+    $consistencyCorpora = Append[
+        $splitCorpora,
+        "Blocks" -> StringJoin[
+            "<thinking>\nThe user wants a plot.\n</thinking>\n## Plot\n\n![plot](attachment://content-abc12)\n",
+            "* an item with `code`\n* another item\n\n```wl\nPlot[x, {x, 0, 1}]\n```\n| a | b |\n|---|---|\n| 1 | 2 |\n\n",
+            "> a quote\n\n---\nI'll check (again).\n\nTOOLCALL: wl\n{}\nENDTOOLCALL\nRESULT\n1\nENDRESULT\n/retry\n",
+            "/wl\n1 + 1\n/exec\nRESULT\n2\nENDRESULT\n### Done with $x^2$"
+        ]
+    ];
+    ,
+    Null,
+    SameTest -> MatchQ,
+    TestID   -> "Consistency-Definitions@@Tests/DynamicSplit.wlt:353,1-412,2"
+]
+
+VerificationTest[
+    {
+        Select[ inconsistentSplits /@ $consistencyCorpora, # =!= { } & ],
+        withToolNames @ Select[ inconsistentSplits /@ $consistencyCorpora, # =!= { } & ]
+    },
+    { <| |>, <| |> },
+    SameTest -> MatchQ,
+    TestID   -> "SplitDynamicContent-ConsistentParts@@Tests/DynamicSplit.wlt:414,1-422,2"
+]
+
+(* See $dynamicSplitRules for why dynamicSplitSkipQ relies on this: *)
+VerificationTest[
+    withToolNames @ With[ { matches = Flatten[ splitParts[ # ][[ 2 ;; ;; 2 ]] & /@ Values @ $consistencyCorpora ] },
+        {
+            Length @ matches,
+            (* The TOOLCALL rule adds a newline after its match: *)
+            Select[ matches, ! StringEndsQ[ StringDelete[ #, "\n" ~~ EndOfString ], "```" | "ENDRESULT" | ")" ] & ]
+        }
+    ],
+    { _? (GreaterThan[ 15 ]), { } },
+    SameTest -> MatchQ,
+    TestID   -> "SplitDynamicContent-MatchEnds@@Tests/DynamicSplit.wlt:425,1-436,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

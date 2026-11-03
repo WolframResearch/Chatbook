@@ -48,16 +48,72 @@ $$delimiter           = StartOfLine ~~ ($$hyphenDelimiter|$$asteriskDelimiter|$$
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Parsing Rules*)
-$$endToolCall       = Longest[ "ENDRESULT" ~~ (("(" ~~ (LetterCharacter|DigitCharacter).. ~~ ")") | "") ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Named Patterns*)
+
+(* The pieces of the rules below. Each one names the parts that the rules use (code, math, text, url, ...). Names in a
+   pattern are replaced by their values when a rule is defined, but a condition's test and a right-hand side are held,
+   so names there (like $$ws in the simple tool call rule) stay symbols in the rule. *)
+
+(* Tool calls end with ENDRESULT or ENDRESULT(id), and can be written inside a code fence: *)
+$$toolCallEnd       = Longest[ "ENDRESULT" ~~ (("(" ~~ (LetterCharacter|DigitCharacter).. ~~ ")") | "") ];
+$$toolCall          = "TOOLCALL:" ~~ Shortest[ ___ ] ~~ ($$toolCallEnd|EndOfString);
 $$eol               = " "... ~~ "\n";
 $$cmd               = Repeated[ Except[ WhitespaceCharacter ], { 1, 80 } ];
 $$simpleToolCommand = StartOfLine ~~ $$ws ~~ ("/" ~~ $$cmd) ~~ $$eol;
-$$simpleToolCall    = Shortest[ $$simpleToolCommand ~~ ___ ~~ ($$endToolCall|EndOfString) ];
+$$simpleToolCall    = Shortest[ $$simpleToolCommand ~~ ___ ~~ ($$toolCallEnd|EndOfString) ];
+$$toolCallFence     = ("```" ~~ Except[ "\n" ]... ~~ (" "...) ~~ "\n") | "";
 
 (* TODO:
     Maybe it would be simpler to use a regex here? The command string part would need to be dynamically generated.
     RegularExpression["(?m)^(\\/wl|\\/wa)\\n(((?!\\/).*\\n)*?)\\/exec$"] :> simpleToolCallCell["$1", "$2"]
 *)
+
+(* The opening tag of a think tag with attributes, e.g. <think type='summary' id='...'>: *)
+$$thinkTagWithAttributes = "<think" ~~ attributes: $$thinkTagAttributes ~~ ">";
+
+(* A code fence opens with ``` and takes the rest of its line as the language, so it can open in the middle of a
+   line: *)
+$$codeFenceOpen = Longest[ "```" ~~ language: Except[ "\n" ]... ] ~~ (" "...) ~~ "\n";
+$$codeFenceBody = Shortest[ code__ ];
+
+$$markdownImage = "![" ~~ alt: Shortest[ ___ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")";
+
+(* Bullets and headings take every newline before them: *)
+$$newlinesBefore = ("\n"|StartOfString)..;
+$$bulletLine     = $$newlinesBefore ~~ w: " "... ~~ ("* "|"- ") ~~ item: Longest[ Except[ "\n" ].. ];
+$$headingLine    = $$newlinesBefore ~~ h: "#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ];
+
+$$resourceFunctionLink = "[`ResourceFunction[" ~~ name: Except[ "[" ].. ~~ "]`](" ~~ Except[ ")" ].. ~~ ")";
+$$codeLink             = "[`" ~~ label: Except[ "[" ].. ~~ "`](" ~~ url: Except[ ")" ].. ~~ ")";
+
+(* Inline code and math, which are in both $textDataFormatRules and $stringFormatRules: *)
+$$doubleBacktickCode = "``" ~~ code__ ~~ "``";
+$$backtickName       = "`" ~~ code: Except[ WhitespaceCharacter ].. ~~ "`";
+$$backtickCode       = "`" ~~ code: Except[ "`"|"\n" ].. ~~ "`";
+$$dollarDisplayMath  = "$$" ~~ math__ ~~ "$$";
+$$parenMath          = "\\(" ~~ math__ ~~ "\\)";
+$$bracketMath        = "\\[" ~~ math__ ~~ "\\]";
+$$dollarMath         = "$" ~~ math: Except[ "$" ].. ~~ "$";
+
+(* Emphasis. The text can't contain the marker character (and the rules check that it has no newline). Underscores only
+   mark emphasis at word boundaries, so names like `snake_case_name` are left as-is: *)
+$$boldItalic            = "***" ~~ text: Except[ "*" ].. ~~ "***";
+$$boldItalicUnderscores = WordBoundary ~~ "___" ~~ text: Except[ "_" ].. ~~ "___" ~~ WordBoundary;
+$$bold                  = "**" ~~ text: Except[ "*" ].. ~~ "**";
+$$boldUnderscores       = WordBoundary ~~ "__" ~~ text: Except[ "_" ].. ~~ "__" ~~ WordBoundary;
+$$strikethrough         = "~~" ~~ text: Except[ "~" ].. ~~ "~~";
+$$italic                = "*" ~~ text: Except[ "*" ].. ~~ "*";
+$$italicUnderscores     = WordBoundary ~~ "_" ~~ text: Except[ "_" ].. ~~ "_" ~~ WordBoundary;
+
+(* An expression URI such as <!attachment://content-xxxxx!>: *)
+$$contentURI = StringExpression[
+    "<!",
+    uri: (Repeated[ LetterCharacter, { 1, 20 } ] ~~ "://content-" ~~ Repeated[ LetterCharacter|DigitCharacter, 5 ]),
+    "!>"
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -65,16 +121,9 @@ $$simpleToolCall    = Shortest[ $$simpleToolCommand ~~ ___ ~~ ($$endToolCall|End
 
 (* The rules for tool calls in $textDataFormatRules: *)
 $toolCallFormatRules = {
-    Longest @ StringExpression[
-        (("```" ~~ Except[ "\n" ]... ~~ (" "...) ~~ "\n"))|"",
-        tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ($$endToolCall|EndOfString))
-    ] :> inlineToolCallCell @ tool
-    ,
-    Longest @ StringExpression[
-        (("```" ~~ Except[ "\n" ]... ~~ (" "...) ~~ "\n"))|"",
-        tool: $$simpleToolCall
-     ] /; ! StringStartsQ[ tool, $$ws ~~ "/retry" ~~ $$eol ] && simpleToolCallStringQ @ tool :> inlineToolCallCell @ tool
-    ,
+    Longest[ $$toolCallFence ~~ tool: $$toolCall ] :> inlineToolCallCell @ tool,
+    Longest[ $$toolCallFence ~~ tool: $$simpleToolCall ] /;
+        ! StringStartsQ[ tool, $$ws ~~ "/retry" ~~ $$eol ] && simpleToolCallStringQ @ tool :> inlineToolCallCell @ tool,
     $$ws ~~ "/retry" ~~ (WhitespaceCharacter|EndOfString) :> $discardPreviousToolCall
 };
 
@@ -89,60 +138,71 @@ $$escapedDisplayMath = RegularExpression[ "(?s)(?<!\\S)" <> esc[ "[" ] <> ".+?" 
 (* The same in a text fragment, where it needs whitespace before it (see $stringFormatRules): *)
 $$escapedDisplayMathInline = RegularExpression[ "(?s)(?<=\\s)" <> esc[ "[" ] <> ".+?" <> esc[ "]" ] <> "(?!\\S)" ];
 
+(* StringSplit scans the text from left to right. The match that starts first wins, and of the rules that match at the
+   same position, the first one in the list wins. This is why fences shield their content, a bullet beats "* * *", a
+   table beats "> | a |", a bullet line that starts before "TOOLCALL:" swallows it, and "$$a\n\nb$$" stays one span.
+
+   #      Rule                                       Token                       Notes
+   1-5    think tags: with attributes, <think>,      thoughtsOpener,             Shortest, so the first closing tag wins
+          <thinking>, then the unclosed forms        thinkingOpener (unclosed)   (no nesting); <think>...</think> needs
+                                                                                 at least one character; swallow fences
+   6      <speech-input>...</speech-input>           speechCell
+   7      escaped \[...\] between whitespace         mathCell                    only when the text has escapes
+   8      code fence                                 codeBlockCell, tableCell    can open mid-line; closes at the next
+                                                                                 ``` or the end; a body that is all
+                                                                                 table becomes a table; not when the
+                                                                                 body has a tool call (then 9-10 match)
+   9-11   TOOLCALL:, simple /cmd, /retry             inlineToolCallCell,         see $toolCallFormatRules;
+                                                     $discardPreviousToolCall    simpleToolCallStringQ reads
+                                                                                 ToolShortNames
+   12     ![alt](url)                                imageCell
+   13     bullet line                                bulletCell                  the indent is kept as is
+   14     heading line                               sectionCell                 more than 6 "#" look like 6
+   15     thematic break                             delimiterCell               the whole line, one unbroken run
+   16     table                                      tableCell                   not anchored to the start of a line;
+                                                                                 can start with blank lines
+   17     block quote                                blockQuoteCell              as many lines as possible
+   18-19  [`ResourceFunction[...]`](url),            inlineCodeCell,
+          [`label`](url)                             "[label](url)"
+   20-22  ``code``, `name` (inlineSyntaxQ), `code`   inlineCodeCell              code wins over emphasis and link
+                                                                                 labels in plain text
+   23-26  $$...$$, \(...\), \[...\],                 mathCell                    $$...$$ can span blank lines; \[...\]
+          $...$ (probablyMathQ)                                                  is only reachable through &#92;
+
+   Newlines that the rules take (the others stay in the text around them):
+   bullet line, heading line   every "\n" before it, and makeResultCell0 gives { "\n", cell }
+   /retry                      all whitespace before it
+   table                       the blank lines before it and the "\n" after it
+   block quote                 the "\n" after it
+   thematic break              none
+   Then formatTextString turns a "\n\n" at either end of a text part into "\n", and joinAdjacentStrings adds " \n"
+   before a cell and trims both ends. *)
 $textDataFormatRules = {
-    Shortest[ "<think"~~attributes: $$thinkTagAttributes~~">"~~thoughts___~~"</think>" ] :>
-        thoughtsOpener[ thoughts, attributes ],
+    Shortest[ $$thinkTagWithAttributes ~~ thoughts___ ~~ "</think>" ] :> thoughtsOpener[ thoughts, attributes ],
     Shortest[ "<think>"~~thoughts__~~"</think>" ] :> thoughtsOpener @ thoughts,
     Shortest[ "<thinking>"~~thoughts__~~"</thinking>" ] :> thoughtsOpener @ thoughts,
-    Shortest[ "<think"~~attributes: $$thinkTagAttributes~~">"~~thoughts___~~EndOfString ] :>
-        thinkingOpener[ thoughts, attributes ],
+    Shortest[ $$thinkTagWithAttributes ~~ thoughts___ ~~ EndOfString ] :> thinkingOpener[ thoughts, attributes ],
     Shortest[ ("<think>"|"<thinking>")~~thoughts__~~EndOfString ] :> thinkingOpener @ thoughts,
-
     speech: Shortest[ "<speech-input>"~~__~~"</speech-input>" ] :> speechCell @ speech,
-
-    (* Whitespace-delimited \[...\] is display math (only possible when the text has escapes): *)
     math: $$escapedDisplayMath :> mathCell @ StringTake[ math, { 5, -5 } ],
-
-    StringExpression[
-        Longest[ "```" ~~ language: Except[ "\n" ]... ] ~~ (" "...) ~~ "\n",
-        Shortest[ code__ ],
-        ("```"|EndOfString)
-    ] /; toolCallStringFreeQ @ code :>
-        If[ StringMatchQ[ code, $$mdTable ],
-            tableCell @ code,
-            codeBlockCell[ language, code ]
-        ]
-    ,
-    Sequence @@ $toolCallFormatRules
-    ,
-    "![" ~~ alt: Shortest[ ___ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")" /;
-        StringFreeQ[ alt, "["~~___~~"]("~~__~~")" ] :>
-            imageCell[ alt, url ]
-    ,
-    ("\n"|StartOfString).. ~~ w:" "... ~~ ("* "|"- ") ~~ item: Longest[ Except[ "\n" ].. ] :>
-        bulletCell[ w, item ]
-    ,
-    ("\n"|StartOfString).. ~~ h:"#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ] :>
-        sectionCell[ StringLength @ h, sec ]
-    ,
-    $$delimiter :> delimiterCell[ ]
-    ,
-    table: $$mdTable :> tableCell @ table
-    ,
-    quote: $$blockQuote :> blockQuoteCell @ quote
-    ,
-    "[`ResourceFunction[" ~~ name: Except[ "[" ].. ~~ "]`](" ~~ Except[ ")" ].. ~~ ")" :>
-        inlineCodeCell[ "ResourceFunction[" <> name <> "]" ]
-    ,
-    "[`" ~~ label: Except[ "[" ].. ~~ "`](" ~~ url: Except[ ")" ].. ~~ ")" :> "[" <> label <> "]("<>url<>")",
-
-    "``" ~~ code__ ~~ "``" /; StringFreeQ[ code, "``" ] :> inlineCodeCell @ code,
-    "`" ~~ code: Except[ WhitespaceCharacter ].. ~~ "`" /; inlineSyntaxQ @ code :> inlineCodeCell @ code,
-    "`" ~~ code: Except[ "`"|"\n" ].. ~~ "`" :> inlineCodeCell @ code,
-    "$$" ~~ math__ ~~ "$$" /; StringFreeQ[ math, "$$" ] :> mathCell @ math,
-    "\\(" ~~ math__ ~~ "\\)" /; StringFreeQ[ math, "\\)" ] :> mathCell @ math,
-    "\\[" ~~ math__ ~~ "\\]" /; StringFreeQ[ math, "\\]" ] :> mathCell @ math,
-    "$" ~~ math: Except[ "$" ].. ~~ "$" /; probablyMathQ @ math :> mathCell @ math
+    $$codeFenceOpen ~~ $$codeFenceBody ~~ ("```"|EndOfString) /; toolCallStringFreeQ @ code :>
+        If[ StringMatchQ[ code, $$mdTable ], tableCell @ code, codeBlockCell[ language, code ] ],
+    Sequence @@ $toolCallFormatRules,
+    $$markdownImage /; StringFreeQ[ alt, "["~~___~~"]("~~__~~")" ] :> imageCell[ alt, url ],
+    $$bulletLine :> bulletCell[ w, item ],
+    $$headingLine :> sectionCell[ StringLength @ h, sec ],
+    $$delimiter :> delimiterCell[ ],
+    table: $$mdTable :> tableCell @ table,
+    quote: $$blockQuote :> blockQuoteCell @ quote,
+    $$resourceFunctionLink :> inlineCodeCell[ "ResourceFunction[" <> name <> "]" ],
+    $$codeLink :> "[" <> label <> "]("<>url<>")",
+    $$doubleBacktickCode /; StringFreeQ[ code, "``" ] :> inlineCodeCell @ code,
+    $$backtickName /; inlineSyntaxQ @ code :> inlineCodeCell @ code,
+    $$backtickCode :> inlineCodeCell @ code,
+    $$dollarDisplayMath /; StringFreeQ[ math, "$$" ] :> mathCell @ math,
+    $$parenMath /; StringFreeQ[ math, "\\)" ] :> mathCell @ math,
+    $$bracketMath /; StringFreeQ[ math, "\\]" ] :> mathCell @ math,
+    $$dollarMath /; probablyMathQ @ math :> mathCell @ math
 };
 
 (* ::**************************************************************************************************************:: *)
@@ -174,7 +234,7 @@ simpleToolCallStringQ[ ___ ] := False;
 simpleToolCallStringQ // endDefinition;
 
 simpleToolCallStringQ0 // beginDefinition;
-simpleToolCallStringQ0[ string_String ] /; StringContainsQ[ string, $$endToolCall ] := True;
+simpleToolCallStringQ0[ string_String ] /; StringContainsQ[ string, $$toolCallEnd ] := True;
 simpleToolCallStringQ0[ string_String ] := MatchQ[
     StringCases[ string, StartOfString ~~ $$ws ~~ "/" ~~ cmd: $$cmd ~~ $$eol ~~ ___ :> cmd, 1 ],
     { _String? toolShortNameQ }
@@ -186,7 +246,7 @@ simpleToolCallStringQ0 // endDefinition;
 (*toolCallStringFreeQ*)
 toolCallStringFreeQ // beginDefinition;
 toolCallStringFreeQ[ string_String ] :=
-    StringFreeQ[ string, "TOOLCALL:" ~~ ___ ~~ ($$endToolCall|EndOfString) ] &&
+    StringFreeQ[ string, "TOOLCALL:" ~~ ___ ~~ ($$toolCallEnd|EndOfString) ] &&
     ! simpleToolCallStringQ[ string ];
 toolCallStringFreeQ // endDefinition;
 
@@ -207,104 +267,55 @@ toolCallStringFreeQ // endDefinition;
      the conditions of the code block and simple tool call rules, which also depend on
      `$ChatHandlerData[ "ToolShortNames" ]`. If that changed while a response streams, a split could be delayed, which
      only affects the streaming display.
+
+   The rules are built from the same pieces as $textDataFormatRules. The code block and image rules differ only in how
+   they end: a match has to be complete (there's no EndOfString alternative). The tool call rules also leave out the
+   code fence line that can come before a tool call (it stays in the static part, where formatTextString drops it) and
+   the /retry check, and the TOOLCALL rule adds a newline after its match. The other block rules aren't here, so a
+   split can also happen inside a think tag, list item, heading, table, block quote or unclosed code block, where
+   $textDataFormatRules gives no split (see the Consistency tests in Tests/DynamicSplit.wlt).
 *)
 $dynamicSplitRules = {
-    (* Code blocks *)
-    s: StringExpression[
-        Longest[ "```" ~~ language: Except[ "\n" ]... ] ~~ (" "...) ~~ "\n",
-        Shortest[ code__ ],
-        "```"
-    ] /; toolCallStringFreeQ @ code :> s
-    ,
-    (* Markdown image *)
-    s: ("![" ~~ alt: Shortest[ ___ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")") /;
-        StringFreeQ[ alt, "["~~___~~"]("~~__~~")" ] :>
-            s
-    ,
-    (* Tool call *)
-    s: Shortest[ "TOOLCALL:" ~~ ___ ~~ $$endToolCall ] :> s <> "\n",
-    s: Shortest[ $$simpleToolCommand ~~ ___ ~~ $$endToolCall ] /; simpleToolCallStringQ @ s :> s
+    s: ($$codeFenceOpen ~~ $$codeFenceBody ~~ "```") /; toolCallStringFreeQ @ code :> s,
+    s: $$markdownImage /; StringFreeQ[ alt, "["~~___~~"]("~~__~~")" ] :> s,
+    s: Shortest[ "TOOLCALL:" ~~ ___ ~~ $$toolCallEnd ] :> s <> "\n",
+    s: Shortest[ $$simpleToolCommand ~~ ___ ~~ $$toolCallEnd ] /; simpleToolCallStringQ @ s :> s
 };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$stringFormatRules*)
 
-(* Underscores only mark emphasis at word boundaries, so names like `snake_case_name` are left as-is: *)
+(* The inline rules, for each text part and for the text of list items, headings, quotes and table cells. The order
+   works as in $textDataFormatRules: the first match wins, and then the first rule. *)
 $stringFormatRules = {
     "```" ~~ code: Except[ "\n" ].. ~~ "```" :> inlineCodeCell @ code,
-
-    "***" ~~ text: Except[ "*" ].. ~~ "***" /; StringFreeQ[ text, "\n" ] :>
-        styleBox[ text, FontWeight -> Bold, FontSlant -> Italic ],
-
-    WordBoundary ~~ "___" ~~ text: Except[ "_" ].. ~~ "___" ~~ WordBoundary /; StringFreeQ[ text, "\n" ] :>
-        styleBox[ text, FontWeight -> Bold, FontSlant -> Italic ],
-
-    "**" ~~ text: Except[ "*" ].. ~~ "**" /; StringFreeQ[ text, "\n" ] :>
-        styleBox[ text, FontWeight -> Bold ],
-
-    WordBoundary ~~ "__" ~~ text: Except[ "_" ].. ~~ "__" ~~ WordBoundary /; StringFreeQ[ text, "\n" ] :>
-        styleBox[ text, FontWeight -> Bold ],
-
-    "~~" ~~ text: Except[ "~" ].. ~~ "~~" /; StringFreeQ[ text, "\n" ] :>
-        styleBox[ text, FontVariations -> { "StrikeThrough" -> True } ],
-
-    "``" ~~ code__ ~~ "``" /; StringFreeQ[ code, "``" ] :>
-        makeResultCell @ inlineCodeCell @ code,
-
-    "`" ~~ code: Except[ WhitespaceCharacter ].. ~~ "`" /; inlineSyntaxQ @ code :>
-        makeResultCell @ inlineCodeCell @ code,
-
-    "`" ~~ code: Except[ "`"|"\n" ].. ~~ "`" :>
-        makeResultCell @ inlineCodeCell @ code,
-
-    "*" ~~ text: Except[ "*" ].. ~~ "*" /; StringFreeQ[ text, "\n" ] :>
-        styleBox[ text, FontSlant -> Italic ],
-
-    WordBoundary ~~ "_" ~~ text: Except[ "_" ].. ~~ "_" ~~ WordBoundary /; StringFreeQ[ text, "\n" ] :>
-        styleBox[ text, FontSlant -> Italic ],
-
-    "$$" ~~ math__ ~~ "$$" /; StringFreeQ[ math, "$$" ] :>
-        makeResultCell @ mathCell @ math,
-
-    "\\(" ~~ math__ ~~ "\\)" /; StringFreeQ[ math, "\\)" ] :>
-        makeResultCell @ mathCell @ math,
-
-    "\\[" ~~ math__ ~~ "\\]" /; StringFreeQ[ math, "\\]" ] :>
-        makeResultCell @ mathCell @ math,
-
+    $$boldItalic /; StringFreeQ[ text, "\n" ] :> styleBox[ text, FontWeight -> Bold, FontSlant -> Italic ],
+    $$boldItalicUnderscores /; StringFreeQ[ text, "\n" ] :> styleBox[ text, FontWeight -> Bold, FontSlant -> Italic ],
+    $$bold /; StringFreeQ[ text, "\n" ] :> styleBox[ text, FontWeight -> Bold ],
+    $$boldUnderscores /; StringFreeQ[ text, "\n" ] :> styleBox[ text, FontWeight -> Bold ],
+    $$strikethrough /; StringFreeQ[ text, "\n" ] :> styleBox[ text, FontVariations -> { "StrikeThrough" -> True } ],
+    $$doubleBacktickCode /; StringFreeQ[ code, "``" ] :> makeResultCell @ inlineCodeCell @ code,
+    $$backtickName /; inlineSyntaxQ @ code :> makeResultCell @ inlineCodeCell @ code,
+    $$backtickCode :> makeResultCell @ inlineCodeCell @ code,
+    $$italic /; StringFreeQ[ text, "\n" ] :> styleBox[ text, FontSlant -> Italic ],
+    $$italicUnderscores /; StringFreeQ[ text, "\n" ] :> styleBox[ text, FontSlant -> Italic ],
+    $$dollarDisplayMath /; StringFreeQ[ math, "$$" ] :> makeResultCell @ mathCell @ math,
+    $$parenMath /; StringFreeQ[ math, "\\)" ] :> makeResultCell @ mathCell @ math,
+    $$bracketMath /; StringFreeQ[ math, "\\]" ] :> makeResultCell @ mathCell @ math,
     (* Escaped \[...\] in a list item, heading, table cell, ... (see $$escapedDisplayMath). The start of the text
        doesn't count as whitespace here, so that e.g. the label in [\[x\]](url) is not math: *)
-    math: $$escapedDisplayMathInline :>
-        makeResultCell @ mathCell @ StringTake[ math, { 5, -5 } ],
-
-    "$" ~~ math: Except[ "$" ].. ~~ "$" /; probablyMathQ @ math :>
-        makeResultCell @ mathCell @ math,
-
-    "![" ~~ alt: Shortest[ ___ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")" /;
-        StringFreeQ[ alt, "["~~___~~"]("~~__~~")" ] :>
-            makeResultCell @ imageCell[ alt, url ],
-
-    "[" ~~ label: Shortest[ ___ ] ~~ "](" ~~ url: Except[ ")" ].. ~~ ")" :>
-        hyperlink[ label, url ],
-
-    "\\textit{" ~~ text__ ~~ "}" /; StringFreeQ[ text, "{"|"}" ] :>
-        styleBox[ text, FontSlant -> Italic ],
-
-    "\\textbf{" ~~ text__ ~~ "}" /; StringFreeQ[ text, "{"|"}" ] :>
-        styleBox[ text, FontWeight -> Bold ],
-
-    "\[FreeformPrompt]" :>
-        Cell @ BoxData @ TemplateBox[
-            { $freeformPromptBox, "paclet:guide/KnowledgeRepresentationAndAccess#203374175" },
-            "HyperlinkPaclet"
-        ],
-
-    StringExpression[
-        "<!",
-        uri: (Repeated[ LetterCharacter, { 1, 20 } ] ~~ "://content-" ~~ Repeated[ LetterCharacter|DigitCharacter, 5 ]),
-        "!>"
-    ] :> image[ None, uri ]
+    math: $$escapedDisplayMathInline :> makeResultCell @ mathCell @ StringTake[ math, { 5, -5 } ],
+    $$dollarMath /; probablyMathQ @ math :> makeResultCell @ mathCell @ math,
+    $$markdownImage /; StringFreeQ[ alt, "["~~___~~"]("~~__~~")" ] :> makeResultCell @ imageCell[ alt, url ],
+    "[" ~~ label: Shortest[ ___ ] ~~ "](" ~~ url: Except[ ")" ].. ~~ ")" :> hyperlink[ label, url ],
+    "\\textit{" ~~ text__ ~~ "}" /; StringFreeQ[ text, "{"|"}" ] :> styleBox[ text, FontSlant -> Italic ],
+    "\\textbf{" ~~ text__ ~~ "}" /; StringFreeQ[ text, "{"|"}" ] :> styleBox[ text, FontWeight -> Bold ],
+    "\[FreeformPrompt]" :> Cell @ BoxData @ TemplateBox[
+        { $freeformPromptBox, "paclet:guide/KnowledgeRepresentationAndAccess#203374175" },
+        "HyperlinkPaclet"
+    ],
+    $$contentURI :> image[ None, uri ]
 };
 
 (* styleBox and hyperlink format their text with formatTextString, which splits it with these same rules. Starting a
