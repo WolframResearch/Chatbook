@@ -1919,7 +1919,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                 Automatic
                                 ,
                                 Dynamic @ {
-                                    Min[ CurrentValue[ "DefaultWindowSize" ][[1]], CurrentValue[ "ViewSize" ][[1]] ] /
+                                    Min[ AbsoluteCurrentValue[ "DefaultWindowSize" ][[1]], AbsoluteCurrentValue[ "ViewSize" ][[1]] ] /
                                         AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
                                     - 25,
                                     Automatic
