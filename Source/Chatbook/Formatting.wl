@@ -70,7 +70,7 @@ $externalLanguageRules = Replace[
 
 $$wsShortest = Shortest[ WhitespaceCharacter... ];
 
-$$mdRow1  =$$wsShortest ~~ "|" ~~ Except[ "\n" ]... ~~ "|" ~~ $$wsShortest ~~ ("\n"|EndOfString);
+$$mdRow1  = $$wsShortest ~~ "|" ~~ Except[ "\n" ]... ~~ "|" ~~ $$wsShortest ~~ ("\n"|EndOfString);
 (* The same rows as Except[ "\n" ].. ~~ Repeated[ "|" ~~ Except[ "\n" ]..., { 2, Infinity } ] ~~ ("\n"|EndOfString):
    a character, then at least two "|" before the end of the line. That pattern backtracks through the rest of the line
    at every position the split tries it (1.8 s for a 10 KB line without "|"). This one can't backtrack (40 ms): *)
