@@ -1337,7 +1337,8 @@ VerificationTest[
     TestID   -> "Blocks-Precedence-Heading-Content@@Tests/FormattingBlocks.wlt:1333,1-1338,2"
 ]
 
-(* Escaped markdown characters give the same blocks as without escapes, also before a code block: *)
+(* Escaped markdown characters give the same blocks as without escapes. This includes blocks in the text before a code
+   block: *)
 VerificationTest[
     {
         SameQ[
@@ -1351,7 +1352,7 @@ VerificationTest[
     },
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Precedence-Escaped-Path-Same-Blocks@@Tests/FormattingBlocks.wlt:1341,1-1355,2"
+    TestID   -> "Blocks-Precedence-Escaped-Path-Same-Blocks@@Tests/FormattingBlocks.wlt:1342,1-1356,2"
 ]
 
 (* Escapes inside block content are unescaped: *)
@@ -1365,7 +1366,7 @@ VerificationTest[
         blocksQuote @ blocksTextBox[ "q _x_" ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Precedence-Escapes-In-Blocks@@Tests/FormattingBlocks.wlt:1358,1-1369,2"
+    TestID   -> "Blocks-Precedence-Escapes-In-Blocks@@Tests/FormattingBlocks.wlt:1359,1-1370,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1395,7 +1396,7 @@ VerificationTest[
         "\nEnd."
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Document-Structure@@Tests/FormattingBlocks.wlt:1376,1-1399,2"
+    TestID   -> "Blocks-Document-Structure@@Tests/FormattingBlocks.wlt:1377,1-1400,2"
 ]
 
 (* Block constructs format the same way while streaming. The second streaming call gets the block cells from the
@@ -1406,14 +1407,14 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Document-Streaming-Same@@Tests/FormattingBlocks.wlt:1403,1-1410,2"
+    TestID   -> "Blocks-Document-Streaming-Same@@Tests/FormattingBlocks.wlt:1404,1-1411,2"
 ]
 
 VerificationTest[
     blocksRoundTrip[ "# Title\n\nIntro paragraph.\n\n## Section\n\n- one\n- **two**\n  - sub\n\n---\n\nEnd." ],
     "# Title\n\nIntro paragraph.\n\n## Section\n\n* one\n* **two**\n  * sub\n\n---\n\nEnd.",
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Document-Serialization@@Tests/FormattingBlocks.wlt:1412,1-1417,2"
+    TestID   -> "Blocks-Document-Serialization@@Tests/FormattingBlocks.wlt:1413,1-1418,2"
 ]
 
 (* Formatting the serialized markdown again gives the same output: *)
@@ -1427,7 +1428,7 @@ VerificationTest[
     },
     { True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Document-Reformat-Serialized@@Tests/FormattingBlocks.wlt:1420,1-1431,2"
+    TestID   -> "Blocks-Document-Reformat-Serialized@@Tests/FormattingBlocks.wlt:1421,1-1432,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
