@@ -49,4 +49,31 @@ VerificationTest[
     TestID   -> "LongLine-Timing@@Tests/FormattingPerformance.wlt:45,1-50,2"
 ]
 
+(* almostCertainlyWLCodeQ only tests the text before the first "[", whitespace, "-" or ":" as a System name. The old
+   definition tested every prefix of up to 50 characters: *)
+VerificationTest[
+    Module[ { oldQ, inputs },
+        oldQ[ wl_, inline_ ] := TrueQ @ Or[
+            If[ TrueQ @ inline, StringContainsQ, StringStartsQ ][ wl, "\[FreeformPrompt]" ],
+            StringMatchQ[
+                wl,
+                (name: Repeated[ _, { 1, 50 } ] /; Wolfram`Chatbook`Formatting`Private`systemNameQ @ name) ~~
+                    Alternatives[ "[" ~~ ___ ~~ "]", Shortest[ WhitespaceCharacter... ] ~~ ("->"|":>") ~~ __ ]
+            ],
+            TrueQ @ inline && StringMatchQ[ wl, "\"" ~~ ___ ~~ "\"" ]
+        ];
+        inputs = Join[
+            Tuples @ { Flatten @ Outer[ StringJoin, Names[ "System`*" ], { "[x]", " -> 1", ":>x" } ], { False } },
+            Tuples @ { { "", "[x]", "Plus", "Plus[", "Plus[x", "Plus[x] y", "Plus [x]", "Plus->1", "Plus\t:> 1",
+                "Plus\n-> 1", "Plus->", "Plus-1", "Plus:x", "Plus::usage", "plus[x]", "System`Plus[x]", "`Plus[x]",
+                "Plu*[x]", "Plus@x", "f[Plus[x]]", "Plus[x][y]", "x -> Plus", "NotASystemName[x]", "\[Pi][x]",
+                "$Line -> 1", StringRepeat[ "a", 60 ] <> "[x]", StringRepeat[ "Plus", 13 ] <> "[x]", "Sin[x]-1",
+                "\[FreeformPrompt] x", "x \[FreeformPrompt]", "\"Plus\"", "\"Plus\"[x]" }, { True, False } }
+        ];
+        Select[ inputs, oldQ @@ # =!= Wolfram`Chatbook`Formatting`Private`almostCertainlyWLCodeQ @@ # & ]
+    ],
+    { },
+    TestID -> "AlmostCertainlyWLCodeQ-SameAsBefore@@Tests/FormattingPerformance.wlt:54,1-77,2"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)

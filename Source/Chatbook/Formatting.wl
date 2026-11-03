@@ -961,12 +961,14 @@ almostCertainlyWLCodeQ[ wl_String ] := almostCertainlyWLCodeQ[ wl, False ];
 
 almostCertainlyWLCodeQ[ wl_String, inline_ ] := TrueQ @ Or[
     If[ TrueQ @ inline, StringContainsQ, StringStartsQ ][ wl, "\[FreeformPrompt]" ],
+    (* A System name followed by [...] or by -> or :>. No System name contains "[", whitespace, "-" or ":", so the only
+       candidate name is the text before the first of these, and systemNameQ is only called once the rest matches: *)
     StringMatchQ[
         wl,
-        (name: Repeated[ _, { 1, 50 } ] /; systemNameQ @ name) ~~ Alternatives[
+        (name: Repeated[ Except[ "["|WhitespaceCharacter|"-"|":" ], { 1, 50 } ] ~~ Alternatives[
             "[" ~~ ___ ~~ "]",
             $$ws ~~ ("->"|":>") ~~ __
-        ]
+        ]) /; systemNameQ @ name
     ],
     TrueQ @ inline && StringMatchQ[ wl, "\"" ~~ ___ ~~ "\"" ]
 ];
