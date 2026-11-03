@@ -29,16 +29,18 @@ $$rawTextToken = codeBlockCell | inlineToolCallCell | thoughtsOpener | thinkingO
 $$wsShortest = Shortest[ WhitespaceCharacter... ];
 $$ws         = WhitespaceCharacter...;
 
-$$mdRow1  = $$wsShortest ~~ "|" ~~ Except[ "\n" ]... ~~ "|" ~~ $$wsShortest ~~ ("\n"|EndOfString);
-(* The same rows as Except[ "\n" ].. ~~ Repeated[ "|" ~~ Except[ "\n" ]..., { 2, Infinity } ] ~~ ("\n"|EndOfString):
+(* Table rows and quote lines don't include the "\n" at the end of their line, so the text after a table or quote
+   starts with its line break, as it does after the other blocks: *)
+$$mdRow1  = $$wsShortest ~~ "|" ~~ Except[ "\n" ]... ~~ "|" ~~ $$wsShortest ~~ EndOfLine;
+(* The same rows as Except[ "\n" ].. ~~ Repeated[ "|" ~~ Except[ "\n" ]..., { 2, Infinity } ] ~~ EndOfLine:
    a character, then at least two "|" before the end of the line. That pattern backtracks through the rest of the line
    at every position the split tries it (1.8 s for a 10 KB line without "|"). This one can't backtrack (40 ms): *)
-$$mdRow2  = RegularExpression[ "[^\\n][^\\n|]*+\\|[^\\n|]*+\\|[^\\n]*+(?:\\n|\\z)" ];
+$$mdRow2  = RegularExpression[ "[^\\n][^\\n|]*+\\|[^\\n|]*+\\|[^\\n]*+" ];
 $$mdRow   = $$mdRow1 | $$mdRow2;
-$$mdTable = $$mdRow ~~ $$mdRow ..;
+$$mdTable = $$mdRow ~~ ("\n" ~~ $$mdRow)..;
 
-$$blockQuoteLine = StartOfLine ~~ ">" ~~ $$wsShortest ~~ Except[ "\n" ].. ~~ ("\n"|EndOfString);
-$$blockQuote     = Longest[ $$blockQuoteLine.. ];
+$$blockQuoteLine = StartOfLine ~~ ">" ~~ $$wsShortest ~~ Except[ "\n" ]..;
+$$blockQuote     = Longest[ $$blockQuoteLine ~~ ("\n" ~~ $$blockQuoteLine)... ];
 
 $$hyphenDelimiter     = Repeated[ "-", { 3, Infinity } ];
 $$asteriskDelimiter   = Repeated[ "*", { 3, Infinity } ];
@@ -173,9 +175,8 @@ $$escapedDisplayMathInline = RegularExpression[ "(?s)(?<=\\s)" <> esc[ "[" ] <> 
    Newlines that the rules take (the others stay in the text around them):
    bullet line, heading line   every "\n" before it, and makeResultCell0 gives { "\n", cell }
    /retry                      all whitespace before it
-   table                       the blank lines before it and the "\n" after it
-   block quote                 the "\n" after it
-   thematic break              none
+   table                       the blank lines before it
+   block quote, thematic break none
    Then formatTextString turns a "\n\n" at either end of a text part into "\n", and joinAdjacentStrings adds " \n"
    before a cell and trims both ends. *)
 $textDataFormatRules = {
@@ -187,7 +188,7 @@ $textDataFormatRules = {
     speech: Shortest[ "<speech-input>"~~__~~"</speech-input>" ] :> speechCell @ speech,
     math: $$escapedDisplayMath :> mathCell @ StringTake[ math, { 5, -5 } ],
     $$codeFenceOpen ~~ $$codeFenceBody ~~ ("```"|EndOfString) /; toolCallStringFreeQ @ code :>
-        If[ StringMatchQ[ code, $$mdTable ], tableCell @ code, codeBlockCell[ language, code ] ],
+        If[ StringMatchQ[ code, $$mdTable ~~ ("\n"|"") ], tableCell @ code, codeBlockCell[ language, code ] ],
     Sequence @@ $toolCallFormatRules,
     $$markdownImage /; StringFreeQ[ alt, "["~~___~~"]("~~__~~")" ] :> imageCell[ alt, url ],
     $$bulletLine :> bulletCell[ w, item ],

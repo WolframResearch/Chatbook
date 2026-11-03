@@ -1499,4 +1499,71 @@ VerificationTest[
     TestID   -> "Blocks-Document-Reformat-Serialized@@Tests/FormattingBlocks.wlt:1489,1-1500,2"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Blocks Directly After a Quote*)
+
+(* A quote doesn't take the "\n" at the end of its last line, so the text after it starts on a new line, with or
+   without a blank line, and more blank lines leave a blank line, as they do after the other blocks: *)
+VerificationTest[
+    blocksNormalized /@ { "> q\nBody", "> q\n\nBody", "> q\n\n\nBody", "Before\n> quoted\nAfter", "> a\n> b\nc" },
+    {
+        { blocksQuote @ blocksTextBox[ "q" ], "\nBody" },
+        { blocksQuote @ blocksTextBox[ "q" ], "\nBody" },
+        { blocksQuote @ blocksTextBox[ "q" ], "\n\nBody" },
+        { "Before\n", blocksQuote @ blocksTextBox[ "quoted" ], "\nAfter" },
+        { blocksQuote @ blocksTextBox[ "a\nb" ], "\nc" }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Blocks-BlockQuote-Text-Directly-After@@Tests/FormattingBlocks.wlt:1440,1-1451,2"
+]
+
+(* A list item, heading, horizontal rule or code block on the line after a quote is formatted as that block: *)
+VerificationTest[
+    blocksNormalized /@ { "> q\n- a", "> q\n## H", "> q\n---", "> q\n```wl\n1+1\n```" },
+    {
+        { blocksQuote @ blocksTextBox[ "q" ], "\n", blocksItem[ " a" ] },
+        { blocksQuote @ blocksTextBox[ "q" ], "\n", blocksSection @ blocksTextBox[ "H" ] },
+        { blocksQuote @ blocksTextBox[ "q" ], "\n", $$blocksDelimiter },
+        { blocksQuote @ blocksTextBox[ "q" ], "\n", $$blocksCodeBlock }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Blocks-BlockQuote-Blocks-Directly-After@@Tests/FormattingBlocks.wlt:1454,1-1464,2"
+]
+
+(* Streaming gives the same output: *)
+VerificationTest[
+    Function[ md, blocksNormalized[ md, "Streaming" ] === blocksNormalized @ md ] /@
+        { "> q\nBody", "> q\nB", "> q\n- a" },
+    { True, True, True },
+    SameTest -> MatchQ,
+    TestID   -> "Blocks-BlockQuote-Directly-After-Streaming@@Tests/FormattingBlocks.wlt:1467,1-1473,2"
+]
+
+(* The text after a quote is serialized on its own line, and formatting the serialized markdown again gives the same
+   output: *)
+VerificationTest[
+    {
+        blocksRoundTrip /@ { "Before\n> **quoted**\nAfter", "> **q**\n- item" },
+        Function[ md, blocksNormalized @ MarkdownRoundTrip @ md === blocksNormalized @ md ] /@ {
+            "Before\n> **quoted**\nAfter",
+            "> **q**\n- item",
+            "> *q*\n## Next"
+        }
+    },
+    { { "Before\n\n> **quoted**\nAfter", "> **q**\n* item" }, { True, True, True } },
+    SameTest -> MatchQ,
+    TestID   -> "Blocks-BlockQuote-Directly-After-Serialization@@Tests/FormattingBlocks.wlt:1477,1-1489,2"
+]
+
+(* A tool call after a quote starts on its own line in the serialized text, as the chat history needs: *)
+VerificationTest[
+    With[ { tc = "TOOLCALL: wolfram_language_evaluator\n{\"code\":\"1\"}\nRESULT\n1\nENDRESULT(abc)" },
+        blocksRoundTrip[ "> **q**\n" <> tc <> "\nText" ]
+    ],
+    "> **q**\n" <> "TOOLCALL: wolfram_language_evaluator\n{\"code\":\"1\"}\nRESULT\n1\nENDRESULT(abc)\nText",
+    SameTest -> MatchQ,
+    TestID   -> "Blocks-BlockQuote-Tool-Call-Directly-After-Serialization@@Tests/FormattingBlocks.wlt:1492,1-1499,2"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)

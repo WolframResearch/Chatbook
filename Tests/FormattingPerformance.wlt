@@ -32,7 +32,7 @@ VerificationTest[
 (* $$mdRow2 matches the same substrings as the old table row pattern, on random strings: *)
 VerificationTest[
     Module[ { old, new, strings },
-        old = Except[ "\n" ].. ~~ Repeated[ ("|" ~~ Except[ "\n" ]...), { 2, Infinity } ] ~~ ("\n"|EndOfString);
+        old = Except[ "\n" ].. ~~ Repeated[ ("|" ~~ Except[ "\n" ]...), { 2, Infinity } ] ~~ EndOfLine;
         new = Wolfram`Chatbook`Formatting`Private`$$mdRow2;
         strings = BlockRandom[ StringJoin /@ RandomChoice[ Characters[ "a ||\n" ], { 500, 12 } ], RandomSeeding -> 1 ];
         SameQ @@ (Union /@ StringPosition[ strings, #, Overlaps -> All ] & /@ { old, new })
