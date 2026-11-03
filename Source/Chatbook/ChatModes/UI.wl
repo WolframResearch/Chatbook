@@ -582,7 +582,7 @@ makeSidebarChatInputCell[ ] := Cell[
                                 ,
                                 If[ TrueQ @ Typeset`returnKeyDownQ,
                                     CurrentValue[ Typeset`sidebarCell, { TaggingRules, "CurrentSelections" } ] = FE`Evaluate @ FEPrivate`GetCurrentSelections @ Typeset`nbo;
-                                    clearOverlayMenus @ Typeset`nbo;
+                                    clearSidebarOverlayMenus @ Typeset`nbo;
                                     Typeset`returnKeyDownQ = False;
                                     Needs[ "Wolfram`Chatbook`" -> None ];
                                     If[ Not @ TrueQ @ $workspaceChatInitialized, initializeWorkspaceChat[ ] ];
@@ -4123,6 +4123,17 @@ clearOverlayMenus[ nbo_NotebookObject ] := (
 );
 
 clearOverlayMenus // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*clearSidebarOverlayMenus*)
+clearSidebarOverlayMenus // beginDefinition;
+
+(* Sidebar overlays never hide the vertical scrollbar, so the user's notebook options are left alone: *)
+clearSidebarOverlayMenus[ nbo_NotebookObject ] :=
+    NotebookDelete @ Cells[ nbo, CellStyle -> "AttachedOverlayMenu", AttachedCell -> True ];
+
+clearSidebarOverlayMenus // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
