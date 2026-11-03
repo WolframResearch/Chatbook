@@ -1,0 +1,1 @@
+Yes, `Total[Range[100]]` returns `5050`.
