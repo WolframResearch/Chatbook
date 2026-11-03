@@ -83,6 +83,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$progressWidth;
 `$rasterCache;
 `$reasoningData;
+`$reasoningOpen;
 `$receivedToolCall;
 `$resultCellCache;
 `$responsesAPIAvailable;

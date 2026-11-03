@@ -991,6 +991,7 @@ chatSubmit // Attributes = { HoldFirst };
 chatSubmit[ args__ ] := Quiet[
     If[ ! MatchQ[ $debugLog, _Internal`Bag ], $debugLog = Internal`Bag[ ] ];
     $receivedToolCall      = False;
+    $reasoningOpen         = False;
     $dynamicSplitChecked   = None;
     $emulatedStopBuffer    = "";
     $emulatedStopTriggered = False;
