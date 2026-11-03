@@ -1734,7 +1734,10 @@ With[
 			<| "Type" -> "Header", "Label"   -> tr @ "UIAdvancedTemperature" |>,
 			<| "Type" -> "Custom", "Content" -> makeTemperatureSlider[ targetObj, appContainer ] |>,
 			<| "Type" -> "Header", "Label"   -> tr @ "UIAdvancedToolCallFrequency" |>,
-			<| "Type" -> "Custom", "Content" -> makeToolCallFrequencySlider[ targetObj, appContainer ] |>,
+			<| "Type" -> "Custom", "Content" -> makeToolCallFrequencySlider[ targetObj, appContainer ] |>
+		},
+		devModeMenuItems @ reasoningMenuItems @ targetObj,
+		{
 			<| "Type" -> "Header", "Label"   -> tr @ "UIAdvancedRoles" |>
 		},
 		Map[
@@ -1756,6 +1759,107 @@ With[
 ];
 
 createMenuAdvancedSettings // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*devModeMenuItems*)
+devModeMenuItems // beginDefinition;
+
+(* Menu items that are not released yet are hidden unless $devModeUI is True, and are then highlighted so they stand
+   out from the released ones. Releasing an item means no longer wrapping it here: *)
+devModeMenuItems[ items_List ] :=
+	If[ TrueQ @ $devModeUI, devModeMenuItem /@ items, { } ];
+
+devModeMenuItems // endDefinition;
+
+
+devModeMenuItem // beginDefinition;
+devModeMenuItem[ item: KeyValuePattern[ "Label" -> label_ ] ] := <| item, "Label" -> devModeStyle @ label |>;
+devModeMenuItem[ item_Association ] := item;
+devModeMenuItem // endDefinition;
+
+
+devModeStyle // beginDefinition;
+devModeStyle[ expr_ ] :=
+	Style[ expr, Background -> color @ "DevModeUIBackground", FontColor -> color @ "DevModeUIForeground" ];
+devModeStyle // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*reasoningMenuItems*)
+reasoningMenuItems // beginDefinition;
+
+(* One setter per reasoning level the selected model declares, plus a reset to the automatic default: *)
+reasoningMenuItems[ targetObj_ ] :=
+	reasoningMenuItems[ targetObj, menuReasoningLevels @ targetObj ];
+
+reasoningMenuItems[ targetObj_, levels: { __String } ] :=
+With[
+	{
+		value = Replace[
+			currentValueOrigin[ targetObj, { TaggingRules, "ChatNotebookSettings", "Reasoning" } ],
+			{
+				{ source_, Inherited | Automatic } :> { source, "Automatic" },
+				(* A level stored in another spelling still checks the family's entry for it: *)
+				{ source_, level_String } :> {
+					source,
+					SelectFirst[ levels, StringMatchQ[ level, #, IgnoreCase -> True ] &, level ]
+				}
+			}
+		]
+	},
+	Join[
+		{
+			<| "Type" -> "Header", "Label" -> tr @ "UIAdvancedReasoning" |>,
+			<|
+				"Type"     -> "Setter",
+				"Icon"     -> None,
+				"Label"    -> tr @ "UIAdvancedChooseAutomatically",
+				"Check"    -> styleListItem[ "Automatic", value ],
+				"Value"    -> "Automatic",
+				"Category" -> "Reasoning",
+				"Action"   :> setCurrentValue[
+					targetObj,
+					{ TaggingRules, "ChatNotebookSettings", "Reasoning" },
+					Inherited
+				]
+			|>
+		},
+		Function[ level,
+			<|
+				"Type"     -> "Setter",
+				"Icon"     -> None,
+				"Label"    -> level,
+				"Check"    -> styleListItem[ level, value ],
+				"Value"    -> level,
+				"Category" -> "Reasoning",
+				"Action"   :> setCurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "Reasoning" }, level ]
+			|>
+		] /@ levels
+	]
+];
+
+(* Models that declare no levels get no reasoning section: *)
+reasoningMenuItems[ targetObj_, _ ] := { };
+
+reasoningMenuItems // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*menuReasoningLevels*)
+menuReasoningLevels // beginDefinition;
+
+(* The selected model's "ReasoningEfforts" from $modelAutoSettings. A model that cannot be resolved just gets no
+   reasoning section, rather than breaking the menu: *)
+menuReasoningLevels[ targetObj_ ] := Replace[
+	catchAlways @ autoModelSetting[
+		resolveFullModelSpec @ currentChatSettings[ targetObj, "Model" ],
+		"ReasoningEfforts"
+	],
+	Except[ { __String } ] -> None
+];
+
+menuReasoningLevels // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

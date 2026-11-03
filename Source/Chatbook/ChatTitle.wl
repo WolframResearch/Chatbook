@@ -144,7 +144,12 @@ generateChatTitleAsync[
 ] := Enclose[
     Module[ { string, short, instructions, context },
 
-        string = ConfirmBy[ messagesToString[ messages, "IncludeSystemMessage" -> False ], StringQ, "String" ];
+        (* The title describes the visible conversation, so reasoning summaries are left out: *)
+        string = ConfirmBy[
+            messagesToString[ messages, "IncludeSystemMessage" -> False, "ReasoningContent" -> "Drop" ],
+            StringQ,
+            "String"
+        ];
         short  = ConfirmBy[ StringTake[ string, UpTo[ $maxContextLength ] ], StringQ, "Short" ];
 
         instructions = ConfirmBy[

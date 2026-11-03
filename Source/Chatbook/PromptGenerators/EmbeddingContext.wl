@@ -28,7 +28,8 @@ getSmallContextString[ messages0: { ___Association }, opts: OptionsPattern[ ] ] 
     Catch @ Module[ { messages, string },
         messages = Reverse @ Take[ Reverse @ messages0, UpTo[ $smallContextMessageCount ] ];
         If[ messages === { }, Throw[ "" ] ];
-        string = ConfirmBy[ messagesToString[ messages, opts ], StringQ, "String" ];
+        (* The query context is the visible conversation, so reasoning summaries are left out unless asked for: *)
+        string = ConfirmBy[ messagesToString[ messages, opts, "ReasoningContent" -> "Drop" ], StringQ, "String" ];
         If[ StringLength @ string > $smallContextStringLength,
             StringTake[ string, { -$smallContextStringLength, -1 } ],
             string
