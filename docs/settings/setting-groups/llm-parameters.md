@@ -191,13 +191,13 @@ Controls the reasoning/thinking effort level for models that support extended th
 
 ### Resolution
 
-When `Automatic`, resolved via `$modelAutoSettings` lookup (no custom `resolveAutoSetting0` handler exists). No global auto default exists in `$modelAutoSettings[Automatic, Automatic]`, so for most models `Automatic` is left as-is and stripped by `DeleteMissing` in `makeLLMConfiguration`.
+When `Automatic`, resolved via `$modelAutoSettings` lookup. With `"RequestMethod" -> "Responses"`, a `resolveAutoSetting0` rule (`Settings.wl`) uses the family's `"ResponsesReasoning"` model setting when it declares one; otherwise the family's `"Reasoning"` model setting applies. No global auto default exists in `$modelAutoSettings[Automatic, Automatic]`, so for most models `Automatic` is left as-is and stripped by `DeleteMissing` in `makeLLMConfiguration`.
 
 ### Model-Specific Overrides
 
 - **GPT-5**: Resolves to `"Minimal"` if `$gpt5Reasoning` is `True` (i.e., `Wolfram/LLMFunctions` paclet is newer than version `2.2.4`), otherwise `Missing["NotSupported"]`.
 - **GPT-5.1**: Resolves to `"None"` under the same paclet version condition, otherwise `Missing["NotSupported"]`.
-- No other model families define a `"Reasoning"` override.
+- **GPT-5.4+** (inherited by GPT-5.6+): Resolves to `"None"` on chat completions, and to `"Medium"` on the Responses endpoint through `"ResponsesReasoning"`.
 
 When the `"Responses"` request method is used, plain effort levels are expanded to request reasoning summaries. See [`"RequestMethod"`](model-and-service.md#requestmethod).
 
@@ -207,7 +207,7 @@ Included in `$llmConfigPassedKeys` (`SendChat.wl`), so it is passed through `LLM
 
 ### Integration Points
 
-- **Dependencies**: None in `$autoSettingKeyDependencies`.
+- **Dependencies**: `"RequestMethod"` in `$autoSettingKeyDependencies`, so the request method is resolved first.
 - **Persona inheritance**: Not listed in `$nonInheritedPersonaValues`, so it is inherited from persona configurations.
 - **Notebook conversion**: Not listed in `$popOutSettings`.
 
