@@ -162,6 +162,7 @@ messagesToString // Options = {
     "IncludeTemporaryMessages" -> False,
     "MessageDelimiter"         -> $messageToStringDelimiter,
     "MessageTemplate"          -> $messageToStringTemplate,
+    "ReasoningContent"         -> "Summary",
     "SingleMessageTemplate"    -> Automatic
 };
 
@@ -169,7 +170,7 @@ messagesToString[ { }, opts: OptionsPattern[ ] ] :=
     "";
 
 messagesToString[ messages0_, opts: OptionsPattern[ ] ] := Enclose[
-    Catch @ Module[ { messages, system, temporary, template, delimiter, reverted, strings },
+    Catch @ Module[ { messages, system, temporary, template, delimiter, reasoning, reverted, strings },
 
         messages = ConfirmMatch[ messages0, $$chatMessages, "Messages" ];
 
@@ -193,9 +194,12 @@ messagesToString[ messages0_, opts: OptionsPattern[ ] ] := Enclose[
         ];
 
         delimiter = ConfirmMatch[ OptionValue[ "MessageDelimiter" ], _String, "Delimiter" ];
+        reasoning = ConfirmMatch[ OptionValue[ "ReasoningContent" ], "Summary"|"Drop", "ReasoningContent" ];
 
+        (* Plain text is wanted here. Reasoning summaries are kept as think blocks ("Summary") or removed ("Drop"),
+           both as structured reasoning parts and as the think blocks that messages rebuilt from cells carry as text: *)
         reverted = ConfirmMatch[
-            revertMultimodalContent @ messages,
+            dropThinkBlocks[ reasoning, revertMultimodalContent[ messages, "ReasoningContent" -> reasoning ] ],
             { KeyValuePattern[ "Content" -> _String ].. },
             "Reverted"
         ];
@@ -218,6 +222,36 @@ messagesToString[ { messages__ }, assistant_String, opts: OptionsPattern[ ] ] :=
     messagesToString[ { messages, <| "Role" -> "Assistant", "Content" -> assistant |> }, opts ];
 
 messagesToString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*dropThinkBlocks*)
+dropThinkBlocks // beginDefinition;
+
+dropThinkBlocks[ "Summary", messages_List ] := messages;
+
+dropThinkBlocks[ "Drop", messages_List ] :=
+    Replace[
+        messages,
+        message: KeyValuePattern[ "Content" -> s_String ] :> <| message, "Content" -> stripThinkBlocks @ s |>,
+        { 1 }
+    ];
+
+dropThinkBlocks // endDefinition;
+
+
+stripThinkBlocks // beginDefinition;
+
+(* A think block that is still open (reasoning cut off) runs to the end of the text: *)
+stripThinkBlocks[ s_String ] /; StringContainsQ[ s, "<think" ] := StringTrim @ StringDelete[
+    s,
+    Shortest[ (("<think" ~~ $$thinkTagAttributes ~~ ">") | "<think>") ~~ ___ ~~ ("</think>" | EndOfString) ]
+];
+
+(* Text without think blocks is left exactly as it is: *)
+stripThinkBlocks[ s_String ] := s;
+
+stripThinkBlocks // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
