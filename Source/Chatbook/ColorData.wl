@@ -535,6 +535,20 @@ Dispatch[{
 		 "DC"     -> "White",
 		 "Notes"  -> "Item within construct using colors ProgressCellBackground/Frame"
 	|>,
+	"DevModeUIBackground" -> <|
+		 "Light"  -> RGBColor[0.98824, 0.87059, 0.96078],
+		 "Dark"   -> RGBColor[0.33333, 0.09020, 0.29020],
+		 "Method" -> "Background",
+		 "DC"     -> "ChatMenu",
+		 "Notes"  -> "Unreleased UI shown with $devModeUI; magenta is used nowhere else in this palette"
+	|>,
+	"DevModeUIForeground" -> <|
+		 "Light"  -> RGBColor[0.54902, 0.00000, 0.43137],
+		 "Dark"   -> RGBColor[1.00000, 0.65098, 0.92157],
+		 "Method" -> "Content",
+		 "DC"     -> "ChatMenu",
+		 "Notes"  -> "Unreleased UI shown with $devModeUI; text on DevModeUIBackground"
+	|>,
 	"DiscardedMaterialBackground" -> <|
 		 "Light"  -> RGBColor[0.94902, 0.96863, 0.98824],
 		 "Dark"   -> RGBColor[0.1759050, 0.2134422, 0.2744532],
