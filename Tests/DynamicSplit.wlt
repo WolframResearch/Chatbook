@@ -349,7 +349,8 @@ VerificationTest[
 (*Think Tags*)
 
 (* A split in an open think tag is declined (quirk 202), since the static part would end the thoughts early. So is a
-   split after a code fence that opens in the thoughts and closes after them. The next chunk checks again: *)
+   split after a code fence that opens in the thoughts and closes after them. Declined content is checked content, so
+   the next chunk only splits again if it can complete a match: *)
 VerificationTest[
     Block[ { Wolfram`Chatbook`SendChat`Private`$dynamicSplitChecked = None },
         Function[
@@ -366,8 +367,11 @@ VerificationTest[
         }
     ],
     {
-        { { "<think>\nLet me compute:\n```wl\n1+1\n```" }, None },
-        { { "<think>\nLet me compute:\n```wl\n1+1\n```\nThat gives 2.\n</think>\nThe answer" }, None },
+        { { "<think>\nLet me compute:\n```wl\n1+1\n```" }, "<think>\nLet me compute:\n```wl\n1+1\n```" },
+        {
+            { "<think>\nLet me compute:\n```wl\n1+1\n```\nThat gives 2.\n</think>\nThe answer" },
+            "<think>\nLet me compute:\n```wl\n1+1\n```\nThat gives 2.\n</think>\nThe answer"
+        },
         {
             {
                 "<think>\nLet me compute:\n",
@@ -378,10 +382,25 @@ VerificationTest[
             },
             None
         },
-        { { "<thinking>\nI will write ```code``` here.\n</thinking>\nCode:\n```wl\nx\n```\nDone" }, None }
+        {
+            { "<thinking>\nI will write ```code``` here.\n</thinking>\nCode:\n```wl\nx\n```\nDone" },
+            "<thinking>\nI will write ```code``` here.\n</thinking>\nCode:\n```wl\nx\n```\nDone"
+        }
     },
     SameTest -> MatchQ,
-    TestID   -> "SplitDynamicContent-ThinkTags@@Tests/DynamicSplit.wlt:353,1-385,2"
+    TestID   -> "SplitDynamicContent-ThinkTags@@Tests/DynamicSplit.wlt:354,1-392,2"
+]
+
+(* Prose after declined content should not need a full split for every chunk: *)
+VerificationTest[
+    Module[ { chunks, result },
+        chunks = randomChunks[ "<think>\n```wl\n1+1\n```\n</think>\n" <> $splitCorpora[ "Prose" ], 1, 9 ];
+        result = compareSplits[ chunks, 1, 0 ];
+        { First @ result, Last @ result / Length @ chunks > 0.8 }
+    ],
+    { 0, True },
+    SameTest -> MatchQ,
+    TestID   -> "SplitDynamicContent-SkipsDeclined@@Tests/DynamicSplit.wlt:395,1-404,2"
 ]
 
 (* While streaming, the static parts that are written never end in the thoughts: *)
@@ -399,7 +418,7 @@ VerificationTest[
     ],
     { True .. },
     SameTest -> MatchQ,
-    TestID   -> "WriteChunk0-ThinkTags@@Tests/DynamicSplit.wlt:388,1-403,2"
+    TestID   -> "WriteChunk0-ThinkTags@@Tests/DynamicSplit.wlt:407,1-422,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -478,7 +497,7 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "Consistency-Definitions@@Tests/DynamicSplit.wlt:421,1-482,2"
+    TestID   -> "Consistency-Definitions@@Tests/DynamicSplit.wlt:440,1-501,2"
 ]
 
 VerificationTest[
@@ -488,7 +507,7 @@ VerificationTest[
     },
     { <| |>, <| |> },
     SameTest -> MatchQ,
-    TestID   -> "SplitDynamicContent-ConsistentParts@@Tests/DynamicSplit.wlt:484,1-492,2"
+    TestID   -> "SplitDynamicContent-ConsistentParts@@Tests/DynamicSplit.wlt:503,1-511,2"
 ]
 
 (* See $dynamicSplitRules for why dynamicSplitSkipQ relies on this: *)
@@ -502,7 +521,7 @@ VerificationTest[
     ],
     { _? (GreaterThan[ 15 ]), { } },
     SameTest -> MatchQ,
-    TestID   -> "SplitDynamicContent-MatchEnds@@Tests/DynamicSplit.wlt:495,1-506,2"
+    TestID   -> "SplitDynamicContent-MatchEnds@@Tests/DynamicSplit.wlt:514,1-525,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
