@@ -16,8 +16,11 @@ $notebookInstructionsPrompt = True;
 $currentSelectionIndicator  = { $leftSelectionIndicator, $rightSelectionIndicator };
 $notebookContextLimitScale  = 0.25;
 $downScaledSettings         = { "MaxCellStringLength", "MaxContextTokens", "MaxOutputCellStringLength" };
+$maxContextImages           = 5;
 $contextPrompt              = None;
 $selectionPrompt            = None;
+$contextImages              = { };
+$sidebarSelectionContext    = None;
 
 $notebookContextTemplate = StringTemplate[ "\
 IMPORTANT: Below is some metadata and content from the user's currently selected notebook. \
@@ -162,6 +165,24 @@ includedNotebookQ[ nbo_NotebookObject ] :=
 includedNotebookQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*resolveFocusedNotebook*)
+resolveFocusedNotebook // beginDefinition;
+
+resolveFocusedNotebook[ focused_ ] :=
+    Module[ { info },
+        If[ notebookObjectQ @ focused,
+            info = notebookInformation @ focused;
+            If[ MatchQ[ info, _Association ] && exclusionReason @ info === None,
+                Return @ { focused, info }
+            ]
+        ];
+        getUserNotebookInformation[ ]
+    ];
+
+resolveFocusedNotebook // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Context from other notebooks*)
 
@@ -252,27 +273,38 @@ getContextFromSelection // Options = {
 };
 
 getContextFromSelection[ chatNB_NotebookObject, settings_Association, opts: OptionsPattern[ ] ] :=
-    Module[ { focused, userNotebook },
+    Module[ { userNotebook, info },
         If[ TrueQ @ $WorkspaceChat,
-            focused = settings[ "FocusedNotebook" ];
-            userNotebook = If[ notebookObjectQ @ focused, focused, getUserNotebook[ ] ];
+            { userNotebook, info } = resolveFocusedNotebook @ settings[ "FocusedNotebook" ];
             ,
             userNotebook = $evaluationNotebook;
+            info = Automatic;
         ];
-        getContextFromSelection[ chatNB, userNotebook, settings, opts ]
+        getContextFromSelection[ chatNB, userNotebook, info, settings, opts ]
     ];
 
-getContextFromSelection[ chatNB_NotebookObject, None, settings_Association, opts: OptionsPattern[ ] ] :=
+getContextFromSelection[ _NotebookObject, None, _Association, OptionsPattern[ ] ] :=
     None;
 
-getContextFromSelection[ chatNB_, nbo_NotebookObject, settings0_Association, opts: OptionsPattern[ ] ] := Enclose[
+getContextFromSelection[ chatNB_, nbo_NotebookObject, settings_Association, opts: OptionsPattern[ ] ] :=
+    getContextFromSelection[ chatNB, nbo, Automatic, settings, opts ];
+
+getContextFromSelection[ _, None, _, _Association, OptionsPattern[ ] ] :=
+    None;
+
+getContextFromSelection[
+    _,
+    nbo_NotebookObject,
+    info: (Automatic | _Association),
+    settings0_Association,
+    OptionsPattern[ ]
+] := Enclose[
     Catch @ Block[
         {
             $notebookInstructionsPrompt = OptionValue[ "NotebookInstructionsPrompt" ],
             $maxCellsBeforeSelection    = OptionValue[ "MaxCellsBeforeSelection"    ],
             $maxCellsAfterSelection     = OptionValue[ "MaxCellsAfterSelection"     ],
-            $notebookMetadataString     = getNotebookMetadataString @ nbo,
-            $countImageTokens           = countImageTokensQ @ settings0
+            $notebookMetadataString     = getNotebookMetadataString[ nbo, info ]
         },
         Module[ { settings, selectionData, string },
             settings = ConfirmBy[ downScaledSettings @ settings0, AssociationQ, "Settings" ];
@@ -304,9 +336,15 @@ getContextFromSelection0[ selectionData: KeyValuePattern[ "Selected" -> { cell_C
             getContextFromSelection0[ selectionData, settings ] /; MatchQ[ $selectionInfo, None|_Association ]
         ];
 
-getContextFromSelection0[ selectionData_Association, settings_ ] := Enclose[
+getContextFromSelection0[ selectionData_Association, settings0_ ] := Enclose[
     Catch @ Module[
-        { cellObjects, cells, len1, len2, before, selected, after, marked, messages, string, nbCtx },
+        {
+            images, settings, cellObjects, cells, len1, len2, before, selected, after, marked, messages, string,
+            nbCtx
+        },
+
+        images   = contextImagesAllowedQ @ settings0;
+        settings = <| settings0, "Multimodal" -> images |>;
 
         cellObjects = ConfirmMatch[ Flatten @ Values @ selectionData, { ___CellObject }, "CellObjects" ];
         cells = ConfirmMatch[ LogChatTiming @ notebookRead @ cellObjects, { ___Cell }, "Cells" ];
@@ -318,9 +356,24 @@ getContextFromSelection0[ selectionData_Association, settings_ ] := Enclose[
         selected = ConfirmMatch[ cells[[ len1 + 1 ;; len1 + len2 ]], { ___Cell }, "SelectedCells" ];
         after    = ConfirmMatch[ cells[[ len1 + len2 + 1 ;; All ]] , { ___Cell }, "AfterCells"    ];
 
+        { before, selected, after } = DeleteCases[ #, _? chatExcludedQ ] & /@ { before, selected, after };
+
         marked = ConfirmMatch[ insertSelectionIndicator @ { before, selected, after }, { ___Cell }, "Marked" ];
-        messages = ConfirmMatch[ LogChatTiming @ makeChatMessages[ settings, marked, False ], { ___Association }, "Messages" ];
+        messages = ConfirmMatch[
+            Block[ { $multimodalMessages = images, $countImageTokens = images },
+                LogChatTiming @ makeChatMessages[ settings, marked, False ]
+            ],
+            { ___Association },
+            "Messages"
+        ];
+
         string = ConfirmBy[ messagesToString[ messages, "MessageTemplate" -> None ], StringQ, "String" ];
+
+        $contextImages = ConfirmMatch[
+            If[ images, selectContextImages[ messages, string ], { } ],
+            { ___List },
+            "ContextImages"
+        ];
 
         $contextPrompt   = processContextPromptString @ string;
         $selectionPrompt = extractSelectionPrompt @ string;
@@ -340,22 +393,121 @@ getContextFromSelection0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*countImageTokensQ*)
-countImageTokensQ // beginDefinition;
-countImageTokensQ[ settings_ ] := countImageTokensQ[ settings, allowedMultimodalRoles @ settings ];
-countImageTokensQ[ settings_, All ] := True;
-countImageTokensQ[ settings_, "System" ] := True;
-countImageTokensQ[ settings_, { ___, "System", ___ } ] := True;
-countImageTokensQ[ settings_, roles_ ] := False;
-countImageTokensQ // endDefinition;
+(*contextImagesAllowedQ*)
+contextImagesAllowedQ // beginDefinition;
+
+contextImagesAllowedQ[ settings_Association ] :=
+    TrueQ @ settings[ "Multimodal" ] && contextImagesAllowedQ @ allowedMultimodalRoles @ settings;
+
+contextImagesAllowedQ[ All ] := True;
+contextImagesAllowedQ[ roles_List ] := MemberQ[ roles, "User" ];
+contextImagesAllowedQ[ _ ] := False;
+
+contextImagesAllowedQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*contextImageParts*)
+contextImageParts // beginDefinition;
+
+contextImageParts[ messages_List ] := DeleteDuplicatesBy[
+    Flatten[ contextImageParts /@ messages, 1 ],
+    Replace[ #, { { link_String, _ } :> link, { None, img_ } :> img } ] &
+];
+
+contextImageParts[ KeyValuePattern[ "Content" -> content_List ] ] := SequenceCases[
+    content,
+    { text: Repeated[ $$contextTextPart, { 0, 1 } ], img: KeyValuePattern[ "Type" -> "Image" ] } :>
+        { imageLink @ text, img }
+];
+
+contextImageParts[ _ ] :=
+    { };
+
+contextImageParts // endDefinition;
+
+$$contextTextPart = _String | KeyValuePattern @ { "Type" -> "Text", "Data" -> _String };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*selectContextImages*)
+selectContextImages // beginDefinition;
+
+selectContextImages[ messages_List, context_String ] :=
+    Module[ { parts, selection, links, positions, indexed },
+        parts = contextImageParts @ messages;
+        If[ Length @ parts <= $maxContextImages, Return @ parts ];
+
+        selection = First[
+            StringPosition[
+                context,
+                Shortest[ $leftSelectionIndicator ~~ ___ ~~ $rightSelectionIndicator ],
+                1
+            ],
+            Missing[ "NotFound" ]
+        ];
+        If[ MissingQ @ selection, Return @ Take[ parts, $maxContextImages ] ];
+
+        links = DeleteDuplicates @ Cases[ parts, { link_String, _ } :> link ];
+        positions = If[ links === { },
+            <| |>,
+            GroupBy[ StringPosition[ context, Alternatives @@ links ], StringTake[ context, # ] & ]
+        ];
+        indexed = MapIndexed[
+            { #1, First @ #2, contextImageDistance[ #1, selection, positions ] } &,
+            parts
+        ];
+        First /@ Take[ SortBy[ indexed, { Last, #[[ 2 ]] & } ], $maxContextImages ]
+    ];
+
+selectContextImages // endDefinition;
+
+
+contextImageDistance // beginDefinition;
+
+contextImageDistance[ { link_String, _ }, selection_, positions_Association ] :=
+    With[ { found = Lookup[ positions, link, { } ] },
+        If[ found === { }, Infinity, Min[ intervalDistance[ #, selection ] & /@ found ] ]
+    ];
+
+contextImageDistance[ _, _, _Association ] :=
+    Infinity;
+
+contextImageDistance // endDefinition;
+
+
+intervalDistance // beginDefinition;
+intervalDistance[ { a1_Integer, a2_Integer }, { b1_Integer, b2_Integer } ] :=
+    Max[ 0, Max[ a1, b1 ] - Min[ a2, b2 ] - 1 ];
+intervalDistance // endDefinition;
+
+
+imageLink // beginDefinition;
+
+imageLink[ ] := None;
+
+imageLink[ KeyValuePattern[ "Data" -> text_String ] ] := imageLink @ text;
+
+imageLink[ text_String ] := Last[
+    StringCases[ text, Shortest[ "![" ~~ Except[ "\n" ]... ~~ "](" ~~ Except[ ")" | "\n" ].. ~~ ")" ] ],
+    None
+];
+
+imageLink // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*getNotebookMetadataString*)
 getNotebookMetadataString // beginDefinition;
 
-getNotebookMetadataString[ nbo_NotebookObject ] := Enclose[
-    ConfirmBy[ getNotebookMetadataString0 @ notebookInformation @ nbo, StringQ, "Metadata" ],
+getNotebookMetadataString[ nbo_NotebookObject ] :=
+    getNotebookMetadataString[ nbo, Automatic ];
+
+getNotebookMetadataString[ nbo_NotebookObject, Automatic ] :=
+    getNotebookMetadataString[ nbo, notebookInformation @ nbo ];
+
+getNotebookMetadataString[ _NotebookObject, info_Association ] := Enclose[
+    ConfirmBy[ getNotebookMetadataString0 @ info, StringQ, "Metadata" ],
     throwInternalFailure
 ];
 
@@ -561,46 +713,13 @@ insertSelectionIndicator // endDefinition;
 selectContextCells // beginDefinition;
 
 selectContextCells[ nbo_NotebookObject ] /; TrueQ @ $SidebarChat :=
-Module[ { sidebarCell, selectionAtTimeOfInputConfirmation, allCells, firstBeforeCell, selectedCells, firstAfterCell, currentSelections },
-    (* The TaggingRules of the sidebar cell contains the selection objects at the time the sidebar input field content was confirmed *)
-    sidebarCell = sidebarCellObject @ nbo;
-    selectionAtTimeOfInputConfirmation = CurrentValue[ sidebarCell, { TaggingRules, "CurrentSelections" } ];
-    currentSelections = FE`Evaluate @ FEPrivate`GetCurrentSelections @ nbo;
-
-    allCells = Cells @ nbo;
-    If[ Not @ AssociationQ @ selectionAtTimeOfInputConfirmation,
-        Return @ <| "Before" -> Reverse @ Take[ Reverse @ allCells, UpTo[ $maxCellsBeforeSelection ] ], "Selected" -> { }, "After" -> { } |>
-    ];
-
-    WithCleanup[
-        With[ { s = selectionAtTimeOfInputConfirmation[[2]] }, (* FIXME use Lookup instead of part to get remnant selection *)
-            FE`Evaluate @ FEPrivate`SetCurrentSelections @ Association[ "ActiveSelection" -> s ]
-        ];
-        selectedCells   = SelectedCells @ nbo;
-        firstBeforeCell = PreviousCell @ NotebookSelection @ nbo;
-        firstAfterCell  = NextCell @ NotebookSelection @ nbo;
-        ,
-        With[ { s1 = currentSelections, s2 = selectionAtTimeOfInputConfirmation },
-            FE`Evaluate @ FEPrivate`SetCurrentSelections @ s1;
-            FE`Evaluate @ FEPrivate`ReleaseSelectionObjects @ s1;
-            FE`Evaluate @ FEPrivate`ReleaseSelectionObjects @ s2;
-            setCurrentValue[ sidebarCell, { TaggingRules, "CurrentSelections" }, Inherited ]
+    If[ savedSelectionContextQ @ $sidebarSelectionContext,
+        removeMissingContextCells[ nbo, $sidebarSelectionContext ],
+        With[ { context = selectSidebarContextCells @ nbo },
+            If[ TrueQ @ $chatState, $sidebarSelectionContext = context ];
+            context
         ]
     ];
-
-    (* It is possible that there is no main notebook selection: default to all cells as "Before" *)
-    If[ firstBeforeCell === None && firstAfterCell === None && selectedCells === { },
-        <| "Before" -> Reverse @ Take[ Reverse @ allCells, UpTo[ $maxCellsBeforeSelection ] ], "Selected" -> { }, "After" -> { } |>
-        ,
-        <|
-            "Before" -> With[ { p = FirstPosition[ allCells, firstBeforeCell, None ] },
-                If[ p =!= None, Reverse @ Take[ Reverse @ Extract[ allCells, { ;; p[[1]] } ], UpTo[ $maxCellsBeforeSelection ] ], { } ] ],
-            "Selected" -> selectedCells,
-            "After" -> With[ { p = FirstPosition[ allCells, firstAfterCell, None ] },
-                If[ p =!= None, Take[ Extract[ allCells, { p[[1]] ;; } ], UpTo[ $maxCellsAfterSelection ] ], { } ] ]
-        |>
-    ]
-]
 
 selectContextCells[ nbo_NotebookObject ] :=
     selectContextCells @ Cells @ nbo;
@@ -615,7 +734,7 @@ selectContextCells[ info: { __Association } ] := Module[ { cursor, i, n },
     cursor = Lookup[ info, "CursorPosition", None ];
     Which[
         First @ cursor === "AboveCell",
-            selectContextCells0 @ <| "Before" -> { }, "Selected" -> { }, "After" -> Rest @ info |>,
+            selectContextCells0 @ <| "Before" -> { }, "Selected" -> { }, "After" -> info |>,
 
         IntegerQ[ i = firstCursorIndex[ cursor, "BelowCell" ] ],
             selectContextCells0 @ <| "Before" -> Take[ info, i ], "Selected" -> { }, "After" -> Drop[ info, i ] |>,
@@ -645,7 +764,130 @@ selectContextCells[ info: { __Association } ] := Module[ { cursor, i, n },
 
 selectContextCells // endDefinition;
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*savedSelectionContextQ*)
+savedSelectionContextQ // beginDefinition;
+savedSelectionContextQ[ KeyValuePattern @ { "Before" -> _List, "Selected" -> _List, "After" -> _List } ] := True;
+savedSelectionContextQ[ _ ] := False;
+savedSelectionContextQ // endDefinition;
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*removeMissingContextCells*)
+removeMissingContextCells // beginDefinition;
+
+removeMissingContextCells[ nbo_NotebookObject, context_Association ] :=
+    With[ { existing = AssociationThread[ Cells @ nbo -> True ] },
+        Select[ Lookup[ existing, #, False ] & ] /@ context
+    ];
+
+removeMissingContextCells // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*selectSidebarContextCells*)
+selectSidebarContextCells // beginDefinition;
+
+selectSidebarContextCells[ nbo_NotebookObject ] :=
+Module[
+    {
+        sidebarCell, selectionAtTimeOfInputConfirmation, allCells, firstBeforeCell, selectedCells, firstAfterCell,
+        currentSelections, context
+    },
+    (* The TaggingRules of the sidebar cell contains the selection objects at the time the sidebar input field content was confirmed *)
+    sidebarCell = sidebarCellObject @ nbo;
+    selectionAtTimeOfInputConfirmation = CurrentValue[ sidebarCell, { TaggingRules, "CurrentSelections" } ];
+    currentSelections = FE`Evaluate @ FEPrivate`GetCurrentSelections @ nbo;
+
+    allCells = Cells @ nbo;
+    If[ Not @ AssociationQ @ selectionAtTimeOfInputConfirmation,
+        Return @ boundedContextCells @ <| "Before" -> allCells, "Selected" -> { }, "After" -> { } |>
+    ];
+
+    WithCleanup[
+        With[ { s = selectionAtTimeOfInputConfirmation[[2]] }, (* FIXME use Lookup instead of part to get remnant selection *)
+            FE`Evaluate @ FEPrivate`SetCurrentSelections @ Association[ "ActiveSelection" -> s ]
+        ];
+        selectedCells   = SelectedCells @ nbo;
+        firstBeforeCell = PreviousCell @ NotebookSelection @ nbo;
+        firstAfterCell  = NextCell @ NotebookSelection @ nbo;
+        ,
+        With[ { s1 = currentSelections, s2 = selectionAtTimeOfInputConfirmation },
+            FE`Evaluate @ FEPrivate`SetCurrentSelections @ s1;
+            FE`Evaluate @ FEPrivate`ReleaseSelectionObjects @ s1;
+            FE`Evaluate @ FEPrivate`ReleaseSelectionObjects @ s2;
+            setCurrentValue[ sidebarCell, { TaggingRules, "CurrentSelections" }, Inherited ]
+        ]
+    ];
+
+    (* It is possible that there is no main notebook selection: default to all cells as "Before" *)
+    context = If[ firstBeforeCell === None && firstAfterCell === None && selectedCells === { },
+        <| "Before" -> allCells, "Selected" -> { }, "After" -> { } |>,
+        <|
+            "Before" -> With[ { p = FirstPosition[ allCells, firstBeforeCell, None ] },
+                If[ p =!= None, Extract[ allCells, { ;; p[[1]] } ], { } ] ],
+            "Selected" -> selectedCells,
+            "After" -> With[ { p = FirstPosition[ allCells, firstAfterCell, None ] },
+                If[ p =!= None, Extract[ allCells, { p[[1]] ;; } ], { } ] ]
+        |>
+    ];
+    boundedContextCells @ context
+];
+
+selectSidebarContextCells // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*boundedContextCells*)
+boundedContextCells // beginDefinition;
+
+boundedContextCells[ KeyValuePattern @ {
+    "Before"   -> before_List,
+    "Selected" -> selected_List,
+    "After"    -> after_List
+} ] := <|
+    "Before"   -> Reverse @ takeIncludedCells[ Reverse @ before, $maxCellsBeforeSelection ],
+    "Selected" -> includedCellObjects @ selected,
+    "After"    -> takeIncludedCells[ after, $maxCellsAfterSelection ]
+|>;
+
+boundedContextCells // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*takeIncludedCells*)
+takeIncludedCells // beginDefinition;
+
+takeIncludedCells[ cells: { ___CellObject }, n: _Integer? NonNegative | Infinity ] :=
+    Module[ { taken, rest, chunk },
+        taken = { };
+        rest  = cells;
+        While[ Length @ taken < n && rest =!= { },
+            chunk = Take[ rest, UpTo[ n ] ];
+            rest  = Drop[ rest, Length @ chunk ];
+            taken = Join[ taken, includedCellObjects @ chunk ]
+        ];
+        Take[ taken, UpTo[ n ] ]
+    ];
+
+takeIncludedCells // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*includedCellObjects*)
+includedCellObjects // beginDefinition;
+
+includedCellObjects[ { } ] := { };
+
+includedCellObjects[ cells: { __CellObject } ] :=
+    Cases[ filterChatCells @ cellInformation @ cells, KeyValuePattern[ "CellObject" -> cell_CellObject ] :> cell ];
+
+includedCellObjects // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*selectContextCells0*)
 selectContextCells0 // beginDefinition;
 
 selectContextCells0[ KeyValuePattern @ {
@@ -654,11 +896,11 @@ selectContextCells0[ KeyValuePattern @ {
     "After"    -> after0_List
 } ] :=
     Module[ { before, after },
-        before = Reverse @ Take[ Reverse @ before0, UpTo[ $maxCellsBeforeSelection ] ];
-        after = Take[ after0, UpTo[ $maxCellsAfterSelection ] ];
+        before = Reverse @ Take[ Reverse @ filterChatCells @ before0, UpTo[ $maxCellsBeforeSelection ] ];
+        after = Take[ filterChatCells @ after0, UpTo[ $maxCellsAfterSelection ] ];
         Map[
             Cases[ KeyValuePattern[ "CellObject" -> cell_CellObject ] :> cell ],
-            <| "Before" -> before, "Selected" -> current, "After" -> after |>
+            <| "Before" -> before, "Selected" -> filterChatCells @ current, "After" -> after |>
         ]
     ];
 
@@ -677,6 +919,22 @@ firstCursorIndex // endDefinition;
 getUserNotebook // beginDefinition;
 getUserNotebook[ ] := FirstCase[ getUserNotebooks[ ], _NotebookObject, None ];
 getUserNotebook // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getUserNotebookInformation*)
+getUserNotebookInformation // beginDefinition;
+
+getUserNotebookInformation[ ] := Enclose[
+    FirstCase[
+        ConfirmMatch[ SourceNotebookObjectInformation[ ], { ___Association }, "NotebookInformation" ],
+        info: KeyValuePattern @ { "Included" -> True, "NotebookObject" -> nbo_NotebookObject } :> { nbo, info },
+        { None, None }
+    ],
+    throwInternalFailure
+];
+
+getUserNotebookInformation // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

@@ -544,10 +544,11 @@ makeHTTPRequest // endDefinition;
 prepareMessagesForLLM // beginDefinition;
 
 prepareMessagesForLLM[ settings_, messages0_ ] := Enclose[
-    Module[ { messages, newRoles, replaced, split, stringResults, noSources, cleanBase, reasoning },
+    Module[ { messages, cleanAdded, newRoles, replaced, split, stringResults, noSources, cleanBase, reasoning },
 
         messages      = ConfirmMatch[ prepareMessagesForLLM0[ settings, messages0 ], { ___Association }, "Messages" ];
-        newRoles      = ConfirmMatch[ rewriteMessageRoles[ settings, messages ], { ___Association }, "NewRoles" ];
+        cleanAdded    = ConfirmMatch[ removeAddedPromptTags @ messages, { ___Association }, "CleanAdded" ];
+        newRoles      = ConfirmMatch[ rewriteMessageRoles[ settings, cleanAdded ], { ___Association }, "NewRoles" ];
         replaced      = ConfirmMatch[ replaceUnicodeCharacters[ settings, newRoles ], { ___Association }, "Replaced" ];
         split         = ConfirmMatch[ splitToolResponses[ settings, replaced ], { ___Association }, "Split" ];
         stringResults = ConfirmMatch[ makeStringResults[ settings, split ], { ___Association }, "StringResults" ];

@@ -230,7 +230,8 @@ constructMessages[ settings_Association? AssociationQ, cells: { __Cell } ] :=
 
 constructMessages[ settings_Association? AssociationQ, messages0: { __Association } ] :=
     Enclose @ Module[
-        { prompted, base, messages, merged, genRole, genPos, generatedPrompts, generatedMessages, combined, processed },
+        { prompted, base, messages, merged, genRole, genPos, generatedPrompts, generatedMessages, combined, processed,
+          outgoing },
 
         If[ settings[ "ToolMethod" ] === "Service", needsBasePrompt[ "ServiceToolCallRetry" ] ];
         If[ settings[ "AutoFormat" ], needsBasePrompt[ "Formatting" ] ];
@@ -311,7 +312,8 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
         $lastSettings = settings;
         $lastMessages = processed;
 
-        processed
+        outgoing = foldContextImageMessage @ processed;
+        If[ TrueQ @ Lookup[ settings, "MergeMessages" ], mergeOutgoingMessageData @ outgoing, outgoing ]
     ];
 
 constructMessages // endDefinition;
@@ -372,16 +374,22 @@ constructInlineMessages // endDefinition;
 addPrompts // beginDefinition;
 
 addPrompts[ settings_Association, messages_List ] := Enclose[
-    Module[ { custom, workspace, inline, sidebar, prompt },
-        custom    = ConfirmMatch[ assembleCustomPrompt @ settings, None|_String, "Custom"    ];
-        workspace = ConfirmMatch[ getWorkspacePrompt @ settings  , None|_String, "Workspace" ];
-        inline    = ConfirmMatch[ getInlineChatPrompt @ settings , None|_String, "Inline"    ];
-        sidebar   = ConfirmMatch[ getSidebarPrompt @ settings    , None|_String, "Sidebar"   ];
-        prompt    = StringRiffle[ Select[ { custom, workspace, inline, sidebar }, StringQ ], "\n\n" ];
-        addPrompts[ prompt, messages ]
+    Block[ { $contextImages = { } },
+        Module[ { custom, workspace, inline, sidebar, prompt, withImages },
+            custom     = ConfirmMatch[ assembleCustomPrompt @ settings, None|_String, "Custom"    ];
+            workspace  = ConfirmMatch[ getWorkspacePrompt @ settings  , None|_String, "Workspace" ];
+            inline     = ConfirmMatch[ getInlineChatPrompt @ settings , None|_String, "Inline"    ];
+            sidebar    = ConfirmMatch[ getSidebarPrompt @ settings    , None|_String, "Sidebar"   ];
+            prompt     = StringRiffle[ Select[ { custom, workspace, inline, sidebar }, StringQ ], "\n\n" ];
+            withImages = ConfirmMatch[ addContextImages[ messages, $contextImages ], _List, "WithImages" ];
+            addPrompts[ prompt, withImages ]
+        ]
     ],
     throwInternalFailure
 ];
+
+addPrompts[ None|"", { sysMessage_? addedPromptsMessageQ, messages___ } ] :=
+    { <| sysMessage, "Content" -> replaceAddedPrompts[ sysMessage[ "Content" ], None ] |>, messages };
 
 addPrompts[ None|"", messages_List ] :=
     messages;
@@ -389,18 +397,202 @@ addPrompts[ None|"", messages_List ] :=
 addPrompts[ prompt_String, { sysMessage: KeyValuePattern[ "Role" -> "System" ], messages___ } ] := Enclose[
     Module[ { systemPrompt, newPrompt, newMessage },
         systemPrompt = ConfirmBy[ Lookup[ sysMessage, "Content" ]             , StringQ     , "SystemPrompt" ];
-        newPrompt    = ConfirmBy[ StringJoin[ systemPrompt, "\n\n", prompt ]  , StringQ     , "NewPrompt"    ];
+        newPrompt    = ConfirmBy[ replaceAddedPrompts[ systemPrompt, prompt ] , StringQ     , "NewPrompt"    ];
         newMessage   = ConfirmBy[ Append[ sysMessage, "Content" -> newPrompt ], AssociationQ, "NewMessage"   ];
         { newMessage, messages }
     ]
 ];
 
 addPrompts[ prompt_String, { messages___ } ] := {
-    <| "Role" -> "System", "Content" -> prompt |>,
+    <| "Role" -> "System", "Content" -> wrapAddedPrompts @ prompt |>,
     messages
 };
 
 addPrompts // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*addedPromptsMessageQ*)
+addedPromptsMessageQ // beginDefinition;
+
+addedPromptsMessageQ[ KeyValuePattern @ { "Role" -> "System", "Content" -> s_String } ] :=
+    StringContainsQ[ s, $addedPromptsOpen ];
+
+addedPromptsMessageQ[ _ ] :=
+    False;
+
+addedPromptsMessageQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*replaceAddedPrompts*)
+replaceAddedPrompts // beginDefinition;
+
+replaceAddedPrompts[ systemPrompt_String, prompt_ ] := StringRiffle[
+    Select[
+        { StringTrim @ removeAddedPrompts @ systemPrompt, wrapAddedPrompts @ prompt },
+        StringQ @ # && # =!= "" &
+    ],
+    "\n\n"
+];
+
+replaceAddedPrompts // endDefinition;
+
+
+wrapAddedPrompts // beginDefinition;
+wrapAddedPrompts[ None|"" ] := None;
+wrapAddedPrompts[ prompt_String ] := $addedPromptsOpen <> prompt <> $addedPromptsClose;
+wrapAddedPrompts // endDefinition;
+
+
+removeAddedPrompts // beginDefinition;
+removeAddedPrompts[ s_String ] := StringDelete[ s, $addedPromptsOpen ~~ ___ ~~ $addedPromptsClose ];
+removeAddedPrompts // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*removeAddedPromptTags*)
+removeAddedPromptTags // beginDefinition;
+
+removeAddedPromptTags[ messages_List ] := Replace[
+    messages,
+    {
+        message: KeyValuePattern @ { "Role" -> "System", "Content" -> content_ } :> <|
+            message,
+            "Content" -> removeAddedPromptTags0 @ content
+        |>,
+        message: KeyValuePattern @ { "role" -> "system", "content" -> content_ } :> <|
+            message,
+            "content" -> removeAddedPromptTags0 @ content
+        |>
+    },
+    { 1 }
+];
+
+removeAddedPromptTags // endDefinition;
+
+
+removeAddedPromptTags0 // beginDefinition;
+
+removeAddedPromptTags0[ content_ ] := ReplaceAll[
+    content,
+    s_String :> RuleCondition @ StringDelete[ s, { $addedPromptsOpen, $addedPromptsClose } ]
+];
+
+removeAddedPromptTags0 // endDefinition;
+
+$addedPromptsOpen  = "<added-prompts>";
+$addedPromptsClose = "</added-prompts>";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*addContextImages*)
+addContextImages // beginDefinition;
+
+addContextImages[ messages_List, { } ] :=
+    messages;
+
+addContextImages[ messages_List, images: { __List } ] := Enclose[
+    Module[ { positions },
+        positions = Position[
+            messages,
+            KeyValuePattern[ "Role" -> "User" ]? (! toolMessageQ @ # &),
+            { 1 },
+            Heads -> False
+        ];
+        If[ positions === { },
+            messages,
+            ConfirmMatch[ Insert[ messages, makeContextImageMessage @ images, Last @ positions ], _List, "Inserted" ]
+        ]
+    ],
+    throwInternalFailure
+];
+
+addContextImages // endDefinition;
+
+
+makeContextImageMessage // beginDefinition;
+
+makeContextImageMessage[ images_List ] := <|
+    "Role"      -> "User",
+    "Content"   -> Flatten @ {
+        <| "Type" -> "Text", "Data" -> $contextImagesLabel |>,
+        Replace[
+            images,
+            {
+                { link_String, img_ } :> { <| "Type" -> "Text", "Data" -> "\n" <> link |>, img },
+                { _, img_ } :> img
+            },
+            { 1 }
+        ]
+    },
+    "Temporary" -> True
+|>;
+
+makeContextImageMessage // endDefinition;
+
+$contextImagesLabel = "\
+[Original images for the MarkdownImageBoxes in the notebook context. Each image follows its markdown link. \
+The user's message follows the images.]";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*foldContextImageMessage*)
+foldContextImageMessage // beginDefinition;
+
+foldContextImageMessage[ messages_List ] := Module[ { imagePosition, relativeInputPosition, imageIndex, inputIndex },
+    imagePosition = FirstPosition[ messages, _? contextImageMessageQ, Missing[ "NotFound" ], { 1 } ];
+    If[ MissingQ @ imagePosition, Return @ messages ];
+
+    imageIndex = First @ imagePosition;
+    relativeInputPosition = FirstPosition[
+        Drop[ messages, imageIndex ],
+        message: KeyValuePattern[ "Role" -> "User" ] /; ! temporaryMessageQ @ message,
+        Missing[ "NotFound" ],
+        { 1 }
+    ];
+    If[ MissingQ @ relativeInputPosition, Return @ messages ];
+
+    inputIndex = imageIndex + First @ relativeInputPosition;
+    Delete[
+        ReplacePart[
+            messages,
+            inputIndex -> <|
+                messages[[ inputIndex ]],
+                "Content" -> Join[
+                    messages[[ imageIndex, "Content" ]],
+                    toContentPartList @ messages[[ inputIndex, "Content" ]]
+                ]
+            |>
+        ],
+        imageIndex
+    ]
+];
+
+foldContextImageMessage[ other_ ] :=
+    other;
+
+foldContextImageMessage // endDefinition;
+
+
+contextImageMessageQ // beginDefinition;
+
+contextImageMessageQ[ KeyValuePattern @ {
+    "Role"      -> "User",
+    "Content"   -> { KeyValuePattern[ "Data" -> $contextImagesLabel ], ___ },
+    "Temporary" -> True
+} ] := True;
+
+contextImageMessageQ[ _ ] := False;
+
+contextImageMessageQ // endDefinition;
+
+
+toContentPartList // beginDefinition;
+toContentPartList[ content_String ] := { <| "Type" -> "Text", "Data" -> content |> };
+toContentPartList[ content_Association ] := { content };
+toContentPartList[ content_List ] := Replace[ content, s_String :> <| "Type" -> "Text", "Data" -> s |>, { 1 } ];
+toContentPartList // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1305,8 +1497,27 @@ mergeMessageData[ messages_List ] :=
 mergeMessageData // endDefinition;
 
 mergeMessageData0 // beginDefinition;
-mergeMessageData0[ messages_List ] := Flatten[ mergeMessages /@ SplitBy[ messages, Lookup[ "Role" ] ] ];
+mergeMessageData0[ messages_List ] := Flatten[
+    mergeMessages /@ SplitBy[ messages, { Lookup[ #, "Role" ], temporaryMessageQ @ # } & ]
+];
 mergeMessageData0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*mergeOutgoingMessageData*)
+mergeOutgoingMessageData // beginDefinition;
+
+mergeOutgoingMessageData[ { sys: KeyValuePattern[ "Role" -> "System" ], rest___ } ] :=
+    Flatten @ { sys, mergeOutgoingMessageData0 @ { rest } };
+
+mergeOutgoingMessageData[ messages_List ] :=
+    mergeOutgoingMessageData0 @ messages;
+
+mergeOutgoingMessageData // endDefinition;
+
+mergeOutgoingMessageData0 // beginDefinition;
+mergeOutgoingMessageData0[ messages_List ] := Flatten[ mergeMessages /@ SplitBy[ messages, Lookup[ "Role" ] ] ];
+mergeOutgoingMessageData0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

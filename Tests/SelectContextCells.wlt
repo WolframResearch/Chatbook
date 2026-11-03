@@ -53,7 +53,7 @@ VerificationTest[
 (*Cursor Positions*)
 VerificationTest[
     selectIndices @ syntheticCellInfo[ 10, 1 -> "AboveCell" ],
-    <| "Before" -> { }, "Selected" -> { }, "After" -> Range[ 2, 10 ] |>,
+    <| "Before" -> { }, "Selected" -> { }, "After" -> Range[ 1, 10 ] |>,
     SameTest -> MatchQ,
     TestID   -> "AboveFirstCell@@Tests/SelectContextCells.wlt:54,1-59,2"
 ]

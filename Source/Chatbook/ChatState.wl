@@ -77,6 +77,7 @@ withChatState[ eval_ ] :=
             withChatState                 = # &,
             $contextPrompt                = $contextPrompt,
             $selectionPrompt              = $selectionPrompt,
+            $sidebarSelectionContext      = None,
             $toolCallCount                = 0,
             $openToolCallBoxes            = Automatic,
             $progressContainer            = None,

@@ -22,7 +22,8 @@ $contentSuggestionsProgressWidth = 250;
 
 $contentSuggestionsOverrides = <|
     "MaxCellStringLength"       -> 1000,
-    "MaxOutputCellStringLength" -> 200
+    "MaxOutputCellStringLength" -> 200,
+    "Multimodal"                -> False
 |>;
 
 $maxContextTokens = <|
@@ -302,7 +303,10 @@ showContentSuggestions0[ nbo_NotebookObject, root: $$feObj, selectionInfo_Associ
 
             context = withApproximateProgress[
                 ConfirmBy[
-                    Replace[ LogChatTiming @ getSuggestionsContext[ type, nbo, settings ], None -> "" ],
+                    Replace[
+                        Block[ { $contextImages = { } }, LogChatTiming @ getSuggestionsContext[ type, nbo, settings ] ],
+                        None -> ""
+                    ],
                     StringQ,
                     "Context"
                 ],
