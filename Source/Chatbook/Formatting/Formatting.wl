@@ -205,6 +205,27 @@ formatToolCall0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Session Caches*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*addToCache*)
+addToCache // beginDefinition;
+addToCache // Attributes = { HoldFirst };
+
+(* Stores value for key in the association held by cache and gives value. The formatter's caches live for the whole
+   session, so when a cache has size entries, its oldest half is discarded first (as for $tokenCountCache in
+   ChatMessages.wl). Callers look the key up first, as in Lookup[ cache, key, addToCache[ cache, size, key, value ] ],
+   so that the value is only computed when it is missing: *)
+addToCache[ cache_Symbol, size_Integer, key_, value_ ] := (
+    If[ Length @ cache >= size, cache = Take[ cache, -Floor[ size / 2 ] ] ];
+    cache[ key ] = value
+);
+
+addToCache // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Load Files*)
 (* Rules.wl comes first, since Pipeline.wl and Tables.wl use its patterns while they load: *)
 Get[ "Wolfram`Chatbook`Formatting`Rules`"            ];
