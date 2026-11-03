@@ -55,7 +55,7 @@
   - [ ] Converting notebook content to Markdown
     - Source: `Source/Chatbook/Serialization.wl`
   - [ ] Converting Markdown to notebook content
-    - Source: `Source/Chatbook/Formatting.wl`
+    - Source: `Source/Chatbook/Formatting/`
 
 * [ ] Handler functions
   - Source: `Source/Chatbook/Handlers.wl`

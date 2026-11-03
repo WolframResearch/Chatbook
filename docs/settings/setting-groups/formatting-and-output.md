@@ -243,7 +243,7 @@ The resolved value is stored in the `$openToolCallBoxes` global variable (`Commo
 
 Used in two places:
 
-1. **Tool call box rendering**: in `parseFullToolCallString` (`Formatting.wl`), the parsed tool call data includes `"Open" -> TrueQ @ $openToolCallBoxes`, which is then passed to `makeToolCallBoxLabel` where it controls whether the `openerView` displaying the tool call details (raw and interpreted views) starts in the open or closed state.
+1. **Tool call box rendering**: in `parseFullToolCallString` (`Formatting/ToolCalls.wl`), the parsed tool call data includes `"Open" -> TrueQ @ $openToolCallBoxes`, which is then passed to `makeToolCallBoxLabel` where it controls whether the `openerView` displaying the tool call details (raw and interpreted views) starts in the open or closed state.
 
 2. **Markdown output handling**: in `checkMarkdownOutput` (`SendChat.wl`), when `$openToolCallBoxes` is truthy, tool output containing markdown images is passed through unchanged; when falsy, `$useMarkdownMessage` is appended to the tool response, which tells the LLM: *"The user does not see the output of this tool call. You must use this output in your response for them to see it."* — prompting the LLM to include image links and other formatted content in its visible response text.
 

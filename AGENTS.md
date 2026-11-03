@@ -99,7 +99,6 @@ PacletInfo.wl defines three kernel extensions loaded in order:
 - **CommonSymbols.wl** — Symbol declarations shared across subpackages
 - **SendChat.wl** — Core chat message sending logic
 - **Serialization.wl** — Chat data serialization/deserialization
-- **Formatting.wl** — LLM response formatting for notebook display
 - **ChatMessages.wl** / **ChatState.wl** — Message history and session state
 - **Settings.wl** — User preferences management; **PreferencesContent.wl** — preferences UI
 - **Sandbox.wl** — Sandboxed Wolfram Language evaluation for LLM-generated code
@@ -114,6 +113,7 @@ PacletInfo.wl defines three kernel extensions loaded in order:
 
 **Subdirectories:**
 - **ChatModes/** — Chat mode extensions (Evaluate, UI, Context, NotebookAssistance, ContentSuggestions)
+- **Formatting/** — LLM response formatting for notebook display (`Formatting.wl` loads the other files, which share its ``Wolfram`Chatbook`Formatting`Private` `` context)
 - **PromptGenerators/** — Prompt augmentation (RelatedDocumentation, WolframAlpha queries, VectorDatabases, NotebookChunking)
 - **Tools/** — LLM tool definitions (WolframLanguageEvaluator, WebSearcher, WebFetcher, DocumentationSearcher, WolframAlpha, NotebookEditor, etc.)
 

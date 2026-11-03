@@ -3,8 +3,8 @@
 
 (* Usage: ./run.sh profile [--files=pattern,...] [--out=NAME]
 
-   Hot-spot breakdown of the CURRENT formatter (it instruments private functions of Formatting.wl and SendChat.wl by
-   name, so it only works for code that still has them; functions that don't exist are skipped).
+   Hot-spot breakdown of the CURRENT formatter (it instruments private functions of the Formatting/ files and
+   SendChat.wl by name, so it only works for code that still has them; functions that don't exist are skipped).
 
    Each instrumented function's calls are timed, and the time is split into self time (excluding time in other
    instrumented functions), so the buckets add up to the total. Three scenarios, each over the corpus, in a kernel

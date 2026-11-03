@@ -1,6 +1,6 @@
 # Formatter differential testing and benchmarks
 
-Tools for checking changes to the Chatbook markdown formatter (`Source/Chatbook/Formatting.wl`) against the
+Tools for checking changes to the Chatbook markdown formatter (`Source/Chatbook/Formatting/`) against the
 code on main: a corpus of realistic LLM responses, a golden snapshot of what the main formatter makes of them, a
 comparison script that shows the first difference in each output, and benchmarks. `QUIRKS.md` lists current
 formatter behavior that looks wrong, found while writing the `Tests/Formatting*.wlt` characterization tests.
@@ -174,8 +174,8 @@ The harness only calls public functions for the one-shot formatting (`FormatChat
 * ``Wolfram`Chatbook`Serialization`Private` ``: `serializeTraditionalForm`, `serializeStandardFormString` (memos
   cleared)
 
-`profile.wls` instruments private functions of `Formatting.wl` by name; it is meant for the current code and skips
-functions that don't exist.
+`profile.wls` instruments private functions of the `Formatting/` files by name; it is meant for the current code and
+skips functions that don't exist.
 
 ## Benchmark
 
