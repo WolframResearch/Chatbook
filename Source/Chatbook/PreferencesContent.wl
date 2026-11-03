@@ -706,7 +706,7 @@ makeModelNameSelector // beginDefinition;
 Attributes[ makeModelNameSelector ] = { HoldAll };
 
 makeModelNameSelector[ dmPrefCache_, service_, model_, modelNameSelector_, state_ ] := Enclose[
-    Catch @ Module[ { models, current, default, fallback },
+    Catch @ Module[ { models, current, items },
 
         ensureServiceName[ service, Dynamic @ dmPrefCache ];
         ConfirmAssert[ StringQ @ service, "ServiceName" ];
@@ -746,22 +746,26 @@ makeModelNameSelector[ dmPrefCache_, service_, model_, modelNameSelector_, state
             ]
         ];
 
-        current  = extractModelName @ CurrentChatSettings[ $FrontEnd, "Model" ];
-        default  = ConfirmBy[ getServiceDefaultModel[ Dynamic @ dmPrefCache, service ], StringQ, "DefaultName" ];
-        fallback = <| "Service" -> service, "Name" -> default |>;
+        (* Building the selector must never write settings, so a stored model name that the service doesn't list
+           (fine-tuned, custom endpoint, set in code) is shown as an extra entry instead of being replaced: *)
+        current = extractModelName @ Lookup[ dmPrefCache, "Model" ];
+        items   = Block[ { $noIcons = TrueQ @ $cloudNotebooks },
+            Map[ popupValue[ #[ "Name" ], #[ "DisplayName" ], #[ "Icon" ] ] &, models ]
+        ];
 
-        If[ ! MemberQ[ models, KeyValuePattern[ "Name" -> current ] ],
-            dmPrefCache[ "Model" ] = CurrentChatSettings[ $FrontEnd, "Model" ] = fallback
+        Which[
+            StringQ @ current && ! MemberQ[ models, KeyValuePattern[ "Name" -> current ] ],
+                items = Join[ { popupValue @ current, Delimiter }, items ],
+            ! StringQ @ current,
+                items = Join[ { Automatic -> "Automatic", Delimiter }, items ]
         ];
 
         PopupMenu[
             Dynamic[
                 extractModelName @ Lookup[ dmPrefCache, "Model" ],
-                Function[ modelSelectCallback[ #, dmPrefCache, service, model ] ]
+                Function[ If[ StringQ @ #, modelSelectCallback[ #, dmPrefCache, service, model ] ] ]
             ],
-            Block[ { $noIcons = TrueQ @ $cloudNotebooks },
-                Map[ popupValue[ #[ "Name" ], #[ "DisplayName" ], #[ "Icon" ] ] &, models ]
-            ],
+            items,
             ImageSize -> Automatic
         ]
     ],

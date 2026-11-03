@@ -338,6 +338,93 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*makeModelNameSelector*)
+VerificationTest[
+    (* Builds the model name selector for the given stored model with a stubbed model list, recording any settings
+       writes, and returns { writes, prefCache, popup items, popup setter }: *)
+    buildModelNameSelector[ name_ ] :=
+        Module[ { writes = { }, cache, svc = "OpenAI", mdl = name, sel = None, st = "Loaded", popup },
+            cache = <|
+                "Model"               -> <| "Service" -> "OpenAI", "Name" -> name |>,
+                "ServiceDefaultModel" -> <| |>
+            |>;
+            Block[
+                {
+                    Wolfram`Chatbook`Common`getServiceModelList = { <| "Name" -> "gpt-3.5-turbo", "DisplayName" -> "GPT-3.5", "Icon" -> "" |>, <| "Name" -> "gpt-4o", "DisplayName" -> "GPT-4o", "Icon" -> "" |> } &,
+                    Wolfram`Chatbook`Common`chooseDefaultModelName = "gpt-3.5-turbo" &,
+                    Wolfram`Chatbook`Common`$cloudNotebooks = True,
+                    CurrentChatSettings
+                },
+                CurrentChatSettings /: Set[ CurrentChatSettings[ args___ ], v_ ] := (AppendTo[ writes, { args } -> v ]; v);
+                CurrentChatSettings[ $FrontEnd, "Model" ] := cache[ "Model" ];
+                popup = Wolfram`Chatbook`PreferencesContent`Private`makeModelNameSelector[ cache, svc, mdl, sel, st ]
+            ];
+            {
+                writes,
+                cache,
+                Replace[ popup, HoldPattern @ PopupMenu[ _, items_, ___ ] :> items ],
+                Replace[ popup, HoldPattern @ PopupMenu[ Dynamic[ _, setter_, ___ ], ___ ] :> setter ]
+            }
+        ],
+    _,
+    SameTest -> MatchQ,
+    TestID   -> "ModelNameSelector-Definitions@@Tests/PreferencesServiceSelector.wlt:342,1-372,2"
+]
+
+(* Viewing Preferences must not replace a model the service doesn't list (fine-tuned, custom, set in code): *)
+VerificationTest[
+    Most @ buildModelNameSelector[ "ft:gpt-4.1-mini:qa-org::abc123" ],
+    {
+        { },
+        <|
+            "Model"               -> <| "Service" -> "OpenAI", "Name" -> "ft:gpt-4.1-mini:qa-org::abc123" |>,
+            "ServiceDefaultModel" -> <| |>
+        |>,
+        {
+            "ft:gpt-4.1-mini:qa-org::abc123" -> "ft:gpt-4.1-mini:qa-org::abc123",
+            Delimiter,
+            "gpt-3.5-turbo" -> "GPT-3.5",
+            "gpt-4o" -> "GPT-4o"
+        }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ModelNameSelector-KeepsUnlistedModel@@Tests/PreferencesServiceSelector.wlt:375,1-392,2"
+]
+
+VerificationTest[
+    Most @ buildModelNameSelector[ "gpt-4o" ],
+    {
+        { },
+        <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-4o" |>, "ServiceDefaultModel" -> <| |> |>,
+        { "gpt-3.5-turbo" -> "GPT-3.5", "gpt-4o" -> "GPT-4o" }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ModelNameSelector-ListedModel@@Tests/PreferencesServiceSelector.wlt:394,1-403,2"
+]
+
+(* A non-string name is shown as a display-only Automatic entry that the setter doesn't store: *)
+VerificationTest[
+    Module[ { result, setter },
+        result = buildModelNameSelector[ Automatic ];
+        setter = Last @ result;
+        Block[ { Wolfram`Chatbook`PreferencesContent`Private`modelSelectCallback = Function[ Null, Throw[ "Called", $tag ], HoldRest ] },
+            { Most @ result, Catch[ setter @ Automatic, $tag ] }
+        ]
+    ],
+    {
+        {
+            { },
+            <| "Model" -> <| "Service" -> "OpenAI", "Name" -> Automatic |>, "ServiceDefaultModel" -> <| |> |>,
+            { Automatic -> "Automatic", Delimiter, "gpt-3.5-turbo" -> "GPT-3.5", "gpt-4o" -> "GPT-4o" }
+        },
+        Null
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ModelNameSelector-AutomaticDisplayOnly@@Tests/PreferencesServiceSelector.wlt:406,1-424,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*serviceConnectButton*)
 
 (* After connecting, the Connect button always fetches again, even if a failure was cached just before: *)
@@ -365,7 +452,7 @@ VerificationTest[
     ],
     { "Connect", { "Fetch", False }, { "Callback", "UnreachableTestService" } },
     SameTest -> MatchQ,
-    TestID   -> "ServiceConnectButton-ClearsNoModelListCache@@Tests/PreferencesServiceSelector.wlt:344,1-369,2"
+    TestID   -> "ServiceConnectButton-ClearsNoModelListCache@@Tests/PreferencesServiceSelector.wlt:431,1-456,2"
 ]
 
 (* A cancelled connection doesn't fetch or change anything: *)
@@ -390,7 +477,7 @@ VerificationTest[
     ],
     { { "Connect" }, <| "UnreachableTestService" -> 0 |> },
     SameTest -> MatchQ,
-    TestID   -> "ServiceConnectButton-Canceled@@Tests/PreferencesServiceSelector.wlt:372,1-394,2"
+    TestID   -> "ServiceConnectButton-Canceled@@Tests/PreferencesServiceSelector.wlt:459,1-481,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
