@@ -180,6 +180,9 @@ functions that don't exist.
 
 `./run.sh bench [--out=NAME] [--files=...] [--cold=default|all|none|pattern] [--reps=10] [--seq-reps=3] [--baseline=FILE.wxf]`
 
+`NAME` (default `bench-latest`) is relative to this directory unless it is an absolute path; the benchmark writes
+`NAME.wxf` and `NAME.md`.
+
 Columns (times in ms):
 
 | Column | Meaning |

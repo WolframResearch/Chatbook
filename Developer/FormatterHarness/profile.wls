@@ -192,7 +192,7 @@ Block[ { $AllowInternet = False }, Module[ { args, opts, files, out, plain, prof
     args  = FormatterHarness`ParseArgs @ Rest @ $ScriptCommandLine;
     opts  = args[ "Options" ];
     files = FormatterHarness`FilterFiles[ FormatterHarness`CorpusFiles[ ], Lookup[ opts, "files", None ] ];
-    out   = FileNameJoin @ { FormatterHarness`$HarnessDir, Lookup[ opts, "out", "profile-latest" ] <> ".md" };
+    out   = FormatterHarness`OutputPath[ Lookup[ opts, "out", "profile-latest" ] <> ".md" ];
 
     FormatterHarness`LoadChatbook[ ];
     warm = FormatterHarness`ReadCorpusFile @ FileNameJoin @ { FormatterHarness`$HarnessDir, "warmup.md" };

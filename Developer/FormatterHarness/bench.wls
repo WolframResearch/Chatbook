@@ -227,7 +227,7 @@ Block[ { $AllowInternet = False }, Module[ { args, opts, files, coldSpec, coldFi
     files   = FormatterHarness`FilterFiles[ FormatterHarness`CorpusFiles[ ], Lookup[ opts, "files", None ] ];
     reps    = ToExpression @ Lookup[ opts, "reps", "10" ];
     seqReps = ToExpression @ Lookup[ opts, "seq-reps", "3" ];
-    out     = FileNameJoin @ { FormatterHarness`$HarnessDir, Lookup[ opts, "out", "bench-latest" ] };
+    out     = FormatterHarness`OutputPath @ Lookup[ opts, "out", "bench-latest" ];
     coldSpec = Lookup[ opts, "cold", "default" ];
     coldFiles = Switch[ coldSpec,
         "none", { },

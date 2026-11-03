@@ -48,6 +48,7 @@ GitInfo;
 ParseArgs;
 FilterFiles;
 Abort2;
+OutputPath;
 
 Begin[ "`Private`" ];
 
@@ -60,6 +61,13 @@ $Repo       = Replace[ Environment[ "CHATBOOK_REPO" ], $Failed :> FileNameDrop[ 
 $ChunkSize  = 40;
 
 Abort2[ msg__ ] := ( Print[ "ERROR: ", msg ]; Exit[ 1 ] );
+
+(* Output names given with --out are relative to this directory unless they are absolute paths: *)
+OutputPath[ name_String ] :=
+    If[ StringStartsQ[ name, "/" | "~" ] || StringMatchQ[ name, LetterCharacter ~~ ":" ~~ ( "\\" | "/" ) ~~ ___ ],
+        ExpandFileName @ name,
+        FileNameJoin @ { $HarnessDir, name }
+    ];
 
 (* Per-file overrides of the handler data that the formatter reads (see $baseHandlerData). Files with simple tool calls
    ("/wl ... /exec") are formatted like a chat using the "Simple" tool method. *)
