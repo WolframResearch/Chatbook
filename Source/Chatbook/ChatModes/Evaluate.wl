@@ -118,8 +118,7 @@ evaluateSidebarChat[ nbo_NotebookObject, sidebarCell_CellObject, input_, Dynamic
         ],
         With[ { selections = CurrentValue[ sidebarCell, { TaggingRules, "CurrentSelections" } ] },
             If[ AssociationQ @ selections, FE`Evaluate @ FEPrivate`ReleaseSelectionObjects @ selections ];
-            setCurrentValue[ sidebarCell, { TaggingRules, "CurrentSelections" }, Inherited ];
-            setCurrentValue[ sidebarCell, { TaggingRules, "CurrentSelectionContext" }, Inherited ]
+            setCurrentValue[ sidebarCell, { TaggingRules, "CurrentSelections" }, Inherited ]
         ]
     ],
     throwInternalFailure

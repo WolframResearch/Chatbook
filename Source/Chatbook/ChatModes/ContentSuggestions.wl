@@ -22,7 +22,8 @@ $contentSuggestionsProgressWidth = 250;
 
 $contentSuggestionsOverrides = <|
     "MaxCellStringLength"       -> 1000,
-    "MaxOutputCellStringLength" -> 200
+    "MaxOutputCellStringLength" -> 200,
+    "Multimodal"                -> False
 |>;
 
 $maxContextTokens = <|

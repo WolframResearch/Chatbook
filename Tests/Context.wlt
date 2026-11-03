@@ -57,7 +57,7 @@ VerificationTest[
     ],
     { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "GetContextFromSelection-ExcludesSelectedAndUnselectedCells@@Tests/Context.wlt:24,1-54,2"
+    TestID   -> "GetContextFromSelection-ExcludesSelectedAndUnselectedCells@@Tests/Context.wlt:24,1-61,2"
 ]
 
 VerificationTest[
@@ -79,7 +79,7 @@ VerificationTest[
     ],
     <| "Before" -> { CellObject[ "included-before-limit" ] }, "Selected" -> { CellObject[ "selected" ] }, "After" -> { } |>,
     SameTest -> MatchQ,
-    TestID   -> "SelectContextCells-FiltersBeforeApplyingLimits@@Tests/Context.wlt:56,1-76,2"
+    TestID   -> "SelectContextCells-FiltersBeforeApplyingLimits@@Tests/Context.wlt:63,1-83,2"
 ]
 
 VerificationTest[
@@ -111,7 +111,7 @@ VerificationTest[
     ],
     { True, 100 },
     SameTest -> MatchQ,
-    TestID   -> "SelectContextCells-SidebarFiltersBeforeApplyingLimits"
+    TestID   -> "SelectContextCells-SidebarFiltersBeforeApplyingLimits@@Tests/Context.wlt:85,1-115,2"
 ]
 
 VerificationTest[
@@ -121,11 +121,11 @@ VerificationTest[
     },
     <| "Before" -> { }, "Selected" -> { }, "After" -> { CellObject[ "first" ], CellObject[ "second" ] } |>,
     SameTest -> MatchQ,
-    TestID   -> "SelectContextCells-AboveCellIncludesFirstCell@@Tests/Context.wlt:78,1-86,2"
+    TestID   -> "SelectContextCells-AboveCellIncludesFirstCell@@Tests/Context.wlt:117,1-125,2"
 ]
 
 VerificationTest[
-    UsingFrontEnd @ Module[ { nb, sidebarCell, cells, saved, first, second },
+    UsingFrontEnd @ Module[ { nb, cells, sidebarCell, first, second, newCell },
         WithCleanup[
             nb = CreateDocument @ {
                 Cell[ "before", "Text" ],
@@ -134,31 +134,125 @@ VerificationTest[
             };
             cells = Cells @ nb;
             sidebarCell = Last @ cells;
-            saved = <| "Before" -> { First @ cells }, "Selected" -> { cells[[ 2 ]] }, "After" -> { } |>;
-            Wolfram`Chatbook`Common`setCurrentValue[
-                sidebarCell,
-                { TaggingRules, "CurrentSelectionContext" },
-                saved
-            ];
             Internal`InheritedBlock[
                 { Wolfram`Chatbook`ChatModes`Common`sidebarCellObject },
                 Wolfram`Chatbook`ChatModes`Common`sidebarCellObject[ _NotebookObject ] := sidebarCell;
-                Block[ { Wolfram`Chatbook`$SidebarChat = True },
-                    first  = Wolfram`Chatbook`ChatModes`Context`Private`selectContextCells @ nb;
+                Block[
+                    {
+                        Wolfram`Chatbook`$SidebarChat                   = True,
+                        Wolfram`Chatbook`Common`$chatState              = True,
+                        Wolfram`Chatbook`Common`$sidebarSelectionContext = None
+                    },
+                    first = Wolfram`Chatbook`ChatModes`Context`Private`selectContextCells @ nb;
+                    SelectionMove[ Last @ cells, After, Cell ];
+                    NotebookWrite[ nb, Cell[ "added during the chat", "Text" ] ];
+                    newCell = Last @ Cells @ nb;
                     second = Wolfram`Chatbook`ChatModes`Context`Private`selectContextCells @ nb
                 ]
             ];
             {
-                first === saved,
-                second === saved,
-                CurrentValue[ sidebarCell, { TaggingRules, "CurrentSelectionContext" } ] === saved
+                first[ "Before" ] === cells,
+                second === first,
+                FreeQ[ second, newCell ],
+                MissingQ @ CurrentValue[ sidebarCell, { TaggingRules, "CurrentSelectionContext" } ] ||
+                    CurrentValue[ sidebarCell, { TaggingRules, "CurrentSelectionContext" } ] === Inherited
             },
             NotebookClose @ nb
         ]
     ],
-    { True, True, True },
+    { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "SelectContextCells-SidebarSelectionSurvivesToolLoop"
+    TestID   -> "SelectContextCells-SidebarSelectionSurvivesToolLoop@@Tests/Context.wlt:127,1-166,2"
+]
+
+VerificationTest[
+    UsingFrontEnd @ Module[ { nb, cells, sidebarCell, select, first, second },
+        WithCleanup[
+            nb = CreateDocument @ {
+                Cell[ "first", "Text" ],
+                Cell[ "sidebar", "Text" ]
+            };
+            cells = Cells @ nb;
+            sidebarCell = Last @ cells;
+            select = Function[
+                Wolfram`Chatbook`Common`withChatState @ Block[ { Wolfram`Chatbook`$SidebarChat = True },
+                    Wolfram`Chatbook`ChatModes`Context`Private`selectContextCells @ nb
+                ]
+            ];
+            Internal`InheritedBlock[
+                { Wolfram`Chatbook`ChatModes`Common`sidebarCellObject },
+                Wolfram`Chatbook`ChatModes`Common`sidebarCellObject[ _NotebookObject ] := sidebarCell;
+                first = select[ ];
+                SelectionMove[ Last @ cells, After, Cell ];
+                NotebookWrite[ nb, Cell[ "second chat", "Text" ] ];
+                second = select[ ]
+            ];
+            {
+                first[ "Before" ] === cells,
+                second[ "Before" ] === Cells @ nb,
+                Length @ second[ "Before" ] === 3,
+                Wolfram`Chatbook`Common`$sidebarSelectionContext === None
+            },
+            NotebookClose @ nb
+        ]
+    ],
+    { True, True, True, True },
+    SameTest -> MatchQ,
+    TestID   -> "SelectContextCells-SidebarContextNotReusedAcrossChats@@Tests/Context.wlt:168,1-202,2"
+]
+
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`Common`$contextPrompt          = None,
+            Wolfram`Chatbook`Common`$selectionPrompt        = None,
+            Wolfram`Chatbook`$ChatHandlerData               = <| |>,
+            Wolfram`Chatbook`$SidebarChat                   = True,
+            Wolfram`Chatbook`Common`$chatState              = True,
+            Wolfram`Chatbook`Common`$sidebarSelectionContext = None
+        },
+        UsingFrontEnd @ Module[ { nb, cells, sidebarCell, settings, deleted, replaced },
+            WithCleanup[
+                nb = CreateDocument @ {
+                    Cell[ "Title", "Title" ],
+                    Cell[ "ALPHA text", "Text" ],
+                    Cell[ "BETA text", "Text" ],
+                    Cell[ "GAMMA text", "Text" ],
+                    Cell[ "sidebar", "Text" ]
+                };
+                cells = Cells @ nb;
+                sidebarCell = Last @ cells;
+                settings = AbsoluteCurrentChatSettings @ nb;
+                Internal`InheritedBlock[
+                    { Wolfram`Chatbook`ChatModes`Common`sidebarCellObject },
+                    Wolfram`Chatbook`ChatModes`Common`sidebarCellObject[ _NotebookObject ] := sidebarCell;
+                    Wolfram`Chatbook`ChatModes`Common`getContextFromSelection[ None, nb, settings ];
+                    NotebookDelete @ cells[[ 3 ]];
+                    deleted = Wolfram`Chatbook`ChatModes`Common`getContextFromSelection[ None, nb, settings ];
+                    NotebookWrite[ cells[[ 4 ]], Cell[ "DELTA text", "Text" ] ];
+                    replaced = Wolfram`Chatbook`ChatModes`Common`getContextFromSelection[ None, nb, settings ]
+                ];
+                {
+                    StringQ @ deleted && StringContainsQ[ deleted, "ALPHA" ],
+                    StringQ @ deleted && StringFreeQ[ deleted, "BETA" ],
+                    StringQ @ deleted && StringContainsQ[ deleted, "GAMMA" ],
+                    StringQ @ replaced && StringContainsQ[ replaced, "ALPHA" ],
+                    StringQ @ replaced && StringFreeQ[ replaced, "GAMMA" ]
+                },
+                NotebookClose @ nb
+            ]
+        ]
+    ],
+    { True, True, True, True, True },
+    SameTest -> MatchQ,
+    TestID   -> "GetContextFromSelection-SidebarDropsRemovedCellsDuringChat@@Tests/Context.wlt:204,1-249,2"
+]
+
+VerificationTest[
+    Wolfram`Chatbook`ChatModes`ContentSuggestions`Private`$contentSuggestionsOverrides[ "Multimodal" ],
+    False,
+    SameTest -> MatchQ,
+    TestID   -> "ContentSuggestions-DisablesMultimodalContext@@Tests/Context.wlt:251,1-256,2"
 ]
 
 VerificationTest[
@@ -189,14 +283,14 @@ VerificationTest[
     ],
     { True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "GetContextFromSelection-AboveFirstCell@@Tests/Context.wlt:88,1-110,2"
+    TestID   -> "GetContextFromSelection-AboveFirstCell@@Tests/Context.wlt:258,1-287,2"
 ]
 
 VerificationTest[
     Wolfram`Chatbook`Common`chatExcludedQ @ Cell[ "Text", "Text", TaggingRules -> "unexpected" ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "ChatExcludedQ-ToleratesNonKeyValueTaggingRules@@Tests/Context.wlt:112,1-117,2"
+    TestID   -> "ChatExcludedQ-ToleratesNonKeyValueTaggingRules@@Tests/Context.wlt:289,1-294,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -218,7 +312,7 @@ VerificationTest[
     { Length @ $plotMessages, Length @ $plotSaved },
     { 2, 3 },
     SameTest -> MatchQ,
-    TestID   -> "GetContextFromSelection-SelectedGraphics-Setup"
+    TestID   -> "GetContextFromSelection-SelectedGraphics-Setup@@Tests/Context.wlt:299,1-316,2"
 ]
 
 VerificationTest[
@@ -237,7 +331,7 @@ VerificationTest[
         <| "Type" -> "Text", "Data" -> "Describe the selected plot in one short sentence." |>
     },
     SameTest -> MatchQ,
-    TestID   -> "GetContextFromSelection-SelectedGraphicsFoldedIntoUserMessage"
+    TestID   -> "GetContextFromSelection-SelectedGraphicsFoldedIntoUserMessage@@Tests/Context.wlt:318,1-335,2"
 ]
 
 VerificationTest[
@@ -247,7 +341,7 @@ VerificationTest[
     },
     { $plotQuestion, $plotQuestion },
     SameTest -> MatchQ,
-    TestID   -> "GetContextFromSelection-SelectedGraphicsSavedWithoutImages"
+    TestID   -> "GetContextFromSelection-SelectedGraphicsSavedWithoutImages@@Tests/Context.wlt:337,1-345,2"
 ]
 
 VerificationTest[
@@ -270,7 +364,7 @@ VerificationTest[
     ],
     { { "System", "User", "Assistant", "User" }, 1 },
     SameTest -> MatchQ,
-    TestID   -> "GetContextFromSelection-SelectedGraphicsToolLoopSendsImagesOnce"
+    TestID   -> "GetContextFromSelection-SelectedGraphicsToolLoopSendsImagesOnce@@Tests/Context.wlt:347,1-368,2"
 ]
 
 VerificationTest[
@@ -284,7 +378,7 @@ VerificationTest[
     ],
     { { "System", "User" }, True, True },
     SameTest -> MatchQ,
-    TestID   -> "GetContextFromSelection-SelectedGraphicsTextFallback"
+    TestID   -> "GetContextFromSelection-SelectedGraphicsTextFallback@@Tests/Context.wlt:370,1-382,2"
 ]
 
 VerificationTest[
@@ -317,7 +411,7 @@ VerificationTest[
     ],
     { { "System", "User" }, 1, 1, 1, { "System", "User", "User" } },
     SameTest -> MatchQ,
-    TestID   -> "MergeMessages-MergesUserHistoryAcrossContextImage"
+    TestID   -> "MergeMessages-MergesUserHistoryAcrossContextImage@@Tests/Context.wlt:384,1-415,2"
 ]
 
 VerificationTest[
@@ -338,7 +432,7 @@ VerificationTest[
         { "![Image](attachment://content-2)", <| "Type" -> "Image", "Data" -> "img2" |> }
     },
     SameTest -> MatchQ,
-    TestID   -> "ContextImageParts-PairsLinksAndDeduplicates"
+    TestID   -> "ContextImageParts-PairsLinksAndDeduplicates@@Tests/Context.wlt:417,1-436,2"
 ]
 
 VerificationTest[
@@ -379,7 +473,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "SelectContextImages-PrefersSelectedAndNearbyImages"
+    TestID   -> "SelectContextImages-PrefersSelectedAndNearbyImages@@Tests/Context.wlt:438,1-477,2"
 ]
 
 VerificationTest[
@@ -399,7 +493,7 @@ VerificationTest[
     ],
     "![Image](attachment://content-" <> ToString[ # ] <> ")" & /@ Range[ 5 ],
     SameTest -> MatchQ,
-    TestID   -> "SelectContextImages-NoSelectionPreservesNotebookOrder"
+    TestID   -> "SelectContextImages-NoSelectionPreservesNotebookOrder@@Tests/Context.wlt:479,1-497,2"
 ]
 
 VerificationTest[
@@ -414,7 +508,7 @@ VerificationTest[
         <| "Role" -> "User", "Content" -> "input" |>
     },
     SameTest -> MatchQ,
-    TestID   -> "MergeMessageData-KeepsTemporaryMessagesSeparate"
+    TestID   -> "MergeMessageData-KeepsTemporaryMessagesSeparate@@Tests/Context.wlt:499,1-512,2"
 ]
 
 VerificationTest[
@@ -440,7 +534,7 @@ VerificationTest[
         KeyValuePattern @ { "Content" -> "retry", "Temporary" -> True }
     },
     SameTest -> MatchQ,
-    TestID   -> "MergeMessages-MergesOutgoingTemporaryBoundaryAfterSaving"
+    TestID   -> "MergeMessages-MergesOutgoingTemporaryBoundaryAfterSaving@@Tests/Context.wlt:514,1-538,2"
 ]
 
 VerificationTest[
@@ -483,7 +577,7 @@ VerificationTest[
         <| "Role" -> "Assistant", "Content" -> "out" |>
     },
     SameTest -> MatchQ,
-    TestID   -> "FoldContextImageMessage-FoldsIntoNextNonTemporaryUserMessage"
+    TestID   -> "FoldContextImageMessage-FoldsIntoNextNonTemporaryUserMessage@@Tests/Context.wlt:540,1-581,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -555,7 +649,7 @@ VerificationTest[
     ],
     { ConstantArray[ { 1, 1, 1, 1 }, 3 ], { False, False, False }, { True, True }, True },
     SameTest -> MatchQ,
-    TestID   -> "AddPrompts-ToolLoopDoesNotRepeatContext"
+    TestID   -> "AddPrompts-ToolLoopDoesNotRepeatContext@@Tests/Context.wlt:586,1-653,2"
 ]
 
 VerificationTest[
@@ -580,7 +674,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "ReplaceAddedPrompts-ReplacesEarlierSection"
+    TestID   -> "ReplaceAddedPrompts-ReplacesEarlierSection@@Tests/Context.wlt:655,1-678,2"
 ]
 
 VerificationTest[
@@ -600,7 +694,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "AddPrompts-NoPromptKeepsMessages"
+    TestID   -> "AddPrompts-NoPromptKeepsMessages@@Tests/Context.wlt:680,1-698,2"
 ]
 
 VerificationTest[
@@ -629,7 +723,7 @@ VerificationTest[
     ],
     { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "PrepareMessagesForLLM-RemovesAddedPromptTags"
+    TestID   -> "PrepareMessagesForLLM-RemovesAddedPromptTags@@Tests/Context.wlt:700,1-727,2"
 ]
 
 VerificationTest[
@@ -653,7 +747,7 @@ VerificationTest[
     ],
     { "GENERATED-DOCS-XYZ", True, True },
     SameTest -> MatchQ,
-    TestID   -> "PrepareMessagesForLLM-StripsAddedPromptsAfterGeneratedLeadingMessage"
+    TestID   -> "PrepareMessagesForLLM-StripsAddedPromptsAfterGeneratedLeadingMessage@@Tests/Context.wlt:729,1-751,2"
 ]
 
 VerificationTest[
@@ -671,7 +765,7 @@ VerificationTest[
         KeyValuePattern @ { "Role" -> "User", "Content" -> "hi" }
     },
     SameTest -> MatchQ,
-    TestID   -> "PrepareMessagesForLLM-StripsAddedPromptsBeforeRoleConversion"
+    TestID   -> "PrepareMessagesForLLM-StripsAddedPromptsBeforeRoleConversion@@Tests/Context.wlt:753,1-769,2"
 ]
 
 VerificationTest[
@@ -689,7 +783,7 @@ VerificationTest[
         KeyValuePattern @ { "role" -> "user", "content" -> "hi" }
     },
     SameTest -> MatchQ,
-    TestID   -> "PrepareMessagesForHTTPRequest-StripsAddedPrompts"
+    TestID   -> "PrepareMessagesForHTTPRequest-StripsAddedPrompts@@Tests/Context.wlt:771,1-787,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
