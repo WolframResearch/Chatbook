@@ -676,10 +676,7 @@ discardedMaterialRow // endDefinition;
 
 discardedMaterialGroups // beginDefinition;
 
-discardedMaterialGroups[ textData_List ] := DeleteCases[
-    Split[ textData, ! MatchQ[ #2, $$discardedToolCallCell ] & ],
-    { ___String? (StringMatchQ[ WhitespaceCharacter... ]) }
-];
+discardedMaterialGroups[ textData_List ] := Split[ textData, ! MatchQ[ #2, $$discardedToolCallCell ] & ];
 
 discardedMaterialGroups // endDefinition;
 
@@ -782,7 +779,6 @@ textTableForm // endDefinition;
 formatRaw // beginDefinition;
 formatRaw[ "" ] := "";
 formatRaw[ item_String ] := formatRaw[ item, styleBox @ item ];
-formatRaw[ item_, { } ] := item;
 formatRaw[ item_, StyleBox[ box_ ] ] := formatRaw[ item, box ];
 formatRaw[ item_, box: _ButtonBox|_Cell|_StyleBox ] := RawBoxes @ box;
 formatRaw[ item_, string_String ] := string;
@@ -1906,7 +1902,6 @@ $stringFormatRulesDeferred = Replace[ $stringFormatRules, (l_ :> r_) :> (l :> de
 (*makeCodeBlockCell*)
 makeCodeBlockCell // beginDefinition;
 makeCodeBlockCell[ _, code_String ] /; StringMatchQ[ StringTrim @ code, "!["~~__~~"]("~~__~~")" ] := image @ code;
-makeCodeBlockCell[ _, code_String ] /; StringStartsQ[ StringTrim @ code, "TOOLCALL: " ] := inlineToolCall @ code;
 makeCodeBlockCell[ language_String, code_String ] /; $useStaticCodeBlockCache && ! TrueQ @ $dynamicText :=
     cachedCodeBlockCell[ language, code ];
 makeCodeBlockCell[ language_String, code_String ] /; plaintextLanguageQ @ language :=
@@ -2555,15 +2550,8 @@ parseCellGroupBlock[ code_String ] := Enclose[
 
         trimmed = DeleteCases[ Replace[ split, s_String :> StringTrim @ s, { 1 } ], "" ];
 
-        Replace[
-            trimmed,
-            {
-                (* No labels: *)
-                { _ } :> Throw @ code,
-
-                (* A single in/out label with some code: *)
-                { label[ "In"|"Out", _ ], s_String } :> Throw @ s}
-        ];
+        (* No labels: *)
+        Replace[ trimmed, { _ } :> Throw @ code ];
 
         rows = Replace[
             SequenceReplace[
@@ -2643,7 +2631,6 @@ makeBlockLabel // beginDefinition;
 makeBlockLabel[ label_String, "Input"  ] := StyleBox[ label, "CellLabelExpired" ];
 makeBlockLabel[ label_String, "Output" ] := StyleBox[ label, "CellLabelExpired" ];
 makeBlockLabel[ label_, "EchoTiming" ] := StyleBox[ "\[WatchIcon]", "EchoDingbat" ];
-makeBlockLabel[ label_String, "Message" ] := StyleBox[ label, "MessageMenuLabel" ];
 makeBlockLabel[ label_, "Print" ] := "";
 
 makeBlockLabel[ label_String, "Echo" ] := StyleBox[
@@ -3463,7 +3450,7 @@ hyperlink[ label_String, uri_String? expressionURIQ ] :=
 hyperlink[ rf_String, uri_ ] /; StringMatchQ[ rf, ("`"|"")~~"ResourceFunction[" ~~ ___ ~~ "]"~~("`"|"") ] :=
     makeInlineWL @ rf;
 
-hyperlink[ label_String | { label_String }, uri_String ] /; StringStartsQ[ uri, "paclet:" ] :=
+hyperlink[ label_String, uri_String ] /; StringStartsQ[ uri, "paclet:" ] :=
     Cell @ BoxData @ TemplateBox[
         {
             StringTrim[ label, (Whitespace|"`"|"\\").. ],
