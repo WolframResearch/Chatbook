@@ -31,7 +31,7 @@ $maxTagLength = Max[ StringLength /@ (List @@ $$severityTag) ] + 2;
 (*Initialization*)
 $buffer = "";
 
-(* The last dynamic content that was found to have no split points (see `splitDynamicContent`): *)
+(* The last dynamic content that has no split points, or only declined ones (see `splitDynamicContent`): *)
 $dynamicSplitChecked = None;
 
 (* State for emulated stop tokens (used when the model does not support server-side stop tokens): *)
@@ -1771,8 +1771,9 @@ $maxChunkDebugSize = 1000;
 (*splitDynamicContent*)
 
 (* Splits dynamic content at completed code blocks, images, and tool calls (see `$dynamicSplitRules`), so that the
-   completed parts can be written as static content. The dynamic content can be the entire response so far, so the
-   full split is skipped whenever it's clear that the content has no split points (see `dynamicSplitSkipQ`). *)
+   completed parts can be written as static content. A split in a think tag is declined (see `thinkTagSplitQ`). The
+   dynamic content can be the entire response so far, so the full split is skipped whenever it's clear that the
+   content has no split points, or only declined ones (see `dynamicSplitSkipQ`). *)
 splitDynamicContent // beginDefinition;
 
 splitDynamicContent[ content_String ] :=
@@ -1781,9 +1782,16 @@ splitDynamicContent[ content_String ] :=
         DeleteCases[ { content }, "" ]
         ,
         With[ { split = StringSplit[ content, $dynamicSplitRules, All ] },
-            (* With All, any match gives at least three parts, so a single part means there are no split points: *)
-            $dynamicSplitChecked = If[ Length @ split === 1, content, None ];
-            DeleteCases[ split, "" ]
+            If[ thinkTagSplitQ @ split,
+                (* Only a new match can change a declined split, so the next chunk doesn't need to check again unless it
+                   can complete one (see `dynamicSplitSkipQ`): *)
+                $dynamicSplitChecked = content;
+                { content }
+                ,
+                (* With All, any match gives at least three parts, so a single part means there are no split points: *)
+                $dynamicSplitChecked = If[ Length @ split === 1, content, None ];
+                DeleteCases[ split, "" ]
+            ]
         ]
     ];
 
@@ -1791,13 +1799,33 @@ splitDynamicContent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*thinkTagSplitQ*)
+
+(* The split rules don't see think tags, so a split in an open think tag isn't a boundary between the parts that the
+   formatter gives for the whole text (quirk 202). `split` is the result of `StringSplit[ content, rules, All ]`, and
+   the static part ends with its last match. Only the tags in the text between the matches count, since a tag in a code
+   block outside the thoughts is code. When a match starts in the thoughts and contains the closing tag (a code fence
+   that opens mid-line and closes after them), the thoughts look open from then on, so every later split is declined.
+   That's needed, since the split rules pair the code fences after it differently from the formatter. *)
+thinkTagSplitQ // beginDefinition;
+
+thinkTagSplitQ[ split_List ] :=
+    With[ { text = StringJoin @ split[[ 1 ;; -2 ;; 2 ]] },
+        StringCount[ text, "<think", IgnoreCase -> True ] > StringCount[ text, "</think", IgnoreCase -> True ]
+    ];
+
+thinkTagSplitQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*dynamicSplitSkipQ*)
 
 (* None of the patterns in `$dynamicSplitRules` look past the end of a match, so if `content` starts with `checked`
-   (which has no split points), any match in `content` must end after `checked`. Every match ends with "```",
-   "ENDRESULT", or ")" (closing an image or "ENDRESULT(id)"), so if none of these can end after `checked`, the content
-   has no split points either. See `$dynamicSplitRules` in Formatting/Rules.wl for everything this relies on,
-   including the conditions that also depend on `$ChatHandlerData[ "ToolShortNames" ]`. *)
+   (which has no split points, or only declined ones), any new match in `content` must end after `checked`. Every match
+   ends with "```", "ENDRESULT", or ")" (closing an image or "ENDRESULT(id)"), so if none of these can end after
+   `checked`, the content has the same split points, and isn't split either (`thinkTagSplitQ` only depends on the text
+   up to the last match). See `$dynamicSplitRules` in Formatting/Rules.wl for everything this relies on, including the
+   conditions that also depend on `$ChatHandlerData[ "ToolShortNames" ]`. *)
 dynamicSplitSkipQ // beginDefinition;
 
 dynamicSplitSkipQ[ content_String, checked_String ] /; StringStartsQ[ content, checked ] :=
