@@ -37,8 +37,6 @@ sectionStyle[ 4 ] := "Subsubsection";
 sectionStyle[ 5 ] := "Subsubsubsection";
 sectionStyle[ _ ] := "Subsubsubsubsection";
 
-$tinyLineBreak = StyleBox[ "\n", "TinyLineBreak", FontSize -> 3 ];
-
 $externalLanguages = {
     "Java",
     "Julia",
@@ -265,8 +263,6 @@ reformatTextData0[ string_String ] :=
         ]
     ];
 
-reformatTextData0[ other_ ] := other;
-
 reformatTextData0 // endDefinition;
 
 (* Whether the text that is being formatted contains markdown escapes (set by reformatTextData0): *)
@@ -446,8 +442,6 @@ makeResultCell0[ mathCell[ math_String ] ] :=
 
 makeResultCell0[ imageCell[ alt_, url_String ] ] := image[ alt, url ];
 
-makeResultCell0[ hyperlinkCell[ label_String, url_String ] ] := hyperlink[ label, url ];
-
 makeResultCell0[ bulletCell[ "", item_String ] ] := {
     "\n",
     Cell[
@@ -588,9 +582,6 @@ inlineSection[ content_, style_String, margins: { { _, _ }, { _, _ } }, size_ ] 
     "InlineSection",
     Background -> None
 ];
-
-inlineSection[ content_, style_String, { bottom_Integer, top_Integer } ] :=
-    inlineSection[ content, style, { { 0, 0 }, { bottom, top } } ];
 
 inlineSection // endDefinition;
 
