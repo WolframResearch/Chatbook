@@ -19,8 +19,8 @@ VerificationTest[
 (* :!CodeAnalysis::Disable::PrivateContextSymbol:: *)
 
 (* Coverage for the OpenAI Responses endpoint transition: the request-method decision, the reasoning
-   effort clamp, and the summary request that turns a plain effort level into the association the
-   Responses endpoint expects.
+   effort clamp, the summary request, and the mapping of structured reasoning onto the <think>
+   envelope.
 
    Everything here is deliberately network-free *and* gate-free. The compatibility gate
    ($responsesAPIAvailable, LLMFunctions 2.4.0+ and LLMConnections 1.1.0+) is False wherever the
@@ -253,6 +253,97 @@ VerificationTest[
     },
     SameTest -> MatchQ,
     TestID   -> "RequestReasoningSummaries-PassThrough@@Tests/ResponsesEndpoint.wlt:231,1-256,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Reasoning to <think>*)
+
+(* A synchronous response arrives whole, so its envelope needs no state: *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Common`$reasoningOpen = False },
+        StringJoin @ Cases[
+            Wolfram`Chatbook`Common`extractBodyChunks @ <|
+                "ContentChunk" -> {
+                    <| "Type" -> "Reasoning", "Data" -> "weighing the options" |>,
+                    <| "Type" -> "Text"     , "Data" -> "the answer"           |>
+                }
+            |>,
+            _String
+        ]
+    ],
+    "<think>weighing the options</think>the answer",
+    SameTest -> MatchQ,
+    TestID   -> "ReasoningEnvelope-SynchronousPart@@Tests/ResponsesEndpoint.wlt:263,1-278,2"
+]
+
+(* A reasoning part with no readable summary must not produce an empty envelope: an unterminated or
+   empty <think> matches neither format rule and would leak its markers as visible text. This is
+   what the endpoint actually returns when no summary was requested, and on tool-call turns even
+   when one was: *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Common`$reasoningOpen = False },
+        StringJoin @ Cases[
+            Wolfram`Chatbook`Common`extractBodyChunks @ <|
+                "ContentChunk" -> {
+                    <| "Type" -> "Reasoning", "Data" -> "" |>,
+                    <| "Type" -> "Reasoning", "Signature" -> "sig" |>,
+                    <| "Type" -> "Text"     , "Data" -> "the answer" |>
+                }
+            |>,
+            _String
+        ]
+    ],
+    "the answer",
+    SameTest -> MatchQ,
+    TestID   -> "ReasoningEnvelope-NoSummaryNoEnvelope@@Tests/ResponsesEndpoint.wlt:284,1-300,2"
+]
+
+(* Streaming delivers one delta per call, so a latch opens the envelope on the first reasoning delta
+   and closes it on the first item that is not reasoning: *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Common`$reasoningOpen = False },
+        StringJoin @ Flatten[
+            Cases[ Wolfram`Chatbook`Common`extractBodyChunks @ #, _String ] & /@ {
+                <| "ReasoningChunk" -> "first "  |>,
+                <| "ReasoningChunk" -> "second " |>,
+                <| "ContentChunk"   -> "answer"  |>
+            }
+        ]
+    ],
+    "<think>first second </think>answer",
+    SameTest -> MatchQ,
+    TestID   -> "ReasoningEnvelope-StreamingLatch@@Tests/ResponsesEndpoint.wlt:304,1-317,2"
+]
+
+(* Nothing else closes the envelope if a response ends while reasoning is still open. Without this,
+   Formatting.wl matches an unterminated <think> only at EndOfString and the cell would show a live
+   "Thinking..." indicator forever: *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Common`$reasoningOpen = False },
+        StringJoin @ Flatten[
+            Cases[ Wolfram`Chatbook`Common`extractBodyChunks @ #, _String ] & /@ {
+                <| "ReasoningChunk" -> "thinking" |>,
+                <| "FinishReason"   -> "stop"     |>
+            }
+        ]
+    ],
+    "<think>thinking</think>",
+    SameTest -> MatchQ,
+    TestID   -> "ReasoningEnvelope-FinishReasonCloses@@Tests/ResponsesEndpoint.wlt:322,1-334,2"
+]
+
+(* A response with no reasoning at all is untouched, which is every provider that does not send it: *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Common`$reasoningOpen = False },
+        StringJoin @ Cases[
+            Wolfram`Chatbook`Common`extractBodyChunks @ <| "ContentChunk" -> "plain answer" |>,
+            _String
+        ]
+    ],
+    "plain answer",
+    SameTest -> MatchQ,
+    TestID   -> "ReasoningEnvelope-NoReasoningUnchanged@@Tests/ResponsesEndpoint.wlt:337,1-347,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
