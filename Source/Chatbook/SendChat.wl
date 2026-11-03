@@ -1796,8 +1796,8 @@ splitDynamicContent // endDefinition;
 (* None of the patterns in `$dynamicSplitRules` look past the end of a match, so if `content` starts with `checked`
    (which has no split points), any match in `content` must end after `checked`. Every match ends with "```",
    "ENDRESULT", or ")" (closing an image or "ENDRESULT(id)"), so if none of these can end after `checked`, the content
-   has no split points either. See `$dynamicSplitRules` in Formatting.wl for everything this relies on, including the
-   conditions that also depend on `$ChatHandlerData[ "ToolShortNames" ]`. *)
+   has no split points either. See `$dynamicSplitRules` in Formatting/Rules.wl for everything this relies on,
+   including the conditions that also depend on `$ChatHandlerData[ "ToolShortNames" ]`. *)
 dynamicSplitSkipQ // beginDefinition;
 
 dynamicSplitSkipQ[ content_String, checked_String ] /; StringStartsQ[ content, checked ] :=

@@ -3508,8 +3508,8 @@ escapeMarkdownCharacters[ text_ ] := text;
 $escapeMarkdown = False;
 
 $markdownReplacements = Flatten @ {
-    (* Underscores only mark emphasis at word boundaries (see $stringFormatRules in Formatting.wl), so underscores
-       inside words aren't escaped: *)
+    (* Underscores only mark emphasis at word boundaries (see $stringFormatRules in Formatting/Rules.wl), so
+       underscores inside words aren't escaped: *)
     "\\_" -> "\\_",
     (WordBoundary ~~ u: "_"..) | (u: "_".. ~~ WordBoundary) :> StringReplace[ u, "_" -> "\\_" ],
     { "\\" <> # -> "\\" <> #, # -> "\\" <> # } & /@ DeleteCases[ $escapedMarkdownCharacters, "_" ]

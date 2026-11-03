@@ -155,9 +155,9 @@ $basePromptComponents[ "EndTurnToken" ] :=
 
 **Solution:** Enhance `almostCertainlyWLCodeQ` with an `inline` parameter and create a new `"InlineWL"` cell style with syntax highlighting.
 
-**Where:** `Source/Chatbook/Formatting/Formatting.wl`, `Source/Chatbook/Serialization.wl`
+**Where:** `Source/Chatbook/Formatting/Rules.wl`, `Source/Chatbook/Formatting/Inline.wl`, `Source/Chatbook/Serialization.wl`
 
-Detection logic (`Formatting.wl`):
+Detection logic (`Rules.wl`):
 
 ```wl
 almostCertainlyWLCodeQ[ wl_String ] := almostCertainlyWLCodeQ[ wl, False ];
@@ -179,7 +179,7 @@ New patterns added for inline mode:
 - Arrow operators (`->`, `:>`) catch rule specifications like `Plot -> ListPlot`
 - Quoted strings (`"..."`) catch file paths and string literals like `"ExampleData/sunspot.dat"`
 
-New cell style (`Formatting.wl`):
+New cell style (`Inline.wl`):
 
 ```wl
 makeInlineWL[ code_String ] := Cell[
@@ -192,7 +192,7 @@ makeInlineWL[ code_String ] := Cell[
 ];
 ```
 
-The caller was updated to pass the inline flag (`Formatting.wl`):
+The caller was updated to pass the inline flag (`Inline.wl`):
 
 ```wl
 (* Before: makeInlineCodeCell[ code_String? almostCertainlyWLCodeQ ] *)
@@ -218,7 +218,7 @@ boxToString[
 
 **Solution:** Add a new markdown rule that matches this specific pattern and render the ResourceFunction expression as an inline WL code cell. Also relax the `hyperlink` function to tolerate backtick-wrapped labels.
 
-**Where:** `Source/Chatbook/Formatting/Formatting.wl`
+**Where:** `Source/Chatbook/Formatting/Rules.wl`, `Source/Chatbook/Formatting/Inline.wl`
 
 New markdown rule (placed before the generic backtick-label link rule in `$textDataFormatRules`):
 
@@ -495,7 +495,7 @@ The fallback change (`combined` instead of `messages`) ensures that if `applyPro
 | `Source/Chatbook/Settings.wl` | Inheritance chain (GPT5 through GPT54), `"EnabledBasePrompts"` setting and resolution | Settings |
 | `Source/Chatbook/Prompting.wl` | 3 new prompt components, `$disabledBasePrompts` mechanism, `needsBasePrompt` guard | Prompting |
 | `Source/Chatbook/PromptGenerators/RelatedDocumentation.wl` | WFR detection, `addExampleDataHint` | Dynamic prompting |
-| `Source/Chatbook/Formatting/Formatting.wl` | `almostCertainlyWLCodeQ` inline mode, `"InlineWL"` cell style, ResourceFunction link rule | Formatting |
+| `Source/Chatbook/Formatting/Rules.wl`, `Inline.wl` | `almostCertainlyWLCodeQ` inline mode, `"InlineWL"` cell style, ResourceFunction link rule | Formatting |
 | `Source/Chatbook/Serialization.wl` | `"InlineWL"` recognition in 3 `boxToString` patterns | Serialization |
 | `Source/Chatbook/ChatMessages.wl` | Pipeline reordering (base prompt after generators) | Message pipeline |
 | `Source/Chatbook/ChatState.wl` | `$disabledBasePrompts` in state initialization | State management |
@@ -507,7 +507,7 @@ The fallback change (`combined` instead of `messages`) ensures that if `applyPro
 - **Behavioral issues surface during testing.** Each fix should be as targeted and model-gated as possible to avoid regressions for other models.
 - **The on-demand prompt system** (`$disabledBasePrompts` + `"EnabledBasePrompts"`) enables fine-grained control: prompts can be both content-triggered and model-gated.
 - **Pipeline ordering matters.** When adding dynamic prompt triggers, verify that the prompt assembly happens AFTER all trigger points have executed.
-- **Formatting fixes must update both generation and serialization.** Changes to `Formatting.wl` (how cells are created) need corresponding changes in `Serialization.wl` (how cells are serialized back to markdown) to ensure round-trip correctness.
+- **Formatting fixes must update both generation and serialization.** Changes to the `Formatting/` files (how cells are created) need corresponding changes in `Serialization.wl` (how cells are serialized back to markdown) to ensure round-trip correctness.
 
 ### See Also
 
