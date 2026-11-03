@@ -186,8 +186,15 @@ $missingImage = RawBoxes @ TemplateBox[ { }, "ImageNotFound" ];
 (* ::Subsubsubsection::Closed:: *)
 (*importImage*)
 importImage // beginDefinition;
-importImage[ url_String ] := importImage[ url ] = importImage0 @ url;
+importImage[ url_String ] := Lookup[
+    $importedImageCache,
+    url,
+    addToCache[ $importedImageCache, $maxImportedImageCacheSize, url, importImage0 @ url ]
+];
 importImage // endDefinition;
+
+$importedImageCache        = <| |>;
+$maxImportedImageCacheSize = 50;
 
 importImage0 // beginDefinition;
 importImage0[ url_String ] := importImage0[ url, Quiet @ Import[ url, "Image" ] ];
@@ -216,8 +223,16 @@ tooltip // endDefinition;
 (*resizeImage*)
 resizeImage // beginDefinition;
 resizeImage[ img_ ] := resizeImage[ img, $dynamicText ];
-resizeImage[ img_, dynamic_ ] := resizeImage[ img, dynamic ] = resizeImage0 @ img;
+resizeImage[ img_, dynamic_ ] := Lookup[
+    $resizedImageCache,
+    Key @ { img, dynamic },
+    addToCache[ $resizedImageCache, $maxResizedImageCacheSize, { img, dynamic }, resizeImage0 @ img ]
+];
 resizeImage // endDefinition;
+
+(* Twice as many entries as $importedImageCache, since each image can be shown both while streaming and after: *)
+$resizedImageCache        = <| |>;
+$maxResizedImageCacheSize = 100;
 
 
 resizeImage0 // beginDefinition;
@@ -266,12 +281,13 @@ cachedBoxes[ e: _Manipulate|_DynamicModule|_Dynamic ] :=
 
 cachedBoxes[ e_ ] :=
     With[ { h = Hash @ Unevaluated @ e },
-        Lookup[ $boxCache, h, $boxCache[ h ] = checkBoxes @ MakeBoxes @ e ]
+        Lookup[ $boxCache, h, addToCache[ $boxCache, $maxBoxCacheSize, h, checkBoxes @ MakeBoxes @ e ] ]
     ];
 
 cachedBoxes // endDefinition;
 
-$boxCache = <| |>;
+$boxCache        = <| |>;
+$maxBoxCacheSize = 100;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -319,8 +335,9 @@ createBoxCacheReference // beginDefinition;
 createBoxCacheReference[ boxes_ ] := With[ { id = Hash @ boxes }, $boxQueueCache[ id ] = boxes; id ];
 createBoxCacheReference // endDefinition;
 
-$boxQueueCache = <| |>;
-$base64Cache   = <| |>;
+$boxQueueCache      = <| |>;
+$base64Cache        = <| |>;
+$maxBase64CacheSize = 100;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -334,7 +351,7 @@ getBase64[ id_, _, _Missing ] := Missing[ "NotAvailable" ];
 
 getBase64[ id_, _, boxes_ ] :=
     With[ { b64 = BaseEncode @ BinarySerialize[ RawBoxes @ boxes, PerformanceGoal -> "Size" ] },
-        $base64Cache[ id ] = b64;
+        addToCache[ $base64Cache, $maxBase64CacheSize, id, b64 ];
         KeyDropFrom[ $boxQueueCache, id ];
         b64
     ];
@@ -346,21 +363,34 @@ getBase64 // endDefinition;
 (*displayBase64Boxes*)
 displayBase64Boxes // beginDefinition;
 
-displayBase64Boxes[ b64_String ] /; $dynamicText := $waiting;
+(* Boxes that were already decoded are shown even while streaming: *)
+displayBase64Boxes[ b64_String ] /; $dynamicText && ! KeyExistsQ[ $decodedBase64Cache, b64 ] := $waiting;
 
-displayBase64Boxes[ b64_String ] := Enclose[
-    Module[ { bytes, boxes, display },
-        bytes = ConfirmBy[ BaseDecode @ b64, ByteArrayQ, "Bytes" ];
-        boxes = ConfirmMatch[ BinaryDeserialize @ bytes, _RawBoxes, "Boxes" ];
-        display = If[ TrueQ @ $CloudEvaluation, cloudEmbeddedHTMLImage @ boxes, boxes ];
-        displayBase64Boxes[ b64 ] = ConfirmMatch[ display, _RawBoxes, "Display" ]
-    ],
-    throwInternalFailure
+displayBase64Boxes[ b64_String ] := Lookup[
+    $decodedBase64Cache,
+    b64,
+    Enclose[
+        Module[ { bytes, boxes, display },
+            bytes = ConfirmBy[ BaseDecode @ b64, ByteArrayQ, "Bytes" ];
+            boxes = ConfirmMatch[ BinaryDeserialize @ bytes, _RawBoxes, "Boxes" ];
+            display = If[ TrueQ @ $CloudEvaluation, cloudEmbeddedHTMLImage @ boxes, boxes ];
+            addToCache[
+                $decodedBase64Cache,
+                $maxDecodedBase64CacheSize,
+                b64,
+                ConfirmMatch[ display, _RawBoxes, "Display" ]
+            ]
+        ],
+        throwInternalFailure
+    ]
 ];
 
 displayBase64Boxes[ _ ] := $waiting;
 
 displayBase64Boxes // endDefinition;
+
+$decodedBase64Cache        = <| |>;
+$maxDecodedBase64CacheSize = 100;
 
 
 $waiting := $waiting = RawBoxes @ ToBoxes @ Panel[
