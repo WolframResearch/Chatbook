@@ -190,24 +190,26 @@ FormatMarkdown // endDefinition;
 (* ::Subsection::Closed:: *)
 (*NormalizeTextData*)
 (* Removes differences that are not visible: adjacent strings are joined, empty strings are dropped, and spaces before
-   a line break are removed. Applies to nested TextData too. *)
+   a line break are removed. Applies to TextData nested at any depth too. *)
 NormalizeTextData // ClearAll;
+NormalizeTextData[ items_List ] := normalizeTextDataList[ normalizeNestedTextData /@ Flatten @ items ];
+NormalizeTextData[ TextData[ items_ ] ] := TextData @ NormalizeTextData @ Flatten @ { items };
+NormalizeTextData[ other_ ] := normalizeNestedTextData @ other;
 
-NormalizeTextData[ items_List ] :=
+(* Joins adjacent strings, drops empty strings, and removes spaces before line breaks: *)
+normalizeTextDataList[ items_List ] :=
     DeleteCases[
-        Replace[
-            SplitBy[ normalizeTextDataItem /@ Flatten @ items, StringQ ],
+        Flatten @ Replace[
+            SplitBy[ items, StringQ ],
             { strings__String } :> StringReplace[ StringJoin @ strings, " ".. ~~ "\n" -> "\n" ],
             { 1 }
-        ] // Flatten,
+        ],
         ""
     ];
 
-NormalizeTextData[ TextData[ items_ ] ] := TextData @ NormalizeTextData @ Flatten @ { items };
-NormalizeTextData[ other_ ] := other;
-
-normalizeTextDataItem[ Cell[ TextData[ items_ ], a___ ] ] := Cell[ TextData @ NormalizeTextData @ Flatten @ { items }, a ];
-normalizeTextDataItem[ other_ ] := other;
+(* Normalizes the TextData anywhere inside an item, e.g. in the BoxData of a heading or a thoughts box: *)
+normalizeNestedTextData[ expr_ ] :=
+    ReplaceAll[ expr, TextData[ items_ ] :> TextData @ NormalizeTextData @ Flatten @ { items } ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
