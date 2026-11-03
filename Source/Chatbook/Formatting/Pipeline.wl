@@ -217,30 +217,8 @@ makeResultCell0[ mathCell[ math_String ] ] :=
 
 makeResultCell0[ imageCell[ alt_, url_String ] ] := image[ alt, url ];
 
-makeResultCell0[ bulletCell[ "", item_String ] ] := {
-    "\n",
-    Cell[
-        TextData @ Flatten @ {
-            StyleBox[ "\[Bullet]", FontColor -> color @ "NA_ChatOutputResultCellBulletFont" ],
-            " ",
-            formatTextString @ item
-        },
-        "InlineItem"
-    ]
-};
-
-makeResultCell0[ bulletCell[ whitespace_String, item_String ] ] := {
-    "\n",
-    Cell[
-        TextData @ Flatten @ {
-            whitespace,
-            StyleBox[ "\[Bullet]", FontColor -> color @ "NA_ChatOutputResultCellBulletFont" ],
-            " ",
-            formatTextString @ item
-        },
-        "InlineSubitem"
-    ]
-};
+makeResultCell0[ bulletCell[ whitespace_String, item_String ] ] :=
+    makeBulletCell[ whitespace, item ];
 
 makeResultCell0[ sectionCell[ n_, section_String ] ] := Flatten @ {
     "\n",
@@ -258,29 +236,8 @@ makeResultCell0[ tableCell[ string_String ] ] :=
 makeResultCell0[ delimiterCell[ ] ] :=
     $delimiterCell;
 
-makeResultCell0[ blockQuoteCell[ quote_String ] ] := Cell[
-    BoxData @ GridBox[
-        {
-            {
-                PaneBox[
-                    formatTextToBoxes @ StringDelete[ StringTrim @ quote, StartOfLine ~~ ">" ~~ " "... ],
-                    ImageMargins -> 5,
-                    ImageSize    -> { Full, Automatic },
-                    BaseStyle    -> { "Text", FontColor -> color @ "NA_ChatOutputResultCellBlockQuoteFont" }
-                ]
-            }
-        },
-        AutoDelete        -> False,
-        GridBoxBackground -> { "Columns" -> { { color @ "NA_ChatOutputResultCellBlockQuoteBackground" } } },
-        GridBoxDividers   -> {
-            "ColumnsIndexed" -> { 1 -> Directive[ color @ "NA_ChatOutputResultCellBlockQuoteFrame", AbsoluteThickness[ 4 ] ] },
-            "Rows"           -> { { False } }
-        },
-        GridBoxItemSize -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } }
-    ],
-    "BlockQuote",
-    Background -> None
-];
+makeResultCell0[ blockQuoteCell[ quote_String ] ] :=
+    makeBlockQuoteCell @ quote;
 
 makeResultCell0 // endDefinition;
 
