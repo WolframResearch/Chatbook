@@ -923,7 +923,7 @@ formatTextString // beginDefinition;
 formatTextString[ code_String? almostCertainlyWLCodeQ ] :=
     { makeInlineWL @ code };
 
-formatTextString[ str_String ] := StringSplit[
+formatTextString[ str_String ] := dropEmptyEnds @ Replace[ StringSplit[
     StringReplace[
         StringDelete[
             str,
@@ -937,11 +937,17 @@ formatTextString[ str_String ] := StringSplit[
             "\n\n"~~EndOfString -> "\n"
         }
     ],
-    $stringFormatRules,
+    $stringFormatRulesDeferred,
     IgnoreCase -> True
-];
+], deferredFormat[ e_ ] :> e, { 1 } ];
 
 formatTextString // endDefinition;
+
+(* StringSplit drops "" from both ends of its result, including "" given by a right-hand side (styleBox gives "" for
+   "**```**"). The deferred right-hand sides are evaluated after the split, so their "" is dropped here instead: *)
+dropEmptyEnds[ { "", rest___ } ] := dropEmptyEnds @ { rest };
+dropEmptyEnds[ { rest___, "" } ] := dropEmptyEnds @ { rest };
+dropEmptyEnds[ list_List ] := list;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1984,6 +1990,13 @@ $stringFormatRules = {
         "!>"
     ] :> image[ None, uri ]
 };
+
+(* styleBox and hyperlink format their text with formatTextString, which splits it with these same rules. Starting a
+   StringSplit with a rule list from inside one of that list's right-hand sides is slow (about 8 ms each time for this
+   list, with or without IgnoreCase), so formatTextString uses a copy whose right-hand sides are held until the split
+   has finished. The patterns and conditions are unchanged, and the right-hand sides are evaluated in the same order: *)
+SetAttributes[ deferredFormat, HoldAllComplete ];
+$stringFormatRulesDeferred = Replace[ $stringFormatRules, (l_ :> r_) :> (l :> deferredFormat @ r), { 1 } ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
