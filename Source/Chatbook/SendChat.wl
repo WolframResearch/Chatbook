@@ -1801,18 +1801,17 @@ splitDynamicContent // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*thinkTagSplitQ*)
 
-(* The split rules don't see think tags, so a split next to a match that starts in an open think tag isn't a boundary
-   between the parts that the formatter gives for the whole text (quirk 202). That's the case when the static part ends
-   in an open think tag, or when a match contains a closing tag (it starts in the thoughts and ends after them, which
-   also pairs the code fences after it differently). `split` is the result of `StringSplit[ content, rules, All ]`. *)
+(* The split rules don't see think tags, so a split in an open think tag isn't a boundary between the parts that the
+   formatter gives for the whole text (quirk 202). `split` is the result of `StringSplit[ content, rules, All ]`, and
+   the static part ends with its last match. Only the tags in the text between the matches count, since a tag in a code
+   block outside the thoughts is code. When a match starts in the thoughts and contains the closing tag (a code fence
+   that opens mid-line and closes after them), the thoughts look open from then on, so every later split is declined.
+   That's needed, since the split rules pair the code fences after it differently from the formatter. *)
 thinkTagSplitQ // beginDefinition;
 
 thinkTagSplitQ[ split_List ] :=
-    With[ { static = StringJoin @ Most @ split },
-        StringContainsQ[ static, "<think", IgnoreCase -> True ] && Or[
-            StringCount[ static, "<think", IgnoreCase -> True ] > StringCount[ static, "</think", IgnoreCase -> True ],
-            AnyTrue[ split[[ 2 ;; ;; 2 ]], StringContainsQ[ #, "</think", IgnoreCase -> True ] & ]
-        ]
+    With[ { text = StringJoin @ split[[ 1 ;; -2 ;; 2 ]] },
+        StringCount[ text, "<think", IgnoreCase -> True ] > StringCount[ text, "</think", IgnoreCase -> True ]
     ];
 
 thinkTagSplitQ // endDefinition;
