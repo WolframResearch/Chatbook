@@ -68,35 +68,101 @@ unescapeMarkdownStrings // endDefinition;
 (*importHTMLEntities*)
 importHTMLEntities // beginDefinition;
 
+(* Thoughts are decoded with the rest of the text, so formatThoughts sets this to avoid decoding them twice: *)
+importHTMLEntities[ string_String ] /; $htmlEntitiesDecoded := string;
+
+(* Named entities (case-sensitive, as in HTML) and numeric ones are decoded in a single pass, so "&amp;lt;" gives
+   "&lt;". Anything else is left as it is: *)
 importHTMLEntities[ string_String ] := StringReplace[
     string,
-    entity: ("&" ~~ Repeated[ Except[ "\n" ], { 1, 6 } ] ~~ ";") :> importHTMLEntity @ entity
+    {
+        e: ("&#" ~~ ("x"|"X") ~~ hex: HexadecimalCharacter.. ~~ ";") :> codePointString[ FromDigits[ hex, 16 ], e ],
+        e: ("&#" ~~ decimal: CharacterRange[ "0", "9" ].. ~~ ";")    :> codePointString[ FromDigits @ decimal, e ],
+        e: ("&" ~~ name: WordCharacter.. ~~ ";")                    :> Lookup[ $htmlEntities, name, e ]
+    }
 ];
 
 importHTMLEntities // endDefinition;
 
+$htmlEntitiesDecoded = False;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
-(*importHTMLEntity*)
-importHTMLEntity // beginDefinition;
+(*codePointString*)
+codePointString // beginDefinition;
 
-importHTMLEntity[ entity_String ] := Lookup[
-    $htmlEntityCache,
-    entity,
-    addToCache[
-        $htmlEntityCache,
-        $maxHTMLEntityCacheSize,
-        entity,
-        With[ { str = Quiet @ ImportString[ ToLowerCase @ entity, "HTML" ] },
-            If[ StringQ @ str, str, entity ]
-        ]
-    ]
+(* Numbers that aren't Unicode characters (zero, surrogates and anything above U+10FFFF) are left as entities: *)
+codePointString[ code_Integer, entity_String ] :=
+    If[ 0 < code < 16^^D800 || 16^^DFFF < code <= 16^^10FFFF, FromCharacterCode @ code, entity ];
+
+codePointString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*$htmlEntities*)
+
+(* The named entities of HTML 4 (with the HTML5 code points for &lang; and &rang;), plus the HTML5 names of ASCII
+   characters and the uppercase forms that HTML5 has for the most common ones: *)
+$htmlEntities = FromCharacterCode /@ Join[
+    (* Latin-1 Supplement, U+00A0 to U+00FF: *)
+    AssociationThread[
+        {
+            "nbsp", "iexcl", "cent", "pound", "curren", "yen", "brvbar", "sect", "uml", "copy", "ordf", "laquo",
+            "not", "shy", "reg", "macr", "deg", "plusmn", "sup2", "sup3", "acute", "micro", "para", "middot",
+            "cedil", "sup1", "ordm", "raquo", "frac14", "frac12", "frac34", "iquest", "Agrave", "Aacute", "Acirc",
+            "Atilde", "Auml", "Aring", "AElig", "Ccedil", "Egrave", "Eacute", "Ecirc", "Euml", "Igrave", "Iacute",
+            "Icirc", "Iuml", "ETH", "Ntilde", "Ograve", "Oacute", "Ocirc", "Otilde", "Ouml", "times", "Oslash",
+            "Ugrave", "Uacute", "Ucirc", "Uuml", "Yacute", "THORN", "szlig", "agrave", "aacute", "acirc", "atilde",
+            "auml", "aring", "aelig", "ccedil", "egrave", "eacute", "ecirc", "euml", "igrave", "iacute", "icirc",
+            "iuml", "eth", "ntilde", "ograve", "oacute", "ocirc", "otilde", "ouml", "divide", "oslash", "ugrave",
+            "uacute", "ucirc", "uuml", "yacute", "thorn", "yuml"
+        },
+        Range[ 160, 255 ]
+    ],
+    (* Greek, U+0391 to U+03A9 (there is no capital final sigma at U+03A2) and U+03B1 to U+03C9: *)
+    AssociationThread[
+        {
+            "Alpha", "Beta", "Gamma", "Delta", "Epsilon", "Zeta", "Eta", "Theta", "Iota", "Kappa", "Lambda", "Mu",
+            "Nu", "Xi", "Omicron", "Pi", "Rho", "Sigma", "Tau", "Upsilon", "Phi", "Chi", "Psi", "Omega"
+        },
+        DeleteCases[ Range[ 913, 937 ], 930 ]
+    ],
+    AssociationThread[
+        {
+            "alpha", "beta", "gamma", "delta", "epsilon", "zeta", "eta", "theta", "iota", "kappa", "lambda", "mu",
+            "nu", "xi", "omicron", "pi", "rho", "sigmaf", "sigma", "tau", "upsilon", "phi", "chi", "psi", "omega"
+        },
+        Range[ 945, 969 ]
+    ],
+    <|
+        "excl" -> 33, "quot" -> 34, "num" -> 35, "dollar" -> 36, "percnt" -> 37, "amp" -> 38, "apos" -> 39,
+        "lpar" -> 40, "rpar" -> 41, "ast" -> 42, "midast" -> 42, "plus" -> 43, "comma" -> 44, "period" -> 46,
+        "sol" -> 47, "colon" -> 58, "semi" -> 59, "lt" -> 60, "equals" -> 61, "gt" -> 62, "quest" -> 63,
+        "commat" -> 64, "lsqb" -> 91, "lbrack" -> 91, "bsol" -> 92, "rsqb" -> 93, "rbrack" -> 93, "Hat" -> 94,
+        "lowbar" -> 95, "grave" -> 96, "lcub" -> 123, "lbrace" -> 123, "verbar" -> 124, "vert" -> 124,
+        "rcub" -> 125, "rbrace" -> 125,
+        "QUOT" -> 34, "AMP" -> 38, "LT" -> 60, "GT" -> 62, "COPY" -> 169, "REG" -> 174,
+        "OElig" -> 338, "oelig" -> 339, "Scaron" -> 352, "scaron" -> 353, "Yuml" -> 376, "fnof" -> 402,
+        "circ" -> 710, "tilde" -> 732, "thetasym" -> 977, "upsih" -> 978, "piv" -> 982,
+        "ensp" -> 8194, "emsp" -> 8195, "thinsp" -> 8201, "zwnj" -> 8204, "zwj" -> 8205, "lrm" -> 8206,
+        "rlm" -> 8207, "ndash" -> 8211, "mdash" -> 8212, "lsquo" -> 8216, "rsquo" -> 8217, "sbquo" -> 8218,
+        "ldquo" -> 8220, "rdquo" -> 8221, "bdquo" -> 8222, "dagger" -> 8224, "Dagger" -> 8225, "bull" -> 8226,
+        "hellip" -> 8230, "permil" -> 8240, "prime" -> 8242, "Prime" -> 8243, "lsaquo" -> 8249,
+        "rsaquo" -> 8250, "oline" -> 8254, "frasl" -> 8260, "euro" -> 8364, "image" -> 8465, "weierp" -> 8472,
+        "real" -> 8476, "trade" -> 8482, "alefsym" -> 8501,
+        "larr" -> 8592, "uarr" -> 8593, "rarr" -> 8594, "darr" -> 8595, "harr" -> 8596, "crarr" -> 8629,
+        "lArr" -> 8656, "uArr" -> 8657, "rArr" -> 8658, "dArr" -> 8659, "hArr" -> 8660,
+        "forall" -> 8704, "part" -> 8706, "exist" -> 8707, "empty" -> 8709, "nabla" -> 8711, "isin" -> 8712,
+        "notin" -> 8713, "ni" -> 8715, "prod" -> 8719, "sum" -> 8721, "minus" -> 8722, "lowast" -> 8727,
+        "radic" -> 8730, "prop" -> 8733, "infin" -> 8734, "ang" -> 8736, "and" -> 8743, "or" -> 8744,
+        "cap" -> 8745, "cup" -> 8746, "int" -> 8747, "there4" -> 8756, "sim" -> 8764, "cong" -> 8773,
+        "asymp" -> 8776, "ne" -> 8800, "equiv" -> 8801, "le" -> 8804, "ge" -> 8805, "sub" -> 8834,
+        "sup" -> 8835, "nsub" -> 8836, "sube" -> 8838, "supe" -> 8839, "oplus" -> 8853, "otimes" -> 8855,
+        "perp" -> 8869, "sdot" -> 8901, "lceil" -> 8968, "rceil" -> 8969, "lfloor" -> 8970, "rfloor" -> 8971,
+        "lang" -> 10216, "rang" -> 10217, "loz" -> 9674, "spades" -> 9824, "clubs" -> 9827, "hearts" -> 9829,
+        "diams" -> 9830
+    |>
 ];
-
-importHTMLEntity // endDefinition;
-
-$htmlEntityCache        = <| |>;
-$maxHTMLEntityCacheSize = 1000;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

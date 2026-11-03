@@ -1264,21 +1264,89 @@ VerificationTest[
     TestID   -> "Blocks-HTMLEntities-Decoded@@Tests/FormattingBlocks.wlt:1242,1-1265,2"
 ]
 
-(* Entity names are lowercased before they are decoded, so "&AMP;" works (it is also a valid HTML5 entity). This also
-   lowercases entities like "&Eacute;" (see the entity quirks): *)
+(* Entity names are case-sensitive, as in HTML. HTML5 also has uppercase forms of the most common ones, like "&AMP;": *)
 VerificationTest[
-    FormatMarkdown[ "&AMP; upper" ],
-    { "& upper" },
+    FormatMarkdown /@ { "&Eacute;cole", "&Omega; vs &omega;", "&Agrave;", "&AMP; upper", "&Amp; &MDASH;" },
+    {
+        { "\[CapitalEAcute]cole" },
+        { "\[CapitalOmega] vs \[Omega]" },
+        { "\[CapitalAGrave]" },
+        { "& upper" },
+        { "&Amp; &MDASH;" }
+    },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-HTMLEntities-Case-Insensitive@@Tests/FormattingBlocks.wlt:1269,1-1274,2"
+    TestID   -> "Blocks-HTMLEntities-Case-Sensitive@@Tests/FormattingBlocks.wlt:1268,1-1279,2"
 ]
 
-(* Unknown entities, text that is too long to be an entity, and a bare "&" are left alone: *)
+(* The HTML5 names of ASCII characters are decoded too: *)
+VerificationTest[
+    FormatMarkdown[ "a &excl; &commat; &lpar;b&rpar; &quest; &Hat; &lcub;&rcub;" ],
+    { "a ! @ (b) ? ^ {}" },
+    SameTest -> MatchQ,
+    TestID   -> "Blocks-HTMLEntities-ASCII-Names@@Tests/FormattingBlocks.wlt:1282,1-1287,2"
+]
+
+(* Unknown entities and a bare "&" are left alone: *)
 VerificationTest[
     FormatMarkdown /@ { "&unknown; entity", "&notanentityatall;", "a & b", "&a;b&c;" },
     { { "&unknown; entity" }, { "&notanentityatall;" }, { "a & b" }, { "&a;b&c;" } },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-HTMLEntities-Unknown@@Tests/FormattingBlocks.wlt:1277,1-1282,2"
+    TestID   -> "Blocks-HTMLEntities-Unknown@@Tests/FormattingBlocks.wlt:1290,1-1295,2"
+]
+
+(* Text that only looks like an entity is not changed: *)
+VerificationTest[
+    FormatMarkdown /@ { "Tom & Jerry; fun", "R&D; costs" },
+    { { "Tom & Jerry; fun" }, { "R&D; costs" } },
+    SameTest -> MatchQ,
+    TestID   -> "Blocks-HTMLEntities-Lookalikes@@Tests/FormattingBlocks.wlt:1298,1-1303,2"
+]
+
+(* Long entity names and numbers are decoded, and so is an uppercase "X" in hexadecimal entities. Numbers that aren't
+   Unicode characters, or that have digits other than 0-9, are left alone: *)
+VerificationTest[
+    FormatMarkdown /@ {
+        "&#128512; smile",
+        "&#x1F600; hex",
+        "&epsilon; &thetasym;",
+        "&#65;&#x42;&#X43;",
+        "&#0; &#55296; &#x110000; &#x; &#; &#\:0663;"
+    },
+    {
+        { "\|01f600 smile" },
+        { "\|01f600 hex" },
+        { "\[CurlyEpsilon] \[CurlyTheta]" },
+        { "ABC" },
+        { "&#0; &#55296; &#x110000; &#x; &#; &#\:0663;" }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Blocks-HTMLEntities-Long-And-Numeric@@Tests/FormattingBlocks.wlt:1307,1-1324,2"
+]
+
+(* Space entities give their space characters. When the text is serialized, a non-breaking space becomes a plain
+   space: *)
+VerificationTest[
+    {
+        FormatMarkdown /@ { "non&nbsp;breaking", "a&#160;x", "a&ensp;b&emsp;c&thinsp;d" },
+        MarkdownRoundTrip[ "non&nbsp;breaking" ]
+    },
+    {
+        { { "non\[NonBreakingSpace]breaking" }, { "a\[NonBreakingSpace]x" }, { "a\:2002b\:2003c\[ThinSpace]d" } },
+        "non breaking"
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Blocks-HTMLEntities-Spaces@@Tests/FormattingBlocks.wlt:1328,1-1339,2"
+]
+
+(* Entities are decoded once, so an escaped entity gives the entity: *)
+VerificationTest[
+    {
+        FormatMarkdown /@ { "&amp;lt;", "&amp;amp; &amp;#60;" },
+        MarkdownRoundTrip[ "- a &amp;lt; b" ]
+    },
+    { { { "&lt;" }, { "&amp; &#60;" } }, "* a &lt; b" },
+    SameTest -> MatchQ,
+    TestID   -> "Blocks-HTMLEntities-Decoded-Once@@Tests/FormattingBlocks.wlt:1342,1-1350,2"
 ]
 
 (* Entities are decoded before anything else is parsed, so they are decoded inside code too: *)
@@ -1298,14 +1366,14 @@ VerificationTest[
         "```wl\nx && y\n```"
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-HTMLEntities-In-Code@@Tests/FormattingBlocks.wlt:1285,1-1302,2"
+    TestID   -> "Blocks-HTMLEntities-In-Code@@Tests/FormattingBlocks.wlt:1353,1-1370,2"
 ]
 
 VerificationTest[
     MarkdownRoundTrip /@ { "Fish &amp; chips", "a &lt; b &gt; c", "- item &lt;tag&gt;" },
     { "Fish & chips", "a < b > c", "* item <tag>" },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-HTMLEntities-Serialization@@Tests/FormattingBlocks.wlt:1304,1-1309,2"
+    TestID   -> "Blocks-HTMLEntities-Serialization@@Tests/FormattingBlocks.wlt:1372,1-1377,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1326,7 +1394,7 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Precedence-Code-Block-Content@@Tests/FormattingBlocks.wlt:1316,1-1330,2"
+    TestID   -> "Blocks-Precedence-Code-Block-Content@@Tests/FormattingBlocks.wlt:1384,1-1398,2"
 ]
 
 (* The heading text is whatever follows the "#" characters, even if it looks like a bullet: *)
@@ -1334,7 +1402,7 @@ VerificationTest[
     FormatMarkdown[ "# - x" ],
     { blocksHeading[ blocksTextBox[ "- x" ], "Title", 26, { { 0, 0 }, { 5, 15 } } ] },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Precedence-Heading-Content@@Tests/FormattingBlocks.wlt:1333,1-1338,2"
+    TestID   -> "Blocks-Precedence-Heading-Content@@Tests/FormattingBlocks.wlt:1401,1-1406,2"
 ]
 
 (* Escaped markdown characters give the same blocks as without escapes. This includes blocks in the text before a code
@@ -1352,7 +1420,7 @@ VerificationTest[
     },
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Precedence-Escaped-Path-Same-Blocks@@Tests/FormattingBlocks.wlt:1342,1-1356,2"
+    TestID   -> "Blocks-Precedence-Escaped-Path-Same-Blocks@@Tests/FormattingBlocks.wlt:1410,1-1424,2"
 ]
 
 (* Escapes inside block content are unescaped: *)
@@ -1366,7 +1434,7 @@ VerificationTest[
         blocksQuote @ blocksTextBox[ "q _x_" ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Precedence-Escapes-In-Blocks@@Tests/FormattingBlocks.wlt:1359,1-1370,2"
+    TestID   -> "Blocks-Precedence-Escapes-In-Blocks@@Tests/FormattingBlocks.wlt:1427,1-1438,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1396,7 +1464,7 @@ VerificationTest[
         "\nEnd."
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Document-Structure@@Tests/FormattingBlocks.wlt:1377,1-1400,2"
+    TestID   -> "Blocks-Document-Structure@@Tests/FormattingBlocks.wlt:1445,1-1468,2"
 ]
 
 (* Block constructs format the same way while streaming. The second streaming call gets the block cells from the
@@ -1407,14 +1475,14 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Document-Streaming-Same@@Tests/FormattingBlocks.wlt:1404,1-1411,2"
+    TestID   -> "Blocks-Document-Streaming-Same@@Tests/FormattingBlocks.wlt:1472,1-1479,2"
 ]
 
 VerificationTest[
     blocksRoundTrip[ "# Title\n\nIntro paragraph.\n\n## Section\n\n- one\n- **two**\n  - sub\n\n---\n\nEnd." ],
     "# Title\n\nIntro paragraph.\n\n## Section\n\n* one\n* **two**\n  * sub\n\n---\n\nEnd.",
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Document-Serialization@@Tests/FormattingBlocks.wlt:1413,1-1418,2"
+    TestID   -> "Blocks-Document-Serialization@@Tests/FormattingBlocks.wlt:1481,1-1486,2"
 ]
 
 (* Formatting the serialized markdown again gives the same output: *)
@@ -1428,7 +1496,7 @@ VerificationTest[
     },
     { True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Document-Reformat-Serialized@@Tests/FormattingBlocks.wlt:1421,1-1432,2"
+    TestID   -> "Blocks-Document-Reformat-Serialized@@Tests/FormattingBlocks.wlt:1489,1-1500,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

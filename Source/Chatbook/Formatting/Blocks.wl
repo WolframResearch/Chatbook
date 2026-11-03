@@ -53,7 +53,7 @@ formatThoughts[ thoughts_, "" ] :=
 
 formatThoughts[ thoughts_, trimmed_String ] :=
     Block[
-        { $textDataFormatRules = $thoughtsFormatRules },
+        { $textDataFormatRules = $thoughtsFormatRules, $htmlEntitiesDecoded = True },
         TextData @ reformatTextData @ trimmed
     ];
 
