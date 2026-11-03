@@ -72,7 +72,10 @@ $externalLanguageRules = Replace[
 
 $$ws      = Shortest[ WhitespaceCharacter... ];
 $$mdRow1  = $$ws ~~ "|" ~~ Except[ "\n" ]... ~~ "|" ~~ $$ws ~~ ("\n"|EndOfString);
-$$mdRow2  = Except[ "\n" ].. ~~ Repeated[ ("|" ~~ Except[ "\n" ]...), { 2, Infinity } ] ~~ ("\n"|EndOfString);
+(* The same rows as Except[ "\n" ].. ~~ Repeated[ "|" ~~ Except[ "\n" ]..., { 2, Infinity } ] ~~ ("\n"|EndOfString):
+   a character, then at least two "|" before the end of the line. That pattern backtracks through the rest of the line
+   at every position the split tries it (1.8 s for a 10 KB line without "|"). This one can't backtrack (40 ms): *)
+$$mdRow2  = RegularExpression[ "[^\\n][^\\n|]*+\\|[^\\n|]*+\\|[^\\n]*+(?:\\n|\\z)" ];
 $$mdRow   = $$mdRow1 | $$mdRow2;
 $$mdTable = $$mdRow ~~ $$mdRow ..;
 
@@ -923,7 +926,7 @@ formatTextString // beginDefinition;
 formatTextString[ code_String? almostCertainlyWLCodeQ ] :=
     { makeInlineWL @ code };
 
-formatTextString[ str_String ] := StringSplit[
+formatTextString[ str_String ] := dropEmptyEnds @ Replace[ StringSplit[
     StringReplace[
         StringDelete[
             str,
@@ -937,11 +940,19 @@ formatTextString[ str_String ] := StringSplit[
             "\n\n"~~EndOfString -> "\n"
         }
     ],
-    $stringFormatRules,
+    $stringFormatRulesDeferred,
     IgnoreCase -> True
-];
+], deferredFormat[ e_ ] :> e, { 1 } ];
 
 formatTextString // endDefinition;
+
+(* StringSplit drops "" from both ends of its result, including "" given by a right-hand side (styleBox gives "" for
+   "**```**"). The deferred right-hand sides are evaluated after the split, so their "" is dropped here instead: *)
+dropEmptyEnds // beginDefinition;
+dropEmptyEnds[ { "", rest___ } ] := dropEmptyEnds @ { rest };
+dropEmptyEnds[ { rest___, "" } ] := dropEmptyEnds @ { rest };
+dropEmptyEnds[ list_List ] := list;
+dropEmptyEnds // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -952,12 +963,14 @@ almostCertainlyWLCodeQ[ wl_String ] := almostCertainlyWLCodeQ[ wl, False ];
 
 almostCertainlyWLCodeQ[ wl_String, inline_ ] := TrueQ @ Or[
     If[ TrueQ @ inline, StringContainsQ, StringStartsQ ][ wl, "\[FreeformPrompt]" ],
+    (* A System name followed by [...] or by -> or :>. No System name contains "[", whitespace, "-" or ":", so the only
+       candidate name is the text before the first of these, and systemNameQ is only called once the rest matches: *)
     StringMatchQ[
         wl,
-        (name: Repeated[ _, { 1, 50 } ] /; systemNameQ @ name) ~~ Alternatives[
+        (name: Repeated[ Except[ "["|WhitespaceCharacter|"-"|":" ], { 1, 50 } ] ~~ Alternatives[
             "[" ~~ ___ ~~ "]",
             $$ws ~~ ("->"|":>") ~~ __
-        ]
+        ]) /; systemNameQ @ name
     ],
     TrueQ @ inline && StringMatchQ[ wl, "\"" ~~ ___ ~~ "\"" ]
 ];
@@ -1984,6 +1997,13 @@ $stringFormatRules = {
         "!>"
     ] :> image[ None, uri ]
 };
+
+(* styleBox and hyperlink format their text with formatTextString, which splits it with these same rules. Starting a
+   StringSplit with a rule list from inside one of that list's right-hand sides is slow (about 8 ms each time for this
+   list, with or without IgnoreCase), so formatTextString uses a copy whose right-hand sides are held until the split
+   has finished. The patterns and conditions are unchanged, and the right-hand sides are evaluated in the same order: *)
+SetAttributes[ deferredFormat, HoldAllComplete ];
+$stringFormatRulesDeferred = Replace[ $stringFormatRules, (l_ :> r_) :> (l :> deferredFormat @ r), { 1 } ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
