@@ -893,7 +893,8 @@ VerificationTest[
     TestID   -> "Tables-Escaped-Asterisks@@Tests/FormattingTables.wlt:889,1-894,2"
 ]
 
-(* Tables are still found when an escape occurs elsewhere in the response, including in fenced tables: *)
+(* Tables are still found when an escape occurs elsewhere in the response, including in fenced tables, with the same
+   line breaks as without escapes (a fenced table keeps the blank line before it): *)
 VerificationTest[
     {
         formatTables[ "Price \\$5\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\nDone" ],
@@ -901,10 +902,10 @@ VerificationTest[
     },
     {
         { "Price $5\n", headedTable @ { { "a", "b" }, { "1", "2" } }, "\nDone" },
-        { "* x\n", headedTable @ { { "a", "b" }, { "1", "2" } } }
+        { "* x\n\n", headedTable @ { { "a", "b" }, { "1", "2" } } }
     },
     SameTest -> MatchQ,
-    TestID   -> "Tables-Escaped-Elsewhere@@Tests/FormattingTables.wlt:897,1-908,2"
+    TestID   -> "Tables-Escaped-Elsewhere@@Tests/FormattingTables.wlt:898,1-909,2"
 ]
 
 (* A table followed by a code block when the response contains an escape: *)
@@ -917,7 +918,7 @@ VerificationTest[
         Cell[ BoxData @ TemplateBox[ { Cell[ _, "ChatCode", ___ ], "Wolfram" }, "ChatCodeBlockTemplate" ], "ChatCodeBlock", ___ ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Tables-Escaped-Code-Block-After@@Tests/FormattingTables.wlt:911,1-921,2"
+    TestID   -> "Tables-Escaped-Code-Block-After@@Tests/FormattingTables.wlt:912,1-922,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -943,7 +944,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "Tables-After-Heading@@Tests/FormattingTables.wlt:928,1-947,2"
+    TestID   -> "Tables-After-Heading@@Tests/FormattingTables.wlt:929,1-948,2"
 ]
 
 (* A list item and a code block directly before a table: *)
@@ -965,7 +966,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "Tables-After-Item-And-Code-Block@@Tests/FormattingTables.wlt:950,1-969,2"
+    TestID   -> "Tables-After-Item-And-Code-Block@@Tests/FormattingTables.wlt:951,1-970,2"
 ]
 
 (* A list and a "---" delimiter directly before a table: *)
@@ -989,7 +990,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "Tables-After-List-And-Delimiter@@Tests/FormattingTables.wlt:972,1-993,2"
+    TestID   -> "Tables-After-List-And-Delimiter@@Tests/FormattingTables.wlt:973,1-994,2"
 ]
 
 (* Blocks after a table and a blank line: *)
@@ -1021,7 +1022,7 @@ VerificationTest[
         { headedTable @ { { "a", "b" }, { "1", "2" } }, "\n", Cell[ _, "BlockQuote", ___ ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Tables-Blocks-After@@Tests/FormattingTables.wlt:996,1-1025,2"
+    TestID   -> "Tables-Blocks-After@@Tests/FormattingTables.wlt:997,1-1026,2"
 ]
 
 (* List items take precedence over table rows, so list items that contain pipes stay list items: *)
@@ -1033,7 +1034,7 @@ VerificationTest[
         Cell[ TextData @ { StyleBox[ "\[Bullet]", ___ ], " d | e | f" }, "InlineItem", ___ ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Tables-List-Items-With-Pipes@@Tests/FormattingTables.wlt:1028,1-1037,2"
+    TestID   -> "Tables-List-Items-With-Pipes@@Tests/FormattingTables.wlt:1029,1-1038,2"
 ]
 
 (* A code block directly after a table (no blank line) is still a separate block: *)
@@ -1045,7 +1046,7 @@ VerificationTest[
         Cell[ _, "ChatCodeBlock", ___ ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Tables-Code-Block-Directly-After@@Tests/FormattingTables.wlt:1040,1-1049,2"
+    TestID   -> "Tables-Code-Block-Directly-After@@Tests/FormattingTables.wlt:1041,1-1050,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1071,7 +1072,7 @@ VerificationTest[
     ],
     { True, True, True, True, True, True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "Tables-Streaming-Same-As-Finished@@Tests/FormattingTables.wlt:1056,1-1075,2"
+    TestID   -> "Tables-Streaming-Same-As-Finished@@Tests/FormattingTables.wlt:1057,1-1076,2"
 ]
 
 (* While streaming, math in cells uses the cheaper TeX boxes and WL code is not parsed yet: *)
@@ -1093,7 +1094,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "Tables-Streaming-Math-And-Code@@Tests/FormattingTables.wlt:1078,1-1097,2"
+    TestID   -> "Tables-Streaming-Math-And-Code@@Tests/FormattingTables.wlt:1079,1-1098,2"
 ]
 
 (* While the first row and the start of the delimiter row are streaming in, there is only one row, so it is text: *)
@@ -1115,7 +1116,7 @@ VerificationTest[
         { "| a | b |\n|---" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Tables-Streaming-First-Row@@Tests/FormattingTables.wlt:1100,1-1119,2"
+    TestID   -> "Tables-Streaming-First-Row@@Tests/FormattingTables.wlt:1101,1-1120,2"
 ]
 
 (* Once the first body row is complete, the table is the same as the finished one: *)
@@ -1123,7 +1124,7 @@ VerificationTest[
     formatTables[ "| a | b |\n|---|---|\n| 1 | 2 |", "Streaming" ],
     { headedTable @ { { "a", "b" }, { "1", "2" } } },
     SameTest -> MatchQ,
-    TestID   -> "Tables-Streaming-Complete-Row@@Tests/FormattingTables.wlt:1122,1-1127,2"
+    TestID   -> "Tables-Streaming-Complete-Row@@Tests/FormattingTables.wlt:1123,1-1128,2"
 ]
 
 (* A later row is added to the table as soon as it has a closing pipe, padded to the width of the table: *)
@@ -1137,7 +1138,7 @@ VerificationTest[
         { headedTable @ { { "a", "b" }, { "1", "2" }, { "3", "4" } } }
     },
     SameTest -> MatchQ,
-    TestID   -> "Tables-Streaming-Later-Rows@@Tests/FormattingTables.wlt:1130,1-1141,2"
+    TestID   -> "Tables-Streaming-Later-Rows@@Tests/FormattingTables.wlt:1131,1-1142,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1155,7 +1156,7 @@ VerificationTest[
         "| Name  | Description      |\n| ----- | ---------------- |\n| Alpha | The first letter |\n| Beta  | Second           |"
     },
     SameTest -> MatchQ,
-    TestID   -> "Tables-Serialization-Headed@@Tests/FormattingTables.wlt:1148,1-1159,2"
+    TestID   -> "Tables-Serialization-Headed@@Tests/FormattingTables.wlt:1149,1-1160,2"
 ]
 
 (* The same for tables written without outer pipes, with only one dash per delimiter cell, or in a code block (the
@@ -1172,7 +1173,7 @@ VerificationTest[
         _String? (StringMatchQ[ "Text\n\n| a | b |\n| - | - |\n| 1 | 2 |\n" ~~ "\n"... ~~ "After" ])
     },
     SameTest -> MatchQ,
-    TestID   -> "Tables-Serialization-Row-Forms@@Tests/FormattingTables.wlt:1163,1-1176,2"
+    TestID   -> "Tables-Serialization-Row-Forms@@Tests/FormattingTables.wlt:1164,1-1177,2"
 ]
 
 (* Tables without headings get an empty header row, so the serialized table is still valid markdown: *)
@@ -1188,7 +1189,7 @@ VerificationTest[
         "|   | b |\n| - | - |\n| 1 | 2 |"
     },
     SameTest -> MatchQ,
-    TestID   -> "Tables-Serialization-No-Headings@@Tests/FormattingTables.wlt:1179,1-1192,2"
+    TestID   -> "Tables-Serialization-No-Headings@@Tests/FormattingTables.wlt:1180,1-1193,2"
 ]
 
 (* Single-column tables, with and without headings: *)
@@ -1202,7 +1203,7 @@ VerificationTest[
         "|   |\n| - |\n| a |\n| 1 |\n| 2 |"
     },
     SameTest -> MatchQ,
-    TestID   -> "Tables-Serialization-Single-Column@@Tests/FormattingTables.wlt:1195,1-1206,2"
+    TestID   -> "Tables-Serialization-Single-Column@@Tests/FormattingTables.wlt:1196,1-1207,2"
 ]
 
 (* Padded ragged rows and empty cells: *)
@@ -1218,7 +1219,7 @@ VerificationTest[
         "| a | b |\n| - | - |\n|   |   |"
     },
     SameTest -> MatchQ,
-    TestID   -> "Tables-Serialization-Shape@@Tests/FormattingTables.wlt:1209,1-1222,2"
+    TestID   -> "Tables-Serialization-Shape@@Tests/FormattingTables.wlt:1210,1-1223,2"
 ]
 
 (* Pipes in cell text are escaped again: *)
@@ -1226,7 +1227,7 @@ VerificationTest[
     MarkdownRoundTrip[ "| a \\| b | c |\n|---|---|\n| 1 | 2 |" ],
     "| a \\| b | c |\n| ------ | - |\n| 1      | 2 |",
     SameTest -> MatchQ,
-    TestID   -> "Tables-Serialization-Escaped-Pipe@@Tests/FormattingTables.wlt:1225,1-1230,2"
+    TestID   -> "Tables-Serialization-Escaped-Pipe@@Tests/FormattingTables.wlt:1226,1-1231,2"
 ]
 
 (* Emphasis, links and math in cells serialize as markdown (math as $$...$$): *)
@@ -1244,7 +1245,7 @@ VerificationTest[
         "| ~~old~~ | new |\n| ------- | --- |\n| 1       | 2   |"
     },
     SameTest -> MatchQ,
-    TestID   -> "Tables-Serialization-Formatted-Contents@@Tests/FormattingTables.wlt:1233,1-1248,2"
+    TestID   -> "Tables-Serialization-Formatted-Contents@@Tests/FormattingTables.wlt:1234,1-1249,2"
 ]
 
 (* Inline code and documentation links in cells are serialized without backticks (grid items are serialized as if they
@@ -1261,7 +1262,7 @@ VerificationTest[
         "| Function | Example                  |\n| -------- | ------------------------ |\n| Plot     | Plot[Sin[x], {x, 0, Pi}] |"
     },
     SameTest -> MatchQ,
-    TestID   -> "Tables-Serialization-Inline-Code@@Tests/FormattingTables.wlt:1252,1-1265,2"
+    TestID   -> "Tables-Serialization-Inline-Code@@Tests/FormattingTables.wlt:1253,1-1266,2"
 ]
 
 (* Unicode, HTML entities, quotes, dollar signs and other markdown characters in cells (they are not escaped): *)
@@ -1281,7 +1282,7 @@ VerificationTest[
         "| # | * | Name |\n| - | - | ---- |\n| 1 | - | x    |"
     },
     SameTest -> MatchQ,
-    TestID   -> "Tables-Serialization-Text-Contents@@Tests/FormattingTables.wlt:1268,1-1285,2"
+    TestID   -> "Tables-Serialization-Text-Contents@@Tests/FormattingTables.wlt:1269,1-1286,2"
 ]
 
 (* Text and headings around a table (the blank line after the table is currently not kept, see the quirks): *)
@@ -1295,7 +1296,7 @@ VerificationTest[
         "## Results\n\n| a | b |\n| - | - |\n| 1 | 2 |"
     },
     SameTest -> MatchQ,
-    TestID   -> "Tables-Serialization-Text-Around@@Tests/FormattingTables.wlt:1288,1-1299,2"
+    TestID   -> "Tables-Serialization-Text-Around@@Tests/FormattingTables.wlt:1289,1-1300,2"
 ]
 
 (* The header and data rows of an aligned table are kept (whether the alignment is kept is not tested here, see the
@@ -1304,7 +1305,7 @@ VerificationTest[
     MarkdownRoundTrip[ "| a | b | c | d |\n|:--|:-:|--:|---|\n| 1 | 2 | 3 | 4 |" ],
     _String? (StringMatchQ[ "| a | b | c | d |\n| " ~~ Except[ "\n" ].. ~~ " |\n| 1 | 2 | 3 | 4 |" ]),
     SameTest -> MatchQ,
-    TestID   -> "Tables-Serialization-Aligned-Content@@Tests/FormattingTables.wlt:1303,1-1308,2"
+    TestID   -> "Tables-Serialization-Aligned-Content@@Tests/FormattingTables.wlt:1304,1-1309,2"
 ]
 
 (* A very long cell is kept whole, while the other columns are padded to at most three characters: *)
@@ -1312,7 +1313,7 @@ VerificationTest[
     MarkdownRoundTrip[ "| a | b |\n|---|---|\n| " <> StringRepeat[ "word ", 40 ] <> "| x |" ],
     "| a   | b |\n| --- | - |\n| " <> StringTrim @ StringRepeat[ "word ", 40 ] <> " | x |",
     SameTest -> MatchQ,
-    TestID   -> "Tables-Serialization-Long-Cell@@Tests/FormattingTables.wlt:1311,1-1316,2"
+    TestID   -> "Tables-Serialization-Long-Cell@@Tests/FormattingTables.wlt:1312,1-1317,2"
 ]
 
 (* Formatting the serialized markdown again gives the same table: *)
@@ -1335,5 +1336,5 @@ VerificationTest[
     ],
     { True, True, True, True, True, True, True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "Tables-Serialization-Reformat@@Tests/FormattingTables.wlt:1319,1-1339,2"
+    TestID   -> "Tables-Serialization-Reformat@@Tests/FormattingTables.wlt:1320,1-1340,2"
 ]

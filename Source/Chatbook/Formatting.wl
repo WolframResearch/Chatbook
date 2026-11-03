@@ -136,6 +136,9 @@ $mdEscapeRules    = "\\" <> # -> esc @ # & /@ $mdEscapedCharacters;
 $mdUnescapeRules  = esc @ # -> # & /@ $mdEscapedCharacters;
 $texUnescapeRules = esc @ # -> "\\" <> # & /@ $mdEscapedCharacters;
 
+(* Parts of the text that keep their raw text, including any escapes (see makeResultCell1): *)
+$$rawTextToken = codeBlockCell | inlineToolCallCell | thoughtsOpener | thinkingOpener | speechCell;
+
 (* ::**************************************************************************************************************:: *)
  (* ::Section::Closed:: *)
  (*StringToBoxes*)
@@ -242,144 +245,49 @@ reformatTextData // endDefinition;
 
 reformatTextData0 // beginDefinition;
 
-reformatTextData0[ string_String ] /; StringContainsQ[ string, $$mdEscapedCharacter ] :=
-    reformatTextDataEscaped @ discardBadToolCalls @ DeleteCases[
-        Quiet[
-            StringSplit[
-                importHTMLEntities @ string,
-                $textDataFormatRulesNoMarkdownUnescape,
-                IgnoreCase -> True
-            ],
-            RegularExpression::maxrec
-        ],
-        ""
+(* Markdown escapes (e.g. \* or \$) are replaced with placeholders before HTML entities are decoded and the text is
+   split, so the escaped characters are not seen as markdown, and an entity such as &#92; never acts as an escape. The
+   placeholders are removed again for each part in makeResultCell1: *)
+reformatTextData0[ string_String ] :=
+    Block[ { $markdownEscapes = StringContainsQ[ string, $$mdEscapedCharacter ] },
+        joinAdjacentStrings @ Flatten[
+            makeResultCell /@ discardBadToolCalls @ DeleteCases[
+                Quiet[
+                    StringSplit[
+                        importHTMLEntities @ If[ $markdownEscapes, StringReplace[ string, $mdEscapeRules ], string ],
+                        $textDataFormatRules,
+                        IgnoreCase -> True
+                    ],
+                    RegularExpression::maxrec
+                ],
+                ""
+            ]
+        ]
     ];
-
-reformatTextData0[ string_String ] := joinAdjacentStrings @ Flatten[
-    makeResultCell /@ discardBadToolCalls @ DeleteCases[
-        Quiet[
-            StringSplit[
-                importHTMLEntities @ string,
-                $textDataFormatRules,
-                IgnoreCase -> True
-            ],
-            RegularExpression::maxrec
-        ],
-        ""
-    ]
-];
 
 reformatTextData0[ other_ ] := other;
 
 reformatTextData0 // endDefinition;
 
-reformatTextDataEscaped // beginDefinition;
-
-reformatTextDataEscaped[ parts_List ] :=
-    joinAdjacentStrings @ Flatten @ reformatTextDataEscaped0 @ splitToolCallSpacing @ parts;
-
-reformatTextDataEscaped // endDefinition;
-
-reformatTextDataEscaped0 // beginDefinition;
-
-reformatTextDataEscaped0[ { before___, text_String, cell: codeBlockCell[ __ ], after___ } ] /;
-    StringMatchQ[ text, ___~~"\n\n"~~("\n"...) ] :=
-        reformatTextDataEscaped0 @ { before, textBeforeCodeBlock @ text, cell, after };
-
-reformatTextDataEscaped0[ parts_List ] := Replace[
-    parts,
-    {
-        s_String :> ReplaceAll[
-            reformatTextData0 @ StringReplace[ s, $mdEscapeRules ],
-            t_String :> RuleCondition @ StringReplace[ t, $mdUnescapeRules ]
-        ],
-        textBeforeCodeBlock[ s_String ] :> ReplaceAll[
-            reformatTextBeforeCodeBlock @ StringReplace[ StringReplace[ s, "\n\n"~~("\n"...)~~EndOfString -> "\n" ], $mdEscapeRules ],
-            t_String :> RuleCondition @ StringReplace[ t, $mdUnescapeRules ]
-        ],
-        toolCallSpacing[ s_String ] :> formatTextString @ s,
-        (* Text in discarded material still needs its escapes handled: *)
-        discardedMaterial[ stuff___ ] :> makeDiscardedMaterialCell0 @ reformatTextDataEscaped @ { stuff },
-        other_ :> makeResultCell @ other
-    },
-    { 1 }
-];
-
-reformatTextDataEscaped0 // endDefinition;
-
-reformatTextBeforeCodeBlock // beginDefinition;
-
-(* Same as the text formatting in reformatTextData0, but without trimming the line break before the code block: *)
-reformatTextBeforeCodeBlock[ string_String ] :=
-    makeResultCell /@ DeleteCases[
-        Quiet[ StringSplit[ string, $textDataFormatRules, IgnoreCase -> True ], RegularExpression::maxrec ],
-        ""
-    ];
-
-reformatTextBeforeCodeBlock // endDefinition;
+(* Whether the text that is being formatted contains markdown escapes (set by reformatTextData0): *)
+$markdownEscapes = False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*splitToolCallSpacing*)
-splitToolCallSpacing // beginDefinition;
+(*restoreRawText*)
+restoreRawText // beginDefinition;
 
-(* Each part of the text between tool calls is formatted separately, which trims its whitespace. The whitespace next to
-   a tool call is split out here, so that tool calls keep the same line breaks as they do in text without escapes: *)
-splitToolCallSpacing[ { } ] := { };
+(* The placeholders become the original escapes again, which gives back the exact raw text: *)
+restoreRawText[ (h: $$rawTextToken)[ args___String ] ] := h @@ StringReplace[ { args }, $texUnescapeRules ];
 
-splitToolCallSpacing[ parts_List ] := Flatten @ MapThread[
-    splitToolCallSpacing0,
-    { parts, Prepend[ Most @ parts, None ], Append[ Rest @ parts, None ] }
-];
+restoreRawText // endDefinition;
 
-splitToolCallSpacing // endDefinition;
-
-
-splitToolCallSpacing0 // beginDefinition;
-
-splitToolCallSpacing0[ text_String, previous_, next_ ] := splitToolCallSpacing1[
-    First @ StringCases[
-        text,
-        StringExpression[
-            StartOfString,
-            lead: WhitespaceCharacter...,
-            core: Shortest[ ___ ],
-            trail: WhitespaceCharacter...,
-            EndOfString
-        ] :> { lead, core, trail },
-        1
-    ],
-    toolCallPartQ @ previous,
-    toolCallPartQ @ next
-];
-
-splitToolCallSpacing0[ other_, _, _ ] := other;
-
-splitToolCallSpacing0 // endDefinition;
-
-
-splitToolCallSpacing1 // beginDefinition;
-
-(* Text that's only whitespace: *)
-splitToolCallSpacing1[ { ws_String, "", "" }, before_, after_ ] :=
-    If[ before || after, toolCallSpacing @ ws, ws ];
-
-splitToolCallSpacing1[ { lead_String, core_String, trail_String }, before_, after_ ] := DeleteCases[
-    {
-        If[ before, toolCallSpacing @ lead, Nothing ],
-        StringJoin[ If[ before, "", lead ], core, If[ after, "", trail ] ],
-        If[ after, toolCallSpacing @ trail, Nothing ]
-    },
-    toolCallSpacing[ "" ]
-];
-
-splitToolCallSpacing1 // endDefinition;
-
-
-toolCallPartQ // beginDefinition;
-toolCallPartQ[ _inlineToolCallCell | _discardedMaterial ] := True;
-toolCallPartQ[ _ ] := False;
-toolCallPartQ // endDefinition;
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*unescapeMarkdownStrings*)
+unescapeMarkdownStrings // beginDefinition;
+unescapeMarkdownStrings[ expr_ ] := ReplaceAll[ expr, s_String :> RuleCondition @ StringReplace[ s, $mdUnescapeRules ] ];
+unescapeMarkdownStrings // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -437,12 +345,24 @@ makeResultCell // beginDefinition;
 makeResultCell[ expr_ ] /; $dynamicText :=
     Lookup[ $resultCellCache,
             HoldComplete @ expr,
-            $resultCellCache[ HoldComplete @ expr ] = makeResultCell0 @ expr
+            $resultCellCache[ HoldComplete @ expr ] = makeResultCell1 @ expr
     ];
 
-makeResultCell[ expr_ ] := makeResultCell0 @ expr;
+makeResultCell[ expr_ ] := makeResultCell1 @ expr;
 
 makeResultCell // endDefinition;
+
+
+makeResultCell1 // beginDefinition;
+
+(* When the text has markdown escapes, the parts that keep their raw text (code blocks, tool calls, think tags and
+   speech) get their escapes back, and every other part has the placeholders in its output replaced with the plain
+   characters. This is done for each part, since some of them are compressed until they're viewed: *)
+makeResultCell1[ expr: $$rawTextToken[ ___ ] ] /; $markdownEscapes := makeResultCell0 @ restoreRawText @ expr;
+makeResultCell1[ expr_ ] /; $markdownEscapes := unescapeMarkdownStrings @ makeResultCell0 @ expr;
+makeResultCell1[ expr_ ] := makeResultCell0 @ expr;
+
+makeResultCell1 // endDefinition;
 
 
 makeResultCell0 // beginDefinition;
@@ -640,10 +560,7 @@ formatThoughts[ thoughts_, "" ] :=
 
 formatThoughts[ thoughts_, trimmed_String ] :=
     Block[
-        {
-            $textDataFormatRules                   = $thoughtsFormatRules,
-            $textDataFormatRulesNoMarkdownUnescape = $thoughtsFormatRulesNoMarkdownUnescape
-        },
+        { $textDataFormatRules = $thoughtsFormatRules },
         TextData @ reformatTextData @ trimmed
     ];
 
@@ -1757,35 +1674,12 @@ $toolCallFormatRules = {
 (* ::Subsection::Closed:: *)
 (*$textDataFormatRules*)
 
-(* Used when the text contains escaped markdown characters. Only the parts whose raw text has to be kept as is are split
-   out here, so that escapes are handled in the remaining text without changing code blocks or tool calls. Tool calls
-   have to be split out at this point too, since their results can contain code blocks: *)
-$textDataFormatRulesNoMarkdownUnescape = {
-    Shortest[ "<think"~~attributes: $$thinkTagAttributes~~">"~~thoughts___~~"</think>" ] :>
-        thoughtsOpener[ thoughts, attributes ],
-    Shortest[ "<think>"~~thoughts__~~"</think>" ] :> thoughtsOpener @ thoughts,
-    Shortest[ "<thinking>"~~thoughts__~~"</thinking>" ] :> thoughtsOpener @ thoughts,
-    Shortest[ "<think"~~attributes: $$thinkTagAttributes~~">"~~thoughts___~~EndOfString ] :>
-        thinkingOpener[ thoughts, attributes ],
-    Shortest[ ("<think>"|"<thinking>")~~thoughts__~~EndOfString ] :> thinkingOpener @ thoughts,
+(* Display math written as \[...\], with whitespace (or the start or end of the text) around it. The brackets are
+   markdown escapes, so at this point they are the placeholders esc[ "[" ] and esc[ "]" ] (4 characters each): *)
+$$escapedDisplayMath = RegularExpression[ "(?s)(?<!\\S)" <> esc[ "[" ] <> ".+?" <> esc[ "]" ] <> "(?!\\S)" ];
 
-    speech: Shortest[ "<speech-input>"~~__~~"</speech-input>" ] :> speechCell @ speech,
-
-    math: RegularExpression[ "(?s)(?<!\\S)\\\\\\[.+?\\\\\\](?!\\S)" ] :>
-        mathCell @ StringTake[ math, { 3, -3 } ],
-
-    StringExpression[
-        Longest[ "```" ~~ language: Except[ "\n" ]... ] ~~ (" "...) ~~ "\n",
-        Shortest[ code__ ],
-        ("```"|EndOfString)
-    ] /; toolCallStringFreeQ @ code :>
-        If[ StringMatchQ[ code, $$mdTable ],
-            tableCell @ code,
-            codeBlockCell[ language, code ]
-        ]
-    ,
-    Sequence @@ $toolCallFormatRules
-};
+(* The same in a text fragment, where it needs whitespace before it (see $stringFormatRules): *)
+$$escapedDisplayMathInline = RegularExpression[ "(?s)(?<=\\s)" <> esc[ "[" ] <> ".+?" <> esc[ "]" ] <> "(?!\\S)" ];
 
 $textDataFormatRules = {
     Shortest[ "<think"~~attributes: $$thinkTagAttributes~~">"~~thoughts___~~"</think>" ] :>
@@ -1797,6 +1691,9 @@ $textDataFormatRules = {
     Shortest[ ("<think>"|"<thinking>")~~thoughts__~~EndOfString ] :> thinkingOpener @ thoughts,
 
     speech: Shortest[ "<speech-input>"~~__~~"</speech-input>" ] :> speechCell @ speech,
+
+    (* Whitespace-delimited \[...\] is display math (only possible when the text has escapes): *)
+    math: $$escapedDisplayMath :> mathCell @ StringTake[ math, { 5, -5 } ],
 
     StringExpression[
         Longest[ "```" ~~ language: Except[ "\n" ]... ] ~~ (" "...) ~~ "\n",
@@ -1851,8 +1748,7 @@ $$thoughtsExcludedRule = HoldPattern @ RuleDelayed[
     _thoughtsOpener | _thinkingOpener | _inlineToolCallCell | $discardPreviousToolCall
 ];
 
-$thoughtsFormatRules                   = DeleteCases[ $textDataFormatRules                  , $$thoughtsExcludedRule ];
-$thoughtsFormatRulesNoMarkdownUnescape = DeleteCases[ $textDataFormatRulesNoMarkdownUnescape, $$thoughtsExcludedRule ];
+$thoughtsFormatRules = DeleteCases[ $textDataFormatRules, $$thoughtsExcludedRule ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1968,6 +1864,11 @@ $stringFormatRules = {
 
     "\\[" ~~ math__ ~~ "\\]" /; StringFreeQ[ math, "\\]" ] :>
         makeResultCell @ mathCell @ math,
+
+    (* Escaped \[...\] in a list item, heading, table cell, ... (see $$escapedDisplayMath). The start of the text
+       doesn't count as whitespace here, so that e.g. the label in [\[x\]](url) is not math: *)
+    math: $$escapedDisplayMathInline :>
+        makeResultCell @ mathCell @ StringTake[ math, { 5, -5 } ],
 
     "$" ~~ math: Except[ "$" ].. ~~ "$" /; probablyMathQ @ math :>
         makeResultCell @ mathCell @ math,
