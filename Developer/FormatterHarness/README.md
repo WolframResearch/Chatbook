@@ -174,8 +174,8 @@ The harness only calls public functions for the one-shot formatting (`FormatChat
 * ``Wolfram`Chatbook`Serialization`Private` ``: `serializeTraditionalForm`, `serializeStandardFormString` (memos
   cleared)
 
-`profile.wls` instruments private functions of `Formatting.wl` by name; it is meant for the current code and skips
-functions that don't exist.
+`profile.wls` instruments private functions of the `Formatting/` files by name; it is meant for the current code and
+skips functions that don't exist.
 
 ## Benchmark
 
