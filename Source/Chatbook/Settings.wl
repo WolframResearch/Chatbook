@@ -402,6 +402,7 @@ $modelAutoSettings[ Automatic, "GPT5" ] = <|
     "Multimodal"                 -> True,
     "PresencePenalty"            -> Missing[ "NotSupported" ],
     "Reasoning"                  :> If[ TrueQ @ $gpt5Reasoning, "Minimal", Missing[ "NotSupported" ] ],
+    "ReasoningEfforts"           -> { "Minimal", "Low", "Medium", "High" }, (* No "None" *)
     "StopTokens"                 -> Missing[ "NotSupported" ],
     "Temperature"                -> Missing[ "NotSupported" ],
     "TokenizerName"              -> "gpt-4o",
@@ -412,13 +413,15 @@ $modelAutoSettings[ Automatic, "GPT5" ] = <|
 
 $modelAutoSettings[ Automatic, "GPT51" ] = <|
     $modelAutoSettings[ Automatic, "GPT5" ],
-    "Reasoning" :> If[ TrueQ @ $gpt5Reasoning, "None", Missing[ "NotSupported" ] ]
+    "Reasoning"        :> If[ TrueQ @ $gpt5Reasoning, "None", Missing[ "NotSupported" ] ],
+    "ReasoningEfforts" -> { "None", "Low", "Medium", "High" } (* "None" replaces "Minimal" *)
 |>;
 
 $modelAutoSettings[ Automatic, "GPT52" ] = <|
     $modelAutoSettings[ Automatic, "GPT51" ],
     "EnabledBasePrompts"       -> { "FunctionRepositoryIntegration", "WolframLanguageEvaluatorToolInteractive" },
     "ExcludedBasePrompts"      -> { ParentList, "EscapedCharacters" },
+    "ReasoningEfforts"         -> { "None", "Low", "Medium", "High", "XHigh" }, (* "XHigh" is new in GPT-5.2 *)
     "ReplaceUnicodeCharacters" -> True
 |>;
 
@@ -427,8 +430,9 @@ $modelAutoSettings[ Automatic, "GPT53" ] =
 
 $modelAutoSettings[ Automatic, "GPT53Chat" ] = <|
     $modelAutoSettings[ Automatic, "GPT53" ],
-    "MaxContextTokens" -> 128000,
-    "Reasoning" :> If[ TrueQ @ $gpt5Reasoning, "Medium", Missing[ "NotSupported" ] ] (* TODO: Doesn't support parameter value of 'none'. *)
+    "MaxContextTokens"  -> 128000,
+    "Reasoning"         :> If[ TrueQ @ $gpt5Reasoning, "Medium", Missing[ "NotSupported" ] ],
+    "ReasoningEfforts"  -> { "Low", "Medium", "High" } (* No "None" *)
 |>;
 
 $modelAutoSettings[ Automatic, "GPT54Plus" ] = <|
