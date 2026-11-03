@@ -29,4 +29,24 @@ VerificationTest[
     TestID -> "DeferredRules-EmptyEnds@@Tests/FormattingPerformance.wlt:26,1-30,2"
 ]
 
+(* $$mdRow2 matches the same substrings as the old table row pattern, on random strings: *)
+VerificationTest[
+    Module[ { old, new, strings },
+        old = Except[ "\n" ].. ~~ Repeated[ ("|" ~~ Except[ "\n" ]...), { 2, Infinity } ] ~~ ("\n"|EndOfString);
+        new = Wolfram`Chatbook`Formatting`Private`$$mdRow2;
+        strings = BlockRandom[ StringJoin /@ RandomChoice[ Characters[ "a ||\n" ], { 500, 12 } ], RandomSeeding -> 1 ];
+        SameQ @@ (Union /@ StringPosition[ strings, #, Overlaps -> All ] & /@ { old, new })
+    ],
+    True,
+    TestID -> "TableRow-SameMatches@@Tests/FormattingPerformance.wlt:33,1-42,2"
+]
+
+(* A 10 KB line with bold text formats in well under a second (it took about 4 s with the old definitions): *)
+VerificationTest[
+    First @ AbsoluteTiming @ FormatChatOutput @ StringRepeat[ "some words **bold** and more words ", 300 ],
+    _? (LessThan[ 1 ]),
+    SameTest -> MatchQ,
+    TestID   -> "LongLine-Timing@@Tests/FormattingPerformance.wlt:45,1-50,2"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)
