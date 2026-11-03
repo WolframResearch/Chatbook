@@ -345,11 +345,11 @@ VerificationTest[
    parts as formatting the whole text. Whitespace at the ends of text parts is ignored, since it can move across a split
    point (bullets, headings and /retry take the newlines before them) and each cell trims it.
 
-   Known exceptions, which the documents here avoid:
+   Known exceptions:
    - A split match that starts inside an open think tag (quirk 202, fixed separately). The split points next to such a
-     match are skipped.
+     match are skipped below.
    - An image or tool call inside a list item, heading, table row or block quote, or inside a code block that isn't
-     closed yet. The split rules don't see these blocks, so they split the image or tool call out of them. *)
+     closed yet. The split rules don't see these blocks and split it out of them. The documents here avoid this. *)
 VerificationTest[
     (* With All, the parts alternate between text and matches: *)
     splitParts[ text_String ] := StringSplit[ text, Wolfram`Chatbook`Common`$dynamicSplitRules, All ];

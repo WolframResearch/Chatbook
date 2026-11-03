@@ -74,7 +74,8 @@ $$toolCallFence     = ("```" ~~ Except[ "\n" ]... ~~ (" "...) ~~ "\n") | "";
 (* The opening tag of a think tag with attributes, e.g. <think type='summary' id='...'>: *)
 $$thinkTagWithAttributes = "<think" ~~ attributes: $$thinkTagAttributes ~~ ">";
 
-(* A code fence opens with ``` and takes the rest of its line as the language, so it can open in the middle of a line: *)
+(* A code fence opens with ``` and takes the rest of its line as the language, so it can open in the middle of a
+   line: *)
 $$codeFenceOpen = Longest[ "```" ~~ language: Except[ "\n" ]... ] ~~ (" "...) ~~ "\n";
 $$codeFenceBody = Shortest[ code__ ];
 
@@ -149,7 +150,8 @@ $$escapedDisplayMathInline = RegularExpression[ "(?s)(?<=\\s)" <> esc[ "[" ] <> 
    7      escaped \[...\] between whitespace         mathCell                    only when the text has escapes
    8      code fence                                 codeBlockCell, tableCell    can open mid-line; closes at the next
                                                                                  ``` or the end; a body that is all
-                                                                                 table becomes a table
+                                                                                 table becomes a table; not when the
+                                                                                 body has a tool call (then 9-10 match)
    9-11   TOOLCALL:, simple /cmd, /retry             inlineToolCallCell,         see $toolCallFormatRules;
                                                      $discardPreviousToolCall    simpleToolCallStringQ reads
                                                                                  ToolShortNames
@@ -266,8 +268,12 @@ toolCallStringFreeQ // endDefinition;
      `$ChatHandlerData[ "ToolShortNames" ]`. If that changed while a response streams, a split could be delayed, which
      only affects the streaming display.
 
-   The rules are built from the same pieces as $textDataFormatRules. The only differences are how they end: a match
-   has to be complete (there's no EndOfString alternative), and the TOOLCALL rule adds a newline after its match.
+   The rules are built from the same pieces as $textDataFormatRules. The code block and image rules differ only in how
+   they end: a match has to be complete (there's no EndOfString alternative). The tool call rules also leave out the
+   code fence line that can come before a tool call (it stays in the static part, where formatTextString drops it) and
+   the /retry check, and the TOOLCALL rule adds a newline after its match. The other block rules aren't here, so a
+   split can also happen inside a think tag, list item, heading, table, block quote or unclosed code block, where
+   $textDataFormatRules gives no split (see the Consistency tests in Tests/DynamicSplit.wlt).
 *)
 $dynamicSplitRules = {
     s: ($$codeFenceOpen ~~ $$codeFenceBody ~~ "```") /; toolCallStringFreeQ @ code :> s,
