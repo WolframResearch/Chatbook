@@ -1337,3 +1337,63 @@ VerificationTest[
     SameTest -> MatchQ,
     TestID   -> "Tables-Serialization-Reformat@@Tests/FormattingTables.wlt:1319,1-1339,2"
 ]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Blocks Directly After a Table*)
+
+(* A table doesn't take the "\n" after its last row, so the text after it starts on a new line, with or without a
+   blank line (it used to be drawn next to the last row): *)
+VerificationTest[
+    {
+        formatTables[ "Before\n| a | b |\n|---|---|\n| 1 | 2 |\nAfter text here" ],
+        formatTables[ "Before\n| a | b |\n|---|---|\n| 1 | 2 |\n\nAfter text here" ],
+        formatTables[ "a | b | c\n1 | 2 | 3\nAfter" ]
+    },
+    {
+        { "Before\n", headedTable @ { { "a", "b" }, { "1", "2" } }, "\nAfter text here" },
+        { "Before\n", headedTable @ { { "a", "b" }, { "1", "2" } }, "\nAfter text here" },
+        { plainTable @ { { "a", "b", "c" }, { "1", "2", "3" } }, "\nAfter" }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Tables-Text-Directly-After@@Tests/FormattingTables.wlt:1347,1-1360,2"
+]
+
+(* A list item, heading, horizontal rule, quote or code block on the line after a table is formatted as that block: *)
+VerificationTest[
+    formatTables[ "| a | b |\n|---|---|\n| 1 | 2 |\n" <> # ] & /@
+        { "- item", "## Next", "---", "> quote", "```wl\n1+1\n```" },
+    {
+        { headedTable @ { { "a", "b" }, { "1", "2" } }, "\n", Cell[ _, "InlineItem", ___ ] },
+        { headedTable @ { { "a", "b" }, { "1", "2" } }, "\n", Cell[ _, "InlineSection", ___ ] },
+        { headedTable @ { { "a", "b" }, { "1", "2" } }, "\n", Cell[ _, "MarkdownDelimiter", ___ ] },
+        { headedTable @ { { "a", "b" }, { "1", "2" } }, "\n", Cell[ _, "BlockQuote", ___ ] },
+        { headedTable @ { { "a", "b" }, { "1", "2" } }, "\n", Cell[ _, "ChatCodeBlock", ___ ] }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Tables-Blocks-Directly-After@@Tests/FormattingTables.wlt:1363,1-1375,2"
+]
+
+(* While streaming, a later row is shown as text on the line after the table until it has a closing pipe (see
+   Tables-Streaming-Later-Rows): *)
+VerificationTest[
+    formatTables[ #, "Streaming" ] & /@ { "| a | b |\n|---|---|\n| 1 | 2 |\n", "| a | b |\n|---|---|\n| 1 | 2 |\n| 3" },
+    { { headedTable @ { { "a", "b" }, { "1", "2" } } }, { headedTable @ { { "a", "b" }, { "1", "2" } }, "\n| 3" } },
+    SameTest -> MatchQ,
+    TestID   -> "Tables-Streaming-Partial-Row@@Tests/FormattingTables.wlt:1379,1-1384,2"
+]
+
+(* The text after a table is serialized on its own line (the space before a line break is invisible), and formatting
+   the serialized markdown again gives the same output: *)
+VerificationTest[
+    {
+        StringReplace[ MarkdownRoundTrip[ "Before\n| a | b |\n|---|---|\n| 1 | 2 |\nAfter" ], " \n" -> "\n" ],
+        Map[
+            reformatted[ formatTables @ MarkdownRoundTrip[ # ] ] === reformatted[ formatTables[ # ] ] &,
+            { "Before\n| a | b |\n|---|---|\n| 1 | 2 |\nAfter", "| a | b |\n|---|---|\n| 1 | 2 |\n- item" }
+        ]
+    },
+    { "Before\n| a | b |\n| - | - |\n| 1 | 2 |\nAfter", { True, True } },
+    SameTest -> MatchQ,
+    TestID   -> "Tables-Serialization-Text-Directly-After@@Tests/FormattingTables.wlt:1388,1-1399,2"
+]
