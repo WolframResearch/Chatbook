@@ -249,4 +249,4 @@ When `True`, LLM responses are processed immediately rather than being queued fo
 
 ### Preferences UI
 
-Exposed in the notebook preferences UI as "Enable automatic assistance".
+Not currently exposed in the preferences UI or the sidebar. It can be set with `CurrentChatSettings` or in the notebook's `TaggingRules`. Sending a cell with the "Send to LLM" widget uses assistance mode for that one send only and does not change this setting.

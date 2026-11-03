@@ -1316,8 +1316,6 @@ WidgetSend // beginDefinition;
 
 WidgetSend[ cell_CellObject ] := withChatState @
     Block[ { $alwaysOpen = True, cellPrint = cellPrintAfter @ cell, $finalCell = cell, $AutomaticAssistance = True },
-        (* TODO: this is currently the only UI method to turn this back on *)
-        setCurrentValue[ parentNotebook @ cell, { TaggingRules, "ChatNotebookSettings", "Assistance" }, True ];
         SendChat @ cell
     ];
 
