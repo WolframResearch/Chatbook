@@ -85,7 +85,7 @@ The setting is evaluated by the `dynamicSplitQ` function (`Settings.wl`), which 
 
 ### Behavior
 
-When dynamic splitting is enabled (`$dynamicSplit` is `True`), the `splitDynamicContent` function (`SendChat.wl`) is called on each `"BodyChunkReceived"` event: it splits the accumulated dynamic content string using `$dynamicSplitRules` (`Formatting.wl`) — a set of string patterns defining safe split points (e.g., after complete code blocks, headings, paragraphs) — then writes the completed static portions as final formatted notebook cells and keeps only the remaining dynamic portion updating live. This reduces the amount of content being dynamically re-rendered, improving performance for long responses.
+When dynamic splitting is enabled (`$dynamicSplit` is `True`), the `splitDynamicContent` function (`SendChat.wl`) is called on each `"BodyChunkReceived"` event: it splits the accumulated dynamic content string using `$dynamicSplitRules` (`Formatting/Rules.wl`) — a set of string patterns defining safe split points (e.g., after complete code blocks, headings, paragraphs) — then writes the completed static portions as final formatted notebook cells and keeps only the remaining dynamic portion updating live. This reduces the amount of content being dynamically re-rendered, improving performance for long responses.
 
 When disabled, all streaming content remains in a single dynamic cell until the response completes.
 
