@@ -24,8 +24,8 @@ VerificationTest[
 (* Faster definitions in the formatter that give the same results as the ones they replaced. formatTextString evaluates
    the right-hand sides of $stringFormatRules after the split, and drops a "" at either end as StringSplit does: *)
 VerificationTest[
-    Wolfram`Chatbook`Formatting`Private`formatTextString /@ { "**```**", "**```** a", "a ~~```~~", "a **```** b" },
-    { { }, { " a" }, { "a " }, { "a ", "", " b" } },
+    Wolfram`Chatbook`Formatting`Private`formatTextString /@ { "**```**", "**```** a", "**a _```_**", "a **```** b" },
+    { { }, { " a" }, { StyleBox[ "a ", FontWeight -> Bold ] }, { "a ", "", " b" } },
     TestID -> "DeferredRules-EmptyEnds@@Tests/FormattingPerformance.wlt:26,1-30,2"
 ]
 

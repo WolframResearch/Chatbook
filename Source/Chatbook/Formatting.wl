@@ -948,9 +948,11 @@ formatTextString // endDefinition;
 
 (* StringSplit drops "" from both ends of its result, including "" given by a right-hand side (styleBox gives "" for
    "**```**"). The deferred right-hand sides are evaluated after the split, so their "" is dropped here instead: *)
+dropEmptyEnds // beginDefinition;
 dropEmptyEnds[ { "", rest___ } ] := dropEmptyEnds @ { rest };
 dropEmptyEnds[ { rest___, "" } ] := dropEmptyEnds @ { rest };
 dropEmptyEnds[ list_List ] := list;
+dropEmptyEnds // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
