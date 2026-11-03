@@ -437,6 +437,7 @@ $modelAutoSettings[ Automatic, "GPT54Plus" ] = <|
     "HybridToolMethod"           -> True,
     "MaxContextTokens"           -> 1050000,
     "Reasoning"                  -> "None", (* Doesn't work with tools in the completions endpoint *)
+    "ReasoningEfforts"           -> { "None", "Low", "Medium", "High", "XHigh" },
     "ToolCallExamplePromptStyle" -> Automatic,
     "ToolMethod"                 -> Verbatim @ Automatic
     (* TODO: We need to use "Service" for the tool method due to lack of stop-token support. However, there are still
@@ -448,6 +449,11 @@ $modelAutoSettings[ Automatic, "GPT54Plus" ] = <|
 
 $modelAutoSettings[ Automatic, "GPT54Mini" ] = <|
     "MaxContextTokens" -> 400000
+|>;
+
+$modelAutoSettings[ Automatic, "GPT56Plus" ] = <|
+    $modelAutoSettings[ Automatic, "GPT54Plus" ],
+    "ReasoningEfforts" -> { "None", "Low", "Medium", "High", "XHigh", "Max" }
 |>;
 
 $gpt5Reasoning := $gpt5Reasoning = pacletVersionAtLeastQ[ "Wolfram/LLMFunctions", "2.2.5" ];
@@ -664,6 +670,97 @@ modelUnsupportedParameters[ as_, config_Association ] :=
     modelUnsupportedParameters[ as, Keys @ config ];
 
 modelUnsupportedParameters // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*resolveReasoningEffort*)
+
+(* Ordered weakest-to-strongest; a family's "ReasoningEfforts" is a subset of this: *)
+$reasoningEffortScale = { "None", "Minimal", "Low", "Medium", "High", "XHigh", "Max" };
+
+resolveReasoningEffort // beginDefinition;
+
+(* Without a model there are no declared levels to clamp to: *)
+resolveReasoningEffort[ settings_Association ] /; ! KeyExistsQ[ settings, "Model" ] :=
+    settings[ "Reasoning" ];
+
+resolveReasoningEffort[ settings_Association ] :=
+    resolveReasoningEffort[
+        settings[ "Reasoning" ],
+        requestMethodReasoningEfforts[ settings, autoModelSetting[ settings, "ReasoningEfforts" ] ]
+    ];
+
+(* Families that declare no effort levels are left exactly as they were: *)
+resolveReasoningEffort[ value_, Except[ { __String } ] ] := value;
+
+(* Off, however the family spells it: *)
+resolveReasoningEffort[ False | None, levels: { __String } ] := clampReasoningEffort[ "None", levels ];
+
+resolveReasoningEffort[ effort_String, levels: { __String } ] :=
+    clampReasoningEffort[ If[ StringMatchQ[ effort, "Off", IgnoreCase -> True ], "None", effort ], levels ];
+
+(* Automatic, Inherited, Missing[ ... ], an explicit association, Quantity[ n, "Tokens" ]: *)
+resolveReasoningEffort[ value_, levels_ ] := value;
+
+resolveReasoningEffort // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*requestMethodReasoningEfforts*)
+requestMethodReasoningEfforts // beginDefinition;
+
+(* "Max" is only accepted on the Responses endpoint (gpt-5.6 offers it there, but stops at "XHigh" on chat
+   completions), so on chat completions it clamps to the next level down: *)
+requestMethodReasoningEfforts[ KeyValuePattern[ "RequestMethod" -> "ChatCompletions" ], levels: { __String } ] :=
+    DeleteCases[ levels, level_ /; StringMatchQ[ level, "Max", IgnoreCase -> True ] ];
+
+requestMethodReasoningEfforts[ settings_, levels_ ] := levels;
+
+requestMethodReasoningEfforts // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*clampReasoningEffort*)
+clampReasoningEffort // beginDefinition;
+
+(* The family accepts the level as spelled, so use the family's own spelling: *)
+clampReasoningEffort[ effort_String, levels: { __String } ] /;
+    AnyTrue[ levels, StringMatchQ[ effort, #, IgnoreCase -> True ] & ] :=
+    SelectFirst[ levels, StringMatchQ[ effort, #, IgnoreCase -> True ] & ];
+
+(* Dropping the parameter would fall back to the vendor default, so clamp instead of dropping: *)
+clampReasoningEffort[ "None", levels: { __String } ] := First @ SortBy[ levels, reasoningEffortIndex ];
+
+clampReasoningEffort[ effort_String, levels: { __String } ] :=
+    clampReasoningEffort[ reasoningEffortIndex @ effort, effort, levels ];
+
+(* Not a level this scale knows about, so leave it alone: *)
+clampReasoningEffort[ _Missing, effort_String, levels_ ] := effort;
+
+(* The nearest supported level, ties resolving upward: *)
+clampReasoningEffort[ want_Integer, effort_String, levels: { __String } ] :=
+    With[ { known = Select[ levels, IntegerQ @ reasoningEffortIndex @ # & ] },
+        If[ known === { },
+            effort,
+            First @ MinimalBy[ known, { Abs[ reasoningEffortIndex @ # - want ], -reasoningEffortIndex @ # } & ]
+        ]
+    ];
+
+clampReasoningEffort // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*reasoningEffortIndex*)
+reasoningEffortIndex // beginDefinition;
+
+reasoningEffortIndex[ effort_String ] :=
+    SelectFirst[
+        Range @ Length @ $reasoningEffortScale,
+        StringMatchQ[ effort, $reasoningEffortScale[[ # ]], IgnoreCase -> True ] &,
+        Missing[ ]
+    ];
+
+reasoningEffortIndex // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

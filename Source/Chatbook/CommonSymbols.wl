@@ -357,6 +357,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `resolveFullModelSpec;
 `resolveInlineReferences;
 `resolvePromptGenerators;
+`resolveReasoningEffort;
 `resolveSkills;
 `resolveTools;
 `restoreReasoningData;

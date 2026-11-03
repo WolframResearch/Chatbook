@@ -1159,6 +1159,7 @@ makeLLMConfiguration0[ as_Association ] /; as[ "ToolMethod" ] === "Service" || a
         as,
         DeleteMissing @ Association[
             KeyTake[ as, $llmConfigPassedKeys ],
+            "Reasoning"  -> resolveReasoningEffort @ requestReasoningSummaries @ as,
             "Tools"      -> Cases[ Flatten @ { as[ "Tools" ] }, _LLMTool ],
             "StopTokens" -> makeStopTokens @ as,
             "ToolMethod" -> "Service"
@@ -1170,6 +1171,7 @@ makeLLMConfiguration0[ as_Association ] :=
         as,
         DeleteMissing @ Association[
             KeyTake[ as, $llmConfigPassedKeys ],
+            "Reasoning"  -> resolveReasoningEffort @ requestReasoningSummaries @ as,
             "StopTokens" -> makeStopTokens @ as
         ] // dropModelUnsupportedParameters[ as ]
     ];
@@ -1191,13 +1193,17 @@ $llmConfigPassedKeys = {
 (*requestReasoningSummaries*)
 
 (* The responses endpoint only includes reasoning summaries when they're requested, so plain effort levels like "High"
-   are expanded to <| "effort" -> "high", "summary" -> "auto" |>. Associations are passed through as-is. *)
+   are expanded to <| "effort" -> "high", "summary" -> "auto" |>. Associations are passed through as-is.
+   The level is clamped to the model's "ReasoningEfforts" first (see resolveReasoningEffort), since the expanded form
+   is no longer a string that later clamping would recognize. *)
 requestReasoningSummaries // beginDefinition;
 
-requestReasoningSummaries[ as: KeyValuePattern @ { "RequestMethod" -> "Responses", "Reasoning" -> effort_String } ] :=
-    If[ ToLowerCase @ effort === "none",
-        as,
-        <| as, "Reasoning" -> <| "effort" -> ToLowerCase @ effort, "summary" -> "auto" |> |>
+requestReasoningSummaries[ as: KeyValuePattern @ { "RequestMethod" -> "Responses", "Reasoning" -> _String } ] :=
+    With[ { effort = resolveReasoningEffort @ as },
+        If[ ToLowerCase @ effort === "none",
+            <| as, "Reasoning" -> effort |>,
+            <| as, "Reasoning" -> <| "effort" -> ToLowerCase @ effort, "summary" -> "auto" |> |>
+        ]
     ];
 
 requestReasoningSummaries[ as_Association ] :=
