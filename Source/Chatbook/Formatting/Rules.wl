@@ -89,7 +89,9 @@ $$headingLine    = $$newlinesBefore ~~ h: "#".. ~~ " " ~~ sec: Longest[ Except[ 
 $$resourceFunctionLink = "[`ResourceFunction[" ~~ name: Except[ "[" ].. ~~ "]`](" ~~ Except[ ")" ].. ~~ ")";
 $$codeLink             = "[`" ~~ label: Except[ "[" ].. ~~ "`](" ~~ url: Except[ ")" ].. ~~ ")";
 
-(* Inline code and math, which are in both $textDataFormatRules and $stringFormatRules: *)
+(* Inline code and math, which are in both $textDataFormatRules and $stringFormatRules. autoCorrect rewrites ```x``` on
+   one line as ``x``, and ````x```` as ```x```, so the triple backtick rules are for code in four backticks: *)
+$$tripleBacktickCode = "```" ~~ code: Except[ "\n" ].. ~~ "```";
 $$doubleBacktickCode = "``" ~~ code__ ~~ "``";
 $$backtickName       = "`" ~~ code: Except[ WhitespaceCharacter ].. ~~ "`";
 $$backtickCode       = "`" ~~ code: Except[ "`"|"\n" ].. ~~ "`";
@@ -164,9 +166,9 @@ $$escapedDisplayMathInline = RegularExpression[ "(?s)(?<=\\s)" <> esc[ "[" ] <> 
    17     block quote                                blockQuoteCell              as many lines as possible
    18-19  [`ResourceFunction[...]`](url),            inlineCodeCell,
           [`label`](url)                             "[label](url)"
-   20-22  ``code``, `name` (inlineSyntaxQ), `code`   inlineCodeCell              code wins over emphasis and link
-                                                                                 labels in plain text
-   23-26  $$...$$, \(...\), \[...\],                 mathCell                    $$...$$ can span blank lines; \[...\]
+   20-23  ```code``` (one line), ``code``,           inlineCodeCell              code wins over emphasis and link
+          `name` (inlineSyntaxQ), `code`                                         labels in plain text
+   24-27  $$...$$, \(...\), \[...\],                 mathCell                    $$...$$ can span blank lines; \[...\]
           $...$ (probablyMathQ)                                                  is only reachable through &#92;
 
    Newlines that the rules take (the others stay in the text around them):
@@ -196,6 +198,7 @@ $textDataFormatRules = {
     quote: $$blockQuote :> blockQuoteCell @ quote,
     $$resourceFunctionLink :> inlineCodeCell[ "ResourceFunction[" <> name <> "]" ],
     $$codeLink :> "[" <> label <> "]("<>url<>")",
+    $$tripleBacktickCode :> inlineCodeCell @ code,
     $$doubleBacktickCode /; StringFreeQ[ code, "``" ] :> inlineCodeCell @ code,
     $$backtickName /; inlineSyntaxQ @ code :> inlineCodeCell @ code,
     $$backtickCode :> inlineCodeCell @ code,
@@ -289,7 +292,7 @@ $dynamicSplitRules = {
 (* The inline rules, for each text part and for the text of list items, headings, quotes and table cells. The order
    works as in $textDataFormatRules: the first match wins, and then the first rule. *)
 $stringFormatRules = {
-    "```" ~~ code: Except[ "\n" ].. ~~ "```" :> inlineCodeCell @ code,
+    $$tripleBacktickCode :> makeResultCell @ inlineCodeCell @ code,
     $$boldItalic /; StringFreeQ[ text, "\n" ] :> styleBox[ text, FontWeight -> Bold, FontSlant -> Italic ],
     $$boldItalicUnderscores /; StringFreeQ[ text, "\n" ] :> styleBox[ text, FontWeight -> Bold, FontSlant -> Italic ],
     $$bold /; StringFreeQ[ text, "\n" ] :> styleBox[ text, FontWeight -> Bold ],

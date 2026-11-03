@@ -1529,4 +1529,36 @@ VerificationTest[
     TestID   -> "Inline-RoundTrip-Reformat-Stable@@Tests/FormattingInline.wlt:1507,1-1530,2"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Four Backticks*)
+
+(* Code in four backticks is inline code, in paragraphs as in list items and headings. autoCorrect rewrites ````x```` as
+   ```x```, which is then inline code like ``x``: *)
+VerificationTest[
+    {
+        formatted[ "Use ````foo bar```` here" ],
+        formatted[ "Use ````Plot```` here" ],
+        formatted[ "Use ````foo bar```` here", "Streaming" ],
+        bulletItemContent[ "- Use ````foo bar```` here" ],
+        innerTextData[ "## Use ````foo bar```` here" ]
+    },
+    {
+        { "Use ", codeTemplateCell[ "foo bar" ], " here" },
+        { "Use ", refLinkCell[ "Plot" ], " here" },
+        { "Use ", codeTemplateCell[ "foo bar" ], " here" },
+        { "Use ", codeTemplateCell[ "foo bar" ], " here" },
+        { "InlineSection", { "Use ", codeTemplateCell[ "foo bar" ], " here" } }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Inline-Code-Four-Backticks@@Tests/FormattingInline.wlt:1538,1-1555,2"
+]
+
+VerificationTest[
+    MarkdownRoundTrip /@ { "Use ````foo bar```` here", "- Use ````foo bar```` here" },
+    { "Use ``foo bar`` here", "* Use ``foo bar`` here" },
+    SameTest -> MatchQ,
+    TestID   -> "Inline-RoundTrip-Four-Backticks@@Tests/FormattingInline.wlt:1557,1-1562,2"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)
