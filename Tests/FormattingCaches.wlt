@@ -67,20 +67,6 @@ VerificationTest[
 VerificationTest[
     cacheBehavior[
         {
-            Wolfram`Chatbook`Formatting`Private`$htmlEntityCache,
-            Wolfram`Chatbook`Formatting`Private`$maxHTMLEntityCacheSize
-        },
-        Wolfram`Chatbook`Formatting`Private`importHTMLEntity,
-        Table[ "&e" <> ToString @ i <> ";", { i, 10 } ]
-    ],
-    $cacheBehavior,
-    SameTest -> MatchQ,
-    TestID   -> "Caches-HTMLEntity@@Tests/FormattingCaches.wlt:67,1-79,2"
-]
-
-VerificationTest[
-    cacheBehavior[
-        {
             Wolfram`Chatbook`Formatting`Private`$correctedCodeCache,
             Wolfram`Chatbook`Formatting`Private`$maxCorrectedCodeCacheSize
         },
@@ -89,7 +75,7 @@ VerificationTest[
     ],
     $cacheBehavior,
     SameTest -> MatchQ,
-    TestID   -> "Caches-CorrectedCode@@Tests/FormattingCaches.wlt:81,1-93,2"
+    TestID   -> "Caches-CorrectedCode@@Tests/FormattingCaches.wlt:67,1-79,2"
 ]
 
 VerificationTest[
@@ -103,7 +89,7 @@ VerificationTest[
     ],
     $cacheBehavior,
     SameTest -> MatchQ,
-    TestID   -> "Caches-ExternalLanguage@@Tests/FormattingCaches.wlt:95,1-107,2"
+    TestID   -> "Caches-ExternalLanguage@@Tests/FormattingCaches.wlt:81,1-93,2"
 ]
 
 (* A failed import is checked for a cloud URL, which needs a $CloudBase: *)
@@ -120,7 +106,7 @@ VerificationTest[
     ],
     $cacheBehavior,
     SameTest -> MatchQ,
-    TestID   -> "Caches-ImportedImage@@Tests/FormattingCaches.wlt:110,1-124,2"
+    TestID   -> "Caches-ImportedImage@@Tests/FormattingCaches.wlt:96,1-110,2"
 ]
 
 VerificationTest[
@@ -134,7 +120,7 @@ VerificationTest[
     ],
     $cacheBehavior,
     SameTest -> MatchQ,
-    TestID   -> "Caches-ResizedImage@@Tests/FormattingCaches.wlt:126,1-138,2"
+    TestID   -> "Caches-ResizedImage@@Tests/FormattingCaches.wlt:112,1-124,2"
 ]
 
 VerificationTest[
@@ -145,7 +131,7 @@ VerificationTest[
     ],
     $cacheBehavior,
     SameTest -> MatchQ,
-    TestID   -> "Caches-BoxCache@@Tests/FormattingCaches.wlt:140,1-149,2"
+    TestID   -> "Caches-BoxCache@@Tests/FormattingCaches.wlt:126,1-135,2"
 ]
 
 VerificationTest[
@@ -165,7 +151,7 @@ VerificationTest[
     ],
     $cacheBehavior,
     SameTest -> MatchQ,
-    TestID   -> "Caches-Base64@@Tests/FormattingCaches.wlt:151,1-169,2"
+    TestID   -> "Caches-Base64@@Tests/FormattingCaches.wlt:137,1-155,2"
 ]
 
 VerificationTest[
@@ -179,7 +165,7 @@ VerificationTest[
     ],
     $cacheBehavior,
     SameTest -> MatchQ,
-    TestID   -> "Caches-DecodedBase64@@Tests/FormattingCaches.wlt:171,1-183,2"
+    TestID   -> "Caches-DecodedBase64@@Tests/FormattingCaches.wlt:157,1-169,2"
 ]
 
 VerificationTest[
@@ -193,7 +179,7 @@ VerificationTest[
     ],
     $cacheBehavior,
     SameTest -> MatchQ,
-    TestID   -> "Caches-EntityBoxes@@Tests/FormattingCaches.wlt:185,1-197,2"
+    TestID   -> "Caches-EntityBoxes@@Tests/FormattingCaches.wlt:171,1-183,2"
 ]
 
 VerificationTest[
@@ -207,7 +193,7 @@ VerificationTest[
     ],
     $cacheBehavior,
     SameTest -> MatchQ,
-    TestID   -> "Caches-InlineTemplateBoxes@@Tests/FormattingCaches.wlt:199,1-211,2"
+    TestID   -> "Caches-InlineTemplateBoxes@@Tests/FormattingCaches.wlt:185,1-197,2"
 ]
 
 (* WolframAlpha is replaced here, so that the test doesn't need the internet: *)
@@ -224,7 +210,7 @@ VerificationTest[
     ],
     $cacheBehavior,
     SameTest -> MatchQ,
-    TestID   -> "Caches-FreeformBoxes@@Tests/FormattingCaches.wlt:214,1-228,2"
+    TestID   -> "Caches-FreeformBoxes@@Tests/FormattingCaches.wlt:200,1-214,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
