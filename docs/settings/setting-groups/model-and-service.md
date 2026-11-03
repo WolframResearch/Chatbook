@@ -172,10 +172,47 @@ When `True`, `makeMessageContent` (`ChatMessages.wl`) processes cell content thr
 
 **Image constraints:**
 
-- `allowedMultimodalRoles` (`ChatMessages.wl`) restricts multimodal content to `"User"` role messages for every model on the Responses endpoint and for GPT-4o models on chat completions, and allows `All` roles otherwise.
+- `allowedMultimodalRoles` (`ChatMessages.wl`) restricts multimodal content to `"User"` role messages for every model on the Responses endpoint and, on chat completions, for the model families that declare it (see [Allowed Roles](#allowed-roles)), and allows `All` roles otherwise.
 - Images are resized via `resizeMultimodalImage` (`ChatMessages.wl`) to fit within `$maxMMImageSize` dimensions before encoding.
 
 **Serialization:** In `Serialization.wl`, the related `$multimodalImages` variable (derived from `$contentTypes`) controls whether graphics boxes are encoded as image URIs (`toMarkdownImageBox`) or replaced with `"[GRAPHIC]"` placeholders, and whether `"Picture"` style cells are serialized as image URIs. Graphics exceeding `$maxBoxSizeForImages` bytes fall back to non-multimodal serialization.
+
+### Allowed Roles
+
+`"Multimodal"` decides *whether* images are included at all. A separate rule decides *which message
+roles* may carry one, because providers restrict this and reject a request that gets it wrong.
+`allowedMultimodalRoles` (`ChatMessages.wl`) answers that question, and both callers — the per-cell
+message builder and the tool response path in `toolEvaluation` — consult it before expanding an image
+into typed content parts.
+
+It resolves in two steps:
+
+1. **The Responses endpoint permits an image only inside a user item**, whatever the model, so a
+   request that resolves to it is restricted to `{ "User" }`. See [`"RequestMethod"`](#requestmethod).
+2. Otherwise the `"MultimodalRoles"` entry in `$modelAutoSettings` applies. This is a model auto
+   setting only — it is not a chat setting, so it cannot be set through `CurrentChatSettings` — and it
+   is declared per model family. Anything undeclared means unrestricted.
+
+Both endpoints say so explicitly when an image is in a role they don't accept:
+
+```
+chat completions:  Invalid 'messages[0]'. Image URLs are only allowed for messages with role
+                   'user', but this message with role 'system' contains an image URL.
+responses:         Invalid value: 'input_image'. Supported values are: 'input_text'.
+```
+
+On chat completions only some OpenAI models need the restriction, so only their families declare
+`{ "User" }`: `GPT4Omni`, because gpt-4o and gpt-4o-mini reject an image in a system message, and
+`O1`, `O3` and `O4Mini`, because LLMConnections sends system messages to o-series models as developer
+messages, which cannot carry images. gpt-4.1 and the GPT-5 families accept an image in a system
+message, so they are unrestricted on chat completions. The declarations are on model families, so they
+follow the model to any service.
+
+Other providers are unrestricted. Anthropic was verified to accept an image in a system message.
+
+The visible consequence, where a restriction applies, is that a tool result carrying an image is sent
+to the model as text: the image is dropped from the request rather than the request failing. The
+image is still displayed in the notebook, which does not depend on what was sent.
 
 ### Chat Mode Overrides
 
