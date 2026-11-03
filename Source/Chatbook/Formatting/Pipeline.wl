@@ -101,8 +101,8 @@ codePointString // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*$htmlEntities*)
 
-(* The named entities of HTML 4 (with the HTML5 code points for &lang; and &rang;), plus &apos; and the uppercase forms
-   of the most common ones, which HTML5 also has: *)
+(* The named entities of HTML 4 (with the HTML5 code points for &lang; and &rang;), plus the HTML5 names of ASCII
+   characters and the uppercase forms that HTML5 has for the most common ones: *)
 $htmlEntities = FromCharacterCode /@ Join[
     (* Latin-1 Supplement, U+00A0 to U+00FF: *)
     AssociationThread[
@@ -135,7 +135,12 @@ $htmlEntities = FromCharacterCode /@ Join[
         Range[ 945, 969 ]
     ],
     <|
-        "quot" -> 34, "amp" -> 38, "apos" -> 39, "lt" -> 60, "gt" -> 62,
+        "excl" -> 33, "quot" -> 34, "num" -> 35, "dollar" -> 36, "percnt" -> 37, "amp" -> 38, "apos" -> 39,
+        "lpar" -> 40, "rpar" -> 41, "ast" -> 42, "midast" -> 42, "plus" -> 43, "comma" -> 44, "period" -> 46,
+        "sol" -> 47, "colon" -> 58, "semi" -> 59, "lt" -> 60, "equals" -> 61, "gt" -> 62, "quest" -> 63,
+        "commat" -> 64, "lsqb" -> 91, "lbrack" -> 91, "bsol" -> 92, "rsqb" -> 93, "rbrack" -> 93, "Hat" -> 94,
+        "lowbar" -> 95, "grave" -> 96, "lcub" -> 123, "lbrace" -> 123, "verbar" -> 124, "vert" -> 124,
+        "rcub" -> 125, "rbrace" -> 125,
         "QUOT" -> 34, "AMP" -> 38, "LT" -> 60, "GT" -> 62, "COPY" -> 169, "REG" -> 174,
         "OElig" -> 338, "oelig" -> 339, "Scaron" -> 352, "scaron" -> 353, "Yuml" -> 376, "fnof" -> 402,
         "circ" -> 710, "tilde" -> 732, "thetasym" -> 977, "upsih" -> 978, "piv" -> 982,
