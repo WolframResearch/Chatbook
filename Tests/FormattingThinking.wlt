@@ -1093,19 +1093,17 @@ VerificationTest[
 (* ::Section::Closed:: *)
 (*Escaped Markdown*)
 
-(* Text with markdown escapes takes a separate formatting path (reformatTextDataEscaped). Think tags are recognized
-   there too, with the same metadata and formatted thoughts. The surrounding text is asserted loosely here, since this
-   path drops the line breaks around the box (the unescaped path gives "...\n", box, "\n\nafter"; see the report for
-   this file): *)
+(* Think tags in text with markdown escapes have the same metadata, formatted thoughts and line breaks around the box
+   as without escapes: *)
 VerificationTest[
     thinkingFormat[ "\\*not italic\\*\n<think>**bold**</think>\nafter" ],
     {
-        s1_String /; StringTrim @ s1 === "*not italic*",
+        "*not italic*\n",
         thinkingThoughtsCell[ TextData @ { StyleBox[ "bold", FontWeight -> Bold ] }, $thinkingFallbackLabel, $thinkingLiteralMeta ],
-        s2_String /; StringStartsQ[ s2, "\n" ] && StringTrim @ s2 === "after"
+        "\n\nafter"
     },
     SameTest -> MatchQ,
-    TestID   -> "Thinking-Escaped-Literal@@Tests/FormattingThinking.wlt:1100,1-1109,2"
+    TestID   -> "Thinking-Escaped-Literal@@Tests/FormattingThinking.wlt:1098,1-1107,2"
 ]
 
 VerificationTest[
@@ -1129,7 +1127,7 @@ VerificationTest[
         { { "EmptyThoughts", "", $thinkingFallbackLabel, $thinkingLiteralMeta } }
     },
     SameTest -> MatchQ,
-    TestID   -> "Thinking-Escaped-Tag-Types@@Tests/FormattingThinking.wlt:1111,1-1133,2"
+    TestID   -> "Thinking-Escaped-Tag-Types@@Tests/FormattingThinking.wlt:1109,1-1131,2"
 ]
 
 (* The same in the streaming display: *)
@@ -1137,7 +1135,7 @@ VerificationTest[
     thinkingBoxes[ "\\*x\\*\n<think>going \\* on", "Streaming" ],
     { { "ThinkingOpener", TextData @ { "going * on" }, $thinkingActiveLabel, $thinkingLiteralMeta } },
     SameTest -> MatchQ,
-    TestID   -> "Thinking-Escaped-Streaming@@Tests/FormattingThinking.wlt:1136,1-1141,2"
+    TestID   -> "Thinking-Escaped-Streaming@@Tests/FormattingThinking.wlt:1134,1-1139,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1156,14 +1154,14 @@ VerificationTest[
     ],
     { True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "Thinking-Streaming-Same-As-Finished@@Tests/FormattingThinking.wlt:1148,1-1160,2"
+    TestID   -> "Thinking-Streaming-Same-As-Finished@@Tests/FormattingThinking.wlt:1146,1-1158,2"
 ]
 
 VerificationTest[
     thinkingState[ thinkingBoxesIn @ FormatMarkdown[ "<think>x</think>\nDone", "Streaming" ], 10., 13. ],
     { { "ThoughtsOpener", TextData @ { "x" }, thinkingSecondsLabel @ 3, $thinkingLiteralMeta } },
     SameTest -> MatchQ,
-    TestID   -> "Thinking-Streaming-Label@@Tests/FormattingThinking.wlt:1162,1-1167,2"
+    TestID   -> "Thinking-Streaming-Label@@Tests/FormattingThinking.wlt:1160,1-1165,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1179,7 +1177,7 @@ VerificationTest[
     thinkingRoundTrip[ "<think>\nLiteral thoughts\n</think>\nThe answer." ],
     "<think>\nLiteral thoughts\n</think>\n\nThe answer.",
     SameTest -> MatchQ,
-    TestID   -> "Thinking-RoundTrip-Literal@@Tests/FormattingThinking.wlt:1178,1-1183,2"
+    TestID   -> "Thinking-RoundTrip-Literal@@Tests/FormattingThinking.wlt:1176,1-1181,2"
 ]
 
 (* <thinking> tags, other letter cases, and attributes that don't mark a summary are all written as <think>: *)
@@ -1191,7 +1189,7 @@ VerificationTest[
     },
     ConstantArray[ "<think>\nLiteral thoughts\n</think>\n\nDone", 3 ],
     SameTest -> MatchQ,
-    TestID   -> "Thinking-RoundTrip-Normalized-Tags@@Tests/FormattingThinking.wlt:1186,1-1195,2"
+    TestID   -> "Thinking-RoundTrip-Normalized-Tags@@Tests/FormattingThinking.wlt:1184,1-1193,2"
 ]
 
 (* An unterminated tag is written as a closed tag: *)
@@ -1199,35 +1197,35 @@ VerificationTest[
     thinkingRoundTrip /@ { "<think>Still going", "<think>\n" },
     { "<think>\nStill going\n</think>", "<think>\n\n</think>" },
     SameTest -> MatchQ,
-    TestID   -> "Thinking-RoundTrip-Unterminated@@Tests/FormattingThinking.wlt:1198,1-1203,2"
+    TestID   -> "Thinking-RoundTrip-Unterminated@@Tests/FormattingThinking.wlt:1196,1-1201,2"
 ]
 
 VerificationTest[
     thinkingRoundTrip[ "<think>\n\n</think>\nAnswer" ],
     "<think>\n\n</think>\n\nAnswer",
     SameTest -> MatchQ,
-    TestID   -> "Thinking-RoundTrip-Empty-Literal@@Tests/FormattingThinking.wlt:1205,1-1210,2"
+    TestID   -> "Thinking-RoundTrip-Empty-Literal@@Tests/FormattingThinking.wlt:1203,1-1208,2"
 ]
 
 VerificationTest[
     thinkingRoundTrip[ "<think>A</think>\nMiddle\n<think>B</think>\nEnd" ],
     "<think>\nA\n</think>\n\nMiddle\n<think>\nB\n</think>\n\nEnd",
     SameTest -> MatchQ,
-    TestID   -> "Thinking-RoundTrip-Multiple@@Tests/FormattingThinking.wlt:1212,1-1217,2"
+    TestID   -> "Thinking-RoundTrip-Multiple@@Tests/FormattingThinking.wlt:1210,1-1215,2"
 ]
 
 VerificationTest[
     thinkingRoundTrip[ "Hello <think>x</think> world" ],
     s_String /; StringMatchQ[ s, "Hello <think>\nx\n</think>\n\n" ~~ " "... ~~ "world" ],
     SameTest -> MatchQ,
-    TestID   -> "Thinking-RoundTrip-Mid-Paragraph@@Tests/FormattingThinking.wlt:1219,1-1224,2"
+    TestID   -> "Thinking-RoundTrip-Mid-Paragraph@@Tests/FormattingThinking.wlt:1217,1-1222,2"
 ]
 
 VerificationTest[
     thinkingRoundTrip[ "<think>\nLiteral thoughts\n</think>\nThe answer.", "Streaming" ],
     "<think>\nLiteral thoughts\n</think>\n\nThe answer.",
     SameTest -> MatchQ,
-    TestID   -> "Thinking-RoundTrip-Streaming@@Tests/FormattingThinking.wlt:1226,1-1231,2"
+    TestID   -> "Thinking-RoundTrip-Streaming@@Tests/FormattingThinking.wlt:1224,1-1229,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1251,7 +1249,7 @@ VerificationTest[
         "<think>\n| a | b |\n| - | - |\n| 1 | 2 |\n</think>\n\nDone"
     },
     SameTest -> MatchQ,
-    TestID   -> "Thinking-RoundTrip-Formatted-Thoughts@@Tests/FormattingThinking.wlt:1238,1-1255,2"
+    TestID   -> "Thinking-RoundTrip-Formatted-Thoughts@@Tests/FormattingThinking.wlt:1236,1-1253,2"
 ]
 
 (* Text that stays plain in thoughts serializes unchanged, and markdown escapes are written back: *)
@@ -1271,7 +1269,7 @@ VerificationTest[
         "<think>\n\:4f60\:597d\n</think>\n\nDone"
     },
     SameTest -> MatchQ,
-    TestID   -> "Thinking-RoundTrip-Plain-Thoughts@@Tests/FormattingThinking.wlt:1258,1-1275,2"
+    TestID   -> "Thinking-RoundTrip-Plain-Thoughts@@Tests/FormattingThinking.wlt:1256,1-1273,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1295,7 +1293,7 @@ VerificationTest[
         "<think type='summary'>\nSum\n</think>\n\nAnswer"
     },
     SameTest -> MatchQ,
-    TestID   -> "Thinking-RoundTrip-Summary@@Tests/FormattingThinking.wlt:1282,1-1299,2"
+    TestID   -> "Thinking-RoundTrip-Summary@@Tests/FormattingThinking.wlt:1280,1-1297,2"
 ]
 
 (* Serializing a summary box restores its stored reasoning data, but only if nothing is stored for its ID yet, and
@@ -1326,7 +1324,7 @@ VerificationTest[
         { "<think type='summary' id='abc'>\nx\n</think>", <| |> }
     },
     SameTest -> MatchQ,
-    TestID   -> "Thinking-RoundTrip-Summary-Restores-Data@@Tests/FormattingThinking.wlt:1303,1-1330,2"
+    TestID   -> "Thinking-RoundTrip-Summary-Restores-Data@@Tests/FormattingThinking.wlt:1301,1-1328,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1352,7 +1350,7 @@ VerificationTest[
     ],
     "<think>\n**Bold** text\n</think>\n<think type='summary'>\n\n</think>\n\nAnswer",
     SameTest -> MatchQ,
-    TestID   -> "Thinking-Serialize-Boxes@@Tests/FormattingThinking.wlt:1338,1-1356,2"
+    TestID   -> "Thinking-Serialize-Boxes@@Tests/FormattingThinking.wlt:1336,1-1354,2"
 ]
 
 (* Literal think tags are kept in the content of chat messages: *)
@@ -1360,7 +1358,7 @@ VerificationTest[
     thinkingState @ CellToChatMessage @ Cell[ TextData @ FormatMarkdown[ "<think>\nhmm\n</think>\nThe answer." ], "ChatOutput" ],
     <| "Role" -> "Assistant", "Content" -> "<think>\nhmm\n</think>\n\nThe answer." |>,
     SameTest -> MatchQ,
-    TestID   -> "Thinking-Chat-Message-Literal@@Tests/FormattingThinking.wlt:1359,1-1364,2"
+    TestID   -> "Thinking-Chat-Message-Literal@@Tests/FormattingThinking.wlt:1357,1-1362,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1383,7 +1381,7 @@ VerificationTest[
         "\nAfter"
     },
     SameTest -> MatchQ,
-    TestID   -> "Thinking-Speech-Element@@Tests/FormattingThinking.wlt:1376,1-1387,2"
+    TestID   -> "Thinking-Speech-Element@@Tests/FormattingThinking.wlt:1374,1-1385,2"
 ]
 
 (* Each element is matched up to its own closing tag, and tags are matched case-insensitively: *)
@@ -1399,7 +1397,7 @@ VerificationTest[
         { thinkingSpeechStub[ "<SPEECH-INPUT>A</Speech-Input>" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Thinking-Speech-Multiple-And-Case@@Tests/FormattingThinking.wlt:1390,1-1403,2"
+    TestID   -> "Thinking-Speech-Multiple-And-Case@@Tests/FormattingThinking.wlt:1388,1-1401,2"
 ]
 
 (* The element comes before markdown in it, and it is recognized inside thoughts too: *)
@@ -1415,7 +1413,7 @@ VerificationTest[
         TextData @ { "a ", thinkingSpeechStub[ "<speech-input>A</speech-input>" ], " b" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Thinking-Speech-Precedence@@Tests/FormattingThinking.wlt:1406,1-1419,2"
+    TestID   -> "Thinking-Speech-Precedence@@Tests/FormattingThinking.wlt:1404,1-1417,2"
 ]
 
 (* While streaming, the element is formatted the same way: *)
@@ -1425,22 +1423,17 @@ VerificationTest[
     ],
     { thinkingSpeechStub[ "<speech-input>A</speech-input>" ] },
     SameTest -> MatchQ,
-    TestID   -> "Thinking-Speech-Streaming@@Tests/FormattingThinking.wlt:1422,1-1429,2"
+    TestID   -> "Thinking-Speech-Streaming@@Tests/FormattingThinking.wlt:1420,1-1427,2"
 ]
 
-(* The element is recognized in text with markdown escapes too. That path drops the line breaks around it (see the
-   report for this file), so they are asserted loosely: *)
+(* The element is recognized in text with markdown escapes too, with the same line breaks around it as without escapes: *)
 VerificationTest[
     Block[ { Wolfram`Chatbook`Common`formatSpeechInput = thinkingSpeechStub },
         thinkingFormat[ "\\*x\\*\n<speech-input>A</speech-input>\nDone" ]
     ],
-    {
-        s1_String /; StringTrim @ s1 === "*x*",
-        thinkingSpeechStub[ "<speech-input>A</speech-input>" ],
-        s2_String /; StringTrim @ s2 === "Done"
-    },
+    { "*x*\n", thinkingSpeechStub[ "<speech-input>A</speech-input>" ], "\nDone" },
     SameTest -> MatchQ,
-    TestID   -> "Thinking-Speech-Escaped@@Tests/FormattingThinking.wlt:1433,1-1444,2"
+    TestID   -> "Thinking-Speech-Escaped@@Tests/FormattingThinking.wlt:1430,1-1437,2"
 ]
 
 (* An element without a closing tag or without content is plain text: *)
@@ -1450,7 +1443,7 @@ VerificationTest[
     ],
     { { "<speech-input><transcript>Hi</transcript>" }, { "<speech-input></speech-input>" } },
     SameTest -> MatchQ,
-    TestID   -> "Thinking-Speech-Plain-Text@@Tests/FormattingThinking.wlt:1447,1-1454,2"
+    TestID   -> "Thinking-Speech-Plain-Text@@Tests/FormattingThinking.wlt:1440,1-1447,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1467,7 +1460,7 @@ VerificationTest[
     },
     { "Hi", "", "a", "" },
     SameTest -> MatchQ,
-    TestID   -> "Thinking-Speech-Parse-Transcript@@Tests/FormattingThinking.wlt:1461,1-1471,2"
+    TestID   -> "Thinking-Speech-Parse-Transcript@@Tests/FormattingThinking.wlt:1454,1-1464,2"
 ]
 
 (* The audio is read from an expression URI in the <audio> element (wrapped in an AudioBox, or after autoCorrect has
@@ -1484,7 +1477,7 @@ VerificationTest[
     ],
     { _Audio, _Audio, None, None },
     SameTest -> MatchQ,
-    TestID   -> "Thinking-Speech-Parse-Audio@@Tests/FormattingThinking.wlt:1475,1-1488,2"
+    TestID   -> "Thinking-Speech-Parse-Audio@@Tests/FormattingThinking.wlt:1468,1-1481,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1507,7 +1500,7 @@ VerificationTest[
     ],
     "<speech-input>\n<audio>not available</audio>\n<transcript>\nHello there\n</transcript>\n</speech-input>\n\nAnswer",
     SameTest -> MatchQ,
-    TestID   -> "Thinking-Speech-Serialize-No-Audio@@Tests/FormattingThinking.wlt:1496,1-1511,2"
+    TestID   -> "Thinking-Speech-Serialize-No-Audio@@Tests/FormattingThinking.wlt:1489,1-1504,2"
 ]
 
 VerificationTest[
@@ -1524,7 +1517,7 @@ VerificationTest[
     ],
     "Answer",
     SameTest -> MatchQ,
-    TestID   -> "Thinking-Speech-Serialize-Empty-Transcript@@Tests/FormattingThinking.wlt:1513,1-1528,2"
+    TestID   -> "Thinking-Speech-Serialize-Empty-Transcript@@Tests/FormattingThinking.wlt:1506,1-1521,2"
 ]
 
 (* With audio, the audio is stored as an attachment, referenced from an AudioBox: *)
@@ -1549,7 +1542,7 @@ VerificationTest[
         StringEndsQ[ s, "</audio>\n<transcript>\nHello\n</transcript>\n</speech-input>" ]
     ],
     SameTest -> MatchQ,
-    TestID   -> "Thinking-Speech-Serialize-Audio@@Tests/FormattingThinking.wlt:1531,1-1553,2"
+    TestID   -> "Thinking-Speech-Serialize-Audio@@Tests/FormattingThinking.wlt:1524,1-1546,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

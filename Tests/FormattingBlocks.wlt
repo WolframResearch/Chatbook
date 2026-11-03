@@ -1337,8 +1337,8 @@ VerificationTest[
     TestID   -> "Blocks-Precedence-Heading-Content@@Tests/FormattingBlocks.wlt:1333,1-1338,2"
 ]
 
-(* Escaped markdown characters send the text through a separate path, which gives the same blocks. This includes
-   blocks in the text before a code block, which that path formats separately (textBeforeCodeBlock): *)
+(* Escaped markdown characters give the same blocks as without escapes. This includes blocks in the text before a code
+   block: *)
 VerificationTest[
     {
         SameQ[

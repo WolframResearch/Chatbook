@@ -893,7 +893,7 @@ VerificationTest[
     TestID   -> "Tables-Escaped-Asterisks@@Tests/FormattingTables.wlt:889,1-894,2"
 ]
 
-(* Tables are still found when an escape occurs elsewhere in the response, including in fenced tables: *)
+(* Tables with an escape elsewhere get the same line breaks as without escapes (a fenced one keeps the blank line): *)
 VerificationTest[
     {
         formatTables[ "Price \\$5\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\nDone" ],
@@ -901,7 +901,7 @@ VerificationTest[
     },
     {
         { "Price $5\n", headedTable @ { { "a", "b" }, { "1", "2" } }, "\nDone" },
-        { "* x\n", headedTable @ { { "a", "b" }, { "1", "2" } } }
+        { "* x\n\n", headedTable @ { { "a", "b" }, { "1", "2" } } }
     },
     SameTest -> MatchQ,
     TestID   -> "Tables-Escaped-Elsewhere@@Tests/FormattingTables.wlt:897,1-908,2"

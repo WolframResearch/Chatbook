@@ -500,8 +500,8 @@ VerificationTest[
     TestID   -> "CodeBlocks-Numbered-List-Item@@Tests/FormattingCodeBlocks.wlt:496,1-501,2"
 ]
 
-(* Text with escaped markdown characters is formatted by a separate path. Code blocks are split out before the escapes
-   are handled, so they look the same as without escapes: *)
+(* Code blocks in text with escaped markdown characters keep their raw text, so they look the same as without
+   escapes: *)
 VerificationTest[
     {
         NormalizeTextData @ FormatMarkdown[ "Some \\*escaped\\* text\n\n```python\nx = 1\n```" ],
