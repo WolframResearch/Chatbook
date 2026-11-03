@@ -1655,7 +1655,7 @@ $$simpleToolCall    = Shortest[ $$simpleToolCommand ~~ ___ ~~ ($$endToolCall|End
 (* ::Subsection::Closed:: *)
 (*$toolCallFormatRules*)
 
-(* These rules are shared by both sets of rules below, so that tool calls are recognized the same way in each: *)
+(* The rules for tool calls in $textDataFormatRules: *)
 $toolCallFormatRules = {
     Longest @ StringExpression[
         (("```" ~~ Except[ "\n" ]... ~~ (" "...) ~~ "\n"))|"",

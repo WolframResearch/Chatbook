@@ -1426,19 +1426,14 @@ VerificationTest[
     TestID   -> "Thinking-Speech-Streaming@@Tests/FormattingThinking.wlt:1420,1-1427,2"
 ]
 
-(* The element is recognized in text with markdown escapes too. That path drops the line breaks around it (see the
-   report for this file), so they are asserted loosely: *)
+(* The element is recognized in text with markdown escapes too, with the same line breaks around it as without escapes: *)
 VerificationTest[
     Block[ { Wolfram`Chatbook`Common`formatSpeechInput = thinkingSpeechStub },
         thinkingFormat[ "\\*x\\*\n<speech-input>A</speech-input>\nDone" ]
     ],
-    {
-        s1_String /; StringTrim @ s1 === "*x*",
-        thinkingSpeechStub[ "<speech-input>A</speech-input>" ],
-        s2_String /; StringTrim @ s2 === "Done"
-    },
+    { "*x*\n", thinkingSpeechStub[ "<speech-input>A</speech-input>" ], "\nDone" },
     SameTest -> MatchQ,
-    TestID   -> "Thinking-Speech-Escaped@@Tests/FormattingThinking.wlt:1431,1-1442,2"
+    TestID   -> "Thinking-Speech-Escaped@@Tests/FormattingThinking.wlt:1430,1-1437,2"
 ]
 
 (* An element without a closing tag or without content is plain text: *)
@@ -1448,7 +1443,7 @@ VerificationTest[
     ],
     { { "<speech-input><transcript>Hi</transcript>" }, { "<speech-input></speech-input>" } },
     SameTest -> MatchQ,
-    TestID   -> "Thinking-Speech-Plain-Text@@Tests/FormattingThinking.wlt:1445,1-1452,2"
+    TestID   -> "Thinking-Speech-Plain-Text@@Tests/FormattingThinking.wlt:1440,1-1447,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1465,7 +1460,7 @@ VerificationTest[
     },
     { "Hi", "", "a", "" },
     SameTest -> MatchQ,
-    TestID   -> "Thinking-Speech-Parse-Transcript@@Tests/FormattingThinking.wlt:1459,1-1469,2"
+    TestID   -> "Thinking-Speech-Parse-Transcript@@Tests/FormattingThinking.wlt:1454,1-1464,2"
 ]
 
 (* The audio is read from an expression URI in the <audio> element (wrapped in an AudioBox, or after autoCorrect has
@@ -1482,7 +1477,7 @@ VerificationTest[
     ],
     { _Audio, _Audio, None, None },
     SameTest -> MatchQ,
-    TestID   -> "Thinking-Speech-Parse-Audio@@Tests/FormattingThinking.wlt:1473,1-1486,2"
+    TestID   -> "Thinking-Speech-Parse-Audio@@Tests/FormattingThinking.wlt:1468,1-1481,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1505,7 +1500,7 @@ VerificationTest[
     ],
     "<speech-input>\n<audio>not available</audio>\n<transcript>\nHello there\n</transcript>\n</speech-input>\n\nAnswer",
     SameTest -> MatchQ,
-    TestID   -> "Thinking-Speech-Serialize-No-Audio@@Tests/FormattingThinking.wlt:1494,1-1509,2"
+    TestID   -> "Thinking-Speech-Serialize-No-Audio@@Tests/FormattingThinking.wlt:1489,1-1504,2"
 ]
 
 VerificationTest[
@@ -1522,7 +1517,7 @@ VerificationTest[
     ],
     "Answer",
     SameTest -> MatchQ,
-    TestID   -> "Thinking-Speech-Serialize-Empty-Transcript@@Tests/FormattingThinking.wlt:1511,1-1526,2"
+    TestID   -> "Thinking-Speech-Serialize-Empty-Transcript@@Tests/FormattingThinking.wlt:1506,1-1521,2"
 ]
 
 (* With audio, the audio is stored as an attachment, referenced from an AudioBox: *)
@@ -1547,7 +1542,7 @@ VerificationTest[
         StringEndsQ[ s, "</audio>\n<transcript>\nHello\n</transcript>\n</speech-input>" ]
     ],
     SameTest -> MatchQ,
-    TestID   -> "Thinking-Speech-Serialize-Audio@@Tests/FormattingThinking.wlt:1529,1-1551,2"
+    TestID   -> "Thinking-Speech-Serialize-Audio@@Tests/FormattingThinking.wlt:1524,1-1546,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

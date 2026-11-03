@@ -1275,7 +1275,7 @@ VerificationTest[
     TestID   -> "Inline-Escaped-Markers@@Tests/FormattingInline.wlt:1263,1-1276,2"
 ]
 
-(* An escape anywhere in the text switches to the escaped formatting path, which formats inline constructs the same: *)
+(* An escape anywhere in the text doesn't change how the other inline constructs are formatted: *)
 VerificationTest[
     formatted[ "Cost \\$5 and **bold** and `Plot` and [ex](https://example.com) and \\textit{it}" ],
     {

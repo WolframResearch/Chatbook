@@ -27,10 +27,9 @@ VerificationTest[
      MathTeX[ input, state, cellOptions... ]        for finished output
      MathTeXStreaming[ boxes, cellOptions... ]      for streaming output
    The replacement only applies to the exact cell structure the formatter creates for math, so a change to the wrapper
-   (e.g. a missing FormBox or a different template name) still makes the tests below fail.
-   mathTrimmedText[ str ] is a pattern for a string that is str apart from whitespace at its ends. *)
+   (e.g. a missing FormBox or a different template name) still makes the tests below fail. *)
 VerificationTest[
-    ClearAll[ mathItems, MathTeX, MathTeXStreaming, $mathCellRules, mathTrimmedText ];
+    ClearAll[ mathItems, MathTeX, MathTeXStreaming, $mathCellRules ];
     $mathCellRules = {
         Cell[
             BoxData @ FormBox[
@@ -47,11 +46,10 @@ VerificationTest[
     };
     mathItems[ md_String ] := mathItems[ md, "Finished" ];
     mathItems[ md_String, status_String ] :=
-        ReplaceAll[ NormalizeTextData @ FormatMarkdown[ md, status ], $mathCellRules ];
-    mathTrimmedText[ str_String ] := _String? (StringTrim @ # === str &),
+        ReplaceAll[ NormalizeTextData @ FormatMarkdown[ md, status ], $mathCellRules ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "Math-Helpers@@Tests/FormattingMath.wlt:32,1-55,2"
+    TestID   -> "Math-Helpers@@Tests/FormattingMath.wlt:31,1-53,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -77,7 +75,7 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Cell-Finished@@Tests/FormattingMath.wlt:63,1-81,2"
+    TestID   -> "Math-Cell-Finished@@Tests/FormattingMath.wlt:61,1-79,2"
 ]
 
 (* While streaming, only the boxes are shown, wrapped in a "TeXAssistantBoxes" StyleBox instead of the template: *)
@@ -90,7 +88,7 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Cell-Streaming@@Tests/FormattingMath.wlt:84,1-94,2"
+    TestID   -> "Math-Cell-Streaming@@Tests/FormattingMath.wlt:82,1-92,2"
 ]
 
 (* The streaming boxes are the same boxes that the finished template holds, for every delimiter and in nested
@@ -110,7 +108,7 @@ VerificationTest[
     ],
     { True, True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "Math-Cell-Streaming-Same-Boxes@@Tests/FormattingMath.wlt:98,1-114,2"
+    TestID   -> "Math-Cell-Streaming-Same-Boxes@@Tests/FormattingMath.wlt:96,1-112,2"
 ]
 
 (* Math is an inline cell in the surrounding text: *)
@@ -118,7 +116,7 @@ VerificationTest[
     mathItems[ "Let $x$ be a variable." ],
     { "Let ", MathTeX[ "x", "Boxes" ], " be a variable." },
     SameTest -> MatchQ,
-    TestID   -> "Math-Cell-Inline-In-Text@@Tests/FormattingMath.wlt:117,1-122,2"
+    TestID   -> "Math-Cell-Inline-In-Text@@Tests/FormattingMath.wlt:115,1-120,2"
 ]
 
 (* The TeX parser (InputAssistant`TeXAssistant) runs once for a math expression, not again for every streamed chunk that
@@ -140,7 +138,7 @@ VerificationTest[
     ],
     1,
     SameTest -> MatchQ,
-    TestID   -> "Math-Cell-TeX-Parsed-Once@@Tests/FormattingMath.wlt:127,1-144,2"
+    TestID   -> "Math-Cell-TeX-Parsed-Once@@Tests/FormattingMath.wlt:125,1-142,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -152,7 +150,7 @@ VerificationTest[
     mathItems /@ { "A $$x^2$$ B", "A \\(x^2\\) B", "A $x^2$ B" },
     ConstantArray[ { "A ", MathTeX[ "x^2", "Boxes" ], " B" }, 3 ],
     SameTest -> MatchQ,
-    TestID   -> "Math-Delimiters-Equivalent@@Tests/FormattingMath.wlt:151,1-156,2"
+    TestID   -> "Math-Delimiters-Equivalent@@Tests/FormattingMath.wlt:149,1-154,2"
 ]
 
 (* \[...\] gives the same math cell too (see the "Bracket Delimiters" section for its other rules): *)
@@ -160,7 +158,7 @@ VerificationTest[
     mathItems /@ { "\\[x^2\\]", "\\[\\alpha\\]" },
     { { MathTeX[ "x^2", "Boxes" ] }, { MathTeX[ "\\alpha", "Boxes" ] } },
     SameTest -> MatchQ,
-    TestID   -> "Math-Delimiters-Brackets@@Tests/FormattingMath.wlt:159,1-164,2"
+    TestID   -> "Math-Delimiters-Brackets@@Tests/FormattingMath.wlt:157,1-162,2"
 ]
 
 (* Display math is not rendered differently from inline math, it's an inline cell in the text: *)
@@ -168,7 +166,7 @@ VerificationTest[
     mathItems[ "The formula $$E = mc^2$$ is famous." ],
     { "The formula ", MathTeX[ "E = mc^2", "Boxes" ], " is famous." },
     SameTest -> MatchQ,
-    TestID   -> "Math-Delimiters-Display-Inline@@Tests/FormattingMath.wlt:167,1-172,2"
+    TestID   -> "Math-Delimiters-Display-Inline@@Tests/FormattingMath.wlt:165,1-170,2"
 ]
 
 (* Display math on its own line keeps the line breaks around it: *)
@@ -176,7 +174,7 @@ VerificationTest[
     mathItems[ "Line one\n$$x$$\nLine two" ],
     { "Line one\n", MathTeX[ "x", "Boxes" ], "\nLine two" },
     SameTest -> MatchQ,
-    TestID   -> "Math-Delimiters-Display-Own-Line@@Tests/FormattingMath.wlt:175,1-180,2"
+    TestID   -> "Math-Delimiters-Display-Own-Line@@Tests/FormattingMath.wlt:173,1-178,2"
 ]
 
 (* Display math in its own paragraph: the blank lines next to it become single line breaks (as they do next to other
@@ -185,7 +183,7 @@ VerificationTest[
     mathItems[ "Here:\n\n$$x^2$$\n\nmore" ],
     { "Here:\n", MathTeX[ "x^2", "Boxes" ], "\nmore" },
     SameTest -> MatchQ,
-    TestID   -> "Math-Delimiters-Display-Paragraph@@Tests/FormattingMath.wlt:184,1-189,2"
+    TestID   -> "Math-Delimiters-Display-Paragraph@@Tests/FormattingMath.wlt:182,1-187,2"
 ]
 
 (* Several math expressions on one line: *)
@@ -197,7 +195,7 @@ VerificationTest[
         { MathTeX[ "a", "Boxes" ], " and ", MathTeX[ "b", "Boxes" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Delimiters-Multiple@@Tests/FormattingMath.wlt:192,1-201,2"
+    TestID   -> "Math-Delimiters-Multiple@@Tests/FormattingMath.wlt:190,1-199,2"
 ]
 
 (* Math does not need whitespace around its delimiters: *)
@@ -210,7 +208,7 @@ VerificationTest[
         { MathTeX[ "x", "Boxes" ], MathTeX[ "y", "Boxes" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Delimiters-Adjacent@@Tests/FormattingMath.wlt:204,1-214,2"
+    TestID   -> "Math-Delimiters-Adjacent@@Tests/FormattingMath.wlt:202,1-212,2"
 ]
 
 (* $$...$$, \(...\) and \[...\] can span lines. Whitespace at the ends of the TeX is trimmed, but line breaks inside
@@ -224,7 +222,7 @@ VerificationTest[
         { MathTeX[ "x^2", "Boxes" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Delimiters-Multiline@@Tests/FormattingMath.wlt:218,1-228,2"
+    TestID   -> "Math-Delimiters-Multiline@@Tests/FormattingMath.wlt:216,1-226,2"
 ]
 
 (* With "\r\n" line endings, the line breaks around the math are kept. (The exact strings are not checked here: they
@@ -242,7 +240,7 @@ VerificationTest[
         }
     ],
     SameTest -> MatchQ,
-    TestID   -> "Math-Delimiters-CRLF@@Tests/FormattingMath.wlt:232,1-246,2"
+    TestID   -> "Math-Delimiters-CRLF@@Tests/FormattingMath.wlt:230,1-244,2"
 ]
 
 (* A multi-line environment with "&" and "\\": *)
@@ -250,7 +248,7 @@ VerificationTest[
     mathItems[ "$$\n\\begin{aligned}\na &= b \\\\\n&= c\n\\end{aligned}\n$$" ],
     { MathTeX[ "\\begin{aligned}\na &= b \\\\\n&= c\n\\end{aligned}", "Boxes" ] },
     SameTest -> MatchQ,
-    TestID   -> "Math-Delimiters-Aligned@@Tests/FormattingMath.wlt:249,1-254,2"
+    TestID   -> "Math-Delimiters-Aligned@@Tests/FormattingMath.wlt:247,1-252,2"
 ]
 
 (* Lines inside display math that look like other markdown blocks are part of the math: *)
@@ -258,7 +256,7 @@ VerificationTest[
     mathItems /@ { "Intro:\n$$\n- x\n$$", "$$\n|a| = |b|\n$$" },
     { { "Intro:\n", MathTeX[ "- x", "Boxes" ] }, { MathTeX[ "|a| = |b|", "Boxes" ] } },
     SameTest -> MatchQ,
-    TestID   -> "Math-Delimiters-Block-Lookalikes@@Tests/FormattingMath.wlt:257,1-262,2"
+    TestID   -> "Math-Delimiters-Block-Lookalikes@@Tests/FormattingMath.wlt:255,1-260,2"
 ]
 
 (* Unterminated or empty delimiters are left as text: *)
@@ -266,7 +264,7 @@ VerificationTest[
     mathItems /@ { "$$x^2", "\\(a", "$x^2", "$100", "$$$$", "\\(\\)" },
     { { "$$x^2" }, { "\\(a" }, { "$x^2" }, { "$100" }, { "$$$$" }, { "\\(\\)" } },
     SameTest -> MatchQ,
-    TestID   -> "Math-Delimiters-Unterminated@@Tests/FormattingMath.wlt:265,1-270,2"
+    TestID   -> "Math-Delimiters-Unterminated@@Tests/FormattingMath.wlt:263,1-268,2"
 ]
 
 (* The same holds while streaming, so partial math is shown as text until its closing delimiter arrives: *)
@@ -274,7 +272,7 @@ VerificationTest[
     mathItems[ #, "Streaming" ] & /@ { "The value is $x", "The value is $$\\frac{1}{", "\\(x^2" },
     { { "The value is $x" }, { "The value is $$\\frac{1}{" }, { "\\(x^2" } },
     SameTest -> MatchQ,
-    TestID   -> "Math-Delimiters-Unterminated-Streaming@@Tests/FormattingMath.wlt:273,1-278,2"
+    TestID   -> "Math-Delimiters-Unterminated-Streaming@@Tests/FormattingMath.wlt:271,1-276,2"
 ]
 
 (* The same in list items and headings: *)
@@ -291,7 +289,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Delimiters-Unterminated-Streaming-Nested@@Tests/FormattingMath.wlt:281,1-295,2"
+    TestID   -> "Math-Delimiters-Unterminated-Streaming-Nested@@Tests/FormattingMath.wlt:279,1-293,2"
 ]
 
 (* An unterminated \[ is a markdown-escaped bracket, so it is shown without its backslash while streaming: *)
@@ -299,7 +297,7 @@ VerificationTest[
     mathItems[ "Text\n\\[ x", "Streaming" ],
     { "Text\n[ x" },
     SameTest -> MatchQ,
-    TestID   -> "Math-Delimiters-Unterminated-Brackets-Streaming@@Tests/FormattingMath.wlt:298,1-303,2"
+    TestID   -> "Math-Delimiters-Unterminated-Brackets-Streaming@@Tests/FormattingMath.wlt:296,1-301,2"
 ]
 
 (* Once the closing delimiter arrives while streaming, the math is shown: *)
@@ -307,7 +305,7 @@ VerificationTest[
     mathItems[ "Let $x^2$ be", "Streaming" ],
     { "Let ", MathTeXStreaming[ FormBox[ SuperscriptBox[ StyleBox[ "x", "TI" ], "2" ], TraditionalForm ] ], " be" },
     SameTest -> MatchQ,
-    TestID   -> "Math-Delimiters-Terminated-Streaming@@Tests/FormattingMath.wlt:306,1-311,2"
+    TestID   -> "Math-Delimiters-Terminated-Streaming@@Tests/FormattingMath.wlt:304,1-309,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -320,7 +318,7 @@ VerificationTest[
     mathItems /@ { "costs $5 and $10", "It costs $5 or $10 for 2 items", "$5 and $x$" },
     { { "costs $5 and $10" }, { "It costs $5 or $10 for 2 items" }, { "$5 and ", MathTeX[ "x", "Boxes" ] } },
     SameTest -> MatchQ,
-    TestID   -> "Math-Dollar-Amounts@@Tests/FormattingMath.wlt:319,1-324,2"
+    TestID   -> "Math-Dollar-Amounts@@Tests/FormattingMath.wlt:317,1-322,2"
 ]
 
 (* The same rule applies in list items: *)
@@ -333,7 +331,7 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Dollar-Amounts-In-List@@Tests/FormattingMath.wlt:327,1-337,2"
+    TestID   -> "Math-Dollar-Amounts-In-List@@Tests/FormattingMath.wlt:325,1-335,2"
 ]
 
 (* Escaped dollars are never math delimiters: *)
@@ -341,7 +339,7 @@ VerificationTest[
     mathItems /@ { "Price: \\$5 - \\$10", "x = \\$5 and y = \\$6", "\\$5 and $x^2$" },
     { { "Price: $5 - $10" }, { "x = $5 and y = $6" }, { "$5 and ", MathTeX[ "x^2", "Boxes" ] } },
     SameTest -> MatchQ,
-    TestID   -> "Math-Dollar-Escaped-Amounts@@Tests/FormattingMath.wlt:340,1-345,2"
+    TestID   -> "Math-Dollar-Escaped-Amounts@@Tests/FormattingMath.wlt:338,1-343,2"
 ]
 
 (* Only letters, digits and parentheses: *)
@@ -355,7 +353,7 @@ VerificationTest[
         { MathTeX[ "(abc)", "Boxes" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Dollar-Letters-And-Digits@@Tests/FormattingMath.wlt:348,1-359,2"
+    TestID   -> "Math-Dollar-Letters-And-Digits@@Tests/FormattingMath.wlt:346,1-357,2"
 ]
 
 (* Anything with "+", "-", "=" or "^": *)
@@ -368,7 +366,7 @@ VerificationTest[
         { MathTeX[ "x^2", "Boxes" ], " here" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Dollar-Operators@@Tests/FormattingMath.wlt:362,1-372,2"
+    TestID   -> "Math-Dollar-Operators@@Tests/FormattingMath.wlt:360,1-370,2"
 ]
 
 (* Anything with a TeX command: *)
@@ -381,7 +379,7 @@ VerificationTest[
         { MathTeX[ "e^{i\\pi}", "Boxes" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Dollar-Commands@@Tests/FormattingMath.wlt:375,1-385,2"
+    TestID   -> "Math-Dollar-Commands@@Tests/FormattingMath.wlt:373,1-383,2"
 ]
 
 (* Unicode letters count as letters, and are converted to TeX commands: *)
@@ -389,7 +387,7 @@ VerificationTest[
     mathItems /@ { "$\[Alpha]$", "$\[Pi] r^2$" },
     { { MathTeX[ "\\alpha", "Boxes" ] }, { MathTeX[ "\\pi r^2", "Boxes" ] } },
     SameTest -> MatchQ,
-    TestID   -> "Math-Dollar-Unicode@@Tests/FormattingMath.wlt:388,1-393,2"
+    TestID   -> "Math-Dollar-Unicode@@Tests/FormattingMath.wlt:386,1-391,2"
 ]
 
 (* Single dollar math can't span lines: *)
@@ -397,7 +395,7 @@ VerificationTest[
     mathItems /@ { "$x\ny$", "I paid $5\nfor 2+2 = $4" },
     { { "$x\ny$" }, { "I paid $5\nfor 2+2 = $4" } },
     SameTest -> MatchQ,
-    TestID   -> "Math-Dollar-Newline@@Tests/FormattingMath.wlt:396,1-401,2"
+    TestID   -> "Math-Dollar-Newline@@Tests/FormattingMath.wlt:394,1-399,2"
 ]
 
 (* Single dollar math must be shorter than 100 characters: *)
@@ -417,7 +415,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Dollar-Length@@Tests/FormattingMath.wlt:404,1-421,2"
+    TestID   -> "Math-Dollar-Length@@Tests/FormattingMath.wlt:402,1-419,2"
 ]
 
 (* None of these limits apply to the other delimiters: *)
@@ -429,7 +427,7 @@ VerificationTest[
         { MathTeX[ "|x|", "Boxes" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Display-Not-Gated@@Tests/FormattingMath.wlt:424,1-433,2"
+    TestID   -> "Math-Display-Not-Gated@@Tests/FormattingMath.wlt:422,1-431,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -441,7 +439,7 @@ VerificationTest[
     mathItems /@ { "$$1,000.5$$", "$$1,000$$ items", "$5$", "\\(3.14\\)" },
     { { "1,000.5" }, { "1,000 items" }, { "5" }, { "3.14" } },
     SameTest -> MatchQ,
-    TestID   -> "Math-Numeric-Plain-Text@@Tests/FormattingMath.wlt:440,1-445,2"
+    TestID   -> "Math-Numeric-Plain-Text@@Tests/FormattingMath.wlt:438,1-443,2"
 ]
 
 (* The same while streaming: *)
@@ -449,7 +447,7 @@ VerificationTest[
     mathItems[ "$$1,000$$", "Streaming" ],
     { "1,000" },
     SameTest -> MatchQ,
-    TestID   -> "Math-Numeric-Plain-Text-Streaming@@Tests/FormattingMath.wlt:448,1-453,2"
+    TestID   -> "Math-Numeric-Plain-Text-Streaming@@Tests/FormattingMath.wlt:446,1-451,2"
 ]
 
 (* Math that is the name of a System symbol (longer than one character) is formatted as inline code, which makes it
@@ -466,7 +464,7 @@ VerificationTest[
         { Cell @ BoxData @ TemplateBox[ { "Gamma", "paclet:ref/Gamma", _ }, "TextRefLink" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-System-Symbol-Link@@Tests/FormattingMath.wlt:457,1-470,2"
+    TestID   -> "Math-System-Symbol-Link@@Tests/FormattingMath.wlt:455,1-468,2"
 ]
 
 (* The same while streaming: *)
@@ -474,7 +472,7 @@ VerificationTest[
     mathItems[ "Use $$Sin$$", "Streaming" ],
     { "Use ", Cell @ BoxData @ TemplateBox[ { "Sin", "paclet:ref/Sin", _ }, "TextRefLink" ] },
     SameTest -> MatchQ,
-    TestID   -> "Math-System-Symbol-Link-Streaming@@Tests/FormattingMath.wlt:473,1-478,2"
+    TestID   -> "Math-System-Symbol-Link-Streaming@@Tests/FormattingMath.wlt:471,1-476,2"
 ]
 
 (* One-letter System symbols and other names are TeX: *)
@@ -482,7 +480,7 @@ VerificationTest[
     mathItems /@ { "$$E$$", "$$N$$", "$$Foo$$" },
     { { MathTeX[ "E", "Boxes" ] }, { MathTeX[ "N", "Boxes" ] }, { MathTeX[ "Foo", "Boxes" ] } },
     SameTest -> MatchQ,
-    TestID   -> "Math-System-Symbol-Single-Letter@@Tests/FormattingMath.wlt:481,1-486,2"
+    TestID   -> "Math-System-Symbol-Single-Letter@@Tests/FormattingMath.wlt:479,1-484,2"
 ]
 
 (* If the TeX can't be made into boxes at all (mocked here, since TeXAssistant always gives boxes), the math is
@@ -504,7 +502,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-TeX-Failure-Fallback@@Tests/FormattingMath.wlt:490,1-508,2"
+    TestID   -> "Math-TeX-Failure-Fallback@@Tests/FormattingMath.wlt:488,1-506,2"
 ]
 
 (* The same while streaming: *)
@@ -522,7 +520,7 @@ VerificationTest[
         " end"
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-TeX-Failure-Fallback-Streaming@@Tests/FormattingMath.wlt:511,1-526,2"
+    TestID   -> "Math-TeX-Failure-Fallback-Streaming@@Tests/FormattingMath.wlt:509,1-524,2"
 ]
 
 (* A TeX template without boxes is put in the FormBox as is, even while streaming: *)
@@ -545,7 +543,7 @@ VerificationTest[
         2
     ],
     SameTest -> MatchQ,
-    TestID   -> "Math-TeX-Template-Without-Boxes@@Tests/FormattingMath.wlt:529,1-549,2"
+    TestID   -> "Math-TeX-Template-Without-Boxes@@Tests/FormattingMath.wlt:527,1-547,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -558,7 +556,7 @@ VerificationTest[
     mathItems[ "$$\[Alpha] + \[Beta]$$" ],
     { MathTeX[ "\\alpha + \\beta", "Boxes" ] },
     SameTest -> MatchQ,
-    TestID   -> "Math-Preprocess-Unicode@@Tests/FormattingMath.wlt:557,1-562,2"
+    TestID   -> "Math-Preprocess-Unicode@@Tests/FormattingMath.wlt:555,1-560,2"
 ]
 
 (* Other symbols with a TeX command are converted too. Characters without one are left as they are: *)
@@ -566,7 +564,7 @@ VerificationTest[
     mathItems /@ { "$$x \[TildeTilde] y$$", "$$\[Infinity]$$", "$$\:4e2d + x$$" },
     { { MathTeX[ "x \\approx y", "Boxes" ] }, { MathTeX[ "\\infty", "Boxes" ] }, { MathTeX[ "\:4e2d + x", "Boxes" ] } },
     SameTest -> MatchQ,
-    TestID   -> "Math-Preprocess-Unicode-Other@@Tests/FormattingMath.wlt:565,1-570,2"
+    TestID   -> "Math-Preprocess-Unicode-Other@@Tests/FormattingMath.wlt:563,1-568,2"
 ]
 
 (* Commas are removed from numbers with thousands separators: *)
@@ -574,7 +572,7 @@ VerificationTest[
     mathItems[ "$$100,000 + x$$" ],
     { MathTeX[ "100000 + x", "Boxes" ] },
     SameTest -> MatchQ,
-    TestID   -> "Math-Preprocess-Thousands@@Tests/FormattingMath.wlt:573,1-578,2"
+    TestID   -> "Math-Preprocess-Thousands@@Tests/FormattingMath.wlt:571,1-576,2"
 ]
 
 (* Ordinal and text superscripts get the braces and \text they need: *)
@@ -582,7 +580,7 @@ VerificationTest[
     mathItems /@ { "$$1^{st}$$", "$$x^\\text{th}$$" },
     { { MathTeX[ "1^{\\text{st}}", "Boxes" ] }, { MathTeX[ "x^{\\text{th}}", "Boxes" ] } },
     SameTest -> MatchQ,
-    TestID   -> "Math-Preprocess-Superscripts@@Tests/FormattingMath.wlt:581,1-586,2"
+    TestID   -> "Math-Preprocess-Superscripts@@Tests/FormattingMath.wlt:579,1-584,2"
 ]
 
 (* If the TeX can't be parsed, math symbols inside \text{...} are put in $...$ and it's parsed again. The template
@@ -591,7 +589,7 @@ VerificationTest[
     mathItems[ "$$\\text{if \\alpha > 0}$$" ],
     { MathTeX[ "\\text{if $\\alpha$ > 0}", "Boxes" ] },
     SameTest -> MatchQ,
-    TestID   -> "Math-Preprocess-Text-Retry@@Tests/FormattingMath.wlt:590,1-595,2"
+    TestID   -> "Math-Preprocess-Text-Retry@@Tests/FormattingMath.wlt:588,1-593,2"
 ]
 
 (* If the second attempt fails too, the template keeps the TeX from the first attempt: *)
@@ -599,7 +597,7 @@ VerificationTest[
     mathItems[ "$$\\text{\\alpha}\\frac{a$$" ],
     { MathTeX[ "\\text{\\alpha}\\frac{a", "Error" ] },
     SameTest -> MatchQ,
-    TestID   -> "Math-Preprocess-Text-Retry-Fails@@Tests/FormattingMath.wlt:598,1-603,2"
+    TestID   -> "Math-Preprocess-Text-Retry-Fails@@Tests/FormattingMath.wlt:596,1-601,2"
 ]
 
 (* \text{...} that parses is left alone: *)
@@ -607,7 +605,7 @@ VerificationTest[
     mathItems /@ { "$$\\text{if } \\alpha > 0$$", "$$\\textbf{v} = 1$$" },
     { { MathTeX[ "\\text{if } \\alpha > 0", "Boxes" ] }, { MathTeX[ "\\textbf{v} = 1", "Boxes" ] } },
     SameTest -> MatchQ,
-    TestID   -> "Math-Preprocess-Text-Valid@@Tests/FormattingMath.wlt:606,1-611,2"
+    TestID   -> "Math-Preprocess-Text-Valid@@Tests/FormattingMath.wlt:604,1-609,2"
 ]
 
 (* HTML entities are decoded before math is found: *)
@@ -615,7 +613,7 @@ VerificationTest[
     mathItems[ "$$a &lt; b$$" ],
     { MathTeX[ "a < b", "Boxes" ] },
     SameTest -> MatchQ,
-    TestID   -> "Math-HTML-Entities@@Tests/FormattingMath.wlt:614,1-619,2"
+    TestID   -> "Math-HTML-Entities@@Tests/FormattingMath.wlt:612,1-617,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -639,7 +637,7 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Invalid-Unbalanced@@Tests/FormattingMath.wlt:626,1-643,2"
+    TestID   -> "Math-Invalid-Unbalanced@@Tests/FormattingMath.wlt:624,1-641,2"
 ]
 
 (* While streaming, the error boxes are shown: *)
@@ -652,7 +650,7 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Invalid-Unbalanced-Streaming@@Tests/FormattingMath.wlt:646,1-656,2"
+    TestID   -> "Math-Invalid-Unbalanced-Streaming@@Tests/FormattingMath.wlt:644,1-654,2"
 ]
 
 (* Unknown commands and blank lines. Whether an unknown command is an error is up to the TeX parser: *)
@@ -664,7 +662,7 @@ VerificationTest[
         { MathTeX[ "a\n\nb", "Error" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Invalid-Unknown-Command@@Tests/FormattingMath.wlt:659,1-668,2"
+    TestID   -> "Math-Invalid-Unknown-Command@@Tests/FormattingMath.wlt:657,1-666,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -697,7 +695,7 @@ VerificationTest[
         { MathTeX[ "a \\\\ b", "Boxes" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Escapes-Kept@@Tests/FormattingMath.wlt:676,1-701,2"
+    TestID   -> "Math-Escapes-Kept@@Tests/FormattingMath.wlt:674,1-699,2"
 ]
 
 (* Backslashes that are not markdown escapes are kept too: *)
@@ -709,7 +707,7 @@ VerificationTest[
         { MathTeX[ "\\int_0^1 x\\,dx", "Boxes" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Escapes-Non-Markdown@@Tests/FormattingMath.wlt:704,1-713,2"
+    TestID   -> "Math-Escapes-Non-Markdown@@Tests/FormattingMath.wlt:702,1-711,2"
 ]
 
 (* TeX line breaks "\\" in a matrix: *)
@@ -717,7 +715,7 @@ VerificationTest[
     mathItems[ "$$\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}$$" ],
     { MathTeX[ "\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}", "Boxes" ] },
     SameTest -> MatchQ,
-    TestID   -> "Math-Escapes-Matrix@@Tests/FormattingMath.wlt:716,1-721,2"
+    TestID   -> "Math-Escapes-Matrix@@Tests/FormattingMath.wlt:714,1-719,2"
 ]
 
 (* In the same text, escapes outside of math are removed, while those inside are kept: *)
@@ -728,7 +726,7 @@ VerificationTest[
         { "Cost $5 and ", MathTeX[ "x^2", "Boxes" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Escapes-Outside-Removed@@Tests/FormattingMath.wlt:724,1-732,2"
+    TestID   -> "Math-Escapes-Outside-Removed@@Tests/FormattingMath.wlt:722,1-730,2"
 ]
 
 (* The same while streaming: *)
@@ -739,32 +737,31 @@ VerificationTest[
         { "Cost $5 and ", MathTeXStreaming[ FormBox[ SuperscriptBox[ StyleBox[ "x", "TI" ], "2" ], TraditionalForm ] ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Escapes-Streaming@@Tests/FormattingMath.wlt:735,1-743,2"
+    TestID   -> "Math-Escapes-Streaming@@Tests/FormattingMath.wlt:733,1-741,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Bracket Delimiters*)
 
-(* "\[" is also a markdown escape, so text with \[...\] is formatted with the rules for escaped text. There, \[...\]
-   is only math when it has whitespace (or the start/end of the text) on both sides: *)
+(* "\[" is also a markdown escape, so \[...\] is only math when it has whitespace (or the start/end of the text) on both
+   sides: *)
 VerificationTest[
     mathItems /@ { "\\[x^2\\]", "\\[\nx^2\n\\]", "\\[\\frac{1}{2}\\]" },
     { { MathTeX[ "x^2", "Boxes" ] }, { MathTeX[ "x^2", "Boxes" ] }, { MathTeX[ "\\frac{1}{2}", "Boxes" ] } },
     SameTest -> MatchQ,
-    TestID   -> "Math-Brackets-Whitespace-Delimited@@Tests/FormattingMath.wlt:751,1-756,2"
+    TestID   -> "Math-Brackets-Whitespace-Delimited@@Tests/FormattingMath.wlt:749,1-754,2"
 ]
 
-(* Text around whitespace-delimited \[...\] stays in order. (The whitespace next to the math is not checked here: it is
-   currently removed, which is a known issue.) *)
+(* The text around whitespace-delimited \[...\] keeps its whitespace, as around $$...$$: *)
 VerificationTest[
     mathItems /@ { "Before \\[x^2\\] after", "Here:\n\n\\[x^2\\]\n\nmore" },
     {
-        { mathTrimmedText[ "Before" ], MathTeX[ "x^2", "Boxes" ], mathTrimmedText[ "after" ] },
-        { mathTrimmedText[ "Here:" ], MathTeX[ "x^2", "Boxes" ], mathTrimmedText[ "more" ] }
+        { "Before ", MathTeX[ "x^2", "Boxes" ], " after" },
+        { "Here:\n", MathTeX[ "x^2", "Boxes" ], "\nmore" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Brackets-Surrounding-Text@@Tests/FormattingMath.wlt:760,1-768,2"
+    TestID   -> "Math-Brackets-Surrounding-Text@@Tests/FormattingMath.wlt:757,1-765,2"
 ]
 
 (* Without whitespace around them, "\[" and "\]" are escaped brackets: *)
@@ -772,7 +769,7 @@ VerificationTest[
     mathItems /@ { "items\\[0\\] and items\\[1\\]", "a\\[x^2\\]b" },
     { { "items[0] and items[1]" }, { "a[x^2]b" } },
     SameTest -> MatchQ,
-    TestID   -> "Math-Brackets-Not-Delimited@@Tests/FormattingMath.wlt:771,1-776,2"
+    TestID   -> "Math-Brackets-Not-Delimited@@Tests/FormattingMath.wlt:768,1-773,2"
 ]
 
 (* Whitespace-delimited \[...\] while streaming: *)
@@ -780,12 +777,11 @@ VerificationTest[
     mathItems[ "\\[\\alpha\\]", "Streaming" ],
     { MathTeXStreaming[ FormBox[ "\[Alpha]", TraditionalForm ] ] },
     SameTest -> MatchQ,
-    TestID   -> "Math-Brackets-Streaming@@Tests/FormattingMath.wlt:779,1-784,2"
+    TestID   -> "Math-Brackets-Streaming@@Tests/FormattingMath.wlt:776,1-781,2"
 ]
 
-(* The rules for text without escapes also have a \[...\] rule, which doesn't need whitespace. It is only reached when
-   the backslash comes from an HTML entity, since those are decoded after the check for escapes (or in a table inside a
-   code fence, which is not tested here): *)
+(* There is also a \[...\] rule that doesn't need whitespace. It is only reached when the backslash comes from an HTML
+   entity, since entities are decoded after escapes are replaced: *)
 VerificationTest[
     mathItems /@ { "a&#92;[x&#92;]b", "a &#92;[x&#92;] b", "- a&#92;[x&#92;]b" },
     {
@@ -799,7 +795,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Brackets-Unescaped-Rules@@Tests/FormattingMath.wlt:789,1-803,2"
+    TestID   -> "Math-Brackets-Unescaped-Rules@@Tests/FormattingMath.wlt:785,1-799,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -814,7 +810,7 @@ VerificationTest[
     mathItems[ "- $x^2$ item" ],
     { Cell[ TextData @ { StyleBox[ "\[Bullet]", ___ ], " ", MathTeX[ "x^2", "Boxes" ], " item" }, "InlineItem" ] },
     SameTest -> MatchQ,
-    TestID   -> "Math-List-Item@@Tests/FormattingMath.wlt:813,1-818,2"
+    TestID   -> "Math-List-Item@@Tests/FormattingMath.wlt:809,1-814,2"
 ]
 
 (* Inline and display math in items and sub-items: *)
@@ -835,7 +831,7 @@ VerificationTest[
         Cell[ TextData @ { "  ", StyleBox[ "\[Bullet]", ___ ], " sub ", MathTeX[ "y", "Boxes" ] }, "InlineSubitem" ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-List-Subitem@@Tests/FormattingMath.wlt:821,1-839,2"
+    TestID   -> "Math-List-Subitem@@Tests/FormattingMath.wlt:817,1-835,2"
 ]
 
 (* \(...\) in a list item: *)
@@ -843,7 +839,7 @@ VerificationTest[
     mathItems[ "- item \\(x\\) end" ],
     { Cell[ TextData @ { StyleBox[ "\[Bullet]", ___ ], " item ", MathTeX[ "x", "Boxes" ], " end" }, "InlineItem" ] },
     SameTest -> MatchQ,
-    TestID   -> "Math-List-Parentheses@@Tests/FormattingMath.wlt:842,1-847,2"
+    TestID   -> "Math-List-Parentheses@@Tests/FormattingMath.wlt:838,1-843,2"
 ]
 
 (* Math in a list item while streaming: *)
@@ -860,7 +856,7 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-List-Item-Streaming@@Tests/FormattingMath.wlt:850,1-864,2"
+    TestID   -> "Math-List-Item-Streaming@@Tests/FormattingMath.wlt:846,1-860,2"
 ]
 
 (* Numbered lists are plain text, with math formatted as usual: *)
@@ -868,7 +864,7 @@ VerificationTest[
     mathItems[ "1. Step one: $x = 1$\n2. Step two: $$y = 2$$" ],
     { "1. Step one: ", MathTeX[ "x = 1", "Boxes" ], "\n2. Step two: ", MathTeX[ "y = 2", "Boxes" ] },
     SameTest -> MatchQ,
-    TestID   -> "Math-Numbered-List@@Tests/FormattingMath.wlt:867,1-872,2"
+    TestID   -> "Math-Numbered-List@@Tests/FormattingMath.wlt:863,1-868,2"
 ]
 
 (* In list items, emphasis around math alone applies to the math cell: *)
@@ -894,7 +890,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-List-Emphasis@@Tests/FormattingMath.wlt:875,1-898,2"
+    TestID   -> "Math-List-Emphasis@@Tests/FormattingMath.wlt:871,1-894,2"
 ]
 
 (* Display math between list items: *)
@@ -908,7 +904,7 @@ VerificationTest[
         Cell[ TextData @ { StyleBox[ "\[Bullet]", ___ ], " b" }, "InlineItem" ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Between-List-Items@@Tests/FormattingMath.wlt:901,1-912,2"
+    TestID   -> "Math-Between-List-Items@@Tests/FormattingMath.wlt:897,1-908,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -962,7 +958,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Heading@@Tests/FormattingMath.wlt:918,1-966,2"
+    TestID   -> "Math-Heading@@Tests/FormattingMath.wlt:914,1-962,2"
 ]
 
 (* Emphasis around math alone in a heading applies to the math cell: *)
@@ -979,7 +975,7 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Heading-Emphasis@@Tests/FormattingMath.wlt:969,1-983,2"
+    TestID   -> "Math-Heading-Emphasis@@Tests/FormattingMath.wlt:965,1-979,2"
 ]
 
 (* A heading with an escape outside its math: *)
@@ -996,7 +992,7 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Heading-Escaped@@Tests/FormattingMath.wlt:986,1-1000,2"
+    TestID   -> "Math-Heading-Escaped@@Tests/FormattingMath.wlt:982,1-996,2"
 ]
 
 (* Math in a heading while streaming: *)
@@ -1017,7 +1013,7 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Heading-Streaming@@Tests/FormattingMath.wlt:1003,1-1021,2"
+    TestID   -> "Math-Heading-Streaming@@Tests/FormattingMath.wlt:999,1-1017,2"
 ]
 
 (* Display math next to a heading: *)
@@ -1028,7 +1024,7 @@ VerificationTest[
         { Cell[ _, "InlineSection", ___ ], "\n", MathTeX[ "x^2", "Boxes" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Next-To-Heading@@Tests/FormattingMath.wlt:1024,1-1032,2"
+    TestID   -> "Math-Next-To-Heading@@Tests/FormattingMath.wlt:1020,1-1028,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1054,7 +1050,7 @@ VerificationTest[
         { { TagBox[ MathTeX[ "x", "Boxes" ], ___ ], _ }, { _, MathTeX[ "y^2", "Boxes" ] } }
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Table@@Tests/FormattingMath.wlt:1039,1-1058,2"
+    TestID   -> "Math-Table@@Tests/FormattingMath.wlt:1035,1-1054,2"
 ]
 
 (* An escaped "|" in table math doesn't split the cell, and is a TeX \| in the math: *)
@@ -1067,7 +1063,7 @@ VerificationTest[
     ],
     { { _, _ }, { MathTeX[ "\\|x\\|", "Boxes" ], _ } },
     SameTest -> MatchQ,
-    TestID   -> "Math-Table-Escaped-Pipe@@Tests/FormattingMath.wlt:1061,1-1071,2"
+    TestID   -> "Math-Table-Escaped-Pipe@@Tests/FormattingMath.wlt:1057,1-1067,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1085,7 +1081,7 @@ VerificationTest[
         { MathTeX[ "x", "Boxes" ], "\nmore ", MathTeX[ "y", "Boxes" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Block-Quote@@Tests/FormattingMath.wlt:1077,1-1089,2"
+    TestID   -> "Math-Block-Quote@@Tests/FormattingMath.wlt:1073,1-1085,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1106,7 +1102,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Next-To-Inline-Code@@Tests/FormattingMath.wlt:1096,1-1110,2"
+    TestID   -> "Math-Next-To-Inline-Code@@Tests/FormattingMath.wlt:1092,1-1106,2"
 ]
 
 (* Math delimiters inside inline code are code: *)
@@ -1128,7 +1124,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-In-Inline-Code@@Tests/FormattingMath.wlt:1113,1-1132,2"
+    TestID   -> "Math-In-Inline-Code@@Tests/FormattingMath.wlt:1109,1-1128,2"
 ]
 
 (* Math delimiters inside code blocks are code: *)
@@ -1141,7 +1137,7 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-In-Code-Block@@Tests/FormattingMath.wlt:1135,1-1145,2"
+    TestID   -> "Math-In-Code-Block@@Tests/FormattingMath.wlt:1131,1-1141,2"
 ]
 
 (* Math next to code blocks, with and without escapes: *)
@@ -1159,7 +1155,7 @@ VerificationTest[
         { "Text $5 then ", MathTeX[ "y", "Boxes" ], "\n", Cell[ _, "ChatCodeBlock" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Next-To-Code-Block@@Tests/FormattingMath.wlt:1148,1-1163,2"
+    TestID   -> "Math-Next-To-Code-Block@@Tests/FormattingMath.wlt:1144,1-1159,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1176,10 +1172,10 @@ VerificationTest[
     ],
     { { "The value ", MathTeX[ "x^2", "Boxes" ], " here" }, MathTeX[ "y", "Boxes" ] },
     SameTest -> MatchQ,
-    TestID   -> "Math-In-Thoughts@@Tests/FormattingMath.wlt:1170,1-1180,2"
+    TestID   -> "Math-In-Thoughts@@Tests/FormattingMath.wlt:1166,1-1176,2"
 ]
 
-(* Thoughts with escapes use the rules for escaped text, including whitespace-delimited \[...\]: *)
+(* Escapes in thoughts are handled as in the answer, including whitespace-delimited \[...\]: *)
 VerificationTest[
     FirstCase[
         mathItems @ #,
@@ -1189,7 +1185,7 @@ VerificationTest[
     ] & /@ { "<think>\n\\[x^2\\]\n</think>\nAnswer", "<think>\nCost \\$5, $$\\$x$$\n</think>\nAnswer" },
     { { MathTeX[ "x^2", "Boxes" ] }, { "Cost $5, ", MathTeX[ "\\$x", "Boxes" ] } },
     SameTest -> MatchQ,
-    TestID   -> "Math-In-Thoughts-Escaped@@Tests/FormattingMath.wlt:1183,1-1193,2"
+    TestID   -> "Math-In-Thoughts-Escaped@@Tests/FormattingMath.wlt:1179,1-1189,2"
 ]
 
 (* The TeX text commands \textbf and \textit are also recognized outside of math: *)
@@ -1217,7 +1213,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-TeX-Text-Commands@@Tests/FormattingMath.wlt:1196,1-1221,2"
+    TestID   -> "Math-TeX-Text-Commands@@Tests/FormattingMath.wlt:1192,1-1217,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1229,7 +1225,7 @@ VerificationTest[
     MarkdownRoundTrip /@ { "$$x^2$$", "$x^2$", "\\(x^2\\)", "\\[x^2\\]", "\\[\\alpha\\]" },
     { "$$x^2$$", "$$x^2$$", "$$x^2$$", "$$x^2$$", "$$\\alpha$$" },
     SameTest -> MatchQ,
-    TestID   -> "Math-Serialization-Delimiters@@Tests/FormattingMath.wlt:1228,1-1233,2"
+    TestID   -> "Math-Serialization-Delimiters@@Tests/FormattingMath.wlt:1224,1-1229,2"
 ]
 
 (* Inline math in text: *)
@@ -1237,7 +1233,7 @@ VerificationTest[
     MarkdownRoundTrip /@ { "The $$\\sqrt{2}$$ is irrational", "Let $x$ be", "$x$ $y$" },
     { "The $$\\sqrt{2}$$ is irrational", "Let $$x$$ be", "$$x$$ $$y$$" },
     SameTest -> MatchQ,
-    TestID   -> "Math-Serialization-Inline@@Tests/FormattingMath.wlt:1236,1-1241,2"
+    TestID   -> "Math-Serialization-Inline@@Tests/FormattingMath.wlt:1232,1-1237,2"
 ]
 
 (* Multi-line math keeps its inner line breaks; the whitespace at its ends is trimmed: *)
@@ -1253,7 +1249,7 @@ VerificationTest[
         "$$\\begin{aligned}\na &= b \\\\\n&= c\n\\end{aligned}$$"
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Serialization-Multiline@@Tests/FormattingMath.wlt:1244,1-1257,2"
+    TestID   -> "Math-Serialization-Multiline@@Tests/FormattingMath.wlt:1240,1-1253,2"
 ]
 
 (* Escapes in the math are kept: *)
@@ -1266,7 +1262,7 @@ VerificationTest[
     },
     { "$$\\$5$$", "$$a \\_ b$$", "$$\\$5$$", "$$\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}$$" },
     SameTest -> MatchQ,
-    TestID   -> "Math-Serialization-Escapes@@Tests/FormattingMath.wlt:1260,1-1270,2"
+    TestID   -> "Math-Serialization-Escapes@@Tests/FormattingMath.wlt:1256,1-1266,2"
 ]
 
 (* Math that couldn't be parsed serializes to its TeX: *)
@@ -1274,7 +1270,7 @@ VerificationTest[
     MarkdownRoundTrip /@ { "$$\\frac{a}{b$$", "$\\notacommand$" },
     { "$$\\frac{a}{b$$", "$$\\notacommand$$" },
     SameTest -> MatchQ,
-    TestID   -> "Math-Serialization-Invalid@@Tests/FormattingMath.wlt:1273,1-1278,2"
+    TestID   -> "Math-Serialization-Invalid@@Tests/FormattingMath.wlt:1269,1-1274,2"
 ]
 
 (* Numbers serialize as text, and System symbol names as links: *)
@@ -1282,7 +1278,7 @@ VerificationTest[
     MarkdownRoundTrip /@ { "$$1,000$$", "Use $$Sin$$ and $Plot$" },
     { "1,000", "Use [Sin](paclet:ref/Sin) and [Plot](paclet:ref/Plot)" },
     SameTest -> MatchQ,
-    TestID   -> "Math-Serialization-Numeric-And-Links@@Tests/FormattingMath.wlt:1281,1-1286,2"
+    TestID   -> "Math-Serialization-Numeric-And-Links@@Tests/FormattingMath.wlt:1277,1-1282,2"
 ]
 
 (* The preprocessed TeX is what's serialized: *)
@@ -1290,7 +1286,7 @@ VerificationTest[
     MarkdownRoundTrip /@ { "$$\[Alpha] + \[Beta]$$", "$$100,000 + x$$", "$$\\text{if \\alpha > 0}$$" },
     { "$$\\alpha + \\beta$$", "$$100000 + x$$", "$$\\text{if $\\alpha$ > 0}$$" },
     SameTest -> MatchQ,
-    TestID   -> "Math-Serialization-Preprocessed@@Tests/FormattingMath.wlt:1289,1-1294,2"
+    TestID   -> "Math-Serialization-Preprocessed@@Tests/FormattingMath.wlt:1285,1-1290,2"
 ]
 
 (* Dollars that are not math are escaped: *)
@@ -1298,7 +1294,7 @@ VerificationTest[
     MarkdownRoundTrip /@ { "costs $5 and $10", "$5 and $x$", "Price: \\$5 - \\$10" },
     { "costs \\$5 and \\$10", "\\$5 and $$x$$", "Price: \\$5 - \\$10" },
     SameTest -> MatchQ,
-    TestID   -> "Math-Serialization-Dollar-Amounts@@Tests/FormattingMath.wlt:1297,1-1302,2"
+    TestID   -> "Math-Serialization-Dollar-Amounts@@Tests/FormattingMath.wlt:1293,1-1298,2"
 ]
 
 (* Math cells right next to each other are joined into one $$...$$ with a space: *)
@@ -1306,7 +1302,7 @@ VerificationTest[
     MarkdownRoundTrip /@ { "$x$$y$", "\\(a\\)\\(b\\)" },
     { "$$x y$$", "$$a b$$" },
     SameTest -> MatchQ,
-    TestID   -> "Math-Serialization-Adjacent@@Tests/FormattingMath.wlt:1305,1-1310,2"
+    TestID   -> "Math-Serialization-Adjacent@@Tests/FormattingMath.wlt:1301,1-1306,2"
 ]
 
 (* Math in other content: *)
@@ -1332,7 +1328,7 @@ VerificationTest[
         "> $$x$$\n> more $$y$$"
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Serialization-Nested@@Tests/FormattingMath.wlt:1313,1-1336,2"
+    TestID   -> "Math-Serialization-Nested@@Tests/FormattingMath.wlt:1309,1-1332,2"
 ]
 
 (* Math in table cells: *)
@@ -1340,7 +1336,7 @@ VerificationTest[
     MarkdownRoundTrip[ "| $x$ | b |\n|---|---|\n| 1 | $y^2$ |" ],
     _String? (StringContainsQ[ #, "| $$x$$ |" ] && StringContainsQ[ #, "| $$y^2$$ |" ] &),
     SameTest -> MatchQ,
-    TestID   -> "Math-Serialization-Table@@Tests/FormattingMath.wlt:1339,1-1344,2"
+    TestID   -> "Math-Serialization-Table@@Tests/FormattingMath.wlt:1335,1-1340,2"
 ]
 
 (* Display math on its own line stays on its own line: *)
@@ -1351,7 +1347,7 @@ VerificationTest[
         _String? (StringMatchQ[ "Here:" ~~ " "... ~~ ("\n"|"\n\n") ~~ "$$x^2$$" ~~ ("\n"|"\n\n") ~~ "more" ])
     },
     SameTest -> MatchQ,
-    TestID   -> "Math-Serialization-Display-Lines@@Tests/FormattingMath.wlt:1347,1-1355,2"
+    TestID   -> "Math-Serialization-Display-Lines@@Tests/FormattingMath.wlt:1343,1-1351,2"
 ]
 
 (* Math that fell back to inline code serializes as inline code: *)
@@ -1359,7 +1355,7 @@ VerificationTest[
     Block[ { Wolfram`Chatbook`Common`makeTeXBoxes = $Failed & }, MarkdownRoundTrip[ "Then $$x^2$$ end" ] ],
     "Then ``x^2`` end",
     SameTest -> MatchQ,
-    TestID   -> "Math-Serialization-Fallback@@Tests/FormattingMath.wlt:1358,1-1363,2"
+    TestID   -> "Math-Serialization-Fallback@@Tests/FormattingMath.wlt:1354,1-1359,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
