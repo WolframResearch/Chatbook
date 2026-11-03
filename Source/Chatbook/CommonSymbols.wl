@@ -361,6 +361,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `resolveReasoningEffort;
 `resolveSkills;
 `resolveTools;
+`responsesServiceQ;
 `restoreReasoningData;
 `revertMultimodalContent;
 `rootEvaluationCell;

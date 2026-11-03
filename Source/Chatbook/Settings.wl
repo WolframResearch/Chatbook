@@ -132,6 +132,22 @@ $modelInheritedLists = {
 };
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*responsesServiceQ*)
+responsesServiceQ // beginDefinition;
+
+(* Whether the installed LLMFunctions can serve the Responses endpoint for the given service: *)
+responsesServiceQ[ service_String ] := And[
+    TrueQ @ $responsesAPIAvailable,
+    TrueQ @ Quiet @ LLMServices`RegisteredServiceQ[ LLMServices`Response      , service ],
+    TrueQ @ Quiet @ LLMServices`RegisteredServiceQ[ LLMServices`ResponseSubmit, service ]
+];
+
+responsesServiceQ[ service_ ] := False;
+
+responsesServiceQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Argument Patterns*)
 $$validRootSettingValue = Inherited | _? (AssociationQ@*Association);
