@@ -60,6 +60,7 @@ name patterns with `*` wildcards; patterns starting with `!` exclude files.
 | `evalwl.sh` | evaluates a `.wl` file with Chatbook loaded from source and a front end (for probing behavior) |
 | `withfe.sh` | runs a command so that its kernels can start a front end |
 | `QUIRKS.md` | formatter behavior that looks wrong, with repros (not encoded in tests) |
+| `RestructurePlan.md` | the plan that the formatter restructure PRs implement |
 | `golden-*.wxf`, `bench-*.wxf`, `bench-*.md`, `profile-*.md` | local results (not committed) |
 
 ## What is compared
