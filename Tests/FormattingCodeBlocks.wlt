@@ -430,11 +430,11 @@ VerificationTest[
     TestID   -> "CodeBlocks-Unicode@@Tests/FormattingCodeBlocks.wlt:420,1-431,2"
 ]
 
-(* "\r\n" line endings: the "\r" at the end of the fence line and the code is trimmed. (Line endings inside the code are
-   currently kept as "\r\n", which the front end draws as a single line; that isn't asserted.) *)
+(* "\r\n" line endings become "\n", including the ones inside the code (the front end would draw "\r\n" as a single
+   line): *)
 VerificationTest[
-    FormatMarkdown[ "```python\r\nprint(1)\r\n```" ],
-    { cbBlock[ cbExternal[ "print(1)", "Python" ], "Python" ] },
+    FormatMarkdown[ "```python\r\nprint(1)\r\nprint(2)\r\n```" ],
+    { cbBlock[ cbExternal[ "print(1)\nprint(2)", "Python" ], "Python" ] },
     SameTest -> MatchQ,
     TestID   -> "CodeBlocks-CRLF-Line-Endings@@Tests/FormattingCodeBlocks.wlt:435,1-440,2"
 ]
