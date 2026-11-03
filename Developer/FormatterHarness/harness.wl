@@ -505,7 +505,7 @@ ReadWXF[ file_String ] := BinaryDeserialize @ ReadByteArray @ file;
    "Actual" -> b, "Note" -> ... |> for the first (depth-first, leftmost) subexpression that differs. *)
 FirstDifference[ a_, b_ ] := firstDiff[ HoldComplete @ a, HoldComplete @ b, { }, { } ];
 
-firstDiff[ HoldComplete[ a_ ], HoldComplete[ b_ ], pos_, path_ ] /; a === b := None;
+firstDiff[ HoldComplete[ a_ ], HoldComplete[ b_ ], pos_, path_ ] /; HoldComplete[ a ] === HoldComplete[ b ] := None;
 
 firstDiff[ HoldComplete[ a_Association ], HoldComplete[ b_Association ], pos_, path_ ] /;
     AssociationQ @ Unevaluated @ a && AssociationQ @ Unevaluated @ b :=
