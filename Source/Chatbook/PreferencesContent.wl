@@ -762,7 +762,7 @@ makeModelNameSelector[ dmPrefCache_, service_, model_, modelNameSelector_, state
             StringQ @ current && ! MemberQ[ models, KeyValuePattern[ "Name" -> current ] ],
                 items = Join[ { popupValue @ current, Delimiter }, items ],
             ! StringQ @ current,
-                items = Join[ { Automatic -> "Automatic", Delimiter }, items ]
+                items = Join[ { Automatic -> tr[ "Automatic" ], Delimiter }, items ]
         ];
 
         PopupMenu[

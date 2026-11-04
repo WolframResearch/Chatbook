@@ -415,7 +415,7 @@ VerificationTest[
         {
             { },
             <| "Model" -> <| "Service" -> "OpenAI", "Name" -> Automatic |>, "ServiceDefaultModel" -> <| |> |>,
-            { Automatic -> "Automatic", Delimiter, "gpt-3.5-turbo" -> "GPT-3.5", "gpt-4o" -> "GPT-4o" }
+            { Automatic -> Wolfram`Chatbook`Common`tr[ "Automatic" ], Delimiter, "gpt-3.5-turbo" -> "GPT-3.5", "gpt-4o" -> "GPT-4o" }
         },
         Null
     },
