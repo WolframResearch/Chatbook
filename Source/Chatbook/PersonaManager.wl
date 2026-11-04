@@ -175,15 +175,9 @@ CreatePersonaManagerPanel[ ] := DynamicModule[ { favorites, delimiterColor, dial
         delimiterColor = CurrentValue[{StyleDefinitions, "DialogDelimiter", CellFrameColor}];
         GetPersonaData[]; (* sets $CachedPersonaData *)
         (* make sure there are no unexpected extra personas *)
-        Enclose[
-            CurrentChatSettings[ $FrontEnd, "VisiblePersonas" ] = ConfirmBy[
-                Quiet @ Intersection[ CurrentChatSettings[ $FrontEnd, "VisiblePersonas" ], Keys @ $CachedPersonaData ],
-                ListQ
-            ]
-        ]
+        removeUninstalledVisiblePersonas[ ]
     ),
     Deinitialization :> (
-        If[ MatchQ[ favorites, { ___String } ], CurrentChatSettings[ $FrontEnd, "PersonaFavorites" ] = favorites ];
         If[ Head[ NotebookGet @ dialogWindow ] === Notebook,
             NotebookClose @ dialogWindow; System`FEDump`$DialogReturnValue = $Canceled; System`FEDump`$DialogDone = True
         ];
@@ -191,6 +185,22 @@ CreatePersonaManagerPanel[ ] := DynamicModule[ { favorites, delimiterColor, dial
 ];
 
 CreatePersonaManagerPanel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*removeUninstalledVisiblePersonas*)
+removeUninstalledVisiblePersonas // beginDefinition;
+
+removeUninstalledVisiblePersonas[ ] :=
+    removeUninstalledVisiblePersonas[ CurrentChatSettings[ $FrontEnd, "VisiblePersonas" ], $CachedPersonaData ];
+
+removeUninstalledVisiblePersonas[ current: { ___String }, personas_Association? AssociationQ ] /;
+    ! SubsetQ[ Keys @ personas, current ] :=
+        CurrentChatSettings[ $FrontEnd, "VisiblePersonas" ] = Select[ current, KeyExistsQ[ personas, # ] & ];
+
+removeUninstalledVisiblePersonas[ _, _ ] := Null;
+
+removeUninstalledVisiblePersonas // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

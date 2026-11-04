@@ -1433,35 +1433,20 @@ MakeChatOutputCellDingbat[ ] := makeChatOutputActiveCellDingbat[ ];
 filterPersonas // beginDefinition;
 
 filterPersonas[ targetObj_ ] :=
-Module[ { personas },
+Module[ { personas, visible, favorites },
 	personas = GetPersonasAssociation[ "IncludeHidden" -> False ];
 
 	RaiseConfirmMatch[personas, <| (_String -> _Association)... |>];
 
-	(* initialize PrivateFrontEndOptions if they aren't already present or somehow broke *)
-	If[!MatchQ[CurrentChatSettings[$FrontEnd, "VisiblePersonas"], {___String}],
-        CurrentChatSettings[$FrontEnd, "VisiblePersonas"] = DeleteCases[
-			Keys[personas],
-			Alternatives["Birdnardo", "RawModel", "Wolfie"]
-		]
-	];
-	If[!MatchQ[CurrentChatSettings[$FrontEnd, "PersonaFavorites"], {___String}],
-        CurrentChatSettings[$FrontEnd, "PersonaFavorites"] = {"WolframAIAssistant", "PlainChat"}
-	];
+	visible   = Replace[ CurrentChatSettings[ $FrontEnd, "VisiblePersonas"  ], Except[ { ___String } ] :> $corePersonaNames ];
+	favorites = Replace[ CurrentChatSettings[ $FrontEnd, "PersonaFavorites" ], Except[ { ___String } ] :> $corePersonaNames ];
 
 	(* only show visible personas and sort visible personas based on favorites setting *)
-	personas = KeyTake[
-		personas,
-		CurrentChatSettings[$FrontEnd, "VisiblePersonas"]
-	];
-	personas = With[{
-		favorites = CurrentChatSettings[$FrontEnd, "PersonaFavorites"]
-	},
-		Association[
-			(* favorites appear in the exact order provided in the CurrentValue *)
-			KeyTake[personas, favorites],
-			KeySort @ KeyTake[personas, Complement[Keys[personas], favorites]]
-		]
+	personas = KeyTake[ personas, visible ];
+	personas = Association[
+		(* favorites appear in the exact order provided in the CurrentValue *)
+		KeyTake[personas, favorites],
+		KeySort @ KeyTake[personas, Complement[Keys[personas], favorites]]
 	];
 
 	(*

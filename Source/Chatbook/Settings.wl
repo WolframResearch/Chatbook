@@ -62,6 +62,7 @@ $defaultChatSettings = <|
     "OpenAIAPICompletionURL"         -> "https://api.openai.com/v1/chat/completions",
     "OpenAIKey"                      -> Automatic,
     "OpenToolCallBoxes"              -> Automatic,
+    "PersonaFavorites"               -> $corePersonaNames,
     "PresencePenalty"                -> Automatic,
     "ProcessingFunctions"            :> $DefaultChatProcessingFunctions,
     "PromptGeneratorMessagePosition" -> 2,

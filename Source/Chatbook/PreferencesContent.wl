@@ -108,7 +108,10 @@ createPreferencesContent[ ] := Enclose[
             ),
             SynchronousInitialization -> False,
             UnsavedVariables          :> { buildID, state },
-            Deinitialization          :> (CurrentChatSettings[ $FrontEnd, "CurrentPreferencesTab" ] = tab)
+            Deinitialization          :> If[
+                tab =!= Replace[ CurrentChatSettings[ $FrontEnd, "CurrentPreferencesTab" ], $$unspecified -> "Services" ],
+                CurrentChatSettings[ $FrontEnd, "CurrentPreferencesTab" ] = tab
+            ]
 
         ]
     ],
@@ -2291,6 +2294,8 @@ $notebooksTabSettingKeys = {
     "UserInstructions"
 };
 
+$personasTabSettingKeys = { "PersonaFavorites", "VisiblePersonas" };
+
 resetChatPreferences // beginDefinition;
 
 resetChatPreferences[ Dynamic[ dmPrefCache_ ], "Notebooks" ] := (
@@ -2301,8 +2306,8 @@ resetChatPreferences[ Dynamic[ dmPrefCache_ ], "Notebooks" ] := (
 
 resetChatPreferences[ Dynamic[ dmPrefCache_ ], "Personas" ] := (
     (* TODO: choice dialog to uninstall personas *)
-    dmPrefCache[ "VisiblePersonas"  ] = CurrentChatSettings[ $FrontEnd, "VisiblePersonas"  ] = $corePersonaNames;
-    dmPrefCache[ "PersonaFavorites" ] = CurrentChatSettings[ $FrontEnd, "PersonaFavorites" ] = $corePersonaNames;
+    unsetChatSettingsKeys[ $FrontEnd, $personasTabSettingKeys ];
+    dmPrefCache = CurrentChatSettings[ $FrontEnd ];
     updateDynamics[ "Personas" ];
 );
 
