@@ -768,7 +768,15 @@ makeModelNameSelector[ dmPrefCache_, service_, model_, modelNameSelector_, state
         PopupMenu[
             Dynamic[
                 extractModelName @ Lookup[ dmPrefCache, "Model" ],
-                Function[ If[ StringQ @ #, modelSelectCallback[ #, dmPrefCache, service, model ] ] ]
+                Function[
+                    If[ StringQ @ #,
+                        dmPrefCache[ "ServiceDefaultModel" ] = Replace[
+                            Lookup[ dmPrefCache, "ServiceDefaultModel", <| |> ],
+                            Except[ _Association ] -> <| |>
+                        ];
+                        modelSelectCallback[ #, dmPrefCache, service, model ]
+                    ]
+                ]
             ],
             items,
             ImageSize -> Automatic
