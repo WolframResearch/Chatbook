@@ -141,6 +141,18 @@ VerificationTest[
     TestID   -> "RelatedWolframAlphaResults-DocumentationProvided-UsingDocumentationQ-Default@@Tests/RelatedWolframAlphaResults.wlt:137,1-142,2"
 ]
 
+(* Both documentation prompt generators provide documentation: *)
+VerificationTest[
+    Wolfram`Chatbook`PromptGenerators`RelatedWolframAlphaResults`Private`usingDocumentationQ /@ {
+        { Wolfram`Chatbook`Common`$defaultPromptGenerators[ "RelatedDocumentation" ] },
+        { Wolfram`Chatbook`Common`$defaultPromptGenerators[ "RelatedDocumentationList" ] },
+        { Wolfram`Chatbook`Common`$defaultPromptGenerators[ "WebSearch" ] }
+    },
+    { True, True, False },
+    SameTest -> MatchQ,
+    TestID   -> "RelatedWolframAlphaResults-UsingDocumentationQ-Generators"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)
 
 (* ::**************************************************************************************************************:: *)

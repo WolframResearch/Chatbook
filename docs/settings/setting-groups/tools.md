@@ -47,16 +47,18 @@ If `WolframLanguageEvaluator` is among the selected tools, `resolveTools` trigge
 
 ### Persona Overrides
 
-- **AgentOne / AgentOneCoder**: `{"WolframLanguageEvaluator", "DocumentationSearcher", "WolframAlpha", ParentList}`
-- **CodeAssistant**: `{"WolframLanguageEvaluator", "DocumentationSearcher", "WolframAlpha", "WebFetcher", "FileReader", ParentList}`
-- **NotebookAssistant**: `{"WolframLanguageEvaluator", "DocumentationSearcher", "WolframAlpha", "CreateNotebook", "WebFetcher", "FileReader", ParentList}`
-- **Wolfie**: `{"WolframLanguageEvaluator", "DocumentationSearcher", "WolframAlpha", "WebSearcher", "WebFetcher", "FileReader", ParentList}`
-- **Birdnardo**: `{"WolframLanguageEvaluator", "DocumentationSearcher", "WolframAlpha", "WebSearcher", "WebFetcher", "WebImageSearcher", "FileReader", ParentList}`
+- **AgentOne / AgentOneCoder**: `{"WolframLanguageEvaluator", "DocumentationSearcher", "DocumentationLookup", "WolframAlpha", ParentList}`
+- **CodeAssistant**: `{"WolframLanguageEvaluator", "DocumentationSearcher", "DocumentationLookup", "WolframAlpha", "WebFetcher", "FileReader", ParentList}`
+- **NotebookAssistant / WolframAIAssistant**: `{"WolframLanguageEvaluator", "DocumentationSearcher", "DocumentationLookup", "WolframAlpha", "CreateNotebook", "WebFetcher", "FileReader", ParentList}`
+- **Wolfie**: `{"WolframLanguageEvaluator", "DocumentationSearcher", "DocumentationLookup", "WolframAlpha", "WebSearcher", "WebFetcher", "FileReader", ParentList}`
+- **Birdnardo**: `{"WolframLanguageEvaluator", "DocumentationSearcher", "DocumentationLookup", "WolframAlpha", "WebSearcher", "WebFetcher", "WebImageSearcher", "FileReader", ParentList}`
 - **WolframAlpha**: `{"WolframAlpha", ParentList}`
 - **PlainChat**: `{"WebSearcher", "WebImageSearcher", "WebFetcher", "FileReader", ParentList}`
 - **CodeWriter**: `{ParentList}`
 - **RawModel**: `None` (no tools)
 - **Wolfie / Birdnardo / NotebookAssistant**: custom tool lists with `ParentList`
+
+The personas with tools list `"DocumentationLookup"` because their `"RelatedDocumentationList"` prompt generator gives a catalog of documentation snippets, which the model retrieves with that tool (see [`"PromptGenerators"`](prompting.md#promptgenerators)).
 
 ### Integration Points
 

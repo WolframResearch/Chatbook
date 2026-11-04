@@ -226,7 +226,11 @@ VerificationTest[
     Wolfram`Chatbook`Common`initializeRelatedDocumentation[ None ],
     <|
         "VectorDatabases" -> $expectedVectorDBNames,
-        "SnippetIndexes"  -> <| "Documentation" -> _Integer? Positive, "ResourceSystem" -> _Integer? Positive |>
+        "SnippetIndexes"  -> <|
+            "Documentation"  -> _Integer? Positive,
+            "ResourceSystem" -> _Integer? Positive,
+            "Descriptions"   -> _Integer? Positive
+        |>
     |>,
     SameTest -> MatchQ,
     TestID   -> "InitializeRelatedDocumentation@@Tests/WorkspaceChatInitialization.wlt:225,1-233,2"

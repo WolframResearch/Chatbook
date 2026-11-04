@@ -121,6 +121,9 @@ documentationSearchFormatter // endDefinition;
 (*formatDocumentationSearchResults*)
 formatDocumentationSearchResults // beginDefinition;
 
+formatDocumentationSearchResults[ result_String ] /; StringTrim @ result === "" :=
+    result;
+
 formatDocumentationSearchResults[ result_String ] := Enclose[
     Module[ { split },
         split = ConfirmMatch[ StringTrim @ StringSplit[ result, "\n======\n" ], { __String }, "Split" ];
