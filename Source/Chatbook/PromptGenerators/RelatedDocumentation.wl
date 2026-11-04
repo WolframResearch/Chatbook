@@ -86,6 +86,7 @@ $streamableSnippetVersions := $streamableSnippetVersions = <|
 (* BEGIN GENERATED: StreamableSnippetDownloadMetadata *)
 (* Expected archive sizes and SHA-256 hashes for downloaded snippet archives (keyed by name and version): *)
 $streamableSnippetArchiveInfo = <|
+    { "Descriptions"  , "1.0.0"           } -> {  9565194, "e34724b651e0818a7ad6ae140c28385713bf876fa753c1da901e521c7f309d8a" },
     { "Documentation" , "14-3-0-11967661" } -> { 38099319, "064bac98325395906fc65788baa1b1411ce9c1ed990a8182a42154119747f9e4" },
     { "Documentation" , "15-0-0-13528852" } -> { 37084178, "a8962c418468149bf3d57a8664051bfd567fdd645c19e3ba33675e834af61510" },
     { "ResourceSystem", "1.1.0"           } -> {  9948586, "306b693c986200479069616b24c3658331dba79075246988ae635af6f646b178" }
