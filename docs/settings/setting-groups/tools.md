@@ -173,7 +173,7 @@ When `Automatic`, resolved per model via `toolsEnabledQ` (`Settings.wl`):
 - **Stop tokens**: `chooseStopTokens` (used by `autoStopTokens`) returns `{ "[INFO]" }` when `$AutomaticAssistance` is `True` and `ToolsEnabled` is `False`, otherwise `None`.
 - **Hybrid tool method**: `hybridToolMethodQ` returns `False` when `ToolsEnabled` is `False`.
 - **Tool example prompt style**: `chooseToolExamplePromptStyle` returns `None` when `ToolsEnabled` is `False`.
-- **Tool Manager warning**: `toolModelWarning` (`ToolManager.wl`) displays `$toolsDisabledWarning` when `False`.
+- **Tool Manager warning**: `toolModelWarning` (`ToolManager.wl`) displays the localized `"ToolManagerToolsDisabled"` warning when `False`.
 
 ### Integration Points
 

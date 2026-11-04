@@ -169,6 +169,7 @@
 "ToolManagerTooltipNonDeletable1" -> "`name` \:662F\:5185\:7F6E\:5DE5\:5177\:ff0c\:65E0\:6CD5\:5220\:9664\:3002",
 "ToolManagerTooltipNonDeletable2" -> "`name` \:662F\:7531\:89D2\:8272 `persona` \:63D0\:4F9B\:7684\:ff0c\:4E0D\:80FD\:5355\:72EC\:5220\:9664\:3002",
 "ToolManagerDeleteTool" -> "\:5220\:9664\:5DE5\:5177",
+"ToolManagerToolsDisabled" -> "Tools are disabled in the current chat settings.",
 
 "UIInitializeChatbook" -> "\:6B63\:5728\:521D\:59CB\:5316\[Ellipsis]",
 "UIEnableChatFeatures" -> "\:542F\:7528 AI \:804A\:5929\:529F\:80FD",

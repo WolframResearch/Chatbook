@@ -576,7 +576,7 @@ toolModelWarning[ None | { } | HoldPattern @ SelectedCells @ None ] := "";
 toolModelWarning[ { cell_CellObject, ___ } ] := toolModelWarning @ cell;
 toolModelWarning[ scope_ ] := toolModelWarning[ scope, currentChatSettings[ scope, "ToolsEnabled" ] ];
 toolModelWarning[ scope_, True ] := "";
-toolModelWarning[ scope_, False ] := $toolsDisabledWarning;
+toolModelWarning[ scope_, False ] := toolWarningRow @ tr[ "ToolManagerToolsDisabled" ];
 toolModelWarning[ scope_, enabled_ ] := toolModelWarning[ scope, enabled, currentChatSettings[ scope, "Model" ] ];
 toolModelWarning[ scope_, enabled_, KeyValuePattern[ "Name" -> Automatic ] ] := "";
 toolModelWarning[ scope_, enabled_, model_? toolsEnabledQ ] := "";
@@ -591,14 +591,7 @@ toolModelWarning0[ scope_, model_String ] := Enclose[
         name     = ConfirmBy[ modelDisplayName @ model, StringQ, "ModelName" ];
         template = ConfirmBy[ Chatbook::ModelToolSupport, StringQ, "Template" ];
         message  = ConfirmBy[ TemplateApply[ template, { name } ], StringQ, "Message" ];
-        Grid[
-            { {
-                Spacer[ 5 ],
-                Style[ "\[WarningSign]", FontWeight -> Bold, FontColor -> Gray, FontSize -> 18 ],
-                Style[ message, FontColor -> Gray, FontSlant -> Italic ]
-            } },
-            Alignment -> { Left, Top }
-        ]
+        toolWarningRow @ message
     ],
     throwInternalFailure[ toolModelWarning0[ scope, model ], ## ] &
 ];
@@ -609,6 +602,22 @@ toolModelWarning0[ scope_, model: Except[ _String ] ] :=
     ];
 
 toolModelWarning0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*toolWarningRow*)
+toolWarningRow // beginDefinition;
+
+toolWarningRow[ message_ ] := Grid[
+    { {
+        Spacer[ 5 ],
+        Style[ "\[WarningSign]", FontWeight -> Bold, FontColor -> Gray, FontSize -> 18 ],
+        Style[ message, FontColor -> Gray, FontSlant -> Italic ]
+    } },
+    Alignment -> { Left, Top }
+];
+
+toolWarningRow // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
