@@ -87,6 +87,57 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*Services Tab*)
+VerificationTest[
+    UsingFrontEnd @ Module[ { original, cache, trigger, service, model, state, modelNameSelector },
+        original = CurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings" } ];
+        WithCleanup[
+            CurrentChatSettings[ $FrontEnd, "Model" ] = <| "Service" -> "OpenAI", "Name" -> "gpt-4.1" |>;
+            cache   = CurrentChatSettings[ $FrontEnd ];
+            trigger = Wolfram`Chatbook`Dynamics`Private`$preferencesTrigger;
+            Needs[ "LLMServices`" -> None ];
+            Block[ { LLMServices`ResetServices },
+                Wolfram`Chatbook`PreferencesContent`Private`resetChatPreferences[ Dynamic @ cache, "Services" ]
+            ];
+            cache   = CurrentChatSettings[ $FrontEnd ];
+            service = Wolfram`Chatbook`PreferencesContent`Private`extractServiceName @ Lookup[ cache, "Model" ];
+            model   = Wolfram`Chatbook`PreferencesContent`Private`extractModelName @ Lookup[ cache, "Model" ];
+            state   = "Loaded";
+            modelNameSelector = Wolfram`Chatbook`Common`catchAlways @
+                Wolfram`Chatbook`PreferencesContent`Private`makeModelNameSelector[
+                    cache,
+                    service,
+                    model,
+                    modelNameSelector,
+                    state
+                ];
+            {
+                Wolfram`Chatbook`Dynamics`Private`$preferencesTrigger > trigger,
+                service,
+                modelNameSelector
+            },
+            CurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings" } ] = original;
+            Wolfram`Chatbook`Settings`Private`$currentSettingsCache = <| |>
+        ]
+    ],
+    { True, "LLMKit", "" },
+    SameTest -> MatchQ,
+    TestID   -> "ResetChatPreferences-Services-RebuildsPanel@@Tests/PreferencesContent.wlt:91,1-126,2"
+]
+
+VerificationTest[
+    UsingFrontEnd @ Module[ { boxes1, boxes2 },
+        boxes1 = ToBoxes @ Wolfram`Chatbook`Common`createPreferencesContent[ ];
+        boxes2 = ToBoxes @ Wolfram`Chatbook`Common`createPreferencesContent[ ];
+        { MatchQ[ boxes1, _DynamicModuleBox ], boxes1 =!= boxes2 }
+    ],
+    { True, True },
+    SameTest -> MatchQ,
+    TestID   -> "CreatePreferencesContent-UniqueBoxesPerRebuild@@Tests/PreferencesContent.wlt:128,1-137,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*Cloud*)
 VerificationTest[
     UsingFrontEnd @ Module[ { original, file, stored },
@@ -126,7 +177,7 @@ VerificationTest[
         "VisiblePersonas"   -> { "Birdnardo" }
     |>,
     SameTest -> MatchQ,
-    TestID   -> "UnsetChatSettingsKeys-Cloud@@Tests/PreferencesContent.wlt:91,1-130,2"
+    TestID   -> "UnsetChatSettingsKeys-Cloud@@Tests/PreferencesContent.wlt:142,1-181,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

@@ -45,7 +45,9 @@ createPreferencesContent // beginDefinition;
 createPreferencesContent[ ] := Enclose[
     Module[ { tabs, tabView, reset },
         (* Retrieve the dynamic content for each preferences tab, confirming that it matches the expected types: *)
-        DynamicModule[ { tab, dmPrefCache, default, service, model, state, serviceSelector = $loadingPopupMenu, modelNameSelector = $loadingPopupMenu },
+        (* buildID makes each rebuild's boxes unique, so the front end replaces the DynamicModule and runs its
+           Initialization again instead of keeping the old instance with stale service and model values: *)
+        DynamicModule[ { buildID = CreateUUID[ ], tab, dmPrefCache, default, service, model, state, serviceSelector = $loadingPopupMenu, modelNameSelector = $loadingPopupMenu },
 
             tabs = createTabViewTabs[ $displayedPreferencesPages, dmPrefCache, default, service, model, state, serviceSelector, modelNameSelector ];
 
@@ -105,7 +107,7 @@ createPreferencesContent[ ] := Enclose[
                 state = "Loaded";
             ),
             SynchronousInitialization -> False,
-            UnsavedVariables          :> { state },
+            UnsavedVariables          :> { buildID, state },
             Deinitialization          :> (CurrentChatSettings[ $FrontEnd, "CurrentPreferencesTab" ] = tab)
 
         ]
@@ -2322,6 +2324,7 @@ resetChatPreferences[ Dynamic[ dmPrefCache_ ], "Services" ] := (
     Needs[ "LLMServices`" -> None ];
     LLMServices`ResetServices[ ];
     InvalidateServiceCache[ ];
+    updateDynamics[ "Preferences" ];
 );
 
 resetChatPreferences // endDefinition;
