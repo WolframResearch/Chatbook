@@ -1012,4 +1012,134 @@ VerificationTest[
     TestID   -> "TaskWaitYield-TimeConstraint@@Tests/StopChat.wlt:1004,1-1013,2"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*StopChatIn*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Definitions*)
+VerificationTest[
+    (* A chat in a chat notebook, the assistant window, and the sidebar of a user notebook. The window's chat cells are
+       top-level cells; the sidebar's are nested in its scrolling content cell, which is in the sidebar cell: *)
+    $windowNB      = NotebookObject[ "TestWindow", "TestWindow" ];
+    $chatNB        = NotebookObject[ "TestChatNotebook", "TestChatNotebook" ];
+    $userNB        = NotebookObject[ "TestUserNotebook", "TestUserNotebook" ];
+    $sidebarCell   = CellObject[ "TestSidebarCell" ];
+    $windowInput   = CellObject[ "TestWindowInput" ];
+    $chatNBInput   = CellObject[ "TestChatNotebookInput" ];
+    $sidebarInput  = CellObject[ "TestSidebarInput" ];
+
+    (* Evaluates eval with the front end stubbed out, and with `running` as the chat that is evaluating: *)
+    withStubbedChatCells // Attributes = { HoldRest };
+    withStubbedChatCells[ running_, eval_ ] := Block[
+        {
+            Wolfram`Chatbook`$ChatEvaluationCell = running,
+            Wolfram`Chatbook`Common`parentNotebook = Replace[ {
+                $windowInput  -> $windowNB,
+                $chatNBInput  -> $chatNB,
+                $sidebarInput -> $userNB,
+                _             -> $Failed
+            } ],
+            Wolfram`Chatbook`Common`parentCell = Replace[ {
+                $sidebarInput                     -> CellObject[ "TestScrollingCell" ],
+                CellObject[ "TestScrollingCell" ] -> $sidebarCell,
+                _                                 -> $Failed
+            } ]
+        },
+        eval
+    ];
+
+    (* Whether ChatbookAction[ "StopChatIn", container ] stopped the chat that is evaluating: *)
+    stopChatInStopped[ running_, container_ ] := Module[ { stopped = False },
+        withStubbedChatCells[
+            running,
+            Block[ { Wolfram`Chatbook`Actions`StopChat = (stopped = True) & },
+                Wolfram`Chatbook`ChatbookAction[ "StopChatIn", container ]
+            ]
+        ];
+        stopped
+    ],
+    Null,
+    SameTest -> MatchQ,
+    TestID   -> "StopChatIn-Definitions@@Tests/StopChat.wlt:1022,1-1066,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*chatEvaluatingInQ*)
+VerificationTest[
+    withStubbedChatCells[
+        $chatNBInput,
+        Wolfram`Chatbook`Common`chatEvaluatingInQ /@ { $windowNB, $chatNB, $sidebarCell }
+    ],
+    { False, True, False },
+    SameTest -> SameQ,
+    TestID   -> "ChatEvaluatingInQ-ChatNotebook-robustness-4@@Tests/StopChat.wlt:1071,1-1079,2"
+]
+
+VerificationTest[
+    withStubbedChatCells[
+        $windowInput,
+        Wolfram`Chatbook`Common`chatEvaluatingInQ /@ { $windowNB, $chatNB, $sidebarCell }
+    ],
+    { True, False, False },
+    SameTest -> SameQ,
+    TestID   -> "ChatEvaluatingInQ-Window@@Tests/StopChat.wlt:1081,1-1089,2"
+]
+
+(* A sidebar chat is in its sidebar cell, but not in the window or in the user notebook's own chats: *)
+VerificationTest[
+    withStubbedChatCells[
+        $sidebarInput,
+        Wolfram`Chatbook`Common`chatEvaluatingInQ /@ { $windowNB, $chatNB, $sidebarCell, CellObject[ "OtherSidebar" ] }
+    ],
+    { False, False, True, False },
+    SameTest -> SameQ,
+    TestID   -> "ChatEvaluatingInQ-Sidebar@@Tests/StopChat.wlt:1092,1-1100,2"
+]
+
+VerificationTest[
+    withStubbedChatCells[
+        None,
+        Wolfram`Chatbook`Common`chatEvaluatingInQ /@ { $windowNB, $sidebarCell, $Failed }
+    ],
+    { False, False, False },
+    SameTest -> SameQ,
+    TestID   -> "ChatEvaluatingInQ-NoChat@@Tests/StopChat.wlt:1102,1-1110,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Scoped Stop*)
+
+(* The assistant window's stop button must not stop a chat in another notebook: *)
+VerificationTest[
+    stopChatInStopped[ $chatNBInput, $windowNB ],
+    False,
+    SameTest -> SameQ,
+    TestID   -> "StopChatIn-OtherNotebook-robustness-4@@Tests/StopChat.wlt:1117,1-1122,2"
+]
+
+VerificationTest[
+    stopChatInStopped[ $sidebarInput, $windowNB ],
+    False,
+    SameTest -> SameQ,
+    TestID   -> "StopChatIn-Window-SidebarChat@@Tests/StopChat.wlt:1124,1-1129,2"
+]
+
+VerificationTest[
+    { stopChatInStopped[ $windowInput, $windowNB ], stopChatInStopped[ $sidebarInput, $sidebarCell ] },
+    { True, True },
+    SameTest -> SameQ,
+    TestID   -> "StopChatIn-OwnChat@@Tests/StopChat.wlt:1131,1-1136,2"
+]
+
+VerificationTest[
+    stopChatInStopped[ None, $windowNB ],
+    False,
+    SameTest -> SameQ,
+    TestID   -> "StopChatIn-NoChat@@Tests/StopChat.wlt:1138,1-1143,2"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)

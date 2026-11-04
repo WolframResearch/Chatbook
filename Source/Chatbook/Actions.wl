@@ -107,6 +107,7 @@ chatbookAction[ "RemoveCellAccents"               , args___ ] := removeCellAccen
 chatbookAction[ "Send"                            , args___ ] := SendChat @ args;
 chatbookAction[ "SendFeedback"                    , args___ ] := SendFeedback @ args;
 chatbookAction[ "StopChat"                        , args___ ] := StopChat @ args;
+chatbookAction[ "StopChatIn"                      , args___ ] := stopChatIn @ args;
 chatbookAction[ "TabLeft"                         , args___ ] := TabLeft @ args;
 chatbookAction[ "TabRight"                        , args___ ] := TabRight @ args;
 chatbookAction[ "ToggleFormatting"                , args___ ] := ToggleFormatting @ args;
@@ -778,6 +779,38 @@ StopChat[ $Failed ] :=
     ];
 
 StopChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*stopChatIn*)
+stopChatIn // beginDefinition;
+
+(* The stop buttons of the assistant window and the sidebar only stop a chat that is evaluating in their own container,
+   in case another chat started after the button was drawn. The no-argument StopChat also stops a chat that has no
+   output cell yet: *)
+stopChatIn[ container_ ] := If[ TrueQ @ chatEvaluatingInQ @ container, StopChat[ ] ];
+
+stopChatIn // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*chatEvaluatingInQ*)
+chatEvaluatingInQ // beginDefinition;
+
+(* True if the chat that is evaluating ($ChatEvaluationCell) is in the given container: a notebook (the assistant
+   window, whose chat cells are top-level cells) or a cell that contains the chat's cell (the sidebar). The send/stop
+   buttons call this from a Dynamic that only tracks $ChatEvaluationCell, so the front end calls below only run when
+   a chat starts or ends: *)
+chatEvaluatingInQ[ container_ ] := chatEvaluatingInQ[ container, $ChatEvaluationCell ];
+
+chatEvaluatingInQ[ nbo_NotebookObject, cell_CellObject ] := parentNotebook @ cell === nbo;
+
+chatEvaluatingInQ[ container_CellObject, cell_CellObject ] :=
+    MemberQ[ NestWhileList[ parentCell, cell, MatchQ[ _CellObject ], 1, 10 ], container ];
+
+chatEvaluatingInQ[ _, _ ] := False;
+
+chatEvaluatingInQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

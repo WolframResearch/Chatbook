@@ -103,4 +103,66 @@ VerificationTest[
     TestID   -> "SidebarSend-PrebuiltResource@@Tests/SidebarChatInput.wlt:92,1-104,2"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Send/Stop Button*)
+
+(* The send/stop button's kernel Dynamic must not read DynamicModule variables, which the kernel might not know yet when
+   the sidebar is first drawn; that printed FE`ExecuteInDynamicModule::novaldu (chatbar-8). It shows Stop only for a
+   chat in this sidebar (robustness-4/sidebar-5): *)
+VerificationTest[
+    $inputCellBoxes = Wolfram`Chatbook`Common`makeSidebarChatInputCell[ ];
+    $sendStopDynamic = FirstCase[
+        $inputCellBoxes,
+        PaneSelectorBox[ { False -> _, True -> _ }, d: (Dynamic|DynamicBox)[ ___ ], ___ ] /;
+            ! FreeQ[ d, Wolfram`Chatbook`Common`chatEvaluatingInQ ] :> HoldComplete @ d,
+        Missing[ "NotFound" ],
+        Infinity
+    ],
+    HoldComplete[ (Dynamic|DynamicBox)[
+        TrueQ[ Wolfram`Chatbook`Common`chatEvaluatingInQ[ ParentCell[ EvaluationCell[ ] ] ] ],
+        TrackedSymbols :> { Wolfram`Chatbook`$ChatEvaluationCell }
+    ] ],
+    SameTest -> MatchQ,
+    TestID   -> "SendButton-ScopedDynamic-chatbar-8@@Tests/SidebarChatInput.wlt:113,1-128,2"
+]
+
+VerificationTest[
+    FreeQ[ $sendStopDynamic, s_Symbol /; StringEndsQ[ SymbolName @ Unevaluated @ s, "$$" ] ],
+    True,
+    SameTest -> MatchQ,
+    TestID   -> "SendButton-NoModuleVariablesInDynamic-chatbar-8@@Tests/SidebarChatInput.wlt:130,1-135,2"
+]
+
+VerificationTest[
+    FirstCase[
+        $inputCellBoxes,
+        b: HoldPattern[ ButtonBox[ __ ] ] /; ! FreeQ[ b, "NASidebarChatInputCellStopButton" ] :>
+            FirstCase[ b, HoldPattern[ ButtonFunction :> f_ ] :> HoldComplete @ f, Missing[ ], Infinity ],
+        Missing[ ],
+        Infinity
+    ],
+    HoldComplete[ CompoundExpression[ _, Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChatIn", ParentCell[ EvaluationCell[ ] ] ] ] ],
+    SameTest -> MatchQ,
+    TestID   -> "SendButton-ScopedStop-robustness-4@@Tests/SidebarChatInput.wlt:137,1-148,2"
+]
+
+(* The front end draws the prebuilt sidebar cell, so it must match the source: *)
+VerificationTest[
+    Module[ { files },
+        files = FileNameJoin @ { PacletObject[ "Wolfram/Chatbook" ][ "Location" ], #, "TextResources", "ChatbookResources.tr" } & /@
+            { "FrontEnd", "DarkModeSupport" };
+        With[ { s = StringDelete[ ReadString @ #, WhitespaceCharacter ] },
+            {
+                StringContainsQ[ s, "Wolfram`Chatbook`Common`chatEvaluatingInQ[ParentCell[EvaluationCell[]]]" ],
+                StringContainsQ[ s, "\"StopChatIn\",ParentCell[EvaluationCell[]]" ],
+                StringContainsQ[ s, "$ChatEvaluationCell===Typeset`chatEvalCell$$" ]
+            }
+        ] & /@ Select[ files, FileExistsQ ]
+    ],
+    { { True, True, False }.. },
+    SameTest -> MatchQ,
+    TestID   -> "SendButton-PrebuiltResource@@Tests/SidebarChatInput.wlt:151,1-166,2"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)
