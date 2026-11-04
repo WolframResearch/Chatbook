@@ -144,6 +144,33 @@ VerificationTest[
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Cloud*)
+
+(* The cloud preferences cell doesn't track the "Preferences" trigger, so resets that change the model rebuild it: *)
+VerificationTest[
+    UsingFrontEnd @ Module[ { original, cache, calls = { } },
+        original = CurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings" } ];
+        WithCleanup[
+            Needs[ "LLMServices`" -> None ];
+            Block[
+                {
+                    LLMServices`ResetServices,
+                    Wolfram`Chatbook`Common`forceRefreshCloudPreferences = AppendTo[ calls, "Cloud" ] &
+                },
+                Scan[
+                    (AppendTo[ calls, # ]; Wolfram`Chatbook`PreferencesContent`Private`resetChatPreferences[ Dynamic @ cache, # ]) &,
+                    { "Notebooks", "Services", "Personas", "Tools" }
+                ]
+            ];
+            calls,
+            CurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings" } ] = original;
+            Wolfram`Chatbook`Settings`Private`$currentSettingsCache = <| |>
+        ]
+    ],
+    { "Notebooks", "Cloud", "Services", "Cloud", "Personas", "Tools" },
+    SameTest -> MatchQ,
+    TestID   -> "ResetChatPreferences-RefreshesCloudPreferences@@Tests/PreferencesContent.wlt:149,1-172,2"
+]
+
 VerificationTest[
     UsingFrontEnd @ Module[ { original, file, stored },
         original = CurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings" } ];
@@ -182,7 +209,7 @@ VerificationTest[
         "VisiblePersonas"   -> { "Birdnardo" }
     |>,
     SameTest -> MatchQ,
-    TestID   -> "UnsetChatSettingsKeys-Cloud@@Tests/PreferencesContent.wlt:147,1-186,2"
+    TestID   -> "UnsetChatSettingsKeys-Cloud@@Tests/PreferencesContent.wlt:174,1-213,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -214,7 +241,7 @@ VerificationTest[
         { Wolfram`Chatbook`Common`$corePersonaNames, Wolfram`Chatbook`Common`$corePersonaNames }
     },
     SameTest -> MatchQ,
-    TestID   -> "ResetChatPreferences-Personas-UnsetsKeys@@Tests/PreferencesContent.wlt:191,1-218,2"
+    TestID   -> "ResetChatPreferences-Personas-UnsetsKeys@@Tests/PreferencesContent.wlt:218,1-245,2"
 ]
 
 VerificationTest[
@@ -252,7 +279,7 @@ VerificationTest[
         { Wolfram`Chatbook`Common`$corePersonaNames, Wolfram`Chatbook`Common`$corePersonaNames, 0.3 }
     },
     SameTest -> MatchQ,
-    TestID   -> "ResetChatPreferences-Personas-Cloud@@Tests/PreferencesContent.wlt:220,1-256,2"
+    TestID   -> "ResetChatPreferences-Personas-Cloud@@Tests/PreferencesContent.wlt:247,1-283,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -275,7 +302,7 @@ VerificationTest[
     ],
     { Wolfram`Chatbook`Common`$corePersonaNames, { } },
     SameTest -> MatchQ,
-    TestID   -> "FilterPersonas-ReadingWritesNothing@@Tests/PreferencesContent.wlt:261,1-279,2"
+    TestID   -> "FilterPersonas-ReadingWritesNothing@@Tests/PreferencesContent.wlt:288,1-306,2"
 ]
 
 VerificationTest[
@@ -293,7 +320,7 @@ VerificationTest[
     ],
     { "Wolfie", "Birdnardo", "PlainChat" },
     SameTest -> MatchQ,
-    TestID   -> "FilterPersonas-VisibleAndFavoritesOrder@@Tests/PreferencesContent.wlt:281,1-297,2"
+    TestID   -> "FilterPersonas-VisibleAndFavoritesOrder@@Tests/PreferencesContent.wlt:308,1-324,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -324,7 +351,7 @@ VerificationTest[
     ],
     { True, { } },
     SameTest -> MatchQ,
-    TestID   -> "PersonaManagerPanel-ViewingWritesNothing@@Tests/PreferencesContent.wlt:302,1-328,2"
+    TestID   -> "PersonaManagerPanel-ViewingWritesNothing@@Tests/PreferencesContent.wlt:329,1-355,2"
 ]
 
 VerificationTest[
@@ -348,7 +375,7 @@ VerificationTest[
     ],
     { False, { "RawModel", "PlainChat" } },
     SameTest -> MatchQ,
-    TestID   -> "PersonaManagerPanel-RemovesUninstalledVisiblePersonas@@Tests/PreferencesContent.wlt:330,1-352,2"
+    TestID   -> "PersonaManagerPanel-RemovesUninstalledVisiblePersonas@@Tests/PreferencesContent.wlt:357,1-379,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

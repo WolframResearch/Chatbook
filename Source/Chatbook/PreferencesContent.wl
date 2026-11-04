@@ -2120,7 +2120,10 @@ disconnectService[ Dynamic[ dmPrefCache_ ], service_String ] :=
         SetEnvironment[ key -> None ];
         clearConnectionCache @ service;
         If[ extractServiceName @ Lookup[ dmPrefCache, "Model" ] === service,
-            dmPrefCache[ "Model" ] = CurrentChatSettings[ $FrontEnd, "Model" ] = $DefaultModel
+            dmPrefCache[ "Model" ] = CurrentChatSettings[ $FrontEnd, "Model" ] = $DefaultModel;
+            (* Rebuild the panel so the service and model selectors show the new default model: *)
+            updateDynamics[ "Preferences" ];
+            forceRefreshCloudPreferences[ ]
         ];
         updateDynamics[ "Services" ]
     ];
@@ -2282,7 +2285,8 @@ resetButton[ Dynamic[ tab_ ], Dynamic[ dmPrefCache_ ] ] :=
 (* ::Subsubsection::Closed:: *)
 (*resetChatPreferences*)
 (* These must match the controls shown on the Notebooks tab. The model selector is shared with the Services tab, so
-   resetting either tab resets the model; updateDynamics[ "Preferences" ] rebuilds both tabs so they show the new value. *)
+   resetting either tab resets the model; updateDynamics[ "Preferences" ] rebuilds both tabs so they show the new value.
+   The cloud preferences cell doesn't track that trigger, so forceRefreshCloudPreferences rebuilds it instead. *)
 $notebooksTabSettingKeys = {
     (* The "Assistance" checkbox is currently disabled from appearing (see makeDefaultSettingsContent): *)
     (* "Assistance", *)
@@ -2309,6 +2313,7 @@ resetChatPreferences[ Dynamic[ dmPrefCache_ ], "Notebooks" ] := (
     unsetChatSettingsKeys[ $FrontEnd, $notebooksTabSettingKeys ];
     dmPrefCache = CurrentChatSettings[ $FrontEnd ];
     updateDynamics[ "Preferences" ];
+    forceRefreshCloudPreferences[ ];
 );
 
 resetChatPreferences[ Dynamic[ dmPrefCache_ ], "Personas" ] := (
@@ -2337,6 +2342,7 @@ resetChatPreferences[ Dynamic[ dmPrefCache_ ], "Services" ] := (
     LLMServices`ResetServices[ ];
     InvalidateServiceCache[ ];
     updateDynamics[ "Preferences" ];
+    forceRefreshCloudPreferences[ ];
 );
 
 resetChatPreferences // endDefinition;

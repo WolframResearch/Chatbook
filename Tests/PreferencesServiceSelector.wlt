@@ -525,4 +525,56 @@ VerificationTest[
     TestID   -> "ServiceConnectButton-Canceled@@Tests/PreferencesServiceSelector.wlt:504,1-526,2"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*disconnectService*)
+
+(* Disconnecting the selected service rebuilds the panel so it shows the new default model: *)
+VerificationTest[
+    Module[ { calls = { }, cache },
+        cache = <| "Model" -> <| "Service" -> "DisconnectTestService", "Name" -> "m" |> |>;
+        Block[
+            {
+                SystemCredential,
+                SetEnvironment,
+                Wolfram`Chatbook`PreferencesContent`Private`clearConnectionCache = Null &,
+                Wolfram`Chatbook`Common`updateDynamics = AppendTo[ calls, # ] &,
+                Wolfram`Chatbook`Common`forceRefreshCloudPreferences = AppendTo[ calls, "Cloud" ] &,
+                CurrentChatSettings
+            },
+            SystemCredential /: Unset[ SystemCredential[ _ ] ] := Null;
+            CurrentChatSettings /: Set[ CurrentChatSettings[ ___ ], v_ ] := v;
+            Wolfram`Chatbook`PreferencesContent`Private`disconnectService[ Dynamic @ cache, "DisconnectTestService" ]
+        ];
+        { calls, cache[ "Model" ] === $DefaultModel }
+    ],
+    { { "Preferences", "Cloud", "Services" }, True },
+    SameTest -> MatchQ,
+    TestID   -> "DisconnectService-SelectedService@@Tests/PreferencesServiceSelector.wlt:533,1-554,2"
+]
+
+(* Disconnecting another service leaves the panel alone: *)
+VerificationTest[
+    Module[ { calls = { }, cache },
+        cache = <| "Model" -> <| "Service" -> "OtherTestService", "Name" -> "m" |> |>;
+        Block[
+            {
+                SystemCredential,
+                SetEnvironment,
+                Wolfram`Chatbook`PreferencesContent`Private`clearConnectionCache = Null &,
+                Wolfram`Chatbook`Common`updateDynamics = AppendTo[ calls, # ] &,
+                Wolfram`Chatbook`Common`forceRefreshCloudPreferences = AppendTo[ calls, "Cloud" ] &,
+                CurrentChatSettings
+            },
+            SystemCredential /: Unset[ SystemCredential[ _ ] ] := Null;
+            CurrentChatSettings /: Set[ CurrentChatSettings[ ___ ], v_ ] := v;
+            Wolfram`Chatbook`PreferencesContent`Private`disconnectService[ Dynamic @ cache, "DisconnectTestService" ]
+        ];
+        { calls, cache[ "Model" ] }
+    ],
+    { { "Services" }, <| "Service" -> "OtherTestService", "Name" -> "m" |> },
+    SameTest -> MatchQ,
+    TestID   -> "DisconnectService-OtherService@@Tests/PreferencesServiceSelector.wlt:557,1-578,2"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)
