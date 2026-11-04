@@ -153,6 +153,14 @@ The Chatbook notebook stylesheet (`FrontEnd/StyleSheets/Chatbook.nb`) is generat
 - Pattern variables use `$$` prefix for reusable patterns (e.g., `$$chatInputStyle`, `$$string`)
 - Build scripts use ``Wolfram`PacletCICD` `` for CI/CD utilities
 
+## Code style and review
+
+Code review is the bottleneck, so simple and reviewable beats complete:
+
+- Prefer the smaller design. Do not chase edge cases that are unlikely in practice; note them as a comment instead.
+- After making changes, consider whether it's more complicated than it needs to be. Try to simplify when appropriate.
+- A good PR that gets merged is better than a perfect one that never gets reviewed because it's too large or complex.
+
 ## Writing and Running Tests
 
 Use the TestReport MCP tool to run tests.
