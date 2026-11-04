@@ -425,6 +425,51 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*modelSelectCallback*)
+
+(* A model set outside the UI may leave ServiceDefaultModel unset, which shouldn't be stored as a Missing[...]: *)
+VerificationTest[
+    Module[ { writes = { }, cache, svc = "OpenAI", mdl = "gpt-4o" },
+        cache = <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-4o" |> |>;
+        Block[ { CurrentChatSettings },
+            CurrentChatSettings /: Set[ CurrentChatSettings[ args___ ], v_ ] := (AppendTo[ writes, { args } -> v ]; v);
+            Wolfram`Chatbook`PreferencesContent`Private`modelSelectCallback[ "gpt-3.5-turbo", cache, svc, mdl ]
+        ];
+        { writes, cache }
+    ],
+    {
+        {
+            { $FrontEnd, "Model" } -> <| "Service" -> "OpenAI", "Name" -> "gpt-3.5-turbo" |>,
+            { $FrontEnd, "ServiceDefaultModel" } -> <| "OpenAI" -> "gpt-3.5-turbo" |>
+        },
+        <|
+            "Model"               -> <| "Service" -> "OpenAI", "Name" -> "gpt-3.5-turbo" |>,
+            "ServiceDefaultModel" -> <| "OpenAI" -> "gpt-3.5-turbo" |>
+        |>
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ModelSelectCallback-NoServiceDefaultModel@@Tests/PreferencesServiceSelector.wlt:431,1-452,2"
+]
+
+VerificationTest[
+    Module[ { cache, svc = "OpenAI", mdl = "gpt-4o" },
+        cache = <|
+            "Model"               -> <| "Service" -> "OpenAI", "Name" -> "gpt-4o" |>,
+            "ServiceDefaultModel" -> <| "ServiceB" -> "b" |>
+        |>;
+        Block[ { CurrentChatSettings },
+            CurrentChatSettings /: Set[ CurrentChatSettings[ ___ ], v_ ] := v;
+            Wolfram`Chatbook`PreferencesContent`Private`modelSelectCallback[ "gpt-3.5-turbo", cache, svc, mdl ]
+        ];
+        cache[ "ServiceDefaultModel" ]
+    ],
+    <| "ServiceB" -> "b", "OpenAI" -> "gpt-3.5-turbo" |>,
+    SameTest -> MatchQ,
+    TestID   -> "ModelSelectCallback-KeepsOtherServices@@Tests/PreferencesServiceSelector.wlt:454,1-469,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*serviceConnectButton*)
 
 (* After connecting, the Connect button always fetches again, even if a failure was cached just before: *)
@@ -452,7 +497,7 @@ VerificationTest[
     ],
     { "Connect", { "Fetch", False }, { "Callback", "UnreachableTestService" } },
     SameTest -> MatchQ,
-    TestID   -> "ServiceConnectButton-ClearsNoModelListCache@@Tests/PreferencesServiceSelector.wlt:431,1-456,2"
+    TestID   -> "ServiceConnectButton-ClearsNoModelListCache@@Tests/PreferencesServiceSelector.wlt:476,1-501,2"
 ]
 
 (* A cancelled connection doesn't fetch or change anything: *)
@@ -477,7 +522,7 @@ VerificationTest[
     ],
     { { "Connect" }, <| "UnreachableTestService" -> 0 |> },
     SameTest -> MatchQ,
-    TestID   -> "ServiceConnectButton-Canceled@@Tests/PreferencesServiceSelector.wlt:459,1-481,2"
+    TestID   -> "ServiceConnectButton-Canceled@@Tests/PreferencesServiceSelector.wlt:504,1-526,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

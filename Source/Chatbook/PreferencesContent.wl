@@ -769,13 +769,7 @@ makeModelNameSelector[ dmPrefCache_, service_, model_, modelNameSelector_, state
             Dynamic[
                 extractModelName @ Lookup[ dmPrefCache, "Model" ],
                 Function[
-                    If[ StringQ @ #,
-                        dmPrefCache[ "ServiceDefaultModel" ] = Replace[
-                            Lookup[ dmPrefCache, "ServiceDefaultModel", <| |> ],
-                            Except[ _Association ] -> <| |>
-                        ];
-                        modelSelectCallback[ #, dmPrefCache, service, model ]
-                    ]
+                    If[ StringQ @ #, modelSelectCallback[ #, dmPrefCache, service, model ] ]
                 ]
             ],
             items,
@@ -859,7 +853,7 @@ modelSelectCallback[ selected_String(* The value chosen via PopupMenu *), dmPref
     (* Remember the selected model for the given service, so it will be automatically chosen
        when choosing this service again: *)
     dmPrefCache[ "ServiceDefaultModel" ] = CurrentChatSettings[ $FrontEnd, "ServiceDefaultModel" ] = Append[
-        Lookup[ dmPrefCache, "ServiceDefaultModel" ],
+        Replace[ Lookup[ dmPrefCache, "ServiceDefaultModel" ], Except[ _? AssociationQ ] :> <| |> ],
         service -> model
     ];
     ,
