@@ -2281,15 +2281,20 @@ resetButton[ Dynamic[ tab_ ], Dynamic[ dmPrefCache_ ] ] :=
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*resetChatPreferences*)
+(* These must match the controls shown on the Notebooks tab. The model selector is shared with the Services tab, so
+   resetting either tab resets the model; updateDynamics[ "Preferences" ] rebuilds both tabs so they show the new value. *)
 $notebooksTabSettingKeys = {
-    "Assistance",
+    (* The "Assistance" checkbox is currently disabled from appearing (see makeDefaultSettingsContent): *)
+    (* "Assistance", *)
     "AutoFormat",
     "ChatHistoryLength",
     "IncludeHistory",
     "LLMEvaluator",
     "MergeMessages",
+    "Model",
     "Multimodal",
     "OpenAIAPICompletionURL",
+    "ServiceDefaultModel",
     "Temperature",
     "ToolCallFrequency",
     "ToolsEnabled",
