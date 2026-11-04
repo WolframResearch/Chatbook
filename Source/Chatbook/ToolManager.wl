@@ -883,12 +883,30 @@ deleteTool[ KeyValuePattern @ { "CanonicalName" -> cName_, "ResourceName" -> rNa
     deleteTool[ cName, rName ];
 
 deleteTool[ cName_, rName_String ] := (
-    unsetCV[ $FrontEnd, "ToolSelections"   , cName ];
-    unsetCV[ $FrontEnd, "ToolSelectionType", cName ];
+    unsetToolKey[ $FrontEnd, "ToolSelections"   , cName ];
+    unsetToolKey[ $FrontEnd, "ToolSelectionType", cName ];
     ResourceUninstall[ "LLMTool", rName ]
 );
 
 deleteTool // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*unsetToolKey*)
+(* Unsetting a single key leaves the parent behind as an empty association, so remove it as well: *)
+unsetToolKey // beginDefinition;
+
+unsetToolKey[ cells_List, parent_String, key_ ] :=
+    Scan[ unsetToolKey[ #, parent, key ] &, cells ];
+
+unsetToolKey[ scope_, parent_String, key_ ] := (
+    If[ KeyExistsQ[ Replace[ cv[ scope, parent ], Except[ _Association ] -> <| |> ], key ],
+        unsetCV[ scope, parent, key ]
+    ];
+    If[ MatchQ[ cv[ scope, parent ], <| |> | { } ], unsetCV[ scope, parent ] ];
+);
+
+unsetToolKey // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -949,7 +967,7 @@ enabledControl[
                         ];
 
                         (* Unset the "All" or "None" setting if it exists, since a checkbox was toggled manually: *)
-                        unsetCV[ scope, "ToolSelectionType", nameOfTool ];
+                        unsetToolKey[ scope, "ToolSelectionType", nameOfTool ];
 
                         (* Cleanup empty tagging rules *)
                         If[ MatchQ[ cv[ scope, "ToolSelections", nameOfTool ], <| |> | { } ],
@@ -1024,7 +1042,10 @@ rightColControl[
                     PopupMenu[
                         Dynamic[
                             acv[ scope, "ToolSelectionType", toolName ],
-                            setCV[ scope, "ToolSelectionType", toolName, # ] &
+                            If[ # === Inherited,
+                                unsetToolKey[ scope, "ToolSelectionType", toolName ],
+                                setCV[ scope, "ToolSelectionType", toolName, # ]
+                            ] &
                         ],
                         {
                             Inherited -> tr[ "ToolManagerEnabledByPersona" ],
@@ -1128,8 +1149,8 @@ rightColControl[
                                 { val, col },
                                 val -> Button[
                                     iconData[ "Clear", col ],
-                                    unsetCV[ scope, "ToolSelections"   , toolName ];
-                                    unsetCV[ scope, "ToolSelectionType", toolName ];
+                                    unsetToolKey[ scope, "ToolSelections"   , toolName ];
+                                    unsetToolKey[ scope, "ToolSelectionType", toolName ];
                                     ,
                                     Appearance -> "Suppressed",
                                     ImageSize  -> { 20, $rowHeight }
