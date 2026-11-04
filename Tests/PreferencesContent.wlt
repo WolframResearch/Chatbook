@@ -48,8 +48,7 @@ VerificationTest[
                 AssociationQ @ cache,
                 Lookup[ cache, "Model" ] =!= model
             },
-            CurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings" } ] = original;
-            Wolfram`Chatbook`Settings`Private`$currentSettingsCache = <| |>
+            CurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings" } ] = original
         ]
     ],
     {
@@ -63,7 +62,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "ResetChatPreferences-Notebooks-PreservesOtherTabs@@Tests/PreferencesContent.wlt:28,1-67,2"
+    TestID   -> "ResetChatPreferences-Notebooks-PreservesOtherTabs@@Tests/PreferencesContent.wlt:28,1-66,2"
 ]
 
 VerificationTest[
@@ -81,13 +80,12 @@ VerificationTest[
                     Wolfram`Chatbook`PreferencesContent`Private`$notebooksTabSettingKeys
                 ]
             },
-            CurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings" } ] = original;
-            Wolfram`Chatbook`Settings`Private`$currentSettingsCache = <| |>
+            CurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings" } ] = original
         ]
     ],
     { True, { } },
     SameTest -> MatchQ,
-    TestID   -> "ResetChatPreferences-Notebooks-NoDefaultsWritten@@Tests/PreferencesContent.wlt:69,1-91,2"
+    TestID   -> "ResetChatPreferences-Notebooks-NoDefaultsWritten@@Tests/PreferencesContent.wlt:68,1-89,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -121,13 +119,12 @@ VerificationTest[
                 service,
                 modelNameSelector
             },
-            CurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings" } ] = original;
-            Wolfram`Chatbook`Settings`Private`$currentSettingsCache = <| |>
+            CurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings" } ] = original
         ]
     ],
     { True, "LLMKit", "" },
     SameTest -> MatchQ,
-    TestID   -> "ResetChatPreferences-Services-RebuildsPanel@@Tests/PreferencesContent.wlt:96,1-131,2"
+    TestID   -> "ResetChatPreferences-Services-RebuildsPanel@@Tests/PreferencesContent.wlt:94,1-128,2"
 ]
 
 VerificationTest[
@@ -138,7 +135,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "CreatePreferencesContent-UniqueBoxesPerRebuild@@Tests/PreferencesContent.wlt:133,1-142,2"
+    TestID   -> "CreatePreferencesContent-UniqueBoxesPerRebuild@@Tests/PreferencesContent.wlt:130,1-139,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -162,13 +159,12 @@ VerificationTest[
                 ]
             ];
             calls,
-            CurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings" } ] = original;
-            Wolfram`Chatbook`Settings`Private`$currentSettingsCache = <| |>
+            CurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings" } ] = original
         ]
     ],
     { "Notebooks", "Cloud", "Services", "Cloud", "Personas", "Tools" },
     SameTest -> MatchQ,
-    TestID   -> "ResetChatPreferences-RefreshesCloudPreferences@@Tests/PreferencesContent.wlt:149,1-172,2"
+    TestID   -> "ResetChatPreferences-RefreshesCloudPreferences@@Tests/PreferencesContent.wlt:146,1-168,2"
 ]
 
 VerificationTest[
@@ -200,8 +196,7 @@ VerificationTest[
             stored = Developer`ReadWXFFile @ file;
             stored,
             Quiet @ DeleteFile @ file;
-            CurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings" } ] = original;
-            Wolfram`Chatbook`Settings`Private`$currentSettingsCache = <| |>
+            CurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings" } ] = original
         ]
     ],
     <|
@@ -209,7 +204,7 @@ VerificationTest[
         "VisiblePersonas"   -> { "Birdnardo" }
     |>,
     SameTest -> MatchQ,
-    TestID   -> "UnsetChatSettingsKeys-Cloud@@Tests/PreferencesContent.wlt:174,1-213,2"
+    TestID   -> "UnsetChatSettingsKeys-Cloud@@Tests/PreferencesContent.wlt:170,1-208,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -230,8 +225,7 @@ VerificationTest[
                 Lookup[ after, "Temperature" ],
                 Lookup[ cache, { "VisiblePersonas", "PersonaFavorites" } ]
             },
-            CurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings" } ] = original;
-            Wolfram`Chatbook`Settings`Private`$currentSettingsCache = <| |>
+            CurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings" } ] = original
         ]
     ],
     {
@@ -241,7 +235,7 @@ VerificationTest[
         { Wolfram`Chatbook`Common`$corePersonaNames, Wolfram`Chatbook`Common`$corePersonaNames }
     },
     SameTest -> MatchQ,
-    TestID   -> "ResetChatPreferences-Personas-UnsetsKeys@@Tests/PreferencesContent.wlt:218,1-245,2"
+    TestID   -> "ResetChatPreferences-Personas-UnsetsKeys@@Tests/PreferencesContent.wlt:213,1-239,2"
 ]
 
 VerificationTest[
@@ -262,16 +256,14 @@ VerificationTest[
                 {
                     $CloudEvaluation = True,
                     Wolfram`Chatbook`Settings`Private`$globalSettingsFile = file,
-                    Wolfram`Chatbook`Settings`Private`$cachedGlobalSettings,
-                    Wolfram`Chatbook`Settings`Private`$currentSettingsCache = <| |>
+                    Wolfram`Chatbook`Settings`Private`$cachedGlobalSettings
                 },
                 Wolfram`Chatbook`PreferencesContent`Private`resetChatPreferences[ Dynamic @ cache, "Personas" ]
             ];
             stored = Developer`ReadWXFFile @ file;
             { stored, Lookup[ cache, { "VisiblePersonas", "PersonaFavorites", "Temperature" } ] },
             Quiet @ DeleteFile @ file;
-            CurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings" } ] = original;
-            Wolfram`Chatbook`Settings`Private`$currentSettingsCache = <| |>
+            CurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings" } ] = original
         ]
     ],
     {
@@ -279,7 +271,7 @@ VerificationTest[
         { Wolfram`Chatbook`Common`$corePersonaNames, Wolfram`Chatbook`Common`$corePersonaNames, 0.3 }
     },
     SameTest -> MatchQ,
-    TestID   -> "ResetChatPreferences-Personas-Cloud@@Tests/PreferencesContent.wlt:247,1-283,2"
+    TestID   -> "ResetChatPreferences-Personas-Cloud@@Tests/PreferencesContent.wlt:241,1-275,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -296,13 +288,12 @@ VerificationTest[
             after = Replace[ CurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings" } ], Except[ _Association ] -> <| |> ];
             { Keys @ personas, Intersection[ Keys @ after, keys ] },
             Quiet @ NotebookClose @ nbo;
-            CurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings" } ] = original;
-            Wolfram`Chatbook`Settings`Private`$currentSettingsCache = <| |>
+            CurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings" } ] = original
         ]
     ],
     { Wolfram`Chatbook`Common`$corePersonaNames, { } },
     SameTest -> MatchQ,
-    TestID   -> "FilterPersonas-ReadingWritesNothing@@Tests/PreferencesContent.wlt:288,1-306,2"
+    TestID   -> "FilterPersonas-ReadingWritesNothing@@Tests/PreferencesContent.wlt:280,1-297,2"
 ]
 
 VerificationTest[
@@ -314,13 +305,12 @@ VerificationTest[
             nbo = CreateDocument[ { }, Visible -> False ];
             Keys @ Wolfram`Chatbook`UI`Private`filterPersonas @ nbo,
             Quiet @ NotebookClose @ nbo;
-            CurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings" } ] = original;
-            Wolfram`Chatbook`Settings`Private`$currentSettingsCache = <| |>
+            CurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings" } ] = original
         ]
     ],
     { "Wolfie", "Birdnardo", "PlainChat" },
     SameTest -> MatchQ,
-    TestID   -> "FilterPersonas-VisibleAndFavoritesOrder@@Tests/PreferencesContent.wlt:308,1-324,2"
+    TestID   -> "FilterPersonas-VisibleAndFavoritesOrder@@Tests/PreferencesContent.wlt:299,1-314,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -345,13 +335,12 @@ VerificationTest[
             ];
             after = Replace[ CurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings" } ], Except[ _Association ] -> <| |> ];
             { ran, Intersection[ Keys @ after, keys ] },
-            CurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings" } ] = original;
-            Wolfram`Chatbook`Settings`Private`$currentSettingsCache = <| |>
+            CurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings" } ] = original
         ]
     ],
     { True, { } },
     SameTest -> MatchQ,
-    TestID   -> "PersonaManagerPanel-ViewingWritesNothing@@Tests/PreferencesContent.wlt:329,1-355,2"
+    TestID   -> "PersonaManagerPanel-ViewingWritesNothing@@Tests/PreferencesContent.wlt:319,1-344,2"
 ]
 
 VerificationTest[
@@ -369,13 +358,12 @@ VerificationTest[
             Wolfram`Chatbook`PersonaManager`Private`removeUninstalledVisiblePersonas[ ];
             after = CurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings", "VisiblePersonas" } ];
             { before, after },
-            CurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings" } ] = original;
-            Wolfram`Chatbook`Settings`Private`$currentSettingsCache = <| |>
+            CurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings" } ] = original
         ]
     ],
     { False, { "RawModel", "PlainChat" } },
     SameTest -> MatchQ,
-    TestID   -> "PersonaManagerPanel-RemovesUninstalledVisiblePersonas@@Tests/PreferencesContent.wlt:357,1-379,2"
+    TestID   -> "PersonaManagerPanel-RemovesUninstalledVisiblePersonas@@Tests/PreferencesContent.wlt:346,1-367,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
