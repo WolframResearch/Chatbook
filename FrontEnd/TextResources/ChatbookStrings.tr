@@ -169,6 +169,7 @@
 "ToolManagerTooltipNonDeletable1" -> "`name` is a built-in tool and cannot be deleted.",
 "ToolManagerTooltipNonDeletable2" -> "`name` is provided by the persona `persona` and cannot be deleted separately.",
 "ToolManagerDeleteTool" -> "Delete Tool",
+"ToolManagerToolsDisabled" -> "Tools are disabled in the current chat settings.",
 
 "UIInitializeChatbook" -> "Initializing\[Ellipsis]",
 "UIEnableChatFeatures" -> "Enable AI Chat Features",

@@ -48,7 +48,7 @@ List of persona name strings marked as favorites, controlling which personas app
 
 ### Default Value
 
-Not included in `$defaultChatSettings` — the setting is lazily initialized at `$FrontEnd` scope. When first accessed, if the value does not match `{___String}`, `filterPersonas` (`UI.wl`) initializes it to `{"CodeAssistant", "CodeWriter", "PlainChat"}`; `CreatePersonaManagerPanel` (`PersonaManager.wl`) similarly falls back to `$corePersonaNames` (`{"CodeAssistant", "CodeWriter", "PlainChat", "RawModel"}`).
+`$corePersonaNames`, defined in `Personas.wl` as `{"WolframAIAssistant", "PlainChat", "RawModel"}`. Nothing writes the default as an explicit setting; `filterPersonas` (`UI.wl`) and `CreatePersonaManagerPanel` (`PersonaManager.wl`) fall back to `$corePersonaNames` if the stored value does not match `{___String}`.
 
 Always read from and written to `$FrontEnd` scope (global persistent setting).
 
@@ -56,9 +56,9 @@ Always read from and written to `$FrontEnd` scope (global persistent setting).
 
 1. **Persona selector menu ordering** (`filterPersonas` in `UI.wl`): favorites are placed first in their stored order via `KeyTake[personas, favorites]`, followed by the remaining visible personas in alphabetical order via `KeySort @ KeyTake[personas, Complement[Keys[personas], favorites]]`.
 
-2. **Persona Manager dialog** (`CreatePersonaManagerPanel` in `PersonaManager.wl`): the `favorites` variable is initialized from this setting on panel creation, favorites are listed before non-favorites in the management grid with a visual divider, and the updated favorites list is saved back to `CurrentChatSettings[$FrontEnd, "PersonaFavorites"]` on panel deinitialization.
+2. **Persona Manager dialog** (`CreatePersonaManagerPanel` in `PersonaManager.wl`): the `favorites` variable is initialized from this setting on panel creation, favorites are listed before non-favorites in the management grid with a visual divider. The panel never changes this setting, so it does not write it.
 
-When the "Personas" preferences are reset (`resetChatPreferences["Personas"]` in `PreferencesContent.wl`), the value is set to `$corePersonaNames`.
+When the "Personas" preferences are reset (`resetChatPreferences["Personas"]` in `PreferencesContent.wl`), the stored value is removed, so the default applies.
 
 ### Integration Points
 
@@ -78,23 +78,23 @@ List of persona name strings controlling which personas appear in the persona se
 
 ### Default Value
 
-`$corePersonaNames`, defined in `Personas.wl` as `{"CodeAssistant", "CodeWriter", "PlainChat", "RawModel"}`.
+`$corePersonaNames`, defined in `Personas.wl` as `{"WolframAIAssistant", "PlainChat", "RawModel"}`.
 
 Always read from and written to `$FrontEnd` scope (global persistent setting).
 
 ### Behavior
 
-Used primarily in `filterPersonas` (`UI.wl`): when building the persona selector menu, `KeyTake[personas, CurrentChatSettings[$FrontEnd, "VisiblePersonas"]]` filters the full persona data to only include personas in this list. The persona selector then orders visible personas by `PersonaFavorites` (favorites first, then remaining visible personas alphabetically).
+Used primarily in `filterPersonas` (`UI.wl`): when building the persona selector menu, `KeyTake[personas, visible]` filters the full persona data to only include personas in this list. The persona selector then orders visible personas by `PersonaFavorites` (favorites first, then remaining visible personas alphabetically).
 
-### Lazy Initialization
+### Reading Without Writing
 
-In `filterPersonas` (`UI.wl`): if the value does not match `{___String}`, it is set to `DeleteCases[Keys[personas], Alternatives["Birdnardo", "RawModel", "Wolfie"]]`, excluding certain personas from the default visible set. `CreatePersonaManagerPanel` (`PersonaManager.wl`) sanitizes this setting on initialization by intersecting it with the keys of `$CachedPersonaData` to remove any stale persona names.
+`filterPersonas` (`UI.wl`) only reads this setting, falling back to `$corePersonaNames` if the value does not match `{___String}`. `CreatePersonaManagerPanel` (`PersonaManager.wl`) checks this setting on initialization and removes any persona names that aren't in `$CachedPersonaData`, keeping the order of the rest. It writes the setting only when it has to remove a name, so viewing the panel doesn't save the default list.
 
 ### Persona Manager Interaction
 
 Each persona row in the Persona Manager dialog includes a checkbox (`addRemovePersonaListingCheckbox`) that toggles membership in this list: checking adds the persona name via `Union`, unchecking removes it via `Complement`. When a new persona is installed from the Prompt Repository (`ResourceInstaller.wl`), `addToVisiblePersonas` automatically appends the new persona name via `Union @ Append[...]`.
 
-When the "Personas" preferences are reset (`resetChatPreferences["Personas"]` in `PreferencesContent.wl`), the value is reset to `$corePersonaNames`.
+When the "Personas" preferences are reset (`resetChatPreferences["Personas"]` in `PreferencesContent.wl`), the stored value is removed, so the default applies.
 
 ### Integration Points
 
@@ -274,7 +274,7 @@ Persists the user's last-selected tab in the Chatbook preferences dialog.
 
 ### Behavior
 
-When the preferences dialog opens, the tab is initialized from this setting (defaulting to `"Services"` if unset); when the dialog closes, the current tab selection is saved back. The `openPreferencesPage` function in `PreferencesContent.wl` also writes to this setting at `$FrontEnd` scope to navigate directly to a specific preferences page.
+When the preferences dialog opens, the tab is initialized from this setting (defaulting to `"Services"` if unset); when the dialog closes, the current tab selection is saved back if it differs from the stored value. The `openPreferencesPage` function in `PreferencesContent.wl` also writes to this setting at `$FrontEnd` scope to navigate directly to a specific preferences page.
 
 ### Integration Points
 

@@ -153,7 +153,7 @@ See additional details in [Formatting & Output Settings](setting-groups/formatti
 | Setting | Default | Description |
 | ------- | ------- | ----------- |
 | `"LLMEvaluator"` | `"CodeAssistant"` | The persona (LLM evaluator) to use, determining the system prompt, available tools, and other settings. |
-| `"PersonaFavorites"` | N/A | List of persona names marked as favorites, controlling persona selector menu ordering. |
+| `"PersonaFavorites"` | `$corePersonaNames` | List of persona names marked as favorites, controlling persona selector menu ordering. |
 | `"VisiblePersonas"` | `$corePersonaNames` | List of persona names controlling which personas appear in the persona selector UI. |
 | `"ChatDrivenNotebook"` | `False` | **Deprecated.** Whether the notebook operates in "chat-driven" mode. |
 | `"InitialChatCell"` | `True` | Whether to create an initial empty chat input cell when opening a new chat notebook. |

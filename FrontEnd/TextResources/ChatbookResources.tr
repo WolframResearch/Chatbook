@@ -9643,7 +9643,7 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
     Background->LightDarkSwitched[
       RGBColor[0.07058823529411765, 0.5568627450980392, 0.8196078431372549], 
       RGBColor[0.4980392156862745, 0.7803921568627451, 0.984313725490196]],
-    ExpressionUUID->"06217459-6b9e-a145-ac7c-e9412d035e5b"], Cell[BoxData[
+    ExpressionUUID->"497835f4-a400-fa47-8ef2-eae0a1a90b5f"], Cell[BoxData[
     DynamicModuleBox[{Typeset`sidebarDockedCell$$, Typeset`thisNotebook$$, 
      Typeset`sidebarCell$$}, 
      FrameBox[
@@ -9674,7 +9674,8 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
                     StandardForm],
                     
                     ImageSizeCache->{
-                    47.403000593185425`, {0.1380000000000008, 8.119}}]}
+                    47.402998208999634`, {0.13799999713897737`, 
+                    8.118999831676483}}]}
                    },
                    AutoDelete->False,
                    BaseStyle->"NotebookAssistant`Sidebar`ToolbarButtonLabel",
@@ -9813,6 +9814,7 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
                FEPrivate`Set[Typeset`down$$, False], PassEventsDown -> True, 
                Method -> "Preemptive", PassEventsUp -> True}]],
             DynamicModuleValues:>{}],
+           BoxID -> "NASidebarNewChat",
            
            Appearance->FEPrivate`FrontEndResource[
             "FEExpressions", "SuppressMouseDownNinePatchAppearance"],
@@ -9862,7 +9864,8 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                     StandardForm],
                     
                     ImageSizeCache->{
-                    39.364500522613525`, {0.1380000000000008, 7.659}}]}
+                    39.36449933052063, {0.13799999713897737`, 
+                    7.658999841213227}}]}
                    },
                    AutoDelete->False,
                    BaseStyle->"NotebookAssistant`Sidebar`ToolbarButtonLabel",
@@ -10001,6 +10004,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                FEPrivate`Set[Typeset`down$$, False], PassEventsDown -> True, 
                Method -> "Preemptive", PassEventsUp -> True}]],
             DynamicModuleValues:>{}],
+           BoxID -> "NASidebarSourcesToggle",
            
            Appearance->FEPrivate`FrontEndResource[
             "FEExpressions", "SuppressMouseDownNinePatchAppearance"],
@@ -10032,7 +10036,8 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                     StandardForm],
                     
                     ImageSizeCache->{
-                    36.04100036621094, {2.3230000000000004`, 8.142}}]}
+                    36.04099881649017, {2.3229999518394466`, 
+                    8.141999831199646}}]}
                    },
                    AutoDelete->False,
                    BaseStyle->"NotebookAssistant`Sidebar`ToolbarButtonLabel",
@@ -10084,7 +10089,6 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                    
                    GridBoxAlignment->{
                     "Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
-                   
                    GridBoxItemSize->{
                     "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
                    GridBoxSpacings->{"Columns" -> {{0.3}}, "Rows" -> {{0}}}],
@@ -10171,6 +10175,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                FEPrivate`Set[Typeset`down$$, False], PassEventsDown -> True, 
                Method -> "Preemptive", PassEventsUp -> True}]],
             DynamicModuleValues:>{}],
+           BoxID -> "NASidebarHistoryToggle",
            
            Appearance->FEPrivate`FrontEndResource[
             "FEExpressions", "SuppressMouseDownNinePatchAppearance"],
@@ -10290,6 +10295,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                FEPrivate`Set[Typeset`down$$, False], PassEventsDown -> True, 
                Method -> "Preemptive", PassEventsUp -> True}]],
             DynamicModuleValues:>{}],
+           BoxID -> "NASidebarOpenAsAssistantWindowButton",
            
            Appearance->FEPrivate`FrontEndResource[
             "FEExpressions", "SuppressMouseDownNinePatchAppearance"],
@@ -10297,7 +10303,8 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
            ButtonFunction:>
             Module[{Wolfram`Chatbook`ChatModes`UI`Private`newNB$, 
               Wolfram`Chatbook`ChatModes`UI`Private`cells$, 
-              Wolfram`Chatbook`ChatModes`UI`Private`chatTitle$}, 
+              Wolfram`Chatbook`ChatModes`UI`Private`chatTitle$, 
+              Wolfram`Chatbook`ChatModes`UI`Private`settings$}, 
              Wolfram`Chatbook`ChatModes`UI`Private`cells$ = ReplaceRepeated[
                 NotebookRead[
                  Cells[
@@ -10368,6 +10375,10 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
              Wolfram`Chatbook`ChatModes`UI`Private`chatTitle$ = 
               CurrentValue[
                Typeset`sidebarCell$$, {TaggingRules, "ConversationTitle"}]; 
+             Wolfram`Chatbook`ChatModes`UI`Private`settings$ = KeyDrop[
+                CurrentValue[
+                Typeset`sidebarCell$$, {
+                 TaggingRules, "ChatNotebookSettings"}], "SidebarChat"]; 
              FrontEndTokenExecute[Typeset`thisNotebook$$, "HideSidebar"]; 
              NotebookDelete[
                Cells[
@@ -10383,27 +10394,31 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
               Wolfram`Chatbook`Common`createUUID[]; 
              Wolfram`Chatbook`Common`setCurrentValue[
               Typeset`sidebarCell$$, {TaggingRules, "ConversationTitle"}, ""]; 
-             Wolfram`Chatbook`ChatModes`UI`Private`newNB$ = 
-              Wolfram`Chatbook`ShowNotebookAssistance[
-               Typeset`thisNotebook$$, "Window", "ChatNotebookSettings" -> 
-                KeyDrop[
-                  CurrentValue[
-                  Typeset`sidebarCell$$, {
-                   TaggingRules, "ChatNotebookSettings"}], "SidebarChat"]]; 
-             If[Wolfram`Chatbook`ChatModes`UI`Private`chatTitle$ =!= "", 
-               Wolfram`Chatbook`Common`setCurrentValue[
-                Wolfram`Chatbook`ChatModes`UI`Private`newNB$, {
-                 TaggingRules, "ConversationTitle"}, 
-                 Wolfram`Chatbook`ChatModes`UI`Private`chatTitle$]; 
-               Wolfram`Chatbook`Common`writeWorkspaceChatTitleDockedCell[
-                Wolfram`Chatbook`ChatModes`UI`Private`newNB$, WindowTitle]]; 
-             SelectionMove[
-              Wolfram`Chatbook`ChatModes`UI`Private`newNB$, Before, Notebook]; 
-             NotebookWrite[
-              Wolfram`Chatbook`ChatModes`UI`Private`newNB$, 
-               Wolfram`Chatbook`ChatModes`UI`Private`cells$]; 
-             Wolfram`Chatbook`Common`attachWorkspaceChatInput[
-              Wolfram`Chatbook`ChatModes`UI`Private`newNB$]; Null],
+             If[
+               MatchQ[Wolfram`Chatbook`ChatModes`UI`Private`cells$, {
+                 BlankSequence[Cell]}], 
+               Wolfram`Chatbook`ChatModes`UI`Private`newNB$ = 
+                Wolfram`Chatbook`ShowNotebookAssistance[
+                 Typeset`thisNotebook$$, "Window", "NewChat" -> True, 
+                  "ChatNotebookSettings" -> 
+                  Wolfram`Chatbook`ChatModes`UI`Private`settings$]; 
+               If[Wolfram`Chatbook`ChatModes`UI`Private`chatTitle$ =!= "", 
+                 Wolfram`Chatbook`Common`setCurrentValue[
+                  Wolfram`Chatbook`ChatModes`UI`Private`newNB$, {
+                   TaggingRules, "ConversationTitle"}, 
+                   Wolfram`Chatbook`ChatModes`UI`Private`chatTitle$]; 
+                 Wolfram`Chatbook`Common`writeWorkspaceChatTitleDockedCell[
+                  Wolfram`Chatbook`ChatModes`UI`Private`newNB$, WindowTitle]]; 
+               SelectionMove[
+                Wolfram`Chatbook`ChatModes`UI`Private`newNB$, After, 
+                 Notebook]; 
+               NotebookWrite[
+                Wolfram`Chatbook`ChatModes`UI`Private`newNB$, 
+                 Wolfram`Chatbook`ChatModes`UI`Private`cells$]; 
+               Wolfram`Chatbook`Common`attachWorkspaceChatInput[
+                Wolfram`Chatbook`ChatModes`UI`Private`newNB$], 
+               Wolfram`Chatbook`ShowNotebookAssistance[
+               Typeset`thisNotebook$$, "Window"]]],
            Evaluator->Automatic,
            Method->"Queued"], 
           ButtonBox[
@@ -10513,6 +10528,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                FEPrivate`Set[Typeset`down$$, False], PassEventsDown -> True, 
                Method -> "Preemptive", PassEventsUp -> True}]],
             DynamicModuleValues:>{}],
+           BoxID -> "NASidebarClose",
            
            Appearance->FEPrivate`FrontEndResource[
             "FEExpressions", "SuppressMouseDownNinePatchAppearance"],
@@ -10567,7 +10583,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
     Magnification->Dynamic[0.85 AbsoluteCurrentValue[
         FrontEnd`EvaluationNotebook[], Magnification]],
     CellTags->"SidebarDockedCell",ExpressionUUID->
-    "0d463e41-9c81-0c4e-8b17-03dfe95669e5"], Cell[BoxData[
+    "28118824-2b3d-b440-8d3c-620208d18be4"], Cell[BoxData[
     DynamicModuleBox[{Typeset`chatInputFieldCell$$, 
      Typeset`chatEvalCell$$ = {}, Typeset`nbo$$, Typeset`sidebarCell$$, 
      Typeset`fieldContent$$ = "", Typeset`returnKeyDownQ$$ = False, 
@@ -10657,6 +10673,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                     RoundingRadius->4,
                     StripOnInput->False], "Down"->
                     FrameBox[
+                    
                     DynamicBox[FEPrivate`FrontEndResource[
                     "ChatbookExpressions", "SendChatArrow"][
                     LightDarkSwitched[
@@ -10687,7 +10704,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                     PassEventsDown -> True, Method -> "Preemptive", 
                     PassEventsUp -> True}]],
                     DynamicModuleValues:>{}],
-                   BoxID -> "SidebarChatInputCellSendButton",
+                   BoxID -> "NASidebarChatInputCellSendButton",
                    
                    Appearance->FEPrivate`FrontEndResource[
                     "FEExpressions", "SuppressMouseDownNinePatchAppearance"],
@@ -10761,6 +10778,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                     PassEventsDown -> True, Method -> "Preemptive", 
                     PassEventsUp -> True}]],
                     DynamicModuleValues:>{}],
+                   BoxID -> "NASidebarChatInputCellStopButton",
                    
                    Appearance->FEPrivate`FrontEndResource[
                     "FEExpressions", "SuppressMouseDownNinePatchAppearance"],
@@ -10800,7 +10818,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                 Typeset`sidebarCell$$, {TaggingRules, "CurrentSelections"}] = 
                FE`Evaluate[
                  FEPrivate`GetCurrentSelections[Typeset`nbo$$]]; 
-              Wolfram`Chatbook`ChatModes`UI`Private`clearOverlayMenus[
+              Wolfram`Chatbook`ChatModes`UI`Private`clearSidebarOverlayMenus[
                Typeset`nbo$$]; Typeset`returnKeyDownQ$$ = False; 
               Needs["Wolfram`Chatbook`" -> None]; If[
                 Not[
@@ -10831,7 +10849,7 @@ workspaceChatInitialized]],
                 Typeset`chatEvalCell$$, Typeset`nbo$$]]],
             
             ImageSizeCache->{
-             982.4375, {11.733218459659325`, 11.931631540340675`}},
+             982.9375, {11.733218453089135`, 11.931631546910864`}},
             SynchronousUpdating->False,
             TrackedSymbols:>{Typeset`returnKeyDownQ$$}], ""},
           {
@@ -10839,7 +10857,7 @@ workspaceChatInitialized]],
             DynamicBox[ToBoxes[Typeset`focusArea$$, StandardForm],
              
              ImageSizeCache->{
-              4.700829908251762, {0.0914062475785613, 0.3284912022354547}}],
+              4.700830332934856, {0.09140625363215804, 0.32849122399056796`}}],
             Alignment->Left,
             StripOnInput->False], "\[SpanFromLeft]"}
          },
@@ -10876,7 +10894,7 @@ workspaceChatInitialized]],
       RGBColor[0.933333, 0.976471, 1.], 
       RGBColor[0.1490196, 0.2078431, 0.2549019]],
     CellTags->"SidebarChatInputCell",ExpressionUUID->
-    "f3410719-48f0-4648-9fe5-b5e11a035599"]}],
+    "dec8ac63-8c44-544a-9ccb-652ee89bb762"]}],
   "NotebookSelectionSnapshotExclusionZone"]], \
 "NotebookAssistant`Sidebar`NotebookAssistantSidebarCell",
  Editable->True,
@@ -10892,8 +10910,8 @@ workspaceChatInitialized]],
    RGBColor[0.933333, 0.976471, 1.], 
    RGBColor[0.1490196, 0.2078431, 0.2549019]],
  CellTags->
-  "NotebookAssistantSidebarCell",ExpressionUUID->"7796f29d-f343-8042-92d2-\
-609aa0a3476a"],
+  "NotebookAssistantSidebarCell",ExpressionUUID->"27354c45-4d49-b848-8644-\
+8cf213dac79b"],
 
 "SidebarAskAnythingArrowIcon" -> GraphicsBox[
   {FaceForm[LightDarkSwitched[

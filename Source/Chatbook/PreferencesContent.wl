@@ -45,7 +45,9 @@ createPreferencesContent // beginDefinition;
 createPreferencesContent[ ] := Enclose[
     Module[ { tabs, tabView, reset },
         (* Retrieve the dynamic content for each preferences tab, confirming that it matches the expected types: *)
-        DynamicModule[ { tab, dmPrefCache, default, service, model, state, serviceSelector = $loadingPopupMenu, modelNameSelector = $loadingPopupMenu },
+        (* buildID makes each rebuild's boxes unique, so the front end replaces the DynamicModule and runs its
+           Initialization again instead of keeping the old instance with stale service and model values: *)
+        DynamicModule[ { buildID = CreateUUID[ ], tab, dmPrefCache, default, service, model, state, serviceSelector = $loadingPopupMenu, modelNameSelector = $loadingPopupMenu },
 
             tabs = createTabViewTabs[ $displayedPreferencesPages, dmPrefCache, default, service, model, state, serviceSelector, modelNameSelector ];
 
@@ -105,8 +107,11 @@ createPreferencesContent[ ] := Enclose[
                 state = "Loaded";
             ),
             SynchronousInitialization -> False,
-            UnsavedVariables          :> { state },
-            Deinitialization          :> (CurrentChatSettings[ $FrontEnd, "CurrentPreferencesTab" ] = tab)
+            UnsavedVariables          :> { buildID, state },
+            Deinitialization          :> If[
+                tab =!= Replace[ CurrentChatSettings[ $FrontEnd, "CurrentPreferencesTab" ], $$unspecified -> "Services" ],
+                CurrentChatSettings[ $FrontEnd, "CurrentPreferencesTab" ] = tab
+            ]
 
         ]
     ],
@@ -706,7 +711,7 @@ makeModelNameSelector // beginDefinition;
 Attributes[ makeModelNameSelector ] = { HoldAll };
 
 makeModelNameSelector[ dmPrefCache_, service_, model_, modelNameSelector_, state_ ] := Enclose[
-    Catch @ Module[ { models, current, default, fallback },
+    Catch @ Module[ { models, current, items },
 
         ensureServiceName[ service, Dynamic @ dmPrefCache ];
         ConfirmAssert[ StringQ @ service, "ServiceName" ];
@@ -746,22 +751,34 @@ makeModelNameSelector[ dmPrefCache_, service_, model_, modelNameSelector_, state
             ]
         ];
 
-        current  = extractModelName @ CurrentChatSettings[ $FrontEnd, "Model" ];
-        default  = ConfirmBy[ getServiceDefaultModel[ Dynamic @ dmPrefCache, service ], StringQ, "DefaultName" ];
-        fallback = <| "Service" -> service, "Name" -> default |>;
+        (* Building the selector must never write settings, so a stored model name that the service doesn't list
+           (fine-tuned, custom endpoint, set in code) is shown as an extra entry instead of being replaced: *)
+        current = extractModelName @ Lookup[ dmPrefCache, "Model" ];
+        items   = Block[ { $noIcons = TrueQ @ $cloudNotebooks },
+            Map[ popupValue[ #[ "Name" ], #[ "DisplayName" ], #[ "Icon" ] ] &, models ]
+        ];
 
-        If[ ! MemberQ[ models, KeyValuePattern[ "Name" -> current ] ],
-            dmPrefCache[ "Model" ] = CurrentChatSettings[ $FrontEnd, "Model" ] = fallback
+        Which[
+            StringQ @ current && ! MemberQ[ models, KeyValuePattern[ "Name" -> current ] ],
+                items = Join[ { popupValue @ current, Delimiter }, items ],
+            ! StringQ @ current,
+                items = Join[ { Automatic -> "Automatic", Delimiter }, items ]
         ];
 
         PopupMenu[
             Dynamic[
                 extractModelName @ Lookup[ dmPrefCache, "Model" ],
-                Function[ modelSelectCallback[ #, dmPrefCache, service, model ] ]
+                Function[
+                    If[ StringQ @ #,
+                        dmPrefCache[ "ServiceDefaultModel" ] = Replace[
+                            Lookup[ dmPrefCache, "ServiceDefaultModel", <| |> ],
+                            Except[ _Association ] -> <| |>
+                        ];
+                        modelSelectCallback[ #, dmPrefCache, service, model ]
+                    ]
+                ]
             ],
-            Block[ { $noIcons = TrueQ @ $cloudNotebooks },
-                Map[ popupValue[ #[ "Name" ], #[ "DisplayName" ], #[ "Icon" ] ] &, models ]
-            ],
+            items,
             ImageSize -> Automatic
         ]
     ],
@@ -2270,18 +2287,35 @@ resetButton[ Dynamic[ tab_ ], Dynamic[ dmPrefCache_ ] ] :=
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*resetChatPreferences*)
+$notebooksTabSettingKeys = {
+    "Assistance",
+    "AutoFormat",
+    "ChatHistoryLength",
+    "IncludeHistory",
+    "LLMEvaluator",
+    "MergeMessages",
+    "Multimodal",
+    "OpenAIAPICompletionURL",
+    "Temperature",
+    "ToolCallFrequency",
+    "ToolsEnabled",
+    "UserInstructions"
+};
+
+$personasTabSettingKeys = { "PersonaFavorites", "VisiblePersonas" };
+
 resetChatPreferences // beginDefinition;
 
 resetChatPreferences[ Dynamic[ dmPrefCache_ ], "Notebooks" ] := (
-    CurrentChatSettings[ $FrontEnd ] = Inherited;
+    unsetChatSettingsKeys[ $FrontEnd, $notebooksTabSettingKeys ];
     dmPrefCache = CurrentChatSettings[ $FrontEnd ];
     updateDynamics[ "Preferences" ];
 );
 
 resetChatPreferences[ Dynamic[ dmPrefCache_ ], "Personas" ] := (
     (* TODO: choice dialog to uninstall personas *)
-    dmPrefCache[ "VisiblePersonas"  ] = CurrentChatSettings[ $FrontEnd, "VisiblePersonas"  ] = $corePersonaNames;
-    dmPrefCache[ "PersonaFavorites" ] = CurrentChatSettings[ $FrontEnd, "PersonaFavorites" ] = $corePersonaNames;
+    unsetChatSettingsKeys[ $FrontEnd, $personasTabSettingKeys ];
+    dmPrefCache = CurrentChatSettings[ $FrontEnd ];
     updateDynamics[ "Personas" ];
 );
 
@@ -2303,6 +2337,7 @@ resetChatPreferences[ Dynamic[ dmPrefCache_ ], "Services" ] := (
     Needs[ "LLMServices`" -> None ];
     LLMServices`ResetServices[ ];
     InvalidateServiceCache[ ];
+    updateDynamics[ "Preferences" ];
 );
 
 resetChatPreferences // endDefinition;

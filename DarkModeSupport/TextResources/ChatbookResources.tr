@@ -9674,7 +9674,7 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
     Background->LightDarkSwitched[
       RGBColor[0.07058823529411765, 0.5568627450980392, 0.8196078431372549], 
       RGBColor[0.4980392156862745, 0.7803921568627451, 0.984313725490196]],
-    ExpressionUUID->"b99636e6-69c8-994b-bf19-592fe1b2e196"], Cell[BoxData[
+    ExpressionUUID->"e363d3fb-81b8-8d4f-bdaf-f8e6def132de"], Cell[BoxData[
     DynamicModuleBox[{Typeset`sidebarDockedCell$$, Typeset`thisNotebook$$, 
      Typeset`sidebarCell$$}, 
      FrameBox[
@@ -10334,7 +10334,8 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
            ButtonFunction:>
             Module[{Wolfram`Chatbook`ChatModes`UI`Private`newNB$, 
               Wolfram`Chatbook`ChatModes`UI`Private`cells$, 
-              Wolfram`Chatbook`ChatModes`UI`Private`chatTitle$}, 
+              Wolfram`Chatbook`ChatModes`UI`Private`chatTitle$, 
+              Wolfram`Chatbook`ChatModes`UI`Private`settings$}, 
              Wolfram`Chatbook`ChatModes`UI`Private`cells$ = ReplaceRepeated[
                 NotebookRead[
                  Cells[
@@ -10405,6 +10406,10 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
              Wolfram`Chatbook`ChatModes`UI`Private`chatTitle$ = 
               CurrentValue[
                Typeset`sidebarCell$$, {TaggingRules, "ConversationTitle"}]; 
+             Wolfram`Chatbook`ChatModes`UI`Private`settings$ = KeyDrop[
+                CurrentValue[
+                Typeset`sidebarCell$$, {
+                 TaggingRules, "ChatNotebookSettings"}], "SidebarChat"]; 
              FrontEndTokenExecute[Typeset`thisNotebook$$, "HideSidebar"]; 
              NotebookDelete[
                Cells[
@@ -10420,27 +10425,31 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
               Wolfram`Chatbook`Common`createUUID[]; 
              Wolfram`Chatbook`Common`setCurrentValue[
               Typeset`sidebarCell$$, {TaggingRules, "ConversationTitle"}, ""]; 
-             Wolfram`Chatbook`ChatModes`UI`Private`newNB$ = 
-              Wolfram`Chatbook`ShowNotebookAssistance[
-               Typeset`thisNotebook$$, "Window", "ChatNotebookSettings" -> 
-                KeyDrop[
-                  CurrentValue[
-                  Typeset`sidebarCell$$, {
-                   TaggingRules, "ChatNotebookSettings"}], "SidebarChat"]]; 
-             If[Wolfram`Chatbook`ChatModes`UI`Private`chatTitle$ =!= "", 
-               Wolfram`Chatbook`Common`setCurrentValue[
-                Wolfram`Chatbook`ChatModes`UI`Private`newNB$, {
-                 TaggingRules, "ConversationTitle"}, 
-                 Wolfram`Chatbook`ChatModes`UI`Private`chatTitle$]; 
-               Wolfram`Chatbook`Common`writeWorkspaceChatTitleDockedCell[
-                Wolfram`Chatbook`ChatModes`UI`Private`newNB$, WindowTitle]]; 
-             SelectionMove[
-              Wolfram`Chatbook`ChatModes`UI`Private`newNB$, Before, Notebook]; 
-             NotebookWrite[
-              Wolfram`Chatbook`ChatModes`UI`Private`newNB$, 
-               Wolfram`Chatbook`ChatModes`UI`Private`cells$]; 
-             Wolfram`Chatbook`Common`attachWorkspaceChatInput[
-              Wolfram`Chatbook`ChatModes`UI`Private`newNB$]; Null],
+             If[
+               MatchQ[Wolfram`Chatbook`ChatModes`UI`Private`cells$, {
+                 BlankSequence[Cell]}], 
+               Wolfram`Chatbook`ChatModes`UI`Private`newNB$ = 
+                Wolfram`Chatbook`ShowNotebookAssistance[
+                 Typeset`thisNotebook$$, "Window", "NewChat" -> True, 
+                  "ChatNotebookSettings" -> 
+                  Wolfram`Chatbook`ChatModes`UI`Private`settings$]; 
+               If[Wolfram`Chatbook`ChatModes`UI`Private`chatTitle$ =!= "", 
+                 Wolfram`Chatbook`Common`setCurrentValue[
+                  Wolfram`Chatbook`ChatModes`UI`Private`newNB$, {
+                   TaggingRules, "ConversationTitle"}, 
+                   Wolfram`Chatbook`ChatModes`UI`Private`chatTitle$]; 
+                 Wolfram`Chatbook`Common`writeWorkspaceChatTitleDockedCell[
+                  Wolfram`Chatbook`ChatModes`UI`Private`newNB$, WindowTitle]]; 
+               SelectionMove[
+                Wolfram`Chatbook`ChatModes`UI`Private`newNB$, After, 
+                 Notebook]; 
+               NotebookWrite[
+                Wolfram`Chatbook`ChatModes`UI`Private`newNB$, 
+                 Wolfram`Chatbook`ChatModes`UI`Private`cells$]; 
+               Wolfram`Chatbook`Common`attachWorkspaceChatInput[
+                Wolfram`Chatbook`ChatModes`UI`Private`newNB$], 
+               Wolfram`Chatbook`ShowNotebookAssistance[
+               Typeset`thisNotebook$$, "Window"]]],
            Evaluator->Automatic,
            Method->"Queued"], 
           ButtonBox[
@@ -10605,7 +10614,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
     Magnification->Dynamic[0.85 AbsoluteCurrentValue[
         FrontEnd`EvaluationNotebook[], Magnification]],
     CellTags->"SidebarDockedCell",ExpressionUUID->
-    "24fe452e-7536-2e48-93e2-7963bf8dcd29"], Cell[BoxData[
+    "618812b4-71a2-b140-b148-2ceaa3a4905d"], Cell[BoxData[
     DynamicModuleBox[{Typeset`chatInputFieldCell$$, 
      Typeset`chatEvalCell$$ = {}, Typeset`nbo$$, Typeset`sidebarCell$$, 
      Typeset`fieldContent$$ = "", Typeset`returnKeyDownQ$$ = False, 
@@ -10840,7 +10849,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                 Typeset`sidebarCell$$, {TaggingRules, "CurrentSelections"}] = 
                FE`Evaluate[
                  FEPrivate`GetCurrentSelections[Typeset`nbo$$]]; 
-              Wolfram`Chatbook`ChatModes`UI`Private`clearOverlayMenus[
+              Wolfram`Chatbook`ChatModes`UI`Private`clearSidebarOverlayMenus[
                Typeset`nbo$$]; Typeset`returnKeyDownQ$$ = False; 
               Needs["Wolfram`Chatbook`" -> None]; If[
                 Not[
@@ -10916,7 +10925,7 @@ workspaceChatInitialized]],
       RGBColor[0.933333, 0.976471, 1.], 
       RGBColor[0.1490196, 0.2078431, 0.2549019]],
     CellTags->"SidebarChatInputCell",ExpressionUUID->
-    "e5cbe56b-01ad-2042-9948-592f7952fed4"]}],
+    "fa8c8973-3d77-4d48-8881-f501764b118e"]}],
   "NotebookSelectionSnapshotExclusionZone"]], \
 "NotebookAssistant`Sidebar`NotebookAssistantSidebarCell",
  Editable->True,
@@ -10932,8 +10941,8 @@ workspaceChatInitialized]],
    RGBColor[0.933333, 0.976471, 1.], 
    RGBColor[0.1490196, 0.2078431, 0.2549019]],
  CellTags->
-  "NotebookAssistantSidebarCell",ExpressionUUID->"f51ffc57-9249-1e42-a6c7-\
-01afe09cbe00"],
+  "NotebookAssistantSidebarCell",ExpressionUUID->"32747b09-a3d0-ab42-8700-\
+a18b84ef91ac"],
 
 "SidebarIconHide" -> (GraphicsBox[{
    Thickness[0.125], 

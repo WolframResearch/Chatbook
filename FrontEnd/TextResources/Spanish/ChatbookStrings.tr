@@ -169,6 +169,7 @@
 "ToolManagerTooltipNonDeletable1" -> "`name` es una herramienta incorporada y no puede eliminarse.",
 "ToolManagerTooltipNonDeletable2" -> "`name` ha sido proporcionada por la persona `persona` y no puede eliminarse por separado.",
 "ToolManagerDeleteTool" -> "Eliminar herramienta",
+"ToolManagerToolsDisabled" -> "Tools are disabled in the current chat settings.",
 
 "UIInitializeChatbook" -> "Inicializando\[Ellipsis]",
 "UIEnableChatFeatures" -> "Habilitar caracter\[IAcute]sticas de chat de IA",
