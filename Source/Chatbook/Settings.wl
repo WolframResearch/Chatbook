@@ -1893,12 +1893,12 @@ unsetCurrentChatSettings0 // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*unsetChatSettingsKeys*)
-(* Removes several explicitly stored settings at once with a single read and a single write,
-   without writing any default values back as explicit settings. *)
+(* Removes several explicitly stored global settings at once with a single read and a single write,
+   without writing any default values back as explicit settings. In the Cloud, this avoids a settings
+   file round trip for each key. *)
 unsetChatSettingsKeys // beginDefinition;
-unsetChatSettingsKeys[ keys: { ___String } ] := unsetChatSettingsKeys[ $FrontEnd, keys ];
-unsetChatSettingsKeys[ obj: $$feObj, keys: { ___String } ] /; $CloudEvaluation := unsetChatSettingsKeys0[ obj, keys ];
-unsetChatSettingsKeys[ obj: $$feObj, keys: { ___String } ] := UsingFrontEnd @ unsetChatSettingsKeys0[ obj, keys ];
+unsetChatSettingsKeys[ obj: $$frontEndObject, keys: { ___String } ] /; $CloudEvaluation := unsetChatSettingsKeys0[ obj, keys ];
+unsetChatSettingsKeys[ obj: $$frontEndObject, keys: { ___String } ] := UsingFrontEnd @ unsetChatSettingsKeys0[ obj, keys ];
 unsetChatSettingsKeys // endDefinition;
 
 
@@ -1921,13 +1921,13 @@ unsetChatSettingsKeys0 // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*storedChatSettings*)
-(* The settings explicitly stored at the given scope, without inherited or default values. *)
+(* The global settings that are explicitly stored, without inherited or default values. *)
 storedChatSettings // beginDefinition;
 
 storedChatSettings[ $$frontEndObject ] /; $CloudEvaluation :=
     getGlobalSettingsFile[ ];
 
-storedChatSettings[ obj: $$feObj ] :=
+storedChatSettings[ obj: $$frontEndObject ] :=
     toStoredSettingsAssociation @ CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings" } ];
 
 storedChatSettings // endDefinition;
