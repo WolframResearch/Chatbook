@@ -2865,7 +2865,7 @@ overrideTagForcing[ HoldComplete[ symbols__Symbol ], eval_ ] :=
         Internal`InheritedBlock[ { symbols },
             protected = Unprotect @ symbols;
             overrideTagForcing0 /@ Unevaluated @ { symbols };
-            Protect @ protected;
+            Protect @ Evaluate @ protected;
             Block[ { $forceTagged = True }, eval ]
         ]
     ];
