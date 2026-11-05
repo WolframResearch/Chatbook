@@ -105,6 +105,7 @@ PacletInfo.wl defines three kernel extensions loaded in order:
 - **Storage.wl** — Persistent chat storage; **SearchChats.wl** / **Search.wl** — search
 - **Models.wl** — LLM model definitions and family classification
 - **Prompting.wl** — Base prompt component management and on-demand prompt system
+- **PromptCache.wl** — Prompt cache optimization (the `"PromptCacheOptimization"` setting): turn records that keep messages added to a chat turn (prompt generator results, base prompt hints, notebook context) the same in later requests
 - **Personas.wl** / **PersonaManager.wl** — LLM persona (system prompt) management
 - **Reasoning.wl** — Reasoning summaries and signatures from the Responses API (`"RequestMethod" -> "Responses"`): the `<think type='summary' id='...'>` string representation, stream conversion, and replacing summaries with signatures in outgoing messages
 - **Skills.wl** — Agent skills (`LLMSkill`): `SKILL.md` parsing, the `"Skills"` setting, the skills catalog prompt, and the `ActivateSkill` tool

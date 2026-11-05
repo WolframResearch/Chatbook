@@ -2412,7 +2412,12 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 
         req = If[ TrueQ @ $useLLMServices,
                   ConfirmMatch[
-                      prepareMessagesForLLM[ settings, constructMessages[ settings, newMessages ] ],
+                      prepareMessagesForLLM[
+                          settings,
+                          Block[ { $promptCacheTurnID = promptCacheID @ settings },
+                              constructMessages[ settings, newMessages ]
+                          ]
+                      ],
                       { __Association },
                       "ConstructMessages"
                   ],
@@ -3916,6 +3921,7 @@ makeReformattedCellTaggingRules[
             "MessageTag"       -> tag,
             "ChatData"         -> chatData,
             "HasChatData"      -> hasChatData @ chatData,
+            "PromptCacheID"    -> promptCacheID @ settings,
             "PageData"         -> If[ $cloudNotebooks, Inherited, <|
                 "Pages"      -> Append[ pages, p -> makeMinimalPageData[ content, settings ] ],
                 "PageCount"  -> p,
@@ -3933,7 +3939,8 @@ makeReformattedCellTaggingRules[ settings_, string_, tag: _String|Inherited, con
                 "CellToStringData" -> string,
                 "MessageTag"       -> tag,
                 "ChatData"         -> chatData,
-                "HasChatData"      -> hasChatData @ chatData
+                "HasChatData"      -> hasChatData @ chatData,
+                "PromptCacheID"    -> promptCacheID @ settings
             |>,
             Inherited
         ]

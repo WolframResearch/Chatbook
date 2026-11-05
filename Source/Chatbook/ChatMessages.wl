@@ -131,7 +131,8 @@ augmentChatMessages[ messages0_, settings_, opts_Association? AssociationQ ] := 
             "ResolvedBasePrompt"
         ];
 
-        (* Messages from an earlier AugmentChatMessages get new generated prompts, not that request's: *)
+        (* Without prompt cache optimization, messages from an earlier AugmentChatMessages get new generated prompts, not
+           that request's: *)
         messages = ConfirmMatch[
             Flatten @ { makeCurrentRole @ resolved, KeyDrop[ messages0, "PromptGenerated" ] },
             $$chatMessages,
@@ -231,8 +232,7 @@ constructMessages[ settings_Association? AssociationQ, cells: { __Cell } ] :=
 
 constructMessages[ settings_Association? AssociationQ, messages0: { __Association } ] :=
     Enclose @ Module[
-        { prompted, base, messages, merged, genRole, genPos, generatedPrompts, generatedMessages, combined, processed,
-          outgoing },
+        { prompted, base, messages, merged, genRole, combined, processed, outgoing },
 
         If[ settings[ "ToolMethod" ] === "Service", needsBasePrompt[ "ServiceToolCallRetry" ] ];
         If[ settings[ "AutoFormat" ], needsBasePrompt[ "Formatting" ] ];
@@ -242,7 +242,7 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
         prompted = addPrompts[
             settings,
             Replace[
-                DeleteCases[ messages0, KeyValuePattern[ "Temporary" -> True ] ],
+                DeleteCases[ messages0, _? (droppedTemporaryMessageQ[ settings, # ] &) ],
                 as: KeyValuePattern[ "HoldTemporary" -> True ] :>
                     <| KeyDrop[ as, "HoldTemporary" ], "Temporary" -> True |>,
                 { 1 }
@@ -261,36 +261,16 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
                      messages
                  ];
 
-        genRole = settings[ "PromptGeneratorMessageRole"     ];
-        genPos  = settings[ "PromptGeneratorMessagePosition" ];
+        genRole = settings[ "PromptGeneratorMessageRole" ];
 
         If[ ! MatchQ[ genRole, "System"|"Assistant"|"User" ],
             throwFailure[ "InvalidPromptGeneratorRole", genRole ]
         ];
 
-        (* Prompt generators run once per chat request: the requests that follow tool calls get the messages of the
-           first request back (settings[ "Data", "Messages" ]), so they reuse its generated prompts.
-           NOTE: if the first request had no generated prompts, the generators run again after a tool call. *)
-        generatedPrompts = ConfirmMatch[
-            Replace[
-                Cases[ messages0, KeyValuePattern @ { "PromptGenerated" -> True, "Content" -> content_ } :> content ],
-                { } :> applyPromptGenerators[ settings, merged ]
-            ],
-            { ___String },
-            "Generated"
-        ];
-
-        generatedMessages = Splice @ ConfirmMatch[
-            <| "Role" -> genRole, "Content" -> #, "Temporary" -> True, "PromptGenerated" -> True |> & /@
-                generatedPrompts,
-            $$chatMessages,
-            "GeneratedMessages"
-        ];
-
         combined = ConfirmMatch[
-            Check[
-                Insert[ merged, generatedMessages, genPos ],
-                throwFailure[ "InvalidPromptGeneratorPosition", genPos ]
+            If[ promptCacheOptimizationQ @ settings,
+                addTurnMessages[ settings, merged ],
+                insertGeneratedPrompts[ settings, messages0, merged ]
             ],
             $$chatMessages,
             "Combined"
@@ -329,6 +309,55 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
     ];
 
 constructMessages // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*droppedTemporaryMessageQ*)
+(* Temporary messages are regenerated for each request, except for the turn messages kept for prompt caching: *)
+droppedTemporaryMessageQ // beginDefinition;
+droppedTemporaryMessageQ[ settings_, message_ ] /; promptCacheMessageQ @ message := ! promptCacheOptimizationQ @ settings;
+droppedTemporaryMessageQ[ settings_, KeyValuePattern[ "Temporary" -> True ] ] := True;
+droppedTemporaryMessageQ[ settings_, _ ] := False;
+droppedTemporaryMessageQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*insertGeneratedPrompts*)
+insertGeneratedPrompts // beginDefinition;
+
+insertGeneratedPrompts[ settings_Association, messages0_List, merged_List ] := Enclose[
+    Module[ { genRole, genPos, generatedPrompts, generatedMessages },
+        genRole = settings[ "PromptGeneratorMessageRole"     ];
+        genPos  = settings[ "PromptGeneratorMessagePosition" ];
+
+        (* Prompt generators run once per chat request: the requests that follow tool calls get the messages of the
+           first request back (settings[ "Data", "Messages" ]), so they reuse its generated prompts.
+           NOTE: if the first request had no generated prompts, the generators run again after a tool call. *)
+        generatedPrompts = ConfirmMatch[
+            Replace[
+                Cases[ messages0, KeyValuePattern @ { "PromptGenerated" -> True, "Content" -> content_ } :> content ],
+                { } :> applyPromptGenerators[ settings, merged ]
+            ],
+            { ___String },
+            "Generated"
+        ];
+
+        generatedMessages = Splice @ ConfirmMatch[
+            <| "Role" -> genRole, "Content" -> #, "Temporary" -> True, "PromptGenerated" -> True |> & /@
+                generatedPrompts,
+            $$chatMessages,
+            "GeneratedMessages"
+        ];
+
+        Check[
+            Insert[ merged, generatedMessages, genPos ],
+            throwFailure[ "InvalidPromptGeneratorPosition", genPos ]
+        ]
+    ],
+    throwInternalFailure
+];
+
+insertGeneratedPrompts // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -735,9 +764,10 @@ makeChatMessages0[ settings0_, cells_List, includeSystem_ ] := Enclose[
             "Message"
         ];
 
+        (* Cells are converted newest first, so that older cells are the first to be shortened by the token budget: *)
         history = ConfirmMatch[
-            Reverse @ Flatten @ MapIndexed[
-                toMessage[ #1, <| settings, "HistoryPosition" -> First[ #2 ] |> ] &,
+            Flatten @ Reverse @ MapIndexed[
+                withTurnMessages[ settings, #1, toMessage[ #1, <| settings, "HistoryPosition" -> First[ #2 ] |> ] ] &,
                 Reverse @ Most @ cells
             ],
             $$validMessageResults,
@@ -752,6 +782,35 @@ makeChatMessages0[ settings0_, cells_List, includeSystem_ ] := Enclose[
 ];
 
 makeChatMessages0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*withTurnMessages*)
+(* Inserts the messages that were added to the turn of a chat output cell (see PromptCache.wl) before the cell's message.
+   The cell's message has already been converted, so it is counted against the token budget before these messages: *)
+withTurnMessages // beginDefinition;
+
+withTurnMessages[ settings_, cell_Cell, message_ ] :=
+    With[ { turnMessages = promptCacheHistoryMessages[ settings, cell ] },
+        If[ turnMessages === { },
+            message,
+            Flatten @ { Reverse[ fittedTurnMessage[ settings, # ] & /@ Reverse @ turnMessages ], message }
+        ]
+    ];
+
+withTurnMessages // endDefinition;
+
+(* Turn messages are only included when they fit in the token budget as they are. Shortening them would give different
+   text in every request, and they are not needed without the messages they were made for: *)
+fittedTurnMessage // beginDefinition;
+
+fittedTurnMessage[ settings_, message_ ] :=
+    If[ $cellStringBudget === 0 || TrueQ[ tokenCount[ settings, message ] > $tokenBudget ],
+        Nothing,
+        tokenCheckedMessage[ settings, message ]
+    ];
+
+fittedTurnMessage // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

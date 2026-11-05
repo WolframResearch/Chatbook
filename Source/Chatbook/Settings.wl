@@ -65,6 +65,7 @@ $defaultChatSettings = <|
     "PersonaFavorites"               -> $corePersonaNames,
     "PresencePenalty"                -> Automatic,
     "ProcessingFunctions"            :> $DefaultChatProcessingFunctions,
+    "PromptCacheOptimization"        -> Automatic,
     "PromptGeneratorMessagePosition" -> 2,
     "PromptGeneratorMessageRole"     -> "System",
     "PromptGenerators"               -> Automatic,
@@ -156,6 +157,8 @@ $modelAutoSettings[ "Anthropic" ] = <| |>;
 
 $modelAutoSettings[ "Anthropic", Automatic ] = <|
     "PresencePenalty"           -> Missing[ "NotSupported" ],
+    (* LLMConnections moves all system messages into the system prompt, so turn messages would collect there: *)
+    "PromptCacheOptimization"   -> False,
     "ReplaceUnicodeCharacters"  -> True,
     "SplitToolResponseMessages" -> True, (* Temporary workaround for bug 458548 *)
     "ToolMethod"                -> "Service"
@@ -202,8 +205,10 @@ $modelAutoSettings[ "AzureOpenAI", Automatic ] = <|
 $modelAutoSettings[ "DeepSeek" ] = <| |>;
 
 $modelAutoSettings[ "DeepSeek", "DeepSeekReasoner" ] = <|
-    "HybridToolMethod" -> False,
-    "ToolResponseRole" -> "User"
+    "HybridToolMethod"        -> False,
+    (* Models that need user role tool responses might not accept the system role turn messages either: *)
+    "PromptCacheOptimization" -> False,
+    "ToolResponseRole"        -> "User"
 |>;
 
 $modelAutoSettings[ "DeepSeek", "DeepSeekChat" ] = <|
@@ -281,7 +286,8 @@ $modelAutoSettings[ "OpenAI", Automatic ] = <|
 $modelAutoSettings[ "TogetherAI" ] = <| |>;
 
 $modelAutoSettings[ "TogetherAI", "DeepSeekReasoner" ] = <|
-    "ToolResponseRole" -> "User"
+    "PromptCacheOptimization" -> False,
+    "ToolResponseRole"        -> "User"
 |>;
 
 $modelAutoSettings[ "TogetherAI", "KimiK25" ] = <|
@@ -521,13 +527,14 @@ $modelAutoSettings[ Automatic, "O4Mini" ] = <|
 (* ::Subsubsubsection::Closed:: *)
 (* DeepSeek *)
 $modelAutoSettings[ Automatic, "DeepSeekFlash" ] = <|
-    "EndToken"               -> None,
-    "HybridToolMethod"       -> False,
-    "MaxContextTokens"       -> 1048576,
-    "Multimodal"             -> False,
-    "ToolCallRetryMessage"   -> False,
-    "ToolMethod"             -> "Simple",
-    "ToolResponseRole"       -> "User"
+    "EndToken"                -> None,
+    "HybridToolMethod"        -> False,
+    "MaxContextTokens"        -> 1048576,
+    "Multimodal"              -> False,
+    "PromptCacheOptimization" -> False,
+    "ToolCallRetryMessage"    -> False,
+    "ToolMethod"              -> "Simple",
+    "ToolResponseRole"        -> "User"
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -547,15 +554,18 @@ $modelAutoSettings[ Automatic, "KimiK25" ] = <|
 (* ::Subsubsubsection::Closed:: *)
 (*Local models*)
 $modelAutoSettings[ Automatic, "Qwen" ] = <|
-    "ToolResponseRole" -> "User"
+    "PromptCacheOptimization" -> False,
+    "ToolResponseRole"        -> "User"
 |>;
 
 $modelAutoSettings[ Automatic, "Nemotron" ] = <|
-    "ToolResponseRole" -> "User"
+    "PromptCacheOptimization" -> False,
+    "ToolResponseRole"        -> "User"
 |>;
 
 $modelAutoSettings[ Automatic, "Mistral" ] = <|
-    "ToolResponseRole" -> "User"
+    "PromptCacheOptimization" -> False,
+    "ToolResponseRole"        -> "User"
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -568,6 +578,7 @@ $modelAutoSettings[ Automatic, Automatic ] = <|
     "EndToken"                  -> "/end",
     "ExcludedBasePrompts"       -> { ParentList },
     "PresencePenalty"           -> 0.1,
+    "PromptCacheOptimization"   -> True,
     "ProviderPreferences"       -> <| |>,
     "ReplaceUnicodeCharacters"  -> False,
     "ShowProgressText"          -> True,

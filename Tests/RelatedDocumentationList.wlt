@@ -224,7 +224,8 @@ VerificationTest[
 (* ::Section::Closed:: *)
 (*Prompt Generators Run Once*)
 
-(* Gives the number of times a counting prompt generator ran, and the generated prompts in each request: *)
+(* Gives the number of times a counting prompt generator ran, and the generated prompts in each request. These tests are
+   for the generated prompts without prompt cache optimization (see Tests/PromptCache.wlt for the other case): *)
 countGenerators // Attributes = { HoldFirst };
 countGenerators[ eval_ ] := Wolfram`Chatbook`Common`withChatState @ Module[ { calls, generator, settings, results },
     calls     = 0;
@@ -232,9 +233,10 @@ countGenerators[ eval_ ] := Wolfram`Chatbook`Common`withChatState @ Module[ { ca
     settings  = Wolfram`Chatbook`Common`resolveAutoSettings @ Wolfram`Chatbook`Common`mergeChatSettings @ {
         Wolfram`Chatbook`Common`$defaultChatSettings,
         <|
-            "LLMEvaluator"     -> "PlainChat",
-            "Model"            -> <| "Service" -> "OpenAI", "Name" -> "gpt-4o" |>,
-            "PromptGenerators" -> { generator }
+            "LLMEvaluator"            -> "PlainChat",
+            "Model"                   -> <| "Service" -> "OpenAI", "Name" -> "gpt-4o" |>,
+            "PromptCacheOptimization" -> False,
+            "PromptGenerators"        -> { generator }
         |>
     };
     results = Block[ { $CurrentChatSettings = settings, $settings = settings }, eval ];
