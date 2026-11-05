@@ -479,8 +479,18 @@ writeChatOutputData // beginDefinition;
 (* Cloud notebooks do not use the "Data" property so we skip storing it: *)
 writeChatOutputData[ cell_CellObject, data_Association ] /; $cloudNotebooks := Null;
 
+(* The messages keep their images for the requests that follow tool calls, but the output cell doesn't need them: *)
 writeChatOutputData[ cell_CellObject, data_Association ] :=
-    LogChatTiming[ CurrentChatSettings[ cell, "Data" ] = data, "WriteChatOutputData" ];
+    LogChatTiming[
+        CurrentChatSettings[ cell, "Data" ] = Replace[
+            data,
+            as: KeyValuePattern[ "Messages" -> messages_List ] :> <|
+                as,
+                "Messages" -> revertMultimodalContent @ messages
+            |>
+        ],
+        "WriteChatOutputData"
+    ];
 
 writeChatOutputData // endDefinition;
 
@@ -4004,7 +4014,8 @@ BaseEncode @ BinarySerialize[
                     #, "Messages", Missing[ "NoMessages" ],
                     If[ ! MatchQ[ #, { ___Association } ],
                         Missing[ "UnexpectedMessages" ]
-                        , (* remove any surrounding non-user prompts and response messages *)
+                        , (* remove any surrounding non-user prompts and response messages, and the images *)
+                        revertMultimodalContent @
                         If[ MatchQ[ Last @ #, KeyValuePattern[ { "Role" -> Except[ "User" ] } ] ], Most, Identity ] @
                             If[ MatchQ[ First @ #, KeyValuePattern[ { "Role" -> Except[ "User" ] } ] ], Rest, Identity ] @
                                 #

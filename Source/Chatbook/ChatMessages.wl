@@ -319,7 +319,9 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
 
         processed //= Select @ nonEmptyMessageQ;
 
-        Sow[ <| "Messages" -> revertMultimodalContent @ processed |>, $chatDataTag ];
+        (* The requests that follow tool calls are rebuilt from these messages (settings[ "Data", "Messages" ]), so they
+           keep their images. Code that writes them to the front end removes the images with revertMultimodalContent. *)
+        Sow[ <| "Messages" -> processed |>, $chatDataTag ];
 
         $lastSettings = settings;
         $lastMessages = processed;
