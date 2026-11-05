@@ -680,7 +680,7 @@ VerificationTest[
     ],
     { { }, { { 12, 17 } }, { { 12, 17 } }, { { 12, 17 } }, { { 3, 8 }, { 12, 17 } } },
     SameTest -> MatchQ,
-    TestID   -> "NewStopTokenPositions"
+    TestID   -> "NewStopTokenPositions@@Tests/EmulatedStopTokens.wlt:671,1-684,2"
 ]
 
 (* After a stop has been triggered, the entire buffer is searched: *)
@@ -690,7 +690,7 @@ VerificationTest[
     ],
     { { 3, 8 }, { 12, 17 } },
     SameTest -> MatchQ,
-    TestID   -> "NewStopTokenPositions-Triggered"
+    TestID   -> "NewStopTokenPositions-Triggered@@Tests/EmulatedStopTokens.wlt:687,1-694,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -809,7 +809,7 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "EmulatedStop-ReferenceDefinitions"
+    TestID   -> "EmulatedStop-ReferenceDefinitions@@Tests/EmulatedStopTokens.wlt:699,1-813,2"
 ]
 
 (* Random chunkings of random text give the same results as the reference after every chunk. Some of these trigger a
@@ -835,7 +835,7 @@ VerificationTest[
     ],
     { { }, True, True },
     SameTest -> MatchQ,
-    TestID   -> "EmulatedStop-RandomChunks"
+    TestID   -> "EmulatedStop-RandomChunks@@Tests/EmulatedStopTokens.wlt:817,1-839,2"
 ]
 
 (* A long response with reasoning that mentions the stop token before the actual tool call: *)
@@ -854,7 +854,7 @@ VerificationTest[
     ],
     { True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "EmulatedStop-LongResponse"
+    TestID   -> "EmulatedStop-LongResponse@@Tests/EmulatedStopTokens.wlt:842,1-858,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -891,7 +891,7 @@ VerificationTest[
         False
     },
     SameTest -> MatchQ,
-    TestID   -> "ApplyEmulatedStopTokens-PassThrough@@Tests/EmulatedStopTokens.wlt:671,1-701,2"
+    TestID   -> "ApplyEmulatedStopTokens-PassThrough@@Tests/EmulatedStopTokens.wlt:865,1-895,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -905,7 +905,7 @@ VerificationTest[
     Wolfram`Chatbook`LLMUtilities`Private`stopTokenTrim[ "text with [WL] inside", { } ],
     "text with [WL] inside",
     SameTest -> MatchQ,
-    TestID   -> "StopTokenTrim-NoStopTokens@@Tests/EmulatedStopTokens.wlt:710,1-715,2"
+    TestID   -> "StopTokenTrim-NoStopTokens@@Tests/EmulatedStopTokens.wlt:904,1-909,2"
 ]
 
 VerificationTest[
@@ -915,28 +915,28 @@ VerificationTest[
     ],
     "query one\nquery two\n",
     SameTest -> MatchQ,
-    TestID   -> "StopTokenTrim-TrimsToEnd@@Tests/EmulatedStopTokens.wlt:717,1-725,2"
+    TestID   -> "StopTokenTrim-TrimsToEnd@@Tests/EmulatedStopTokens.wlt:911,1-919,2"
 ]
 
 VerificationTest[
     Wolfram`Chatbook`LLMUtilities`Private`stopTokenTrim[ "a[WL]b[WL]c", { "[NONE]", "[WL]" } ],
     "a",
     SameTest -> MatchQ,
-    TestID   -> "StopTokenTrim-FirstOccurrence@@Tests/EmulatedStopTokens.wlt:727,1-732,2"
+    TestID   -> "StopTokenTrim-FirstOccurrence@@Tests/EmulatedStopTokens.wlt:921,1-926,2"
 ]
 
 VerificationTest[
     Wolfram`Chatbook`LLMUtilities`Private`stopTokenTrim[ "[WL] use documentation instead", { "[NONE]", "[WL]" } ],
     "",
     SameTest -> MatchQ,
-    TestID   -> "StopTokenTrim-EntireResponse@@Tests/EmulatedStopTokens.wlt:734,1-739,2"
+    TestID   -> "StopTokenTrim-EntireResponse@@Tests/EmulatedStopTokens.wlt:928,1-933,2"
 ]
 
 VerificationTest[
     Wolfram`Chatbook`LLMUtilities`Private`stopTokenTrim[ "123456789th prime", { "[NONE]", "[WL]" } ],
     "123456789th prime",
     SameTest -> MatchQ,
-    TestID   -> "StopTokenTrim-NoMatch@@Tests/EmulatedStopTokens.wlt:741,1-746,2"
+    TestID   -> "StopTokenTrim-NoMatch@@Tests/EmulatedStopTokens.wlt:935,1-940,2"
 ]
 
 (* A stop token may arrive split across several streamed chunks: *)
@@ -944,14 +944,14 @@ VerificationTest[
     Wolfram`Chatbook`LLMUtilities`Private`stopTokenTrim[ { "queries", "\n[NO", "NE] extra" }, { "[NONE]", "[WL]" } ],
     "queries\n",
     SameTest -> MatchQ,
-    TestID   -> "StopTokenTrim-SplitChunks@@Tests/EmulatedStopTokens.wlt:749,1-754,2"
+    TestID   -> "StopTokenTrim-SplitChunks@@Tests/EmulatedStopTokens.wlt:943,1-948,2"
 ]
 
 VerificationTest[
     Wolfram`Chatbook`LLMUtilities`Private`stopTokenTrim[ { }, { "[NONE]", "[WL]" } ],
     "",
     SameTest -> MatchQ,
-    TestID   -> "StopTokenTrim-EmptyChunks@@Tests/EmulatedStopTokens.wlt:756,1-761,2"
+    TestID   -> "StopTokenTrim-EmptyChunks@@Tests/EmulatedStopTokens.wlt:950,1-955,2"
 ]
 
 (* llmChat responses are associations with a "Content" key; other keys pass through unchanged: *)
@@ -962,7 +962,7 @@ VerificationTest[
     ],
     <| "Content" -> "q1\n", "ToolRequests" -> { } |>,
     SameTest -> MatchQ,
-    TestID   -> "StopTokenTrim-Association@@Tests/EmulatedStopTokens.wlt:764,1-772,2"
+    TestID   -> "StopTokenTrim-Association@@Tests/EmulatedStopTokens.wlt:958,1-966,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -981,7 +981,7 @@ VerificationTest[
     ],
     <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-5" |>, "MaxTokens" -> 250 |>,
     SameTest -> MatchQ,
-    TestID   -> "DropModelUnsupportedParameters-Automatic-Unsupported@@Tests/EmulatedStopTokens.wlt:779,1-791,2"
+    TestID   -> "DropModelUnsupportedParameters-Automatic-Unsupported@@Tests/EmulatedStopTokens.wlt:973,1-985,2"
 ]
 
 (* gpt-4o supports stop tokens, so the settings are unchanged: *)
@@ -1000,7 +1000,7 @@ VerificationTest[
         "MaxTokens"  -> 250
     |>,
     SameTest -> MatchQ,
-    TestID   -> "DropModelUnsupportedParameters-Automatic-Supported@@Tests/EmulatedStopTokens.wlt:794,1-810,2"
+    TestID   -> "DropModelUnsupportedParameters-Automatic-Supported@@Tests/EmulatedStopTokens.wlt:988,1-1004,2"
 ]
 
 (* Shorthand model specifications are resolved with resolveFullModelSpec: *)
@@ -1011,7 +1011,7 @@ VerificationTest[
     ],
     <| "MaxTokens" -> 250 |>,
     SameTest -> MatchQ,
-    TestID   -> "DropModelUnsupportedParameters-ShorthandModelSpec@@Tests/EmulatedStopTokens.wlt:813,1-821,2"
+    TestID   -> "DropModelUnsupportedParameters-ShorthandModelSpec@@Tests/EmulatedStopTokens.wlt:1007,1-1015,2"
 ]
 
 (* Automatic also works when the config specifies its model in shorthand form: *)
@@ -1022,7 +1022,7 @@ VerificationTest[
     ],
     <| "Model" -> { "OpenAI", "o4-mini" } |>,
     SameTest -> MatchQ,
-    TestID   -> "DropModelUnsupportedParameters-Automatic-ShorthandModelSpec@@Tests/EmulatedStopTokens.wlt:824,1-832,2"
+    TestID   -> "DropModelUnsupportedParameters-Automatic-ShorthandModelSpec@@Tests/EmulatedStopTokens.wlt:1018,1-1026,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1051,7 +1051,7 @@ VerificationTest[
         "GPT5"
     },
     SameTest -> MatchQ,
-    TestID   -> "ChooseModelFamily-GPT6@@Tests/EmulatedStopTokens.wlt:840,1-861,2"
+    TestID   -> "ChooseModelFamily-GPT6@@Tests/EmulatedStopTokens.wlt:1034,1-1055,2"
 ]
 
 VerificationTest[
@@ -1065,7 +1065,7 @@ VerificationTest[
     ] /@ { "gpt-6", "gpt-6.0", "gpt-5.6" },
     ConstantArray[ Missing[ "NotSupported" ], { 3, 3 } ],
     SameTest -> MatchQ,
-    TestID   -> "AutoModelSetting-GPT6-UnsupportedParameters@@Tests/EmulatedStopTokens.wlt:863,1-875,2"
+    TestID   -> "AutoModelSetting-GPT6-UnsupportedParameters@@Tests/EmulatedStopTokens.wlt:1057,1-1069,2"
 ]
 
 VerificationTest[
@@ -1075,7 +1075,7 @@ VerificationTest[
     },
     { False, False },
     SameTest -> MatchQ,
-    TestID   -> "StopTokensSupportedQ-GPT6@@Tests/EmulatedStopTokens.wlt:877,1-885,2"
+    TestID   -> "StopTokensSupportedQ-GPT6@@Tests/EmulatedStopTokens.wlt:1071,1-1079,2"
 ]
 
 (* No "stop" parameter is sent for gpt-6, so the stop tokens are emulated instead: *)
@@ -1094,7 +1094,7 @@ VerificationTest[
     ],
     { _Missing, { "\n/exec" } },
     SameTest -> MatchQ,
-    TestID   -> "StopTokens-GPT6-NotSent@@Tests/EmulatedStopTokens.wlt:888,1-904,2"
+    TestID   -> "StopTokens-GPT6-NotSent@@Tests/EmulatedStopTokens.wlt:1082,1-1098,2"
 ]
 
 VerificationTest[
@@ -1109,7 +1109,7 @@ VerificationTest[
     ],
     <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-6.0" |>, "MaxTokens" -> 250 |>,
     SameTest -> MatchQ,
-    TestID   -> "DropModelUnsupportedParameters-GPT6@@Tests/EmulatedStopTokens.wlt:906,1-919,2"
+    TestID   -> "DropModelUnsupportedParameters-GPT6@@Tests/EmulatedStopTokens.wlt:1100,1-1113,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
