@@ -23,29 +23,29 @@ $catalogLine = StartOfString ~~ ("paclet:"|"resource:") ~~ Except[ WhitespaceCha
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*ShortPrompt*)
+(*CatalogPrompt*)
 VerificationTest[
-    catalog = RelatedDocumentation[ $fitQuery, "ShortPrompt", MaxItems -> 30 ],
+    catalog = RelatedDocumentation[ $fitQuery, "CatalogPrompt", MaxItems -> 30 ],
     _String? (StringStartsQ[ "Here are Wolfram documentation snippets that might be relevant" ]),
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-ShortPrompt"
+    TestID   -> "RelatedDocumentation-CatalogPrompt"
 ]
 
 VerificationTest[
     catalogURIs = $ChatHandlerData[ "RelatedDocumentationCatalog", "Results" ],
     { __String },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-ShortPrompt-HandlerData"
+    TestID   -> "RelatedDocumentation-CatalogPrompt-HandlerData"
 ]
 
 VerificationTest[
     lines = StringSplit[
-        RelatedDocumentation[ $fitQuery, "ShortPrompt", MaxItems -> 30, "PromptHeader" -> False ],
+        RelatedDocumentation[ $fitQuery, "CatalogPrompt", MaxItems -> 30, "PromptHeader" -> False ],
         "\n"
     ],
     { __String? (StringMatchQ[ $catalogLine ]) },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-ShortPrompt-NoHeader"
+    TestID   -> "RelatedDocumentation-CatalogPrompt-NoHeader"
 ]
 
 (* The header is followed by the same lines: *)
@@ -53,7 +53,7 @@ VerificationTest[
     StringEndsQ[ catalog, "\n\n" <> StringRiffle[ lines, "\n" ] ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-ShortPrompt-HeaderAndLines"
+    TestID   -> "RelatedDocumentation-CatalogPrompt-HeaderAndLines"
 ]
 
 (* Resource URIs are shortened, and the handler data has the full URIs of the lines: *)
@@ -67,7 +67,7 @@ VerificationTest[
     },
     { True, False, True, True },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-ShortPrompt-ShortURIs"
+    TestID   -> "RelatedDocumentation-CatalogPrompt-ShortURIs"
 ]
 
 (* Outside of a chat no tools are selected, so the header doesn't mention the documentation searcher: *)
@@ -75,7 +75,7 @@ VerificationTest[
     { StringContainsQ[ catalog, "documentation_lookup tool" ], StringContainsQ[ catalog, "searcher" ] },
     { True, False },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-ShortPrompt-ToolNames"
+    TestID   -> "RelatedDocumentation-CatalogPrompt-ToolNames"
 ]
 
 (* The header uses the tool names that the model sees with each tool method: *)
@@ -104,7 +104,7 @@ VerificationTest[
         )
     },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-ShortPrompt-ToolMethods"
+    TestID   -> "RelatedDocumentation-CatalogPrompt-ToolMethods"
 ]
 
 (* The catalog lists the same candidates as the unfiltered "Prompt", whose output is unchanged: *)
@@ -114,7 +114,7 @@ VerificationTest[
     ],
     _String? (StringStartsQ[ "Here are some Wolfram documentation snippets that you may find useful.\n\n======\n\n" ]),
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-ShortPrompt-Prompt"
+    TestID   -> "RelatedDocumentation-CatalogPrompt-Prompt"
 ]
 
 VerificationTest[
@@ -125,7 +125,7 @@ VerificationTest[
     },
     { True, False, True },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-ShortPrompt-SameCandidates"
+    TestID   -> "RelatedDocumentation-CatalogPrompt-SameCandidates"
 ]
 
 (* ::**************************************************************************************************************:: *)

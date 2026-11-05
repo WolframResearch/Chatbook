@@ -75,7 +75,7 @@ user's latest message.";
 (*$snippetVersion*)
 $snippetVersion := $snippetVersion = If[ $VersionNumber >= 15.0, "15-0-0-13528852", "14-3-0-11967661" ];
 
-(* "Descriptions" has a short description of each snippet of the other two, for catalogs ("ShortPrompt"). *)
+(* "Descriptions" has a short description of each snippet of the other two, for catalogs ("CatalogPrompt"). *)
 $streamableSnippetVersions := $streamableSnippetVersions = <|
     "Documentation"  -> $snippetVersion,
     "ResourceSystem" -> "1.1.0",
@@ -322,7 +322,7 @@ RelatedDocumentation[ prompt_, "Prompt", n_Integer, opts: OptionsPattern[ ] ] :=
     ];
 
 (* A catalog of the results, from which the model retrieves snippets with the DocumentationLookup tool: *)
-RelatedDocumentation[ prompt_, "ShortPrompt", n_Integer, opts: OptionsPattern[ ] ] :=
+RelatedDocumentation[ prompt_, "CatalogPrompt", n_Integer, opts: OptionsPattern[ ] ] :=
     catchMine @ withChatState @ Block[
         {
             $usePromptHeader = Replace[

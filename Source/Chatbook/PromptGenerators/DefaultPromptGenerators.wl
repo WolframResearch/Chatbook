@@ -129,7 +129,7 @@ relatedDocumentationListGenerator // beginDefinition;
 
 relatedDocumentationListGenerator[ messages: $$chatMessages ] :=
     If[ TrueQ @ toolSelectedQ[ "DocumentationLookup" ],
-        LogChatTiming @ RelatedDocumentation[ messages, "ShortPrompt", MaxItems -> 50 ],
+        LogChatTiming @ RelatedDocumentation[ messages, "CatalogPrompt", MaxItems -> 50 ],
         relatedDocumentationGenerator @ messages
     ];
 
