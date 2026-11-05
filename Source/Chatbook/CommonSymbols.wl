@@ -347,6 +347,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `rasterize;
 `rasterizeBlock;
 `readString;
+`readUserNotebook;
 `reasoningBoxToString;
 `reasoningIDs;
 `reasoningMetadata;
