@@ -798,9 +798,13 @@ toolStringSplit // beginDefinition;
 toolStringSplit[ req_String, result_String, id_String ] :=
     toolStringSplit[ toolRequestParser @ req, result, id ];
 
-(* Results written without an ID get one from the request: *)
+(* Results written without an ID, or with a 5 character ID from before 3eee65a8 (MistralAI only accepts 9 characters),
+   get one from the request: *)
 toolStringSplit[ { _, req: HoldPattern @ LLMToolRequest[ as_Association, opts___ ] }, result_String, id_String ] :=
-    toolStringSplit[ LLMToolRequest @ <| as, "RequestID" -> If[ id === "", tinyHash[ req, 9 ], id ] |>, result ];
+    toolStringSplit[
+        LLMToolRequest @ <| as, "RequestID" -> If[ StringLength @ id === 9, id, tinyHash[ req, 9 ] ] |>,
+        result
+    ];
 
 toolStringSplit[ req: HoldPattern[ _LLMToolRequest ], result_String ] :=
     toolStringSplit[ req, getToolByName @ req[ "Name" ], result ];
@@ -813,7 +817,9 @@ toolStringSplit[ req: HoldPattern[ _LLMToolRequest ], tool: HoldPattern[ _LLMToo
             "Tool"                       -> tool,
             "InterpretedParameterValues" -> Association @ req[ "ParameterValues" ],
             "Output"                     -> result,
-            "ResponseString"             -> result
+            "ResponseString"             -> result,
+            (* Without a version, LLMToolResponse runs its legacy updater, which takes about 50 ms: *)
+            "LLMPacletVersion"           -> req[ "Data" ][ "LLMPacletVersion" ]
         |>
     };
 

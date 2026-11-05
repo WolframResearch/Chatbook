@@ -218,6 +218,43 @@ VerificationTest[
     TestID   -> "ServiceToolCalls-History-NoID@@Tests/ServiceToolCalls.wlt:207,1-219,2"
 ]
 
+(* 5 character IDs from before 3eee65a8 are replaced, since MistralAI only accepts 9 characters: *)
+VerificationTest[
+    summarize @ prepareMessages[
+        "Service",
+        { <| "Role" -> "Assistant", "Content" -> toolCallWithResult[ "1+1", "2", "abcde" ] <> "Done." |> }
+    ],
+    {
+        { "Assistant", "", { { id_String? (StringLength[ # ] === 9 &), "1+1" } }, { } },
+        { "Tool"     , "", { }, { { id_, "2" } } },
+        { "Assistant", "Done.", { }, { } }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ServiceToolCalls-History-OldID@@Tests/ServiceToolCalls.wlt:222,1-234,2"
+]
+
+(* Splitting 10 tool calls takes about 70 ms. It took about 500 ms when each LLMToolResponse went through the
+   LLMFunctions legacy updater: *)
+VerificationTest[
+    Module[ { messages },
+        messages = {
+            $userMessage,
+            <|
+                "Role"    -> "Assistant",
+                "Content" -> StringJoin[
+                    Table[ toolCallWithResult[ ToString @ i, ToString @ i, StringPadLeft[ ToString @ i, 9, "x" ] ], { i, 10 } ],
+                    "Done."
+                ]
+            |>
+        };
+        prepareMessages[ "Service", messages ];
+        First @ AbsoluteTiming @ prepareMessages[ "Service", messages ]
+    ],
+    _? (LessThan[ 0.25 ]),
+    SameTest -> MatchQ,
+    TestID   -> "ServiceToolCalls-History-Timing@@Tests/ServiceToolCalls.wlt:238,1-256,2"
+]
+
 (* Earlier tool calls are sent the same way during the response and later in the chat history: *)
 VerificationTest[
     Module[ { inTurn, history },
@@ -252,7 +289,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "ServiceToolCalls-InTurn-Matches-History@@Tests/ServiceToolCalls.wlt:222,1-256,2"
+    TestID   -> "ServiceToolCalls-InTurn-Matches-History@@Tests/ServiceToolCalls.wlt:259,1-293,2"
 ]
 
 (* The IDs are kept until the messages are prepared for the LLM: *)
@@ -293,7 +330,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "ServiceToolCalls-ConstructMessages-KeepsIDs@@Tests/ServiceToolCalls.wlt:259,1-297,2"
+    TestID   -> "ServiceToolCalls-ConstructMessages-KeepsIDs@@Tests/ServiceToolCalls.wlt:296,1-334,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -331,7 +368,7 @@ VerificationTest[
         |>
     },
     SameTest -> SameQ,
-    TestID   -> "OtherToolMethods-RemoveIDs@@Tests/ServiceToolCalls.wlt:304,1-335,2"
+    TestID   -> "OtherToolMethods-RemoveIDs@@Tests/ServiceToolCalls.wlt:341,1-372,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
