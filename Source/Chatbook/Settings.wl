@@ -254,6 +254,15 @@ $modelAutoSettings[ "MistralAI", Automatic ] = <|
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*Ollama*)
+$modelAutoSettings[ "Ollama" ] = <| |>;
+
+$modelAutoSettings[ "Ollama", Automatic ] = <|
+    "PresencePenalty" -> Missing[ "NotSupported" ]
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*OpenAI*)
 $modelAutoSettings[ "OpenAI" ] = <| |>;
 
