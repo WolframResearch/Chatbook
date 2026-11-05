@@ -55,8 +55,8 @@ hyperlink[ label_String, uri_String ] /; StringStartsQ[ uri, "paclet:" ] :=
             uri,
             StringReplace[
                 uri,
-                StartOfString ~~ "paclet:" ~~ ref__ ~~ EndOfString :>
-                    "https://reference.wolfram.com/language/"<>ref<>".html"
+                StartOfString ~~ "paclet:" ~~ ref: Except[ "#" ].. ~~ fragment___ ~~ EndOfString :>
+                    "https://reference.wolfram.com/language/"<>ref<>".html"<>fragment
             ]
         },
         "TextRefLink"

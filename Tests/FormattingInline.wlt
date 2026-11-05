@@ -1094,6 +1094,50 @@ VerificationTest[
     TestID   -> "Inline-Hyperlink-Paclet-Adjacent-Text@@Tests/FormattingInline.wlt:1087,1-1095,2"
 ]
 
+(* A fragment (e.g. a snippet URI) stays in the paclet: URI, which the documentation center resolves, and comes after
+   ".html" in the web URL: *)
+VerificationTest[
+    formatted /@ {
+        "See [Table](paclet:ref/Table#23775) now",
+        "See [speed](paclet:ref/entity/TaxonomicSpecies#0a1b2c) now"
+    },
+    {
+        {
+            "See ",
+            Cell @ BoxData @ TemplateBox[
+                {
+                    "Table",
+                    "paclet:ref/Table#23775",
+                    "https://reference.wolfram.com/language/ref/Table.html#23775"
+                },
+                "TextRefLink"
+            ],
+            " now"
+        },
+        {
+            "See ",
+            Cell @ BoxData @ TemplateBox[
+                {
+                    "speed",
+                    "paclet:ref/entity/TaxonomicSpecies#0a1b2c",
+                    "https://reference.wolfram.com/language/ref/entity/TaxonomicSpecies.html#0a1b2c"
+                },
+                "TextRefLink"
+            ],
+            " now"
+        }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Inline-Hyperlink-Paclet-Fragment"
+]
+
+VerificationTest[
+    MarkdownRoundTrip[ "See [Table](paclet:ref/Table#23775) now" ],
+    "See [Table](paclet:ref/Table#23775) now",
+    SameTest -> MatchQ,
+    TestID   -> "Inline-RoundTrip-Paclet-Fragment"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Links With Code Labels*)

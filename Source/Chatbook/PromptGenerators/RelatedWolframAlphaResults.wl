@@ -396,7 +396,7 @@ usingDocumentationQ[ _ ] /; $docsProvided := True;
 usingDocumentationQ[ generators_List ] := AnyTrue[ generators, usingDocumentationQ ];
 usingDocumentationQ[ HoldPattern @ LLMPromptGenerator[ as_, ___ ] ] := usingDocumentationQ @ as;
 usingDocumentationQ[ KeyValuePattern[ "Name" -> name_String ] ] := usingDocumentationQ @ name;
-usingDocumentationQ[ "RelatedDocumentation" ] := True;
+usingDocumentationQ[ "RelatedDocumentation"|"RelatedDocumentationList" ] := True;
 usingDocumentationQ[ _ ] := False;
 usingDocumentationQ // endDefinition;
 

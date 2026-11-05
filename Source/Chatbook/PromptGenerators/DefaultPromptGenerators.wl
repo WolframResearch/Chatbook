@@ -26,6 +26,7 @@ Chatbook::InvalidPromptGenerator = "Expected a valid LLMPromptGenerator instead 
 (*DefaultPromptGenerators*)
 $defaultPromptGenerators := $defaultPromptGenerators = insertPromptGeneratorNames @ <|
     "RelatedDocumentation"       -> LLMPromptGenerator[ relatedDocumentationGenerator      , "Messages" ],
+    "RelatedDocumentationList"   -> LLMPromptGenerator[ relatedDocumentationListGenerator  , "Messages" ],
     "RelatedWolframAlphaResults" -> LLMPromptGenerator[ relatedWolframAlphaResultsGenerator, "Messages" ],
     "WebSearch"                  -> LLMPromptGenerator[ webSearchGenerator                 , "Messages" ]
 |>;
@@ -118,6 +119,21 @@ relatedDocumentationGenerator[ messages: $$chatMessages ] :=
     ];
 
 relatedDocumentationGenerator // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*relatedDocumentationListGenerator*)
+(* Gives a catalog of related snippets for the model to retrieve with the DocumentationLookup tool. Without that tool
+   (e.g. tools are disabled, or the persona doesn't have it), it gives the snippets, like "RelatedDocumentation". *)
+relatedDocumentationListGenerator // beginDefinition;
+
+relatedDocumentationListGenerator[ messages: $$chatMessages ] :=
+    If[ TrueQ @ toolSelectedQ[ "DocumentationLookup" ],
+        LogChatTiming @ RelatedDocumentation[ messages, "CatalogPrompt", MaxItems -> 50 ],
+        relatedDocumentationGenerator @ messages
+    ];
+
+relatedDocumentationListGenerator // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

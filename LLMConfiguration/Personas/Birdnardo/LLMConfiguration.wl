@@ -2,10 +2,11 @@
 	"Description"       -> "The one and only Birdnardo",
 	"DisplayName"    	-> Dynamic @ FEPrivate`FrontEndResource[ "ChatbookStrings", "PersonaNameBirdnardo" ],
 	"DocumentationLink" -> "https://resources.wolframcloud.com/PromptRepository/resources/Birdnardo/",
-	"PromptGenerators"  -> { "RelatedDocumentation", ParentList },
+	"PromptGenerators"  -> { "RelatedDocumentationList", ParentList },
 	"Tools"             -> {
 		"WolframLanguageEvaluator",
 		"DocumentationSearcher",
+		"DocumentationLookup",
 		"WolframAlpha",
 		"WebSearcher",
 		"WebFetcher",

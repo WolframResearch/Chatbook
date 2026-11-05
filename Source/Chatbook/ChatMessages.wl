@@ -131,8 +131,9 @@ augmentChatMessages[ messages0_, settings_, opts_Association? AssociationQ ] := 
             "ResolvedBasePrompt"
         ];
 
+        (* Messages from an earlier AugmentChatMessages get new generated prompts, not that request's: *)
         messages = ConfirmMatch[
-            Flatten @ { makeCurrentRole @ resolved, messages0 },
+            Flatten @ { makeCurrentRole @ resolved, KeyDrop[ messages0, "PromptGenerated" ] },
             $$chatMessages,
             "Messages"
         ];
@@ -267,10 +268,21 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
             throwFailure[ "InvalidPromptGeneratorRole", genRole ]
         ];
 
-        generatedPrompts = ConfirmMatch[ applyPromptGenerators[ settings, merged ], { ___String }, "Generated" ];
+        (* Prompt generators run once per chat request: the requests that follow tool calls get the messages of the
+           first request back (settings[ "Data", "Messages" ]), so they reuse its generated prompts.
+           NOTE: if the first request had no generated prompts, the generators run again after a tool call. *)
+        generatedPrompts = ConfirmMatch[
+            Replace[
+                Cases[ messages0, KeyValuePattern @ { "PromptGenerated" -> True, "Content" -> content_ } :> content ],
+                { } :> applyPromptGenerators[ settings, merged ]
+            ],
+            { ___String },
+            "Generated"
+        ];
 
         generatedMessages = Splice @ ConfirmMatch[
-            <| "Role" -> genRole, "Content" -> #, "Temporary" -> True |> & /@ generatedPrompts,
+            <| "Role" -> genRole, "Content" -> #, "Temporary" -> True, "PromptGenerated" -> True |> & /@
+                generatedPrompts,
             $$chatMessages,
             "GeneratedMessages"
         ];

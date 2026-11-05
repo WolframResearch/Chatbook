@@ -110,6 +110,42 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*Short Resource URIs*)
+(* Documentation catalogs show resource URIs in a short form, which the model may use in links: *)
+VerificationTest[
+    Wolfram`Chatbook`Common`autoCorrect /@ {
+        "See [FITImport](resource:function/FITImport#334957977).",
+        "[data](resource:data/Sample-Data-Fishers-Irises) and [net](resource:nn/ResNet-50-Trained-on-ImageNet-Competition-Data)",
+        "[root](resource:paclet/RickHennigan/ComputationalFitness) [ref](resource:paclet/RickHennigan/ComputationalFitness/ref/FITImport.html#447361725)"
+    },
+    {
+        "See [FITImport](https://resources.wolframcloud.com/FunctionRepository/resources/FITImport#334957977).",
+        "[data](https://datarepository.wolframcloud.com/resources/Sample-Data-Fishers-Irises) and [net](https://resources.wolframcloud.com/NeuralNetRepository/resources/ResNet-50-Trained-on-ImageNet-Competition-Data)",
+        "[root](https://paclets.com/RickHennigan/ComputationalFitness) [ref](https://paclets.com/RickHennigan/ComputationalFitness/ref/FITImport.html#447361725)"
+    },
+    SameTest -> MatchQ,
+    TestID   -> "AutoCorrect-ShortURIs"
+]
+
+(* autoCorrect runs on the whole accumulated text for every chunk, so the rules must be idempotent, and a short URI that
+   is split between chunks must give the same result: *)
+VerificationTest[
+    $shortURIText = "Use [FITImport](resource:function/FITImport#334957977) or [x](resource:paclet/A/B).";
+    {
+        Wolfram`Chatbook`Common`autoCorrect @ Wolfram`Chatbook`Common`autoCorrect @ $shortURIText,
+        Fold[
+            Wolfram`Chatbook`SendChat`Private`appendStringContent,
+            Null,
+            StringPartition[ $shortURIText, UpTo[ 7 ] ]
+        ]
+    },
+    ConstantArray[ Wolfram`Chatbook`Common`autoCorrect @ $shortURIText, 2 ],
+    SameTest -> MatchQ,
+    TestID   -> "AutoCorrect-ShortURIs-Idempotent-Streaming"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*Moonshot Tool Calls*)
 (* autoCorrect only includes the Moonshot tool call rule when the string contains "<|tool_calls_section_begin|>",
    which must give the same results as always using the full list of rules. *)
@@ -144,7 +180,8 @@ VerificationTest[
             "\\uF351", "\\uf351", "\\uFF1D", "\\uff1d", "\:ff1d", "\\\:ff1d", "\\" <> "[FreeformInput]",
             "\\\\" <> "[FreeformEntity]", "\\[FreeformPrompt]", "\\[RawEscape][FreeformPrompt]", "\[FreeformPrompt]",
             "\n<|image_sentinel|>\n", "<|image_sentinel|>", "paclet:ref/ResourceFunction/",
-            "paclet:ref/resource-function/", "/functions.", "[end]"
+            "paclet:ref/resource-function/", "/functions.", "[end]", "resource:function/", "resource:data/",
+            "resource:nn/", "resource:paclet/", "resource:"
         },
         Keys @ Wolfram`Chatbook`Common`$longNameCharacters,
         {

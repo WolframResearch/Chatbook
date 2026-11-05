@@ -1,6 +1,12 @@
 <|
     "BasePrompt"       -> { ParentList, "AgentOneCoderPersona", "WolframLanguage" },
     "Hidden"           -> True,
-    "PromptGenerators" -> { "RelatedDocumentation" },
-    "Tools"            -> { "WolframLanguageEvaluator", "DocumentationSearcher", "WolframAlpha", ParentList }
+    "PromptGenerators" -> { "RelatedDocumentationList" },
+    "Tools"            -> {
+        "WolframLanguageEvaluator",
+        "DocumentationSearcher",
+        "DocumentationLookup",
+        "WolframAlpha",
+        ParentList
+    }
 |>

@@ -79,10 +79,16 @@ formatSpecialBoxes[ string_String ] :=
 formatSpecialBoxes[ boxes_ ] :=
     boxes /. {
         RowBox @ { "\[FreeformPrompt]", "[", q_String? quotedStringQ, "]" } :>
-            RuleCondition @ If[ TrueQ @ $dynamicText, formatNLInputFast @ q, formatNLInputSlow @ q ]
+            RuleCondition @ If[ TrueQ[ $dynamicText || $useFastNLInputFormatting ],
+                                formatNLInputFast @ q,
+                                formatNLInputSlow @ q
+                            ]
         ,
         RowBox @ { "\[FreeformPrompt]", "[", RowBox @ { q_String? quotedStringQ, ",", _ }, "]" } :>
-            RuleCondition @ If[ TrueQ @ $dynamicText, formatNLInputFast @ q, formatNLInputSlow @ q ]
+            RuleCondition @ If[ TrueQ[ $dynamicText || $useFastNLInputFormatting ],
+                                formatNLInputFast @ q,
+                                formatNLInputSlow @ q
+                            ]
         ,
         RowBox @ { "\[FreeformPrompt]", "[", q_String } /; StringMatchQ[ q, "\""~~Except[ "\""]..~~("\""|"") ] :>
             RuleCondition @ formatNLInputFast @ q

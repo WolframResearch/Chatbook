@@ -1959,6 +1959,8 @@ $llmAutoCorrectRulesNoMoonshot := $llmAutoCorrectRulesNoMoonshot = Flatten @ {
     "<|image_sentinel|>" :> "",
     "paclet:ref/ResourceFunction/" :> "https://resources.wolframcloud.com/FunctionRepository/resources/",
     "paclet:ref/resource-function/" :> "https://resources.wolframcloud.com/FunctionRepository/resources/",
+    (* Short resource URIs from the documentation catalog, e.g. "resource:function/" (see $shortURIPrefixes): *)
+    $shortURIExpansionRules,
     StartOfLine ~~ "/functions." -> "/",
     StartOfLine ~~ "[end]" ~~ EndOfLine -> "/end",
     $longNameCharacters

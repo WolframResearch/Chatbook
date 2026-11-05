@@ -140,9 +140,10 @@ When `Automatic`, resolves to `{}` (no generators) via `resolveAutoSetting0` (`S
 
 ### Built-in Generators
 
-Three built-in generators are registered in `$defaultPromptGenerators` (`DefaultPromptGenerators.wl`):
+Four built-in generators are registered in `$defaultPromptGenerators` (`DefaultPromptGenerators.wl`):
 
-- **`"RelatedDocumentation"`** — searches documentation via vector databases, returning formatted markdown with citations; uses `RelatedDocumentation` from `RelatedDocumentation.wl`
+- **`"RelatedDocumentation"`** — searches documentation via vector databases and inserts the relevant snippets; uses `RelatedDocumentation[messages, "Prompt", ...]` from `RelatedDocumentation.wl`. In inline, workspace, sidebar and LLMKit chats, a small LLM picks up to 10 of about 50 search results; otherwise the top 5 results are used without filtering.
+- **`"RelatedDocumentationList"`** — the same search, but inserts only a catalog: one `<URI> - <short description>` line per result (`RelatedDocumentation[messages, "CatalogPrompt", MaxItems -> 50]`), with instructions to retrieve the snippets that help with the `"DocumentationLookup"` tool, all in one call. There is no LLM filter. Resource URIs are shortened in the catalog (e.g. `resource:function/FITImport#334957977`), and results without a description (from the `"Descriptions"` snippet store) are left out. When the `"DocumentationLookup"` tool is not selected (e.g. tools are disabled, or the persona doesn't have it), it does exactly what `"RelatedDocumentation"` does. The catalog's full URIs are in the handler data as `"RelatedDocumentationCatalog" -> <|"Results" -> uris|>`.
 - **`"RelatedWolframAlphaResults"`** — queries Wolfram Alpha for relevant results via `RelatedWolframAlphaResults` from `RelatedWolframAlphaResults.wl`
 - **`"WebSearch"`** — performs web searches using the Tavily API, requiring a `TAVILY_API_KEY` system credential
 
@@ -154,7 +155,9 @@ Resolution occurs in two stages:
 
 1. **Settings resolution** (`resolveAutoSettings0` in `Settings.wl`, line 692): `resolvePromptGenerators` (`Common.wl`) reads the `"PromptGenerators"` list, conditionally appends `"RelatedWolframAlphaResults"` if `featureEnabledQ["RelatedWolframAlphaResults", settings]` is `True` (triggered by `"WolframAlphaCAGEnabled" -> True`), conditionally appends `"WebSearch"` if `featureEnabledQ["RelatedWebSearchResults", settings]` is `True` (triggered by `"WebSearchRAGMethod" -> "Tavily"`), then resolves each string name to an `LLMPromptGenerator` object via `resolvePromptGenerator` (which looks up the name in `$defaultPromptGenerators`; invalid names throw `"InvalidPromptGenerator"` failure). `ParentList` and `$$unspecified` entries are removed via `Nothing`. The resolved list is deduplicated and stored back as `{ ___LLMPromptGenerator }`.
 
-2. **Message construction** (`augmentChatMessages` in `ChatMessages.wl`, line 276): `applyPromptGenerators` (`DefaultPromptGenerators.wl`) converts each generator to an `LLMPromptGenerator` via `toPromptGenerator`, creates generator data via `makePromptGeneratorData` (which extracts `"Input"` from the last message's content and `"Messages"` from the full message list), then applies each generator. Each invocation triggers `"PromptGeneratorStart"` and `"PromptGeneratorEnd"` handler function events. Generator results are processed by `formatGeneratedPrompt` and the non-empty results are wrapped as message Associations with `"Role"` set to `PromptGeneratorMessageRole`, `"Content"` set to the generated text, and `"Temporary" -> True`, inserted at the position specified by `PromptGeneratorMessagePosition`.
+2. **Message construction** (`augmentChatMessages` in `ChatMessages.wl`, line 276): `applyPromptGenerators` (`DefaultPromptGenerators.wl`) converts each generator to an `LLMPromptGenerator` via `toPromptGenerator`, creates generator data via `makePromptGeneratorData` (which extracts `"Input"` from the last message's content and `"Messages"` from the full message list), then applies each generator. Each invocation triggers `"PromptGeneratorStart"` and `"PromptGeneratorEnd"` handler function events. Generator results are processed by `formatGeneratedPrompt` and the non-empty results are wrapped as message Associations with `"Role"` set to `PromptGeneratorMessageRole`, `"Content"` set to the generated text, `"Temporary" -> True` and `"PromptGenerated" -> True`, inserted at the position specified by `PromptGeneratorMessagePosition`.
+
+Generators run once per chat request, not again for the requests that follow tool calls: `toolEvaluation` (`SendChat.wl`) passes the messages of the first request back to `constructMessages` (`ChatMessages.wl`), which reuses the messages marked `"PromptGenerated" -> True` instead of calling `applyPromptGenerators` again. If the first request had no generated prompts, the generators run again after a tool call.
 
 ### ExperimentalFeatures Interaction
 
@@ -162,18 +165,20 @@ Interacts with `"ExperimentalFeatures"` bidirectionally: `ExperimentalFeatures` 
 
 ### Persona Overrides
 
-- **AgentOne**: `{"RelatedDocumentation", "RelatedWolframAlphaResults"}`
-- **AgentOneCoder**: `{"RelatedDocumentation"}`
-- **CodeAssistant/CodeWriter/Wolfie/Birdnardo/NotebookAssistant**: `{"RelatedDocumentation", ParentList}`
+- **AgentOne**: `{"RelatedDocumentationList", "RelatedWolframAlphaResults"}`
+- **AgentOneCoder**: `{"RelatedDocumentationList"}`
+- **CodeAssistant/CodeWriter/Wolfie/Birdnardo/NotebookAssistant/WolframAIAssistant**: `{"RelatedDocumentationList", ParentList}`
 - **WolframAlpha**: `{"RelatedWolframAlphaResults", ParentList}`
 - **RawModel**: `{}` (no generators)
 - **PlainChat**: does not set this (inherits default)
 
 `ParentList` in persona values enables merging with the parent scope's generators via `mergeChatSettings`.
 
+The personas with tools also list the `"DocumentationLookup"` tool, so they get the catalog of `"RelatedDocumentationList"`. CodeWriter has no tools, so its generator gives full snippets. Custom personas that name `"RelatedDocumentation"` keep getting full snippets.
+
 ### Chat Mode Overrides
 
-NotebookAssistance mode (`ShowNotebookAssistance.wl`) overrides to `{"RelatedDocumentation"}` in `$notebookAssistanceBaseSettings`.
+NotebookAssistance mode (`ShowNotebookAssistance.wl`) overrides to `{"RelatedDocumentationList"}` in `$notebookAssistanceBaseSettings`. Its persona (WolframAIAssistant) merges its own list with this one through `ParentList`, so both must name the same documentation generator, or both generators run.
 
 ### Integration Points
 
@@ -201,7 +206,7 @@ The default is a fixed numeric value (`2`), not `Automatic`. When `Automatic`, r
 
 ### Implementation
 
-Used in `augmentChatMessages` (`ChatMessages.wl`): after chat messages are constructed and optionally merged (via `MergeMessages`), prompt generators produce additional context strings. These strings are wrapped as message Associations with `"Role"` set to the `PromptGeneratorMessageRole` value, `"Content"` set to the generated text, and `"Temporary" -> True` (marking them for exclusion in subsequent chat turns). The messages are then inserted via `Insert[merged, generatedMessages, genPos]`, where `genPos` is this setting's resolved value. A position of `2` places the generated messages after the first message in the list (typically the system prompt), ensuring they appear early in the context before user/assistant conversation history.
+Used in `augmentChatMessages` (`ChatMessages.wl`): after chat messages are constructed and optionally merged (via `MergeMessages`), prompt generators produce additional context strings. These strings are wrapped as message Associations with `"Role"` set to the `PromptGeneratorMessageRole` value, `"Content"` set to the generated text, `"Temporary" -> True` (marking them for exclusion in subsequent chat turns), and `"PromptGenerated" -> True` (so that the requests after tool calls in the same turn reuse them). The messages are then inserted via `Insert[merged, generatedMessages, genPos]`, where `genPos` is this setting's resolved value. A position of `2` places the generated messages after the first message in the list (typically the system prompt), ensuring they appear early in the context before user/assistant conversation history.
 
 If the position is invalid (e.g., out of bounds for the message list), `throwFailure["InvalidPromptGeneratorPosition", genPos]` is called. The value can be any valid `Insert` position specification (positive or negative integer).
 
@@ -232,7 +237,7 @@ The three valid values determine how the LLM interprets the generated context: `
 
 ### Implementation
 
-Used in `augmentChatMessages` (`ChatMessages.wl`): each generated prompt string is wrapped as a message Association with `"Role"` set to this setting's resolved value, `"Content"` set to the generated text, and `"Temporary" -> True`. The generated messages are then inserted into the merged message list at the position specified by `PromptGeneratorMessagePosition`.
+Used in `augmentChatMessages` (`ChatMessages.wl`): each generated prompt string is wrapped as a message Association with `"Role"` set to this setting's resolved value, `"Content"` set to the generated text, `"Temporary" -> True` and `"PromptGenerated" -> True`. The generated messages are then inserted into the merged message list at the position specified by `PromptGeneratorMessagePosition`.
 
 ### Integration Points
 
