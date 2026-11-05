@@ -2908,6 +2908,7 @@ getSentenceBERTEmbeddingFunction[ ] := Enclose[
     Module[ { name },
 
         Needs[ "SemanticSearch`" -> None ];
+        cacheSentenceBERTTokenizer[ ];
 
         name = ConfirmBy[
             SelectFirst[
@@ -2927,6 +2928,30 @@ getSentenceBERTEmbeddingFunction[ ] := Enclose[
 ];
 
 getSentenceBERTEmbeddingFunction // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*cacheSentenceBERTTokenizer*)
+(* SentenceBERTEmbedding uses the "Tokenizer" element of this resource. The repository reports "ByteCount" -> $Failed
+   for it, so ResourceSystemClient does not cache the element and downloads it again in every session (about 3 s).
+   This downloads it once in a way that caches it. When it is already cached, the check costs nothing extra, since
+   NetModel loads the tokenizer from the same files right after. Remove this once ResourceSystemClient caches it. *)
+$sentenceBERTTokenizerResource = "MiniLM V2 Reranker Trained on MS MARCO Data";
+
+cacheSentenceBERTTokenizer // beginDefinition;
+
+(* Skipped in the cloud, where ResourceSystemClient does not cache resource content on purpose: *)
+cacheSentenceBERTTokenizer[ ] := catchQuiet @ Module[ { ro },
+    NetModel; (* Loads NeuralNetworks` *)
+    If[ ! $CloudEvaluation && FailureQ @ NeuralNetworks`LocalNetModel[ $sentenceBERTTokenizerResource, "Tokenizer" ],
+        ro = ResourceObject @ $sentenceBERTTokenizerResource;
+        If[ MatchQ[ ro, _ResourceObject ],
+            ResourceSystemClient`ResourceDownload[ ro, <| "Element" -> "Tokenizer", "ResponseMethod" -> "Download" |> ]
+        ]
+    ];
+];
+
+cacheSentenceBERTTokenizer // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
