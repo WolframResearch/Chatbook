@@ -713,6 +713,7 @@ rewriteServiceToolCalls[
     ]
 |>;
 
+(* Tool results end with "ENDRESULT(id)", where id is the request ID the tool call was sent with: *)
 rewriteServiceToolCalls[
     settings_,
     message: KeyValuePattern @ { "Role" -> "Assistant", "Content" -> content_String }
@@ -720,9 +721,12 @@ rewriteServiceToolCalls[
     message,
     Flatten @ StringSplit[
         content,
-        Shortest[
-            req: ("TOOLCALL: " ~~ __ ~~ "\nENDARGUMENTS") ~~ "\nENDTOOLCALL\nRESULT\n" ~~ result__ ~~ "\nENDRESULT"
-        ] :> toolStringSplit[ req, result ]
+        StringExpression[
+            Shortest[
+                req: ("TOOLCALL: " ~~ __ ~~ "\nENDARGUMENTS") ~~ "\nENDTOOLCALL\nRESULT\n" ~~ result__ ~~ "\nENDRESULT"
+            ],
+            ("(" ~~ id: (LetterCharacter|DigitCharacter).. ~~ ")") | ""
+        ] :> toolStringSplit[ req, result, id ]
     ]
 ];
 
@@ -772,13 +776,12 @@ serviceToolMessageMerge // endDefinition;
 (*toolStringSplit*)
 toolStringSplit // beginDefinition;
 
-toolStringSplit[ req_String, result_String ] :=
-    toolStringSplit[ toolRequestParser @ req, result ];
+toolStringSplit[ req_String, result_String, id_String ] :=
+    toolStringSplit[ toolRequestParser @ req, result, id ];
 
-toolStringSplit[ { _, req: HoldPattern @ LLMToolRequest[ as_Association, opts___ ] }, result_String ] :=
-    With[ { id = tinyHash[ req, 9 ] },
-        toolStringSplit[ LLMToolRequest @ <| as, "RequestID" -> id |>, result ]
-    ];
+(* Results written without an ID get one from the request: *)
+toolStringSplit[ { _, req: HoldPattern @ LLMToolRequest[ as_Association, opts___ ] }, result_String, id_String ] :=
+    toolStringSplit[ LLMToolRequest @ <| as, "RequestID" -> If[ id === "", tinyHash[ req, 9 ], id ] |>, result ];
 
 toolStringSplit[ req: HoldPattern[ _LLMToolRequest ], result_String ] :=
     toolStringSplit[ req, getToolByName @ req[ "Name" ], result ];
