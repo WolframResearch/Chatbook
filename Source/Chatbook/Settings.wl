@@ -1407,12 +1407,18 @@ serviceMaxContextTokens[ settings_Association ] :=
 
 serviceMaxContextTokens[ service_String, name_String ] :=
     Module[ { max },
-        max = Quiet @ ServiceExecute[ service, "ModelContextLength", { "Name" -> name } ];
+        (* Like LLMServices requests, start a local Ollama server if needed instead of asking the user in a dialog: *)
+        max = Quiet @ Block[ { Ollama`IssueDialogsQ = False },
+            ServiceExecute[ service, "ModelContextLength", { "Model" -> name } ]
+        ];
         If[ TrueQ @ Positive @ max,
             serviceMaxContextTokens[ service, name ] = Floor @ max,
             autoMaxContextTokens0 @ name
         ]
     ];
+
+(* The service chooses the model, so there's no specific model to query (same default as autoMaxContextTokens): *)
+serviceMaxContextTokens[ _String, Automatic ] := 2^16;
 
 serviceMaxContextTokens // endDefinition;
 
