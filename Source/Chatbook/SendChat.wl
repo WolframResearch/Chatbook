@@ -379,7 +379,13 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] :
         cellTags = CurrentValue[ evalCell, CellTags ];
         cell = activeAIAssistantCell[
             container,
-            Association[ settings, "Container" :> container, "CellObject" :> cellObject, "Task" :> task ],
+            Association[
+                settings,
+                "Data"       -> frontEndChatData @ data,
+                "Container"  :> container,
+                "CellObject" :> cellObject,
+                "Task"       :> task
+            ],
             cellTags
         ];
 
@@ -479,20 +485,23 @@ writeChatOutputData // beginDefinition;
 (* Cloud notebooks do not use the "Data" property so we skip storing it: *)
 writeChatOutputData[ cell_CellObject, data_Association ] /; $cloudNotebooks := Null;
 
-(* The messages keep their images for the requests that follow tool calls, but the output cell doesn't need them: *)
 writeChatOutputData[ cell_CellObject, data_Association ] :=
-    LogChatTiming[
-        CurrentChatSettings[ cell, "Data" ] = Replace[
-            data,
-            as: KeyValuePattern[ "Messages" -> messages_List ] :> <|
-                as,
-                "Messages" -> revertMultimodalContent @ messages
-            |>
-        ],
-        "WriteChatOutputData"
-    ];
+    LogChatTiming[ CurrentChatSettings[ cell, "Data" ] = frontEndChatData @ data, "WriteChatOutputData" ];
 
 writeChatOutputData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*frontEndChatData*)
+frontEndChatData // beginDefinition;
+
+(* The messages keep their images for the requests that follow tool calls, but the output cell doesn't need them: *)
+frontEndChatData[ data: KeyValuePattern[ "Messages" -> messages_List ] ] :=
+    <| data, "Messages" -> revertMultimodalContent @ messages |>;
+
+frontEndChatData[ data_Association ] := data;
+
+frontEndChatData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
