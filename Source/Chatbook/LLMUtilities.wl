@@ -27,6 +27,9 @@ $backgroundHandlers = False;
 $defaultConfigSettings = <|
     "LLMEvaluator"        -> $defaultConfigPersona,
     "ExcludedBasePrompts" -> { "Notebooks", "NotebooksPreamble" },
+    (* LLMFunctions sends generated configurations to chat completions, unless told otherwise, so their settings are
+       resolved for that endpoint (e.g. reasoning without a summary request) unless the caller gives a method: *)
+    "RequestMethod"       -> "ChatCompletions",
     "ToolPrePrompt"       -> "",
     "ToolListingPrompt"   -> "",
     "ToolPostPrompt"      -> ""

@@ -1035,7 +1035,7 @@ chatSubmit0[
             Quiet[
                 chat[
                     standardizeMessageKeys @ messages,
-                    makeLLMConfiguration @ requestReasoningSummaries @ settings,
+                    makeLLMConfiguration @ settings,
                     Authentication -> auth
                 ],
                 { LLMServices`Chat::unsupported, LLMServices`Response::llmunsupported }
@@ -1080,7 +1080,7 @@ chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] :
                 "ChatSubmit",
                 HoldComplete[
                     standardizeMessageKeys @ messages,
-                    makeLLMConfiguration @ requestReasoningSummaries @ settings,
+                    makeLLMConfiguration @ settings,
                     Authentication       -> settings[ "Authentication" ],
                     HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
                     HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings,
