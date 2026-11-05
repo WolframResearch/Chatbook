@@ -29,6 +29,14 @@ Resolution only occurs when `ToolsEnabled` is `True`; otherwise the setting rema
 
 A built-in tool can be version-gated through its `"Enabled"` and `"Hidden"` keys: `FileReader` wraps `FormatUtilities`LLM`ReadFile` and requires Wolfram 15.1, so on earlier versions it stays in `$DefaultTools` (persona tool lists that name it remain valid) but is filtered out by `toolEnabledQ` and hidden from the tool manager UI.
 
+`"Enabled"` can also limit a tool to certain chat modes. `NotebookReader` (`Tools/DefaultToolDefinitions/NotebookReader.wl`, short name `nb_read`) lets the model read the user's notebook on demand, so it is only enabled in sidebar and Notebook Assistant window chats (`$SidebarChat` or `$WorkspaceChat`, which `resolveAutoSettings0` sets before `resolveTools`). It is hidden from the tool manager UI and is not in any persona's tool list. Instead, the notebook assistance settings (`$notebookAssistanceBaseSettings` in `ChatModes/ShowNotebookAssistance.wl`) add it to `"Tools"`, which personas splice in through `ParentList`. The tool:
+
+- Reads the same notebook as the automatic notebook context: the focused notebook in the Notebook Assistant window, or the notebook that contains the sidebar.
+- With the default `"scope" -> "selection"`, gives the same view as the automatic notebook context (`getContextFromSelection` in `ChatModes/Context.wl`): the cells around the user's selection, marked with `<selection>`. Relative times like "(3 minutes ago)" are left out of the metadata, because tool results stay in the conversation.
+- With `"scope" -> "all"`, gives the notebook from the beginning, 50 cells at a time. The optional `"offset"` parameter is the 1-based index of the first cell, and each result says which cells it shows and the offset of the next page.
+- Gives an explanation instead of notebook content when there is no notebook, or when `"AllowSelectionContext"` is not `True` (the user turned notebook content off).
+- Does not change the chat's own notebook context state (`$contextPrompt`, `$selectionPrompt`, `$contextImages`, and so on).
+
 The `getToolNames` function (`Tools/Common.wl`) determines the initial tool name list through a two-level dispatch:
 
 - If the persona declares tools (via `LLMEvaluator["Tools"]`), persona tools and setting-level tools are combined.
