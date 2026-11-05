@@ -698,20 +698,22 @@ rewriteServiceToolCalls // beginDefinition;
 rewriteServiceToolCalls[ settings_, messages_List ] :=
     Flatten[ rewriteServiceToolCalls[ settings, # ] & /@ messages ];
 
+(* The message for a tool call that is being evaluated ends with that call, which is given in "ToolRequests".
+   Earlier calls in the same response already have results, so they are split like any other assistant message: *)
 rewriteServiceToolCalls[
     settings_,
     message: HoldPattern @ KeyValuePattern @ {
         "Content"      -> content_String,
         "ToolRequest"  -> True,
-        "ToolRequests" -> requests: { __LLMToolRequest }
+        "ToolRequests" -> { __LLMToolRequest }
     }
-] := <|
-    message,
-    "Content" -> StringDelete[
-        content,
-        "\n"... ~~ StartOfLine ~~ "TOOLCALL: " ~~ ___ ~~ "\nENDARGUMENTS\nENDTOOLCALL" ~~ EndOfString
-    ]
-|>;
+] := serviceToolMessageMerge @ Flatten @ {
+    rewriteServiceToolCalls[
+        settings,
+        <| KeyDrop[ message, { "ToolRequest", "ToolRequests" } ], "Content" -> removeLastToolCall @ content |>
+    ],
+    <| message, "Content" -> { } |>
+};
 
 (* Tool results end with "ENDRESULT(id)", where id is the request ID the tool call was sent with: *)
 rewriteServiceToolCalls[
@@ -734,6 +736,23 @@ rewriteServiceToolCalls[ settings_, message_Association ] :=
     message;
 
 rewriteServiceToolCalls // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*removeLastToolCall*)
+removeLastToolCall // beginDefinition;
+
+removeLastToolCall[ content_String ] := StringReplace[
+    content,
+    StringExpression[
+        StartOfString,
+        before: Longest[ ___ ],
+        StartOfLine ~~ "TOOLCALL: " ~~ ___ ~~ "\nENDARGUMENTS\nENDTOOLCALL",
+        EndOfString
+    ] :> before
+];
+
+removeLastToolCall // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

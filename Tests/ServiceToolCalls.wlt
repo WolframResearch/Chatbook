@@ -84,6 +84,81 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*In-Turn Tool Calls*)
+VerificationTest[
+    summarize @ prepareMessages[ "Service", { $userMessage, inTurnMessage[ "Let me compute.\n", "1+1", "id1111111" ] } ],
+    {
+        { "User"     , "Hello"          , { }                       , { } },
+        { "Assistant", "Let me compute.", { { "id1111111", "1+1" } }, { } }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ServiceToolCalls-InTurn-FirstCall@@Tests/ServiceToolCalls.wlt:88,1-96,2"
+]
+
+VerificationTest[
+    summarize @ prepareMessages[ "Service", { $userMessage, inTurnMessage[ "", "1+1", "id1111111" ] } ],
+    {
+        { "User"     , "Hello", { }                       , { } },
+        { "Assistant", ""     , { { "id1111111", "1+1" } }, { } }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ServiceToolCalls-InTurn-FirstCall-NoText@@Tests/ServiceToolCalls.wlt:98,1-106,2"
+]
+
+(* Earlier tool calls of the same response are kept with their results: *)
+VerificationTest[
+    summarize @ prepareMessages[
+        "Service",
+        {
+            $userMessage,
+            inTurnMessage[
+                "Let me compute.\n" <> toolCallWithResult[ "1+1", "2", "id1111111" ] <> "Now the second.\n",
+                "2+2",
+                "id2222222"
+            ]
+        }
+    ],
+    {
+        { "User"     , "Hello"          , { }                       , { }                     },
+        { "Assistant", "Let me compute.", { { "id1111111", "1+1" } }, { }                     },
+        { "Tool"     , ""               , { }                       , { { "id1111111", "2" } } },
+        { "Assistant", "Now the second.", { { "id2222222", "2+2" } }, { }                     }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ServiceToolCalls-InTurn-SecondCall@@Tests/ServiceToolCalls.wlt:109,1-129,2"
+]
+
+VerificationTest[
+    summarize @ prepareMessages[
+        "Service",
+        {
+            $userMessage,
+            inTurnMessage[
+                StringJoin[
+                    "Start.\n",
+                    toolCallWithResult[ "1+1", "2", "id1111111" ],
+                    "Middle.\n",
+                    toolCallWithResult[ "2+2", "4", "id2222222" ]
+                ],
+                "3+3",
+                "id3333333"
+            ]
+        }
+    ],
+    {
+        { "User"     , "Hello"  , { }                       , { }                     },
+        { "Assistant", "Start." , { { "id1111111", "1+1" } }, { }                     },
+        { "Tool"     , ""       , { }                       , { { "id1111111", "2" } } },
+        { "Assistant", "Middle.", { { "id2222222", "2+2" } }, { }                     },
+        { "Tool"     , ""       , { }                       , { { "id2222222", "4" } } },
+        { "Assistant", ""       , { { "id3333333", "3+3" } }, { }                     }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ServiceToolCalls-InTurn-ThirdCall@@Tests/ServiceToolCalls.wlt:131,1-158,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*Chat History*)
 VerificationTest[
     summarize @ prepareMessages[
@@ -111,7 +186,7 @@ VerificationTest[
         { "Assistant", "Done."          , { }                       , { }                     }
     },
     SameTest -> MatchQ,
-    TestID   -> "ServiceToolCalls-History@@Tests/ServiceToolCalls.wlt:88,1-115,2"
+    TestID   -> "ServiceToolCalls-History@@Tests/ServiceToolCalls.wlt:163,1-190,2"
 ]
 
 (* A result at the end of the message: *)
@@ -125,7 +200,7 @@ VerificationTest[
         { "Tool"     , "", { }                       , { { "id1111111", "2" } } }
     },
     SameTest -> MatchQ,
-    TestID   -> "ServiceToolCalls-History-EndsWithResult@@Tests/ServiceToolCalls.wlt:118,1-129,2"
+    TestID   -> "ServiceToolCalls-History-EndsWithResult@@Tests/ServiceToolCalls.wlt:193,1-204,2"
 ]
 
 (* Results written without an ID get one from the request: *)
@@ -140,7 +215,44 @@ VerificationTest[
         { "Assistant", "Done.", { }, { } }
     },
     SameTest -> MatchQ,
-    TestID   -> "ServiceToolCalls-History-NoID@@Tests/ServiceToolCalls.wlt:132,1-144,2"
+    TestID   -> "ServiceToolCalls-History-NoID@@Tests/ServiceToolCalls.wlt:207,1-219,2"
+]
+
+(* Earlier tool calls are sent the same way during the response and later in the chat history: *)
+VerificationTest[
+    Module[ { inTurn, history },
+        inTurn = prepareMessages[
+            "Service",
+            {
+                $userMessage,
+                inTurnMessage[
+                    "Let me compute.\n" <> toolCallWithResult[ "1+1", "2", "id1111111" ] <> "Now the second.\n",
+                    "2+2",
+                    "id2222222"
+                ]
+            }
+        ];
+        history = prepareMessages[
+            "Service",
+            {
+                $userMessage,
+                <|
+                    "Role"    -> "Assistant",
+                    "Content" -> StringJoin[
+                        "Let me compute.\n",
+                        toolCallWithResult[ "1+1", "2", "id1111111" ],
+                        "Now the second.\n",
+                        toolCallWithResult[ "2+2", "4", "id2222222" ],
+                        "Done."
+                    ]
+                |>
+            }
+        ];
+        Take[ inTurn, 3 ] === Take[ history, 3 ]
+    ],
+    True,
+    SameTest -> MatchQ,
+    TestID   -> "ServiceToolCalls-InTurn-Matches-History@@Tests/ServiceToolCalls.wlt:222,1-256,2"
 ]
 
 (* The IDs are kept until the messages are prepared for the LLM: *)
@@ -181,7 +293,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "ServiceToolCalls-ConstructMessages-KeepsIDs@@Tests/ServiceToolCalls.wlt:147,1-185,2"
+    TestID   -> "ServiceToolCalls-ConstructMessages-KeepsIDs@@Tests/ServiceToolCalls.wlt:259,1-297,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -219,7 +331,7 @@ VerificationTest[
         |>
     },
     SameTest -> SameQ,
-    TestID   -> "OtherToolMethods-RemoveIDs@@Tests/ServiceToolCalls.wlt:192,1-223,2"
+    TestID   -> "OtherToolMethods-RemoveIDs@@Tests/ServiceToolCalls.wlt:304,1-335,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
