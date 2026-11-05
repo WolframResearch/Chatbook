@@ -30,6 +30,9 @@ $resultCellCache         = <| |>;
 $staticCodeBlockCache    = <| |>;
 $useStaticCodeBlockCache = False;
 
+(* When True, \[FreeformPrompt] inputs are formatted without a Wolfram|Alpha call, as they are while streaming: *)
+$useFastNLInputFormatting = False;
+
 sectionStyle[ 1 ] := "Title";
 sectionStyle[ 2 ] := "Section";
 sectionStyle[ 3 ] := "Subsection";

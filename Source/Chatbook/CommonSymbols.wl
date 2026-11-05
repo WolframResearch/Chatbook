@@ -119,6 +119,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$toolEvaluationResults;
 `$toolOptions;
 `$toolResultStringLength;
+`$useFastNLInputFormatting;
 `$useLLMServices;
 `$useRasterCache;
 `$useStaticCodeBlockCache;

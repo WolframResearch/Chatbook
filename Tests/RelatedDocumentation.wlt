@@ -499,6 +499,40 @@ VerificationTest[
     TestID   -> "DocumentationLookup-Formatter"
 ]
 
+(* Freeform inputs in documentation results are formatted without Wolfram|Alpha calls (formatNLInputSlow). The same
+   code in a chat response still gets them, even with the static code block cache from the tool call's formatting: *)
+VerificationTest[
+    $freeformCode = "```wl\nEntityValue[\[FreeformPrompt][\"domestic cat\"], \"Lifespan\"]\n```";
+    $slowQueries  = { };
+    Internal`InheritedBlock[ { Wolfram`Chatbook`Formatting`Private`formatNLInputSlow },
+        (* Records the calls instead of making them: *)
+        DownValues[ Wolfram`Chatbook`Formatting`Private`formatNLInputSlow ] = {
+            HoldPattern @ Wolfram`Chatbook`Formatting`Private`formatNLInputSlow[ q_String ] :> (
+                AppendTo[ $slowQueries, q ];
+                Wolfram`Chatbook`Formatting`Private`formatNLInputFast @ q
+            )
+        };
+        Block[
+            {
+                Wolfram`Chatbook`Common`$useStaticCodeBlockCache = True,
+                Wolfram`Chatbook`Formatting`Private`$staticCodeBlockCache = <| |>
+            },
+            {
+                Wolfram`Chatbook`Tools`Private`documentationSearchFormatter[
+                    "# Example\npaclet:ref/Example#1\n\n" <> $freeformCode,
+                    "Result"
+                ],
+                $slowQueries,
+                FormatChatOutput @ $freeformCode,
+                $slowQueries
+            }
+        ]
+    ],
+    { _Column? (! FreeQ[ #, "CalculateInput" ] &), { }, _RawBoxes, { "\"domestic cat\"" } },
+    SameTest -> MatchQ,
+    TestID   -> "DocumentationLookup-Formatter-FreeformPrompt"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)
 
 (* ::**************************************************************************************************************:: *)

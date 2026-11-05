@@ -33,7 +33,18 @@ cachedCodeBlockCell // beginDefinition;
    written. The non-dynamic formatting (which includes a front end round trip for Wolfram Language code) gives the same
    result both times, so it's cached for the current response. The key includes the globals that formatting uses: *)
 cachedCodeBlockCell[ language_String, code_String ] :=
-    With[ { key = { language, code, $SidebarChat, $WorkspaceChat, $InlineChat, $cloudNotebooks } },
+    With[
+        {
+            key = {
+                language,
+                code,
+                $SidebarChat,
+                $WorkspaceChat,
+                $InlineChat,
+                $cloudNotebooks,
+                TrueQ @ $useFastNLInputFormatting
+            }
+        },
         Lookup[
             $staticCodeBlockCache,
             Key @ key,

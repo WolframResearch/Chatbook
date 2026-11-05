@@ -164,10 +164,12 @@ formatItem // beginDefinition;
 
 formatItem[ link_Hyperlink ] := link;
 
+(* Documentation results are only shown for reference, so \[FreeformPrompt] inputs in them are formatted without
+   making Wolfram|Alpha calls: *)
 formatItem[ text_String ] := Style[
     ReplaceAll[
         ReplaceAll[
-            FormatChatOutput @ text,
+            Block[ { $useFastNLInputFormatting = True }, FormatChatOutput @ text ],
             Cell[
                 BoxData @ TemplateBox[ { cell: Cell[ __, "ChatCode", ___ ], ___ }, "ChatCodeBlockTemplate" | "NotebookAssistant`Sidebar`ChatCodeBlockTemplate", ___ ],
                 "ChatCodeBlock",
