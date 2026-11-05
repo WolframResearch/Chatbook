@@ -79,7 +79,7 @@
 "FormattingThinkingCompleteSingular" -> "Pensado por un segundo",
 "FormattingThinkingCompleteFallback" -> "Pensado",
 "FormattingHide" -> "Ocultar",
-"FormattingDiscardedMaterial" -> "Discarded material",
+"FormattingDiscardedMaterial" -> "Material descartado",
 
 "InlineReferencesFieldHint" -> "PromptName",
 "InlineReferencesInsertLabel" -> "Insertar:",
@@ -169,7 +169,7 @@
 "ToolManagerTooltipNonDeletable1" -> "`name` es una herramienta incorporada y no puede eliminarse.",
 "ToolManagerTooltipNonDeletable2" -> "`name` ha sido proporcionada por la persona `persona` y no puede eliminarse por separado.",
 "ToolManagerDeleteTool" -> "Eliminar herramienta",
-"ToolManagerToolsDisabled" -> "Tools are disabled in the current chat settings.",
+"ToolManagerToolsDisabled" -> "Las herramientas han sido deshabilitadas en las opciones de chat actuales.",
 
 "UIInitializeChatbook" -> "Inicializando\[Ellipsis]",
 "UIEnableChatFeatures" -> "Habilitar caracter\[IAcute]sticas de chat de IA",
@@ -276,7 +276,7 @@
 "WorkspaceHistoryLastPage" -> "\[CapitalUAcute]ltima p\[AAcute]gina",
 "WorkspaceHistoryTitle" -> "Historial",
 "WorkspaceHistoryFieldHint" -> "Buscar",
-"WorkspaceHistoryLoadFailed" -> "That chat could not be loaded.",
+"WorkspaceHistoryLoadFailed" -> "No se pudo cargar ese chat.",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "Copiar respuesta al portapapeles\[Ellipsis]",
 "WorkspaceOutputRaftCopyAs" -> "Copiar respuesta como\[Ellipsis]",
@@ -312,10 +312,10 @@
 "ProgressTextGeneratingSuggestions" -> "Generando sugerencias",
 "ProgressTextDownloadingSnippet" -> "Descargando `1` fragmento de documentaci\[OAcute]n",
 "ProgressTextDownloadingSnippets" -> "Descargando `1` fragmentos de documentaci\[OAcute]n",
-"DownloadRedownloadPrompt" -> "Some locally installed files appear to be incomplete or corrupt:\n\n`1`\n\nWould you like to download them again?",
-"DownloadRetryPrompt" -> "The download of some semantic search resources did not complete. Would you like to try again?",
-"ProgressTextDownloadingSearchIndices" -> "Downloading semantic search indices\[Ellipsis]",
-"ProgressTextUnpackingFiles" -> "Unpacking files\[Ellipsis]"
+"DownloadRedownloadPrompt" -> "Algunos archivos instalados localmente parecen estar incompletos o da\[NTilde]ados:\n\n`1`\n\n\[DownQuestion]Desea descargarlos nuevamente?",
+"DownloadRetryPrompt" -> "La descarga de algunos recursos de b\[UAcute]squeda sem\[AAcute]ntica no se complet\[OAcute]. \[DownQuestion]Desea intentar nuevamente?",
+"ProgressTextDownloadingSearchIndices" -> "Descargando \[IAcute]ndices de b\[UAcute]squeda sem\[AAcute]ntica\[Ellipsis]",
+"ProgressTextUnpackingFiles" -> "Descomprimiendo archivos\[Ellipsis]"
 }
 @|
 @|
