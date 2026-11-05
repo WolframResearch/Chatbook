@@ -681,15 +681,22 @@ $reasoningEffortScale = { "None", "Minimal", "Low", "Medium", "High", "XHigh", "
 
 resolveReasoningEffort // beginDefinition;
 
-(* Without a model there are no declared levels to clamp to: *)
-resolveReasoningEffort[ settings_Association ] /; ! KeyExistsQ[ settings, "Model" ] :=
-    settings[ "Reasoning" ];
+(* A model given by name alone belongs to the same service that makeLLMConfiguration0 gives it: *)
+resolveReasoningEffort[ settings: KeyValuePattern[ "Model" -> name_String ] ] :=
+    resolveReasoningEffort @ <| settings, "Model" -> { serviceName @ name, name } |>;
 
-resolveReasoningEffort[ settings_Association ] :=
+resolveReasoningEffort[ settings: KeyValuePattern[ "Model" -> KeyValuePattern[ "Service" -> _String ] | { _String, _ } ] ] :=
     resolveReasoningEffort[
         settings[ "Reasoning" ],
         requestMethodReasoningEfforts[ settings, autoModelSetting[ settings, "ReasoningEfforts" ] ]
     ];
+
+(* Without a model that can be resolved there are no declared levels to clamp to, so the value is kept, except that the
+   "Off" spelling becomes "None": "off" is not an effort level of the Responses endpoint or of the services that take
+   effort strings, and "none" is. False and None are kept, since some services turn reasoning off only with those
+   (Anthropic, Ollama): *)
+resolveReasoningEffort[ settings_Association ] :=
+    reasoningOffToNone @ settings[ "Reasoning" ];
 
 (* Families that declare no effort levels are left exactly as they were: *)
 resolveReasoningEffort[ value_, Except[ { __String } ] ] := value;
@@ -704,6 +711,14 @@ resolveReasoningEffort[ effort_String, levels: { __String } ] :=
 resolveReasoningEffort[ value_, levels_ ] := value;
 
 resolveReasoningEffort // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*reasoningOffToNone*)
+reasoningOffToNone // beginDefinition;
+reasoningOffToNone[ effort_String ] /; StringMatchQ[ effort, "Off", IgnoreCase -> True ] := "None";
+reasoningOffToNone[ value_ ] := value;
+reasoningOffToNone // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
