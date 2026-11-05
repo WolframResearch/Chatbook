@@ -249,12 +249,9 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
             ]
         ];
 
-        messages = prompted /.
-            s_String :> RuleCondition @ StringTrim @ StringReplace[
-                s,
-                "\nENDRESULT(" ~~ Repeated[ LetterCharacter|DigitCharacter, $tinyHashLength ] ~~ ")\n" :>
-                    "\nENDRESULT\n"
-            ];
+        (* Tool call IDs ("ENDRESULT(id)") are kept here: prepareMessagesForLLM removes them, or uses them as the
+           request IDs for the "Service" tool method. *)
+        messages = prompted /. s_String :> RuleCondition @ StringTrim @ s;
 
         merged = If[ TrueQ @ Lookup[ settings, "MergeMessages" ],
                      ConfirmMatch[ mergeMessageData @ messages, $$chatMessages, "Merged" ],

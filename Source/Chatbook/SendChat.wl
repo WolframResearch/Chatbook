@@ -698,21 +698,24 @@ rewriteServiceToolCalls // beginDefinition;
 rewriteServiceToolCalls[ settings_, messages_List ] :=
     Flatten[ rewriteServiceToolCalls[ settings, # ] & /@ messages ];
 
+(* The message for a tool call that is being evaluated ends with that call, which is given in "ToolRequests".
+   Earlier calls in the same response already have results, so they are split like any other assistant message: *)
 rewriteServiceToolCalls[
     settings_,
     message: HoldPattern @ KeyValuePattern @ {
         "Content"      -> content_String,
         "ToolRequest"  -> True,
-        "ToolRequests" -> requests: { __LLMToolRequest }
+        "ToolRequests" -> { __LLMToolRequest }
     }
-] := <|
-    message,
-    "Content" -> StringDelete[
-        content,
-        "\n"... ~~ StartOfLine ~~ "TOOLCALL: " ~~ ___ ~~ "\nENDARGUMENTS\nENDTOOLCALL" ~~ EndOfString
-    ]
-|>;
+] := serviceToolMessageMerge @ Flatten @ {
+    rewriteServiceToolCalls[
+        settings,
+        <| KeyDrop[ message, { "ToolRequest", "ToolRequests" } ], "Content" -> removeLastToolCall @ content |>
+    ],
+    <| message, "Content" -> { } |>
+};
 
+(* Tool results end with "ENDRESULT(id)", where id is the request ID the tool call was sent with: *)
 rewriteServiceToolCalls[
     settings_,
     message: KeyValuePattern @ { "Role" -> "Assistant", "Content" -> content_String }
@@ -720,9 +723,12 @@ rewriteServiceToolCalls[
     message,
     Flatten @ StringSplit[
         content,
-        Shortest[
-            req: ("TOOLCALL: " ~~ __ ~~ "\nENDARGUMENTS") ~~ "\nENDTOOLCALL\nRESULT\n" ~~ result__ ~~ "\nENDRESULT"
-        ] :> toolStringSplit[ req, result ]
+        StringExpression[
+            Shortest[
+                req: ("TOOLCALL: " ~~ __ ~~ "\nENDARGUMENTS") ~~ "\nENDTOOLCALL\nRESULT\n" ~~ result__ ~~ "\nENDRESULT"
+            ],
+            ("(" ~~ id: (LetterCharacter|DigitCharacter).. ~~ ")") | ""
+        ] :> toolStringSplit[ req, result, id ]
     ]
 ];
 
@@ -730,6 +736,23 @@ rewriteServiceToolCalls[ settings_, message_Association ] :=
     message;
 
 rewriteServiceToolCalls // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*removeLastToolCall*)
+removeLastToolCall // beginDefinition;
+
+removeLastToolCall[ content_String ] := StringReplace[
+    content,
+    StringExpression[
+        StartOfString,
+        before: Longest[ ___ ],
+        StartOfLine ~~ "TOOLCALL: " ~~ ___ ~~ "\nENDARGUMENTS\nENDTOOLCALL",
+        EndOfString
+    ] :> before
+];
+
+removeLastToolCall // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -772,12 +795,15 @@ serviceToolMessageMerge // endDefinition;
 (*toolStringSplit*)
 toolStringSplit // beginDefinition;
 
-toolStringSplit[ req_String, result_String ] :=
-    toolStringSplit[ toolRequestParser @ req, result ];
+toolStringSplit[ req_String, result_String, id_String ] :=
+    toolStringSplit[ toolRequestParser @ req, result, id ];
 
-toolStringSplit[ { _, req: HoldPattern @ LLMToolRequest[ as_Association, opts___ ] }, result_String ] :=
-    With[ { id = tinyHash[ req, 9 ] },
-        toolStringSplit[ LLMToolRequest @ <| as, "RequestID" -> id |>, result ]
+(* Results written without an ID, or with a 5 character ID from before 3eee65a8 (MistralAI only accepts 9 characters),
+   get one from the request: *)
+toolStringSplit[ { _, req: HoldPattern @ LLMToolRequest[ as_Association, opts___ ] }, result_String, id_String ] :=
+    toolStringSplit[
+        LLMToolRequest @ <| as, "RequestID" -> If[ StringLength @ id === 9, id, tinyHash[ req, 9 ] ] |>,
+        result
     ];
 
 toolStringSplit[ req: HoldPattern[ _LLMToolRequest ], result_String ] :=
@@ -791,7 +817,9 @@ toolStringSplit[ req: HoldPattern[ _LLMToolRequest ], tool: HoldPattern[ _LLMToo
             "Tool"                       -> tool,
             "InterpretedParameterValues" -> Association @ req[ "ParameterValues" ],
             "Output"                     -> result,
-            "ResponseString"             -> result
+            "ResponseString"             -> result,
+            (* Without a version, LLMToolResponse runs its legacy updater, which takes about 50 ms: *)
+            "LLMPacletVersion"           -> req[ "Data" ][ "LLMPacletVersion" ]
         |>
     };
 
