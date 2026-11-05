@@ -140,3 +140,19 @@ VerificationTest[
     SameTest -> MatchQ,
     TestID   -> "CurrentChatSettings-Regression#592@@Tests/CurrentChatSettings.wlt:134,1-142,2"
 ]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*#1750*)
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::PrivateContextSymbol:: *)
+(* An Ollama model with an Automatic name has no specific model to query for its context length: *)
+VerificationTest[
+    Wolfram`Chatbook`Settings`Private`autoMaxContextTokens @ <|
+        "Model" -> <| "Service" -> "Ollama", "Name" -> Automatic |>
+    |>,
+    _Integer? Positive,
+    SameTest -> MatchQ,
+    TestID   -> "AutoMaxContextTokens-OllamaAutomaticModel-GH#1750@@Tests/CurrentChatSettings.wlt:150,1-157,2"
+]
+(* :!CodeAnalysis::EndBlock:: *)
