@@ -2400,7 +2400,12 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
                 "ToolRequest"  -> True,
                 "ToolRequests" -> { toolCall }
             |>,
-            makeToolResponseMessage[ settings, checkMarkdownOutput @ response, toolResponse ]
+            makeToolResponseMessage[
+                settings,
+                (* NotebookReader results come from the user's own notebook, so the user already sees their images: *)
+                If[ toolCall[ "Name" ] === "NotebookReader", response, checkMarkdownOutput @ response ],
+                toolResponse
+            ]
         };
 
         $finishReason = None;
