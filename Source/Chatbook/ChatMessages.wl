@@ -234,10 +234,7 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
     Enclose @ Module[
         { prompted, base, messages, merged, genRole, combined, processed, outgoing },
 
-        If[ settings[ "ToolMethod" ] === "Service", needsBasePrompt[ "ServiceToolCallRetry" ] ];
-        If[ settings[ "AutoFormat" ], needsBasePrompt[ "Formatting" ] ];
-        If[ discourageExtraToolCallsQ @ settings, needsBasePrompt[ "DiscourageExtraToolCalls" ] ];
-        needsBasePrompt @ settings;
+        needsSettingsBasePrompts @ settings;
 
         prompted = addPrompts[
             settings,
@@ -276,7 +273,7 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
         removeBasePrompt @ settings[ "ExcludedBasePrompts" ];
 
         base = ConfirmBy[
-            "<base-prompt>" <> $basePrompt <> "</base-prompt>",
+            "<base-prompt>" <> If[ promptCacheOptimizationQ @ settings, promptCacheBasePrompt[ ], $basePrompt ] <> "</base-prompt>",
             StringQ,
             "BasePrompt"
         ];
@@ -1196,18 +1193,47 @@ makeCurrentRole[ as_, base_, name_String ] :=
         makeCurrentRole[ as, base, persona ] /; AssociationQ @ persona
     ];
 
-makeCurrentRole[ as_, base_, persona_Association ] := (
+makeCurrentRole[ as_, base_, persona_Association ] := withStaticBasePrompts[
+    as,
     needsBasePrompt @ base;
     needsBasePrompt @ persona;
     <| "Role" -> "System", "Content" -> buildSystemPrompt @ Association[ as, KeyDrop[ persona, { "Skills", "Tools" } ] ] |>
-);
+];
 
-makeCurrentRole[ as_, base_, _ ] := (
+makeCurrentRole[ as_, base_, _ ] := withStaticBasePrompts[
+    as,
     needsBasePrompt @ base;
     <| "Role" -> "System", "Content" -> buildSystemPrompt @ as |>
-);
+];
 
 makeCurrentRole // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*needsSettingsBasePrompts*)
+(* Base prompt components that are determined by the settings rather than by the content of the conversation: *)
+needsSettingsBasePrompts // beginDefinition;
+
+needsSettingsBasePrompts[ settings_Association ] := (
+    If[ settings[ "ToolMethod" ] === "Service", needsBasePrompt[ "ServiceToolCallRetry" ] ];
+    If[ settings[ "AutoFormat" ], needsBasePrompt[ "Formatting" ] ];
+    If[ discourageExtraToolCallsQ @ settings, needsBasePrompt[ "DiscourageExtraToolCalls" ] ];
+    If[ toolSelectedQ[ "WolframLanguageEvaluator" ], needsBasePrompt[ "WolframLanguageEvaluatorTool" ] ];
+    (* Replaces the temporary message that is added after tool responses without prompt cache optimization: *)
+    If[ toolCallRetryPromptQ @ settings, needsBasePrompt[ "ToolCallRetry" ] ];
+    needsBasePrompt @ settings
+);
+
+needsSettingsBasePrompts // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toolCallRetryPromptQ*)
+toolCallRetryPromptQ // beginDefinition;
+toolCallRetryPromptQ[ KeyValuePattern[ "ToolsEnabled" -> False ] ] := False;
+toolCallRetryPromptQ[ KeyValuePattern[ "Tools" -> { } ] ] := False;
+toolCallRetryPromptQ[ settings_Association ] := promptCacheOptimizationQ @ settings && TrueQ @ settings[ "ToolCallRetryMessage" ];
+toolCallRetryPromptQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1625,7 +1651,7 @@ mergeMessages[ messages: { first_Association, __Association } ] := Enclose[
 
         merged = ConfirmMatch[ mergeCodeBlocks @ content, { (_String|_Association)... }, "Merged" ];
 
-        <| first, "Role" -> role, "Content" -> merged |>
+        <| first, "Role" -> role, "Content" -> merged, mergePromptCacheKeys @ messages |>
     ],
     throwInternalFailure
 ];

@@ -2425,8 +2425,13 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
             <| "ToolResponse" -> toolResponse, "ToolResponseString" -> output |>
         ];
 
+        (* With prompt cache optimization, the system prompt can't change, so these are disabled with a hint instead
+           (see disabledPromptHints in PromptCache.wl): *)
         messages = ConfirmMatch[
-            removeToolPreferencePrompt @ removeBasePrompt[ settings[ "Data", "Messages" ], { "AutoAssistant" } ],
+            If[ promptCacheOptimizationQ @ settings,
+                settings[ "Data", "Messages" ],
+                removeToolPreferencePrompt @ removeBasePrompt[ settings[ "Data", "Messages" ], { "AutoAssistant" } ]
+            ],
             { __Association },
             "Messages"
         ];
@@ -2606,8 +2611,11 @@ makeToolResponseMessage[ settings_, model_Association, response_, toolResponse_ 
         response,
         toolResponse
     ],
-    If[ TrueQ @ settings[ "ToolCallRetryMessage" ], $toolCallRetryMessage, Nothing ](* ,
-    If[ TrueQ @ discourageExtraToolCallsQ @ settings, $discourageExtraToolCallsMessage, Nothing ], *)
+    (* With prompt cache optimization, this is a base prompt component instead (see needsSettingsBasePrompts): *)
+    If[ TrueQ @ settings[ "ToolCallRetryMessage" ] && ! promptCacheOptimizationQ @ settings,
+        $toolCallRetryMessage,
+        Nothing
+    ]
 };
 
 makeToolResponseMessage // endDefinition;
@@ -2663,17 +2671,6 @@ $toolCallRetryMessage = <|
     "HoldTemporary" -> True
 |>;
 
-$discourageExtraToolCallsPrompt = "\
-IMPORTANT: Do not make any more tool calls unless absolutely necessary! \
-Stop and think about what the user was asking for. \
-Does the tool response give you enough information to answer the user's query? \
-If so, respond to the user now instead of making any additional tool calls.";
-
-$discourageExtraToolCallsMessage = <|
-    "Role"          -> "System",
-    "Content"       -> $discourageExtraToolCallsPrompt,
-    "HoldTemporary" -> True
-|>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

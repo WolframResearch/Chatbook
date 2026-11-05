@@ -310,6 +310,234 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Base Prompt Hints*)
+
+(* A prompt generator that makes base prompt components needed, like content of the conversation would: *)
+needsGenerator[ names_ ] := LLMPromptGenerator[ (Wolfram`Chatbook`Common`needsBasePrompt /@ names; "Generated") &, "Messages" ];
+
+$cellLabelsText = "NEVER include \"In[...]:=\"";
+$audioText      = "![label](audio://content-id) represents an interactive audio player";
+$firstCells     = { Cell[ "Hello", "ChatInput" ] };
+
+contentString[ message_ ] := StringJoin @ Flatten @ { message[ "Content" ] };
+systemContent[ messages_ ] := contentString @ First @ messages;
+hintCount[ messages_ ] := Total[ StringCount[ contentString @ #, "<system-hint>" ] & /@ messages ];
+
+(* Components needed because of the content are sent as a hint after the user message instead of in the system prompt: *)
+VerificationTest[
+    withCacheSettings[
+        <| "PromptGenerators" -> { needsGenerator @ { "CellLabels" } } |>,
+        Module[ { messages },
+            messages = First @ constructWithData[ $settings, $firstCells ];
+            {
+                StringContainsQ[ systemContent @ messages, $cellLabelsText ],
+                Lookup[ messages, "Role" ],
+                StringContainsQ[ contentString @ Last @ messages, "<system-hint>" ~~ ___ ~~ $cellLabelsText ]
+            }
+        ]
+    ],
+    { False, { "System", "User", "System" }, True },
+    SameTest -> MatchQ,
+    TestID   -> "BasePromptHints-NotInSystemPrompt@@Tests/PromptCache.wlt:327,1-342,2"
+]
+
+VerificationTest[
+    withCacheSettings[
+        <| "PromptCacheOptimization" -> False, "PromptGenerators" -> { needsGenerator @ { "CellLabels" } } |>,
+        Module[ { messages },
+            messages = First @ constructWithData[ $settings, $firstCells ];
+            { StringContainsQ[ systemContent @ messages, $cellLabelsText ], hintCount @ messages }
+        ]
+    ],
+    { True, 0 },
+    SameTest -> MatchQ,
+    TestID   -> "BasePromptHints-Legacy@@Tests/PromptCache.wlt:344,1-355,2"
+]
+
+(* The system prompt doesn't depend on the content of the conversation: *)
+VerificationTest[
+    Table[
+        SameQ @@ Table[
+            withCacheSettings[
+                <| "LLMEvaluator" -> persona, "PromptGenerators" -> { needsGenerator @ names } |>,
+                systemContent @ First @ constructWithData[ $settings, $firstCells ]
+            ],
+            { names, { { }, { "CellLabels" }, { "MarkdownImageBox", "Checkboxes" } } }
+        ],
+        { persona, { "PlainChat", "CodeAssistant" } }
+    ],
+    { True, True },
+    SameTest -> MatchQ,
+    TestID   -> "BasePromptHints-SameSystemPrompt@@Tests/PromptCache.wlt:358,1-372,2"
+]
+
+(* A hint is sent once per conversation: *)
+VerificationTest[
+    Module[ { extra, first, data, second },
+        extra = <| "PromptGenerators" -> { needsGenerator @ { "CellLabels" } } |>;
+        { first, data } = cacheRequest[ extra, $firstCells ];
+        second = First @ cacheRequest[
+            extra,
+            {
+                Cell[ "Hello", "ChatInput" ],
+                Cell[ "Hi there", "ChatOutput", TaggingRules -> <| "PromptCacheID" -> data[ "PromptCacheID" ] |> ],
+                Cell[ "Next", "ChatInput" ]
+            }
+        ];
+        {
+            Take[ sentMessages @ second, Length @ first ] === sentMessages @ first,
+            hintCount @ first,
+            hintCount @ second
+        }
+    ],
+    { True, 1, 1 },
+    SameTest -> MatchQ,
+    TestID   -> "BasePromptHints-OncePerConversation@@Tests/PromptCache.wlt:375,1-396,2"
+]
+
+(* Components needed after a tool call are sent as a hint with the other turn messages, before the response: *)
+VerificationTest[
+    withCacheSettings[
+        <| |>,
+        Module[ { first, data, second, third },
+            { first, data } = constructWithData[ $settings, $firstCells ];
+            Wolfram`Chatbook`Common`needsBasePrompt[ "SpecialURIAudio" ];
+            second = toolLoopMessages[ $settings, data ];
+            third  = toolLoopMessages[ $settings, data ];
+            {
+                systemContent @ second === systemContent @ first,
+                Lookup[ second, "Role" ],
+                StringContainsQ[ contentString @ second[[ 3 ]], "<system-hint>" ~~ ___ ~~ $audioText ],
+                sentMessages @ third === sentMessages @ second,
+                Length @ Wolfram`Chatbook`PromptCache`Private`promptCacheRecord[ data[ "PromptCacheID" ] ][ "Messages" ]
+            }
+        ]
+    ],
+    { True, { "System", "User", "System", "Assistant", "System" }, True, True, 2 },
+    SameTest -> MatchQ,
+    TestID   -> "BasePromptHints-ToolLoop@@Tests/PromptCache.wlt:399,1-419,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Disabled Prompts*)
+
+(* Instructions that are removed from the system prompt after a tool call without prompt cache optimization are disabled
+   with a hint instead, once per turn: *)
+VerificationTest[
+    withCacheSettings[
+        <| |>,
+        Module[ { first, data, second, third },
+            Wolfram`Chatbook`Common`needsBasePrompt[ "AutoAssistant" ];
+            { first, data } = constructWithData[ $settings, $firstCells ];
+            second = toolLoopMessages[ $settings, data ];
+            third  = toolLoopMessages[ $settings, data ];
+            {
+                StringContainsQ[ systemContent @ first, "[INFO]" ],
+                StringContainsQ[ contentString @ Last @ first, "[INFO]" ],
+                StringCount[ contentString @ second[[ 3 ]], "already started this response" ],
+                sentMessages @ third === sentMessages @ second
+            }
+        ]
+    ],
+    { False, True, 1, True },
+    SameTest -> MatchQ,
+    TestID   -> "DisabledPromptHints-AutoAssistant@@Tests/PromptCache.wlt:427,1-446,2"
+]
+
+(* Instructions that are meant for one response are scoped to it, and sent again in each turn that needs them: *)
+VerificationTest[
+    Module[ { cells, data1, data2, second, third },
+        data1 = withCacheSettings[
+            <| |>,
+            Wolfram`Chatbook`Common`needsBasePrompt[ "AutoAssistant" ];
+            Last @ constructWithData[ $settings, $firstCells ]
+        ];
+        cells = {
+            Cell[ "Hello", "ChatInput" ],
+            Cell[ "[INFO] Hi there", "ChatOutput", TaggingRules -> <| "PromptCacheID" -> data1[ "PromptCacheID" ] |> ],
+            Cell[ "Next", "ChatInput" ]
+        };
+        (* A turn without automatic assistance: *)
+        { second, data2 } = withCacheSettings[
+            <| |>,
+            Module[ { d }, d = Last @ constructWithData[ $settings, cells ]; { toolLoopMessages[ $settings, d ], d } ]
+        ];
+        (* Another turn with automatic assistance: *)
+        third = withCacheSettings[
+            <| |>,
+            Wolfram`Chatbook`Common`needsBasePrompt[ "AutoAssistant" ];
+            First @ constructWithData[
+                $settings,
+                Join[
+                    cells,
+                    {
+                        Cell[ "Ok", "ChatOutput", TaggingRules -> <| "PromptCacheID" -> data2[ "PromptCacheID" ] |> ],
+                        Cell[ "Last", "ChatInput" ]
+                    }
+                ]
+            ]
+        ];
+        {
+            StringCount[ StringJoin[ contentString /@ second ], "already started this response" ],
+            StringCount[ contentString @ Last @ third, "instructions for your response to the user's latest message" ],
+            StringCount[ StringJoin[ contentString /@ third ], "ALWAYS begin your response" ]
+        }
+    ],
+    { 0, 1, 2 },
+    SameTest -> MatchQ,
+    TestID   -> "BasePromptHints-PerTurn@@Tests/PromptCache.wlt:449,1-490,2"
+]
+
+VerificationTest[
+    withCacheSettings[
+        <| "ToolCallFrequency" -> 1 |>,
+        Module[ { first, data },
+            { first, data } = constructWithData[ $settings, $firstCells ];
+            {
+                StringContainsQ[ systemContent @ first, "User Tool Call Preferences" ],
+                StringCount[ contentString @ toolLoopMessages[ $settings, data ][[ 3 ]], "frequency preference" ]
+            }
+        ]
+    ],
+    { True, 1 },
+    SameTest -> MatchQ,
+    TestID   -> "DisabledPromptHints-ToolCallFrequency@@Tests/PromptCache.wlt:492,1-506,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Tool Call Retry*)
+
+(* The retry instructions are part of the system prompt instead of a temporary message after each tool response: *)
+VerificationTest[
+    withCacheSettings[
+        <| "ToolCallRetryMessage" -> True |>,
+        {
+            StringContainsQ[ systemContent @ First @ constructWithData[ $settings, $firstCells ], "before retrying" ],
+            Length @ Wolfram`Chatbook`SendChat`Private`makeToolResponseMessage[ $settings, "2", None ]
+        }
+    ],
+    { True, 1 },
+    SameTest -> MatchQ,
+    TestID   -> "ToolCallRetry-SystemPrompt@@Tests/PromptCache.wlt:513,1-524,2"
+]
+
+VerificationTest[
+    withCacheSettings[
+        <| "PromptCacheOptimization" -> False, "ToolCallRetryMessage" -> True |>,
+        {
+            StringContainsQ[ systemContent @ First @ constructWithData[ $settings, $firstCells ], "before retrying" ],
+            Length @ Wolfram`Chatbook`SendChat`Private`makeToolResponseMessage[ $settings, "2", None ]
+        }
+    ],
+    { False, 2 },
+    SameTest -> MatchQ,
+    TestID   -> "ToolCallRetry-Legacy@@Tests/PromptCache.wlt:526,1-537,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Records*)
 
 (* The record ID is written to the output cell's tagging rules: *)
@@ -323,7 +551,7 @@ VerificationTest[
     ],
     KeyValuePattern[ "PromptCacheID" -> "abc" ],
     SameTest -> MatchQ,
-    TestID   -> "Records-TaggingRules@@Tests/PromptCache.wlt:316,1-327,2"
+    TestID   -> "Records-TaggingRules@@Tests/PromptCache.wlt:544,1-555,2"
 ]
 
 VerificationTest[
@@ -339,7 +567,7 @@ VerificationTest[
     ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "Records-NoTaggingRules@@Tests/PromptCache.wlt:329,1-343,2"
+    TestID   -> "Records-NoTaggingRules@@Tests/PromptCache.wlt:557,1-571,2"
 ]
 
 (* The number of records kept in memory is bounded: *)
@@ -354,7 +582,7 @@ VerificationTest[
     ],
     _Integer? (# <= 10 &),
     SameTest -> MatchQ,
-    TestID   -> "Records-Bounded@@Tests/PromptCache.wlt:346,1-358,2"
+    TestID   -> "Records-Bounded@@Tests/PromptCache.wlt:574,1-586,2"
 ]
 
 (* Regenerated responses have pages, which use the other definition: *)
@@ -368,7 +596,7 @@ VerificationTest[
     ],
     KeyValuePattern @ { "PromptCacheID" -> "abc", "PageData" -> KeyValuePattern[ "PageCount" -> 2 ] },
     SameTest -> MatchQ,
-    TestID   -> "Records-TaggingRulesPages@@Tests/PromptCache.wlt:361,1-372,2"
+    TestID   -> "Records-TaggingRulesPages@@Tests/PromptCache.wlt:589,1-600,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -395,7 +623,7 @@ VerificationTest[
     Cases[ secondTurnChatData[ ][ "Data", "Messages" ], KeyValuePattern[ "Content" -> c_String ] :> c ],
     { _String, "Hello", "Hi there", "Next", "Generated prompt 2", "Answer" },
     SameTest -> MatchQ,
-    TestID   -> "ChatData-CurrentTurnMessages@@Tests/PromptCache.wlt:394,1-399,2"
+    TestID   -> "ChatData-CurrentTurnMessages@@Tests/PromptCache.wlt:622,1-627,2"
 ]
 
 (* Feedback without the chat history includes the user's message and the response, but not the turn messages: *)
@@ -406,7 +634,7 @@ VerificationTest[
     ],
     { { "System", _ }, { "User", "Next" }, { "Assistant", "Answer" } },
     SameTest -> MatchQ,
-    TestID   -> "ChatData-FeedbackWithoutHistory@@Tests/PromptCache.wlt:402,1-410,2"
+    TestID   -> "ChatData-FeedbackWithoutHistory@@Tests/PromptCache.wlt:630,1-638,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

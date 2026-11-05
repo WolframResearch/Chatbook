@@ -437,6 +437,8 @@ When `Automatic`, resolved by `toolCallRetryMessageQ` (`Settings.wl`), which del
 
 When `True`, `makeToolResponseMessage` (`SendChat.wl`) appends `$toolCallRetryMessage` — a system message with `"HoldTemporary" -> True` containing: *"IMPORTANT: If a tool call does not give the expected output, ask the user before retrying unless you are ABSOLUTELY SURE you know how to fix the issue."* The `"HoldTemporary"` flag means this message is included in the current request but not persisted in the conversation history.
 
+When `"PromptCacheOptimization"` is `True`, the same instructions are the `"ToolCallRetry"` base prompt component in the system prompt instead (see `needsSettingsBasePrompts` in `ChatMessages.wl`).
+
 ### Model-Specific Overrides
 
 - **`False`**: GPT-4.1, GPT-5 (and GPT-5.1/GPT-5.2 via inheritance)

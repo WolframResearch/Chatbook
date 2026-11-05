@@ -61,6 +61,7 @@ $basePromptOrder = {
     "EndTurnToken",
     "ToolCallPreamble",
     "ServiceToolCallRetry",
+    "ToolCallRetry",
     "EndTurnToolCall",
     "DiscourageExtraToolCalls",
     "WolframLanguageEvaluatorToolTrouble",
@@ -122,6 +123,7 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "EndTurnToken"                         -> { },
     "ToolCallPreamble"                     -> { },
     "ServiceToolCallRetry"                 -> { },
+    "ToolCallRetry"                        -> { },
     "EndTurnToolCall"                      -> { "EndTurnToken" },
     "DiscourageExtraToolCalls"             -> { },
     "WolframLanguageEvaluatorToolTrouble"  -> { "WolframLanguageEvaluatorTool" },
@@ -392,6 +394,10 @@ $basePromptComponents[ "ServiceToolCallRetry" ] = "\
 This will cause the previous tool call to be hidden in a collapsed section that the user can open if they wish to see \
 prior attempts.";
 
+$basePromptComponents[ "ToolCallRetry" ] = "\
+* IMPORTANT: If a tool call does not give the expected output, ask the user before retrying unless you are ABSOLUTELY \
+SURE you know how to fix the issue.";
+
 $basePromptComponents[ "EndTurnToolCall" ] = "\
 * If you are going to make a tool call, you must do so BEFORE ending your turn.";
 
@@ -457,10 +463,22 @@ $basePrompt := buildPrompt[ ];
 (*buildPrompt*)
 buildPrompt // beginDefinition;
 
-buildPrompt[ ] := Enclose[
+buildPrompt[ ] := (
+    expandPromptComponents[ ];
+    basePromptString @ Keys @ $collectedPromptComponents
+);
+
+buildPrompt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*basePromptString*)
+(* Combines the given base prompt components in the standard order, without adding their dependencies: *)
+basePromptString // beginDefinition;
+
+basePromptString[ names: { ___String } ] := Enclose[
     Module[ { keys, ordered, string },
-        expandPromptComponents[ ];
-        keys = ConfirmMatch[ Values @ KeyTake[ $collectedPromptComponents, $basePromptOrder ], { ___String }, "Keys" ];
+        keys = ConfirmMatch[ Select[ $basePromptOrder, MemberQ[ names, # ] & ], { ___String }, "Keys" ];
         ordered = ConfirmMatch[ Values @ KeyTake[ $basePromptComponents, keys ], { (_String|None)... }, "Ordered" ];
         string = ConfirmBy[ StringRiffle[ DeleteCases[ ordered, ""|None ], "\n" ], StringQ, "String" ];
         If[ StringQ @ $chatIndicatorSymbol,
@@ -471,7 +489,46 @@ buildPrompt[ ] := Enclose[
     throwInternalFailure
 ];
 
-buildPrompt // endDefinition;
+basePromptString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*collectedBasePromptNames*)
+(* The names of the base prompt components collected so far, including their dependencies: *)
+collectedBasePromptNames // beginDefinition;
+collectedBasePromptNames[ ] := With[ { collected = expandPromptComponents[ ] }, Select[ $basePromptOrder, KeyExistsQ[ collected, # ] & ] ];
+collectedBasePromptNames // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*withStaticBasePrompts*)
+(* With prompt cache optimization, the system prompt only includes the base prompt components that are determined by the
+   settings, so it is the same for every request of a conversation (and for other conversations with the same settings).
+   Components that are needed because of the content of the conversation are sent as hints after the messages that
+   needed them instead (see basePromptHints in PromptCache.wl).
+
+   The settings-determined components are the ones that are collected while building the system message (persona and
+   settings base prompts, tool examples) plus the ones from needsSettingsBasePrompts. They are collected separately from
+   the components collected so far, which can include content-dependent ones (e.g. "NotebookAssistanceGettingStarted"),
+   and are kept in $staticBasePrompts: *)
+withStaticBasePrompts // beginDefinition;
+withStaticBasePrompts // Attributes = { HoldRest };
+
+withStaticBasePrompts[ settings_? promptCacheOptimizationQ, eval_ ] :=
+    Module[ { result, static },
+        { result, static } = Block[ { $collectedPromptComponents = <| |> },
+            needsSettingsBasePrompts @ settings;
+            { eval, removeBasePrompt @ settings[ "ExcludedBasePrompts" ]; collectedBasePromptNames[ ] }
+        ];
+        $staticBasePrompts = static;
+        needsBasePrompt /@ static;
+        result
+    ];
+
+withStaticBasePrompts[ settings_, eval_ ] :=
+    eval;
+
+withStaticBasePrompts // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
