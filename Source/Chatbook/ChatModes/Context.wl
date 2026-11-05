@@ -1135,13 +1135,13 @@ readUserNotebook[ settings_, scope_, offset_, { nbo_NotebookObject, info_ } ] :=
         {
             (* Leave the chat's own notebook context state as it is: *)
             $contextImages, $contextPrompt, $selectionPrompt, $lastContextPrompt, $lastSelectionPrompt,
-            (* During a chat, serializing cells uses up the chat's token budget, so keep it from changing too: *)
-            $cellStringBudget = $cellStringBudget, $tokenBudget = $tokenBudget, $tokenPressure = $tokenPressure,
             (* Use the same format as getSidebarPrompt and getWorkspacePrompt: *)
             $includeCellXML = TrueQ @ $notebookEditorEnabled,
             $includeRelativeTimes = False
         },
-        readUserNotebook0[ nbo, info, settings, scope, offset ]
+        (* During a chat, serializing cells would otherwise use (and use up) what's left of the chat's token budget, so
+           the size of the result would depend on how long the chat is: *)
+        withTokenBudget[ downScaledSettings @ settings, readUserNotebook0[ nbo, info, settings, scope, offset ] ]
     ];
 
 readUserNotebook[ _, _, _, _ ] :=

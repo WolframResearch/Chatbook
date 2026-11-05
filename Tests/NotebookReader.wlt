@@ -199,6 +199,45 @@ VerificationTest[
     TestID   -> "AllScope-Paging@@Tests/NotebookReader.wlt:166,1-200,2"
 ]
 
+(* The result doesn't depend on how much of the chat's token budget is left, and doesn't use it up: *)
+VerificationTest[
+    UsingFrontEnd @ Module[ { nb, settings, read, outside, inside },
+        WithCleanup[
+            nb = CreateDocument @ Table[
+                Cell[ "CELL-" <> ToString @ i <> ": " <> StringRepeat[ "lorem ipsum dolor sit amet ", 10 ], "Text" ],
+                { i, 6 }
+            ];
+            SelectionMove[ Cells[ nb ][[ 3 ]], All, Cell ];
+            (* In a chat, the settings are already resolved when the tool is called: *)
+            settings = <| AbsoluteCurrentChatSettings @ nb, "AllowSelectionContext" -> True, "FocusedNotebook" -> nb |>;
+            read = Block[
+                {
+                    Wolfram`Chatbook`$WorkspaceChat   = True,
+                    Wolfram`Chatbook`$SidebarChat     = False,
+                    Wolfram`Chatbook`$ChatHandlerData = <| "ChatNotebookSettings" -> settings |>
+                },
+                Wolfram`Chatbook`Tools`Private`notebookReader @ <| |>
+            ] &;
+            outside = read[ ];
+            inside = Block[
+                {
+                    Wolfram`Chatbook`Common`$chatState               = True,
+                    Wolfram`Chatbook`Common`$tokenBudget             = 100,
+                    Wolfram`Chatbook`Common`$tokenPressure           = 0.99,
+                    Wolfram`Chatbook`Common`$initialCellStringBudget = 1000,
+                    Wolfram`Chatbook`Common`$cellStringBudget        = 0
+                },
+                { read[ ], Wolfram`Chatbook`Common`$tokenBudget, Wolfram`Chatbook`Common`$cellStringBudget }
+            ];
+            { StringContainsQ[ outside, "CELL-3:" ], inside === { outside, 100, 0 } },
+            NotebookClose @ nb
+        ]
+    ],
+    { True, True },
+    SameTest -> MatchQ,
+    TestID   -> "IndependentOfChatTokenBudget@@Tests/NotebookReader.wlt:203,1-239,2"
+]
+
 (* When a page does not fit in the token budget, it ends early instead of silently skipping cells at its start: *)
 VerificationTest[
     UsingFrontEnd @ Module[ { nb, page, last, shown, next },
@@ -227,7 +266,7 @@ VerificationTest[
     ],
     { True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "AllScope-TokenBudget@@Tests/NotebookReader.wlt:203,1-231,2"
+    TestID   -> "AllScope-TokenBudget@@Tests/NotebookReader.wlt:242,1-270,2"
 ]
 
 (* Invalid parameters fall back to the defaults: *)
@@ -241,7 +280,7 @@ VerificationTest[
         { 3, 1, 1, 1, 1 }
     },
     SameTest -> MatchQ,
-    TestID   -> "Parameters-Defaults@@Tests/NotebookReader.wlt:234,1-245,2"
+    TestID   -> "Parameters-Defaults@@Tests/NotebookReader.wlt:273,1-284,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -261,7 +300,7 @@ VerificationTest[
     ],
     _String? (StringContainsQ[ "no notebook to read" ]),
     SameTest -> MatchQ,
-    TestID   -> "NoNotebook@@Tests/NotebookReader.wlt:250,1-265,2"
+    TestID   -> "NoNotebook@@Tests/NotebookReader.wlt:289,1-304,2"
 ]
 
 VerificationTest[
@@ -275,7 +314,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "SelectionContextDisabled@@Tests/NotebookReader.wlt:267,1-279,2"
+    TestID   -> "SelectionContextDisabled@@Tests/NotebookReader.wlt:306,1-318,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
