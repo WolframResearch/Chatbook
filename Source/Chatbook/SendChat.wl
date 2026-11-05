@@ -2304,7 +2304,7 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
     catchChatStopped @ Module[
         {
             string, simple, parser, callPos, toolCall, toolResponse, output,
-            messages, roles, response, newMessages, req, toolID, task
+            messages, roles, role, response, newMessages, req, toolID, task
         },
 
         $toolCallCount = If[ IntegerQ @ $toolCallCount, $toolCallCount + 1, 1 ];
@@ -2360,9 +2360,11 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
         ];
 
         roles = ConfirmMatch[ allowedMultimodalRoles @ settings, All | { __String }, "Roles" ];
+        role  = ConfirmBy[ toolResponseRole @ settings, StringQ, "Role" ];
 
+        (* Images are kept only if the role the tool response is actually sent with may carry them: *)
         response =
-            If[ roles === All || MemberQ[ roles, "System" ],
+            If[ roles === All || MemberQ[ roles, role ],
                 expandMultimodalString @ ToString @ output,
                 ToString @ output
             ];
@@ -2521,6 +2523,20 @@ terminalQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*toolResponseRole*)
+toolResponseRole // beginDefinition;
+
+(* The role a tool response message is sent with, which also decides whether it may carry images: *)
+toolResponseRole[ settings_ ] := Which[
+    settings[ "ToolMethod" ] === "Service", "Tool",
+    StringQ @ settings[ "ToolResponseRole" ], settings[ "ToolResponseRole" ],
+    True, "System"
+];
+
+toolResponseRole // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*makeToolResponseMessage*)
 makeToolResponseMessage // beginDefinition;
 
@@ -2529,7 +2545,7 @@ makeToolResponseMessage[ settings_, response_, toolResponse_ ] :=
 
 makeToolResponseMessage[ settings_, model_Association, response_, toolResponse_ ] := {
     makeToolResponseMessage0[
-        If[ settings[ "ToolMethod" ] === "Service", "Tool", settings[ "ToolResponseRole" ] ],
+        toolResponseRole @ settings,
         settings[ "ToolResponseStyle" ],
         response,
         toolResponse
