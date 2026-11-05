@@ -159,7 +159,7 @@ When `Automatic`, resolved by `autoMaxContextTokens` (`Settings.wl`), which disp
 The resolved value is used to initialize the token budget in `makeTokenBudget` (`ChatMessages.wl`), which multiplies it by `TokenBudgetMultiplier` to produce the working budget. During message construction:
 
 - Token pressure is tracked as `1.0 - ($tokenBudget / MaxContextTokens)`.
-- The cell string budget (`$cellStringBudget`) is dynamically reduced as pressure increases, dropping to `0` when fewer than `$reservedTokens` (500) remain.
+- The cell string budget (`$cellStringBudget`) is dynamically reduced as pressure increases, dropping to `0` when fewer than `$reservedTokens` (500) remain. When `"PromptCacheOptimization"` is `True`, it stays at its initial value instead, and drops to `0` when less than 15% of `"MaxContextTokens"` is left.
 
 ### Dependent Settings
 
@@ -318,7 +318,7 @@ Any non-negative numeric value (`$$size` pattern: non-negative `_Integer` or `_R
 
 The token budget is computed by `makeTokenBudget` (`ChatMessages.wl`): `Ceiling[MaxContextTokens * TokenBudgetMultiplier]`. When set to an unspecified value (`Missing`, `Automatic`, or `Inherited`), the token budget equals `MaxContextTokens` unchanged.
 
-This budget is assigned to `$tokenBudget` in `makeChatMessages` (`ChatMessages.wl`) and is decremented as each message is added to the context. When a message's token count exceeds the remaining budget, it is truncated via `cutMessageContent`. Token pressure is tracked as `1.0 - ($tokenBudget / MaxContextTokens)`, and the cell string budget (`$cellStringBudget`) dynamically decreases as pressure rises, dropping to `0` when fewer than `$reservedTokens` (500) tokens remain.
+This budget is assigned to `$tokenBudget` in `makeChatMessages` (`ChatMessages.wl`) and is decremented as each message is added to the context. When a message's token count exceeds the remaining budget, it is truncated via `cutMessageContent`. Token pressure is tracked as `1.0 - ($tokenBudget / MaxContextTokens)`, and the cell string budget (`$cellStringBudget`) dynamically decreases as pressure rises, dropping to `0` when fewer than `$reservedTokens` (500) tokens remain (see `"PromptCacheOptimization"` for how this differs with prompt cache optimization).
 
 ### Integration Points
 

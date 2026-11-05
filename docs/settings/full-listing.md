@@ -126,7 +126,7 @@ See additional details in [Prompting Settings](setting-groups/prompting.md).
 | `"ToolResponseRole"` | `Automatic` | Message role assigned to tool response messages sent back to the LLM. |
 | `"ToolResponseStyle"` | `Automatic` | How tool response content is wrapped/formatted before being sent back to the LLM. |
 | `"SplitToolResponseMessages"` | `Automatic` | Whether to split tool responses into separate messages. |
-| `"MaxToolResponses"` | `5` | Maximum number of tool responses allowed per chat turn. |
+| `"MaxToolResponses"` | `5` | Maximum number of tool responses allowed per chat turn (doubled when `"PromptCacheOptimization"` is `True`). |
 | `"SendToolResponse"` | `Automatic` | Whether to send tool responses back to the LLM for further processing. |
 | `"EndToken"` | `Automatic` | End-of-turn token that signals the LLM has finished its response. |
 

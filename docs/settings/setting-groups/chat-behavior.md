@@ -68,7 +68,7 @@ When `Automatic`, resolved by `chooseMaxCellStringLength` (`Settings.wl`): if `M
 
 ### Implementation
 
-The resolved value is used as the initial `$cellStringBudget` in `makeChatMessages` (`ChatMessages.wl`), which dynamically decreases the budget as messages are added based on token pressure: `$cellStringBudget = Ceiling[(1 - $tokenPressure) * $initialCellStringBudget]`, dropping to `0` when the remaining token budget falls below `$reservedTokens` (500). Each cell is serialized via `CellToString` with `"MaxCellStringLength" -> $cellStringBudget` (`ChatMessages.wl`), which truncates cell content exceeding this limit.
+The resolved value is used as the initial `$cellStringBudget` in `makeChatMessages` (`ChatMessages.wl`), which dynamically decreases the budget as messages are added based on token pressure: `$cellStringBudget = Ceiling[(1 - $tokenPressure) * $initialCellStringBudget]`, dropping to `0` when the remaining token budget falls below `$reservedTokens` (500). When `"PromptCacheOptimization"` is `True`, the budget stays at its initial value instead, and drops to `0` when less than 15% of `"MaxContextTokens"` is left. Each cell is serialized via `CellToString` with `"MaxCellStringLength" -> $cellStringBudget` (`ChatMessages.wl`), which truncates cell content exceeding this limit.
 
 ### Dependent Settings
 

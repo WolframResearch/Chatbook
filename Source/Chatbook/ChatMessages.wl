@@ -959,9 +959,12 @@ tokenCheckedMessage[ as_Association, message_ ] := Enclose[
 
         $tokenBudget      = Max[ 0, budget - count ];
         $tokenPressure    = 1.0 - ($tokenBudget / as[ "MaxContextTokens" ]);
-        $cellStringBudget = If[ $tokenBudget < $reservedTokens,
-                                0,
-                                Ceiling[ (1 - $tokenPressure) * $initialCellStringBudget ]
+        $cellStringBudget = Which[
+                                $tokenBudget < reservedTokens @ as, 0,
+                                (* Older messages would be shortened by a different amount after every new message,
+                                   so they wouldn't be sent the same way in later requests: *)
+                                promptCacheOptimizationQ @ as, $initialCellStringBudget,
+                                True, Ceiling[ (1 - $tokenPressure) * $initialCellStringBudget ]
                             ];
 
         Internal`StuffBag[
@@ -984,6 +987,19 @@ tokenCheckedMessage[ as_Association, message_ ] := Enclose[
 tokenCheckedMessage // endDefinition;
 
 $tokenBudgetLog = Internal`Bag[ ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*reservedTokens*)
+(* The number of tokens left when no more messages are added. With prompt cache optimization, messages are not shortened
+   more and more as the conversation grows, so the history fills the budget, which doesn't count the system prompt (other
+   than the base prompt), the tool definitions, or the tool calls of the current turn. A larger part is kept free then.
+   NOTE: Once a conversation reaches this limit, the oldest messages that are left change with every new message, so
+   each later request misses the cache after the system prompt. *)
+reservedTokens // beginDefinition;
+reservedTokens[ as_? promptCacheOptimizationQ ] := Max[ $reservedTokens, Ceiling[ 0.15 * as[ "MaxContextTokens" ] ] ];
+reservedTokens[ _ ] := $reservedTokens;
+reservedTokens // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

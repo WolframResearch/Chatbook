@@ -2578,11 +2578,21 @@ insertToolID // endDefinition;
 (*sendToolResponseQ*)
 sendToolResponseQ // beginDefinition;
 (* TODO: allow one final response when reaching the limit and disable tools for the next chat submit *)
-sendToolResponseQ[ KeyValuePattern[ "MaxToolResponses" -> n_Integer ], _ ] /; $toolCallCount > n := False;
+sendToolResponseQ[ settings: KeyValuePattern[ "MaxToolResponses" -> n_Integer ], _ ] /;
+    $toolCallCount > maxToolResponses[ settings, n ] := False;
 sendToolResponseQ[ KeyValuePattern[ "SendToolResponse" -> False ], _ ] := False;
 sendToolResponseQ[ _, response: HoldPattern[ _LLMToolResponse ] ] := ! TrueQ @ terminalToolResponseQ @ response;
 sendToolResponseQ[ _, _ ] := True;
 sendToolResponseQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*maxToolResponses*)
+(* With prompt cache optimization, the earlier messages of a turn are mostly served from the prompt cache, so each tool
+   call costs less and more of them are allowed: *)
+maxToolResponses // beginDefinition;
+maxToolResponses[ settings_, n_Integer ] := If[ promptCacheOptimizationQ @ settings, 2 * n, n ];
+maxToolResponses // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
