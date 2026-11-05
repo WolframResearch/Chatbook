@@ -188,24 +188,28 @@ VerificationTest[
 (* ::Section::Closed:: *)
 (*sidebarChatInputCellSendButton*)
 
-(* The sidebar's send/stop selector must also keep the stop button (and its spinner) out of a default pane: *)
+(* The sidebar's send/stop selector (and the initialization gate around it) must also keep the stop button (and its
+   spinner) out of a default pane: *)
 VerificationTest[
     $sidebarSelector = ToBoxes @ Wolfram`Chatbook`ChatModes`UI`Private`sidebarChatInputCellSendButton[
         fieldContent,
         input,
-        returnKeyDownQ
+        returnKeyDownQ,
+        initializedQ
     ],
-    PaneSelectorBox[ { False -> _, True -> _ }, _Dynamic, ___?OptionQ ],
+    PaneSelectorBox[ { False -> _, True -> PaneSelectorBox[ { False -> _, True -> _ }, _Dynamic, ___?OptionQ ] }, _Dynamic, ___?OptionQ ],
     SameTest -> MatchQ,
-    TestID   -> "SidebarSendStopSelector-NoDefaultPane@@Tests/WorkspaceChatInputCell.wlt:192,1-201,2"
+    TestID   -> "SidebarSendStopSelector-NoDefaultPane@@Tests/WorkspaceChatInputCell.wlt:193,1-203,2"
 ]
 
 VerificationTest[
+    $sidebarStopSelector = Lookup[ First @ $sidebarSelector, True ];
     FreeQ[ Lookup[ First @ $sidebarSelector, False ], "StopChatButton" ] &&
-        ! FreeQ[ Lookup[ First @ $sidebarSelector, True ], "StopChatButton" ],
+        FreeQ[ Lookup[ First @ $sidebarStopSelector, False ], "StopChatButton" ] &&
+        ! FreeQ[ Lookup[ First @ $sidebarStopSelector, True ], "StopChatButton" ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "SidebarSendStopSelector-SpinnerOnlyInStopPane@@Tests/WorkspaceChatInputCell.wlt:203,1-209,2"
+    TestID   -> "SidebarSendStopSelector-SpinnerOnlyInStopPane@@Tests/WorkspaceChatInputCell.wlt:205,1-213,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

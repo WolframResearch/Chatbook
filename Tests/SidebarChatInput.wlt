@@ -107,9 +107,7 @@ VerificationTest[
 (* ::Section::Closed:: *)
 (*Send/Stop Button*)
 
-(* The send/stop button's kernel Dynamic must not read DynamicModule variables, which the kernel might not know yet when
-   the sidebar is first drawn; that printed FE`ExecuteInDynamicModule::novaldu (chatbar-8). It shows Stop only for a
-   chat in this sidebar (robustness-4/sidebar-5): *)
+(* The send/stop button shows Stop only for a chat in this sidebar (robustness-4/sidebar-5): *)
 VerificationTest[
     $inputCellBoxes = Wolfram`Chatbook`Common`makeSidebarChatInputCell[ ];
     $sendStopDynamic = FirstCase[
@@ -124,14 +122,40 @@ VerificationTest[
         TrackedSymbols :> { Wolfram`Chatbook`$ChatEvaluationCell }
     ] ],
     SameTest -> MatchQ,
-    TestID   -> "SendButton-ScopedDynamic-chatbar-8@@Tests/SidebarChatInput.wlt:113,1-128,2"
+    TestID   -> "SendButton-ScopedDynamic-robustness-4@@Tests/SidebarChatInput.wlt:111,1-126,2"
+]
+
+(* The front end evaluates a kernel Dynamic in a DynamicModule with the module's variables, even if it doesn't use them.
+   When the sidebar is first opened from the menu, that can happen before the kernel knows them, which printed
+   FE`ExecuteInDynamicModule::novaldu (chatbar-8). So the kernel Dynamic is behind a front end check that the
+   module's Initialization has run: *)
+VerificationTest[
+    $initGate = FirstCase[
+        $inputCellBoxes,
+        PaneSelectorBox[ { False -> _, True -> inner_ }, (Dynamic|DynamicBox)[ FEPrivate`SameQ[ Typeset`initializedQ$$, True ], ___ ], ___ ] :>
+            HoldComplete @ inner,
+        Missing[ "NotFound" ],
+        Infinity
+    ];
+    {
+        MatchQ[ $initGate, _HoldComplete ],
+        ! FreeQ[ $initGate, Wolfram`Chatbook`Common`chatEvaluatingInQ ],
+        Count[ $inputCellBoxes, HoldPattern[ Wolfram`Chatbook`Common`chatEvaluatingInQ ], Infinity, Heads -> True ]
+    },
+    { True, True, 1 },
+    SameTest -> MatchQ,
+    TestID   -> "SendButton-InitializationGate-chatbar-8@@Tests/SidebarChatInput.wlt:132,1-148,2"
 ]
 
 VerificationTest[
-    FreeQ[ $sendStopDynamic, s_Symbol /; StringEndsQ[ SymbolName @ Unevaluated @ s, "$$" ] ],
-    True,
+    $inputModule = FirstCase[ $inputCellBoxes, box: DynamicModuleBox[ { ___, HoldPattern[ Typeset`chatEvalCell$$ = _ ], ___ }, ___ ] :> HoldComplete @ box, None, Infinity ];
+    {
+        ! FreeQ[ $inputModule, HoldPattern[ DynamicModuleBox[ { ___, Typeset`initializedQ$$ = False, ___ }, ___ ] ] ],
+        ! FreeQ[ Cases[ $inputModule, HoldPattern[ Initialization :> init_ ] :> HoldComplete @ init, Infinity ], HoldPattern[ Typeset`initializedQ$$ = True ] ]
+    },
+    { True, True },
     SameTest -> MatchQ,
-    TestID   -> "SendButton-NoModuleVariablesInDynamic-chatbar-8@@Tests/SidebarChatInput.wlt:130,1-135,2"
+    TestID   -> "SendButton-InitializationSetsFlag-chatbar-8@@Tests/SidebarChatInput.wlt:150,1-159,2"
 ]
 
 VerificationTest[
@@ -144,7 +168,7 @@ VerificationTest[
     ],
     HoldComplete[ CompoundExpression[ _, Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChatIn", ParentCell[ EvaluationCell[ ] ] ] ] ],
     SameTest -> MatchQ,
-    TestID   -> "SendButton-ScopedStop-robustness-4@@Tests/SidebarChatInput.wlt:137,1-148,2"
+    TestID   -> "SendButton-ScopedStop-robustness-4@@Tests/SidebarChatInput.wlt:161,1-172,2"
 ]
 
 (* The front end draws the prebuilt sidebar cell, so it must match the source: *)
@@ -156,13 +180,14 @@ VerificationTest[
             {
                 StringContainsQ[ s, "Wolfram`Chatbook`Common`chatEvaluatingInQ[ParentCell[EvaluationCell[]]]" ],
                 StringContainsQ[ s, "\"StopChatIn\",ParentCell[EvaluationCell[]]" ],
+                StringContainsQ[ s, "FEPrivate`SameQ[Typeset`initializedQ$$,True]" ],
                 StringContainsQ[ s, "$ChatEvaluationCell===Typeset`chatEvalCell$$" ]
             }
         ] & /@ Select[ files, FileExistsQ ]
     ],
-    { { True, True, False }.. },
+    { { True, True, True, False }.. },
     SameTest -> MatchQ,
-    TestID   -> "SendButton-PrebuiltResource@@Tests/SidebarChatInput.wlt:151,1-166,2"
+    TestID   -> "SendButton-PrebuiltResource@@Tests/SidebarChatInput.wlt:175,1-191,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
