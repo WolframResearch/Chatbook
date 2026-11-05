@@ -65,6 +65,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$inlineChatState;
 `$lastCellObject;
 `$lastChatString;
+`$lastMessageList;
 `$lastMessages;
 `$lastSettings;
 `$lastTask;

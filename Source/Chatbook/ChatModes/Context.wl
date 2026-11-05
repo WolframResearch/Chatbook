@@ -1171,19 +1171,15 @@ readUserNotebook0[ nbo_, info_, settings_, "all", offset_ ] := Enclose[
             ]
         ];
 
-        last = Min[ total, offset + $notebookReaderPageSize - 1 ];
-
-        (* TODO: if a page does not fit in the token budget, its first cells are excised ("[n Cells Excised]"), and the
-           next offset skips them. If this happens in practice, pages could be sized by the budget instead. *)
-        content = ConfirmBy[
-            Block[ { $notebookInstructionsPrompt = False, $currentSelectionIndicator = None },
-                getContextFromSelection0[
-                    <| "Before" -> cells[[ offset ;; last ]], "Selected" -> { }, "After" -> { } |>,
-                    downScaledSettings @ settings
-                ]
+        { content, last } = ConfirmMatch[
+            readNotebookPage[
+                cells,
+                downScaledSettings @ settings,
+                offset,
+                Min[ total, offset + $notebookReaderPageSize - 1 ]
             ],
-            StringQ,
-            "Content"
+            { _String, _Integer },
+            "Page"
         ];
 
         metadata = ConfirmBy[ getNotebookMetadataString[ nbo, info ], StringQ, "Metadata" ];
@@ -1208,6 +1204,65 @@ readUserNotebook0[ nbo_, info_, settings_, "all", offset_ ] := Enclose[
 ];
 
 readUserNotebook0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*readNotebookPage*)
+(* Gives { content, last } for the cells from first to at most last. The token budget is spent from the last cell
+   backwards, so cells that don't fit are excised from the start of the page, and nothing in the content says so.
+   When that happens, the page is read again without as many cells at its end, until nothing is excised. This way the
+   page always starts at first and the next offset comes right after the cells that were shown.
+   NOTE: each retry serializes the page again. If retries turn out to be slow in practice, the page size could be
+   lowered, or pages could be sized by serializing one cell at a time. *)
+readNotebookPage // beginDefinition;
+
+readNotebookPage[ cells: { __CellObject }, settings_Association, first_Integer, last_Integer ] := Enclose[
+    Module[ { content, excised },
+        Block[
+            {
+                (* Each try starts from the same budget: *)
+                $cellStringBudget = $cellStringBudget, $tokenBudget = $tokenBudget, $tokenPressure = $tokenPressure,
+                $notebookInstructionsPrompt = False, $currentSelectionIndicator = None, $lastMessageList = None
+            },
+            content = ConfirmBy[
+                getContextFromSelection0[
+                    <| "Before" -> cells[[ first ;; last ]], "Selected" -> { }, "After" -> { } |>,
+                    settings
+                ],
+                StringQ,
+                "Content"
+            ];
+            (* makeChatMessages0 sets $lastMessageList: *)
+            excised = ConfirmMatch[ excisedCellCount @ $lastMessageList, _Integer, "Excised" ]
+        ];
+        If[ excised > 0 && last > first,
+            readNotebookPage[ cells, settings, first, Max[ first, last - excised ] ],
+            { content, last }
+        ]
+    ],
+    throwInternalFailure
+];
+
+readNotebookPage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*excisedCellCount*)
+(* The number of cells excised from the start of a message list, which makeChatMessages0 combines into a leading
+   "[n Cells Excised]" system message: *)
+excisedCellCount // beginDefinition;
+
+excisedCellCount[ { KeyValuePattern @ { "Role" -> "System", "Content" -> content_String }, ___ } ] := First[
+    StringCases[
+        content,
+        StartOfString ~~ "[" ~~ n: DigitCharacter.. ~~ " Cells Excised]" ~~ EndOfString :> FromDigits @ n
+    ],
+    0
+];
+
+excisedCellCount[ _ ] := 0;
+
+excisedCellCount // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

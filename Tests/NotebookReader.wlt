@@ -199,6 +199,37 @@ VerificationTest[
     TestID   -> "AllScope-Paging@@Tests/NotebookReader.wlt:166,1-200,2"
 ]
 
+(* When a page does not fit in the token budget, it ends early instead of silently skipping cells at its start: *)
+VerificationTest[
+    UsingFrontEnd @ Module[ { nb, page, last, shown, next },
+        WithCleanup[
+            nb = CreateDocument @ Table[
+                Cell[ "CELL-" <> ToString @ i <> ": " <> StringRepeat[ "lorem ipsum dolor sit amet ", 40 ], "Text" ],
+                { i, 12 }
+            ];
+            page = workspaceNotebookReader[ nb, <| "MaxContextTokens" -> 8000 |>, <| "scope" -> "all" |> ];
+            last = First[ StringCases[ page, "cells 1 to " ~~ n: DigitCharacter.. ~~ " of 12" :> FromDigits @ n ], 0 ];
+            shown = Select[ Range @ 12, StringContainsQ[ page, "CELL-" <> ToString @ # <> ":" ] & ];
+            next = workspaceNotebookReader[
+                nb,
+                <| "MaxContextTokens" -> 8000 |>,
+                <| "scope" -> "all", "offset" -> last + 1 |>
+            ];
+            {
+                1 < last < 12,
+                shown === Range @ last,
+                StringContainsQ[ page, "offset " <> ToString[ last + 1 ] ],
+                StringContainsQ[ next, "cells " <> ToString[ last + 1 ] <> " to " ],
+                StringContainsQ[ next, "CELL-" <> ToString[ last + 1 ] <> ":" ]
+            },
+            NotebookClose @ nb
+        ]
+    ],
+    { True, True, True, True, True },
+    SameTest -> MatchQ,
+    TestID   -> "AllScope-TokenBudget@@Tests/NotebookReader.wlt:203,1-231,2"
+]
+
 (* Invalid parameters fall back to the defaults: *)
 VerificationTest[
     {
@@ -210,7 +241,7 @@ VerificationTest[
         { 3, 1, 1, 1, 1 }
     },
     SameTest -> MatchQ,
-    TestID   -> "Parameters-Defaults@@Tests/NotebookReader.wlt:203,1-214,2"
+    TestID   -> "Parameters-Defaults@@Tests/NotebookReader.wlt:234,1-245,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -230,7 +261,7 @@ VerificationTest[
     ],
     _String? (StringContainsQ[ "no notebook to read" ]),
     SameTest -> MatchQ,
-    TestID   -> "NoNotebook@@Tests/NotebookReader.wlt:219,1-234,2"
+    TestID   -> "NoNotebook@@Tests/NotebookReader.wlt:250,1-265,2"
 ]
 
 VerificationTest[
@@ -244,7 +275,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "SelectionContextDisabled@@Tests/NotebookReader.wlt:236,1-248,2"
+    TestID   -> "SelectionContextDisabled@@Tests/NotebookReader.wlt:267,1-279,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
