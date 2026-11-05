@@ -188,7 +188,8 @@ VerificationTest[
     TestID   -> "NotebookReader-Hidden@@Tests/ToolAvailability.wlt:181,1-189,2"
 ]
 
-(* The tool is selected for the Notebook Assistant window and the sidebar, but not for chat notebooks: *)
+(* The tool is selected for the Notebook Assistant window and the sidebar, but not for chat notebooks, and not when
+   notebook content is turned off (the sidebar's "Ignore notebook content" is checked by default): *)
 VerificationTest[
     Map[
         Function[
@@ -212,12 +213,17 @@ VerificationTest[
         ],
         {
             Wolfram`Chatbook`ChatModes`Common`$notebookAssistanceWorkspaceSettings,
+            <|
+                Wolfram`Chatbook`ChatModes`Common`$notebookAssistanceWorkspaceSettings,
+                "AllowSelectionContext" -> False
+            |>,
             Wolfram`Chatbook`NotebookAssistanceSidebarSettings[ ],
+            <| Wolfram`Chatbook`NotebookAssistanceSidebarSettings[ ], "AllowSelectionContext" -> True |>,
             <| |>
         }
     ],
-    { True, True, False },
+    { True, False, False, True, False },
     SameTest -> SameQ,
-    TestID   -> "NotebookReader-SelectedTools@@Tests/ToolAvailability.wlt:192,1-222,2"
+    TestID   -> "NotebookReader-SelectedTools@@Tests/ToolAvailability.wlt:193,1-228,2"
 ]
 (* :!CodeAnalysis::EndBlock:: *)

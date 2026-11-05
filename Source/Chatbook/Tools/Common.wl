@@ -445,6 +445,8 @@ selectTools[ as_Association ] := Enclose[
         selectTools0 /@ selectedNames;
 
         $selectedTools = Select[ $selectedTools, toolEnabledQ ];
+        (* Don't offer NotebookReader when the user turned notebook content off (e.g. "Ignore notebook content"): *)
+        If[ ! TrueQ @ as[ "AllowSelectionContext" ], KeyDropFrom[ $selectedTools, "NotebookReader" ] ];
         selectSkillTool @ as;
         short = <| (toolShortName[ # ] -> # &) /@ Values[ $selectedTools ] |>;
 
