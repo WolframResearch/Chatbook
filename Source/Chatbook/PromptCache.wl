@@ -184,8 +184,10 @@ addTurnMessages[ settings_Association, messages_List ] /; StringQ @ $promptCache
     updateTurnMessages[ settings, messages, $promptCacheTurnID ];
 
 addTurnMessages[ settings_Association, messages_List ] := Enclose[
-    Module[ { role, generated, generatedMessages, turnMessages, id },
+    Module[ { role, context, generated, generatedMessages, turnMessages, id },
         role = ConfirmBy[ settings[ "PromptGeneratorMessageRole" ], StringQ, "Role" ];
+        (* The notebook context comes first, since prompt generators use it (see insertContextPrompt): *)
+        context = ConfirmMatch[ notebookContextTurnMessages[ settings, messages ], { ___Association }, "Context" ];
         generated = ConfirmMatch[ applyPromptGenerators[ settings, messages ], { ___String }, "Generated" ];
 
         generatedMessages = <|
@@ -196,7 +198,11 @@ addTurnMessages[ settings_Association, messages_List ] := Enclose[
             "PromptCache"     -> True
         |> & /@ generated;
 
-        turnMessages = Join[ generatedMessages, basePromptHints[ settings, Join[ messages, generatedMessages ] ] ];
+        turnMessages = Join[
+            context,
+            generatedMessages,
+            basePromptHints[ settings, Join[ messages, context, generatedMessages ] ]
+        ];
 
         (* The ID is also what tells requests that follow a tool call that the prompt generators already ran: *)
         id = ConfirmBy[ createUUID[ ], StringQ, "ID" ];

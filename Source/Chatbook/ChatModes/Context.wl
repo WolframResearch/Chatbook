@@ -1102,6 +1102,311 @@ fullSelection // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Notebook Context with Prompt Cache Optimization*)
+(* With prompt cache optimization, the notebook context of sidebar and workspace chats is not added to the system prompt
+   of every request. Instead, it is sent once per conversation with the turn messages of the first input (see
+   addTurnMessages in PromptCache.wl). Later inputs only get a short notice when the user's selection moved or the
+   notebook changed since then, and the AI can read the current content with the NotebookReader tool if it needs to.
+
+   The context message and the notices record the state of the notebook they describe ("NotebookContextState"), so the
+   state the AI last heard about is the one in the latest of these messages in the history. If the history has no
+   notebook context (e.g. because its turn records are gone after restarting the kernel), the full context is sent
+   again. *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Configuration*)
+$notebookContextImagesLabel = "\
+[Original images for the MarkdownImageBoxes in the notebook content above. Each image follows its markdown link.]";
+
+$notebookChangeHintTemplate = StringTemplate[ "\
+<system-hint>
+Since your last response, `1`, so the notebook content you saw earlier may be out of date. `2`
+</system-hint>" ];
+
+(* The content hash also changes with some notebook options (e.g. the window size), so "Content" is worded neutrally: *)
+$notebookChangeDescriptions = <|
+    "Notebook"  -> "the user switched to a different notebook (`1`)",
+    "Selection" -> "the user moved their selection in the notebook",
+    "Content"   -> "the notebook has changed"
+|>;
+
+(* Users often refer to their selection without saying so (e.g. "And this one?"), so that case is spelled out: *)
+$notebookReaderHint = StringTemplate[ "\
+If the user's message refers to the notebook or to something they selected (for example \"this\", \"this cell\" or \
+\"here\"), use the `1` tool to see its current state before you respond. Otherwise, ignore this notice and don't \
+read the notebook." ];
+
+$notebookChangeNoReaderHint = "\
+If the user's message refers to the notebook or to something they selected (for example \"this\", \"this cell\" or \
+\"here\"), keep in mind that you haven't seen these changes.";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*notebookContextTurnMessages*)
+notebookContextTurnMessages // beginDefinition;
+
+notebookContextTurnMessages[ settings_Association, messages_List ] /;
+    TrueQ[ ($WorkspaceChat || $SidebarChat) && settings[ "AllowSelectionContext" ] ] :=
+        LogChatTiming[ notebookContextTurnMessages0[ settings, messages ], "NotebookContextTurnMessages" ];
+
+notebookContextTurnMessages[ settings_, messages_ ] :=
+    { };
+
+notebookContextTurnMessages // endDefinition;
+
+
+notebookContextTurnMessages0 // beginDefinition;
+
+notebookContextTurnMessages0[ settings_Association, messages_List ] := Enclose[
+    Catch @ Module[ { data, previous, state, changes },
+        data = ConfirmMatch[ notebookSelectionData @ settings, _Association|None, "Data" ];
+        If[ data === None, Throw @ { } ];
+
+        If[ ! MemberQ[ messages, KeyValuePattern[ "NotebookContext" -> True ] ],
+            Throw @ fullNotebookContextMessages[ settings, data ]
+        ];
+
+        previous = Last[ Cases[ messages, KeyValuePattern[ "NotebookContextState" -> s_Association ] :> s ], None ];
+        If[ ! AssociationQ @ previous, Throw @ { } ];
+
+        changes = notebookContextChanges[ previous[ "Fingerprint" ], notebookFingerprint @ data ];
+
+        If[ changes === { },
+            (* Prompt generators use these for searches (see insertContextPrompt in VectorDatabases.wl): *)
+            $contextPrompt   = previous[ "ContextPrompt"   ];
+            $selectionPrompt = previous[ "SelectionPrompt" ];
+            Throw @ { }
+        ];
+
+        (* Update the prompts for searches with a smaller context around the current selection, which is not sent: *)
+        contextFromSelectionData[
+            data[ "Notebook" ],
+            data[ "Info" ],
+            selectionNeighborhood @ data,
+            <| settings, "Multimodal" -> False |>
+        ];
+
+        state = ConfirmBy[ notebookContextState @ data, AssociationQ, "State" ];
+        { notebookChangeHint[ changes, data, state ] }
+    ],
+    throwInternalFailure
+];
+
+notebookContextTurnMessages0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*contextFromSelectionData*)
+(* Like getContextFromSelection, but for selection data that has already been determined: *)
+contextFromSelectionData // beginDefinition;
+
+contextFromSelectionData[ nbo_NotebookObject, info_, selectionData_Association, settings0_Association ] := Enclose[
+    Block[
+        {
+            $includeCellXML         = TrueQ @ $notebookEditorEnabled,
+            (* The context is sent again unchanged in later requests, where relative times would be out of date: *)
+            $includeRelativeTimes   = False,
+            $notebookMetadataString = getNotebookMetadataString[ nbo, info ]
+        },
+        Module[ { settings, string },
+            settings = ConfirmBy[ downScaledSettings @ settings0, AssociationQ, "Settings" ];
+            string = ConfirmBy[ getContextFromSelection0[ selectionData, settings ], StringQ, "Context" ];
+            ConfirmBy[ mergeCodeBlocks @ string, StringQ, "Merged" ]
+        ]
+    ],
+    throwInternalFailure
+];
+
+contextFromSelectionData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*notebookSelectionData*)
+notebookSelectionData // beginDefinition;
+
+notebookSelectionData[ settings_Association ] := Enclose[
+    Module[ { nbo, info, selectionData },
+        { nbo, info } = contextNotebook @ settings;
+        selectionData = If[ MatchQ[ nbo, _NotebookObject ], LogChatTiming @ selectContextCells @ nbo, None ];
+        If[ AssociationQ @ selectionData,
+            <| "Notebook" -> nbo, "Info" -> info, "SelectionData" -> selectionData |>,
+            None
+        ]
+    ],
+    throwInternalFailure
+];
+
+notebookSelectionData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*fullNotebookContextMessages*)
+fullNotebookContextMessages // beginDefinition;
+
+fullNotebookContextMessages[ settings_, data_Association ] := Enclose[
+    Block[ { $contextImages = { } },
+        Module[ { context, images },
+            context = ConfirmBy[
+                contextFromSelectionData[ data[ "Notebook" ], data[ "Info" ], data[ "SelectionData" ], settings ],
+                StringQ,
+                "Context"
+            ];
+            images = ConfirmMatch[ $contextImages, { ___List }, "Images" ];
+            Flatten @ {
+                <|
+                    "Role"                 -> "System",
+                    "Content"              -> context,
+                    "Temporary"            -> True,
+                    "PromptCache"          -> True,
+                    "NotebookContext"      -> True,
+                    "NotebookContextState" -> ConfirmBy[ notebookContextState @ data, AssociationQ, "State" ]
+                |>,
+                If[ images === { }, Nothing, notebookContextImageMessage @ images ]
+            }
+        ]
+    ],
+    throwInternalFailure
+];
+
+fullNotebookContextMessages // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*notebookContextImageMessage*)
+(* Images can't be part of system messages, so they are sent in a separate user message: *)
+notebookContextImageMessage // beginDefinition;
+
+notebookContextImageMessage[ images_List ] := <|
+    "Role"            -> "User",
+    "Content"         -> Flatten @ {
+        <| "Type" -> "Text", "Data" -> $notebookContextImagesLabel |>,
+        Replace[
+            images,
+            {
+                { link_String, img_ } :> { <| "Type" -> "Text", "Data" -> "\n" <> link |>, img },
+                { _, img_ } :> img
+            },
+            { 1 }
+        ]
+    },
+    "Temporary"       -> True,
+    "PromptCache"     -> True,
+    "NotebookContext" -> True
+|>;
+
+notebookContextImageMessage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*notebookContextState*)
+(* What a context message or a notice tells the AI about the notebook, and the prompts used for searches with it: *)
+notebookContextState // beginDefinition;
+
+notebookContextState[ data_Association ] := <|
+    "Fingerprint"     -> notebookFingerprint @ data,
+    "ContextPrompt"   -> $contextPrompt,
+    "SelectionPrompt" -> $selectionPrompt
+|>;
+
+notebookContextState // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*notebookFingerprint*)
+(* Cheap values that tell whether the user switched notebooks, moved their selection, or changed the notebook: *)
+notebookFingerprint // beginDefinition;
+
+notebookFingerprint[ KeyValuePattern @ { "Notebook" -> nbo_NotebookObject, "SelectionData" -> selection_Association } ] := <|
+    "Notebook"  -> nbo,
+    "Content"   -> notebookContentHash @ nbo,
+    "Selection" -> {
+        selection[ "Selected" ],
+        Last[ selection[ "Before" ], None ],
+        First[ selection[ "After" ], None ],
+        Replace[ selection[ "Selected" ], { { cell_CellObject } :> cellInformation[ cell, { "CursorPosition" } ], _ -> None } ]
+    }
+|>;
+
+notebookFingerprint // endDefinition;
+
+
+notebookContentHash // beginDefinition;
+
+(* NOTE: this also changes with some notebook options, e.g. when the window is resized: *)
+notebookContentHash[ nbo_NotebookObject ] :=
+    Replace[ FrontEndExecute @ FrontEnd`CryptoHash @ nbo, { KeyValuePattern[ "DirtiableContentsHash" -> h_ ] :> h, _ -> None } ];
+
+notebookContentHash // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*notebookContextChanges*)
+notebookContextChanges // beginDefinition;
+
+notebookContextChanges[ old_Association, new_Association ] :=
+    If[ old[ "Notebook" ] =!= new[ "Notebook" ],
+        { "Notebook" },
+        Select[ { "Selection", "Content" }, old[ # ] =!= new[ # ] & ]
+    ];
+
+notebookContextChanges[ _, _ ] := { };
+
+notebookContextChanges // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*notebookChangeHint*)
+notebookChangeHint // beginDefinition;
+
+notebookChangeHint[ changes_List, data_Association, state_Association ] := <|
+    "Role"                 -> "System",
+    "Content"              -> TemplateApply[
+        $notebookChangeHintTemplate,
+        {
+            StringRiffle[
+                Replace[
+                    Lookup[ $notebookChangeDescriptions, changes ],
+                    s_String :> TemplateApply[ s, { notebookTitle @ data } ],
+                    { 1 }
+                ],
+                " and "
+            ],
+            If[ toolSelectedQ[ "NotebookReader" ],
+                TemplateApply[ $notebookReaderHint, { catalogToolName[ "NotebookReader" ] } ],
+                $notebookChangeNoReaderHint
+            ]
+        }
+    ],
+    "Temporary"            -> True,
+    "PromptCache"          -> True,
+    "NotebookContextState" -> state
+|>;
+
+notebookChangeHint // endDefinition;
+
+
+notebookTitle // beginDefinition;
+notebookTitle[ KeyValuePattern[ "Info" -> KeyValuePattern[ "WindowTitle" -> title_String ] ] ] := "\"" <> title <> "\"";
+notebookTitle[ KeyValuePattern[ "Notebook" -> nbo_NotebookObject ] ] := ToString[ nbo, InputForm ];
+notebookTitle // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*selectionNeighborhood*)
+(* A few cells around the selection, used to update the prompts for searches when the selection or content changed: *)
+selectionNeighborhood // beginDefinition;
+
+selectionNeighborhood[ KeyValuePattern[ "SelectionData" -> selection_Association ] ] := <|
+    "Before"   -> Take[ selection[ "Before" ], -Min[ 3, Length @ selection[ "Before" ] ] ],
+    "Selected" -> selection[ "Selected" ],
+    "After"    -> Take[ selection[ "After" ], UpTo[ 1 ] ]
+|>;
+
+selectionNeighborhood // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*NotebookReader Tool*)
 $noUserNotebookMessage = "There is no notebook to read: the user does not currently have a notebook open.";
 $emptyUserNotebookMessage = "The user's notebook is empty.";

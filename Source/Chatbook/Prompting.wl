@@ -264,8 +264,8 @@ $basePromptComponents[ "ConversionGraphics" ] = "\
 $basePromptComponents[ "MarkdownImageBox" ] = "\
 	* If there are images embedded in the notebook, they will be replaced by a box representation in the form \
 ``MarkdownImageBox[\"![label](attachment://content-id)\"]``. You will also receive the original image, either \
-immediately after the box or, for images in the user's notebook context, at the start of the user's message, where \
-each markdown link is followed by its image. You can use the markdown from this box \
+immediately after the box or, for images in the user's notebook context, in a list of images where each markdown link \
+is followed by its image. You can use the markdown from this box \
 ``![label](attachment://content-id)`` in your responses if you want to display the original image. The user is not \
 aware of the existence of MarkdownImageBoxes, since they just see an image, so avoid talking about these directly.";
 
