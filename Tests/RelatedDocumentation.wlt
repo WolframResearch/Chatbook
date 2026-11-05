@@ -474,15 +474,16 @@ VerificationTest[
     TestID   -> "DocumentationLookup-No-Instructions"
 ]
 
-(* Long pages are cut, and pages that use ExampleData files get the same hint as the RAG prompt: *)
+(* Long pages are cut, and pages that use ExampleData files get the same hint as the RAG prompt. The hint only lists
+   files that exist, and they ship with the documentation, which some installations (e.g. the CI engine) don't have: *)
 VerificationTest[
     plotPage = docLookup[ "Plot" ];
     {
         StringLength @ plotPage <= Wolfram`Chatbook`Tools`Private`$maxPageLength + 20,
         StringEndsQ[ plotPage, "\n\n[Page truncated]" ],
-        StringContainsQ[ docLookup[ "Import" ], "<system-hint>" ~~ ___ ~~ "\"ExampleData/" ]
+        StringContainsQ[ docLookup[ "Import" ], "<system-hint>" ~~ ___ ~~ "\"ExampleData/rose.gif\"" ]
     },
-    { True, True, True },
+    { True, True, StringQ @ FindFile[ "ExampleData/rose.gif" ] },
     SameTest -> MatchQ,
     TestID   -> "DocumentationLookup-LongPages-ExampleData"
 ]
