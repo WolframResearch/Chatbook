@@ -210,3 +210,5 @@ Note: To print input form from wolframscript, use `Print[ToString[expr, InputFor
 You only need to use this wolframscript fallback if you're certain that your changes will affect the tools, or if the tools stop working as expected. The WolframLanguageEvaluator tool is designed to produce better output for AI than wolframscript.
 
 Setting `$AllowInternet` persists in future sessions. Be sure to set back to `True` if you change it, or only modify it via `Block`.
+
+The `BuildPaclet.wls` script temporarily disables the installed Chatbook paclet. Use `PacletEnable` to restore it if the script was interrupted. Be careful running this script while multiple agents are working on the repo.
