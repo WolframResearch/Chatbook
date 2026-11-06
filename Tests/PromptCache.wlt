@@ -50,18 +50,18 @@ constructWithData[ settings_, messages_ ] :=
 (* The parts of messages that are sent: *)
 sentMessages[ messages_ ] := KeyTake[ messages, { "Role", "Content" } ];
 
-(* Simulates the request that follows a tool call (see toolEvaluation in SendChat.wl): *)
+(* Constructs the request that follows a tool call, as toolEvaluation in SendChat.wl does: the messages of the first
+   request come back in the settings' "Data", and are followed by the tool request and the tool response (simplified
+   here): *)
 toolLoopMessages[ settings_, data_ ] :=
-    Block[ { Wolfram`Chatbook`Common`$promptCacheTurnID = data[ "PromptCacheID" ] },
-        Wolfram`Chatbook`Common`constructMessages[
-            <| settings, "Data" -> data |>,
-            Join[
-                data[ "Messages" ],
-                {
-                    <| "Role" -> "Assistant", "Content" -> "/wl\n1 + 1\n/exec", "ToolRequest" -> True |>,
-                    <| "Role" -> "System", "Content" -> "2", "ToolResponse" -> True |>
-                }
-            ]
+    Wolfram`Chatbook`Common`constructToolResponseMessages[
+        <| settings, "Data" -> data |>,
+        Join[
+            data[ "Messages" ],
+            {
+                <| "Role" -> "Assistant", "Content" -> "/wl\n1 + 1\n/exec", "ToolRequest" -> True |>,
+                <| "Role" -> "System", "Content" -> "2", "ToolResponse" -> True |>
+            }
         ]
     ];
 
@@ -87,16 +87,16 @@ VerificationTest[
     TestID   -> "PromptCacheOptimization-False@@Tests/PromptCache.wlt:83,1-88,2"
 ]
 
-
 (* Turn messages are system messages after the user message, which some services don't handle as needed: *)
 VerificationTest[
     withCacheSettings[ <| "Model" -> # |>, $settings[ "PromptCacheOptimization" ] ] & /@ {
         <| "Service" -> "Anthropic", "Name" -> "claude-sonnet-4-5" |>,
-        <| "Service" -> "MistralAI", "Name" -> "mistral-large-latest" |>
+        <| "Service" -> "MistralAI", "Name" -> "codestral-latest" |>,
+        <| "Service" -> "TogetherAI", "Name" -> "mistralai/Mistral-7B-Instruct-v0.3" |>
     },
-    { False, False },
+    { False, False, False },
     SameTest -> MatchQ,
-    TestID   -> "PromptCacheOptimization-ModelDependent@@Tests/PromptCache.wlt:92,1-100,2"
+    TestID   -> "PromptCacheOptimization-ModelDependent@@Tests/PromptCache.wlt:91,1-100,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -355,6 +355,58 @@ VerificationTest[
     _Integer? (# <= 10 &),
     SameTest -> MatchQ,
     TestID   -> "Records-Bounded@@Tests/PromptCache.wlt:346,1-358,2"
+]
+
+(* Regenerated responses have pages, which use the other definition: *)
+VerificationTest[
+    Wolfram`Chatbook`SendChat`Private`makeReformattedCellTaggingRules[
+        <| "Data" -> <| "Messages" -> { <| "Role" -> "User", "Content" -> "Hello" |> }, "PromptCacheID" -> "abc" |> |>,
+        "Hi there",
+        Inherited,
+        TextData[ "Hi there" ],
+        <| "Pages" -> <| 1 -> "Previous page" |>, "PageCount" -> 1, "CurrentPage" -> 1 |>
+    ],
+    KeyValuePattern @ { "PromptCacheID" -> "abc", "PageData" -> KeyValuePattern[ "PageCount" -> 2 ] },
+    SameTest -> MatchQ,
+    TestID   -> "Records-TaggingRulesPages@@Tests/PromptCache.wlt:361,1-372,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Chat Data*)
+
+(* The chat data that is written to the output cell of the second turn: *)
+secondTurnChatData[ ] := withCacheSettings[
+    <| |>,
+    Module[ { data, output, cells },
+        data   = Last @ turnRequest[ $settings, { Cell[ "Hello", "ChatInput" ] } ];
+        output = Cell[ "Hi there", "ChatOutput", TaggingRules -> <| "PromptCacheID" -> data[ "PromptCacheID" ] |> ];
+        cells  = { Cell[ "Hello", "ChatInput" ], output, Cell[ "Next", "ChatInput" ] };
+        BinaryDeserialize @ BaseDecode @ Wolfram`Chatbook`SendChat`Private`makeCompactChatData[
+            "Answer",
+            Inherited,
+            <| $settings, "Data" -> Last @ turnRequest[ $settings, cells ] |>
+        ]
+    ]
+];
+
+(* Only the current turn's turn messages are written to the output cell, since the earlier turns' are in their records: *)
+VerificationTest[
+    Cases[ secondTurnChatData[ ][ "Data", "Messages" ], KeyValuePattern[ "Content" -> c_String ] :> c ],
+    { _String, "Hello", "Hi there", "Next", "Generated prompt 2", "Answer" },
+    SameTest -> MatchQ,
+    TestID   -> "ChatData-CurrentTurnMessages@@Tests/PromptCache.wlt:394,1-399,2"
+]
+
+(* Feedback without the chat history includes the user's message and the response, but not the turn messages: *)
+VerificationTest[
+    Module[ { feedback },
+        feedback = <| "ChatData" -> secondTurnChatData[ ][ "Data" ] |>;
+        Lookup[ Wolfram`Chatbook`Feedback`Private`dropChatHistory[ feedback ][ "ChatData", "Messages" ], { "Role", "Content" } ]
+    ],
+    { { "System", _ }, { "User", "Next" }, { "Assistant", "Answer" } },
+    SameTest -> MatchQ,
+    TestID   -> "ChatData-FeedbackWithoutHistory@@Tests/PromptCache.wlt:402,1-410,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

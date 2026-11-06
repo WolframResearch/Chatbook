@@ -252,9 +252,11 @@ $modelAutoSettings[ "GoogleGemini", Automatic ] = <|
 $modelAutoSettings[ "MistralAI" ] = <| |>;
 
 $modelAutoSettings[ "MistralAI", Automatic ] = <|
-    "EndToken"          -> None,
-    "ToolMethod"        -> "Service",
-    "PresencePenalty"   -> Missing[ "NotSupported" ]
+    "EndToken"                -> None,
+    (* The Mistral API rejects requests that end with a system message, which turn messages would give: *)
+    "PromptCacheOptimization" -> False,
+    "ToolMethod"              -> "Service",
+    "PresencePenalty"         -> Missing[ "NotSupported" ]
 |>;
 
 (* ::**************************************************************************************************************:: *)

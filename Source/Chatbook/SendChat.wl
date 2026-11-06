@@ -2412,12 +2412,7 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 
         req = If[ TrueQ @ $useLLMServices,
                   ConfirmMatch[
-                      prepareMessagesForLLM[
-                          settings,
-                          Block[ { $promptCacheTurnID = promptCacheID @ settings },
-                              constructMessages[ settings, newMessages ]
-                          ]
-                      ],
+                      prepareMessagesForLLM[ settings, constructToolResponseMessages[ settings, newMessages ] ],
                       { __Association },
                       "ConstructMessages"
                   ],
@@ -3978,7 +3973,7 @@ makeCompactChatData[
                 "Data" -> Association[
                     data,
                     "Messages" -> revertMultimodalContent @ Append[
-                        messages,
+                        dropReplayedTurnMessages @ messages,
                         <| "Role" -> "Assistant", "Content" -> message |>
                     ]
                 ]

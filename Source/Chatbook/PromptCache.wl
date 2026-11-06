@@ -25,7 +25,8 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 $maxPromptCacheRecords = 256;
 $promptCacheRecords    = <| |>;
 
-(* Set by toolEvaluation to the ID of the current turn's record while building the messages for a tool response: *)
+(* Set by constructToolResponseMessages to the ID of the current turn's record while building the messages for a tool
+   response: *)
 $promptCacheTurnID = None;
 
 (* ::**************************************************************************************************************:: *)
@@ -107,6 +108,21 @@ promptCacheHistoryMessages // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*dropReplayedTurnMessages*)
+(* Removes the turn messages that were inserted from the records of earlier turns, so that the copy of the messages that
+   is written to the output cell ("ChatData") doesn't grow with each turn. These come before the user's message, and the
+   current turn's turn messages come after it: *)
+dropReplayedTurnMessages // beginDefinition;
+
+dropReplayedTurnMessages[ messages_List ] :=
+    With[ { n = Max[ 0, Position[ messages, KeyValuePattern[ "Role" -> "User" ], { 1 }, Heads -> False ] ] },
+        Join[ DeleteCases[ Take[ messages, n ], _? promptCacheMessageQ ], Drop[ messages, n ] ]
+    ];
+
+dropReplayedTurnMessages // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*addTurnMessages*)
 (* Appends the prompt generator results to the messages of the current turn and creates the turn's record. The record ID
    is sown as chat data, so it can be written to the output cell. Requests that follow a tool call get the messages of
@@ -140,6 +156,18 @@ addTurnMessages[ settings_Association, messages_List ] := Enclose[
 ];
 
 addTurnMessages // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*constructToolResponseMessages*)
+(* Constructs the messages for the request that follows a tool call (see toolEvaluation in SendChat.wl). The messages
+   start with the messages of the turn's first request, which already include its turn messages: *)
+constructToolResponseMessages // beginDefinition;
+
+constructToolResponseMessages[ settings_Association, messages_List ] :=
+    Block[ { $promptCacheTurnID = promptCacheID @ settings }, constructMessages[ settings, messages ] ];
+
+constructToolResponseMessages // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

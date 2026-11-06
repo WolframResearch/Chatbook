@@ -198,7 +198,7 @@ Controls whether requests are built so that LLM providers can reuse cached promp
 
 ### Accepted Values
 
-- **`Automatic`** (default) — resolves via `$modelAutoSettings` (`Settings.wl`): `True` by default, `False` for the Anthropic service (LLMConnections moves every system message into the top-level system prompt, so turn messages would collect there) and for models that need user role tool responses (DeepSeek reasoner and Flash, Qwen, Nemotron, Mistral), since turn messages are system messages after the user's message
+- **`Automatic`** (default) — resolves via `$modelAutoSettings` (`Settings.wl`): `True` by default, `False` for the Anthropic service (LLMConnections moves every system message into the top-level system prompt, so turn messages would collect there), for the MistralAI service (its API rejects requests that end with a system message) and for models that need user role tool responses (DeepSeek reasoner and Flash, Qwen, Nemotron, Mistral), since turn messages are system messages after the user's message
 - **`True`** — use the prompt-cache-friendly behavior described below
 - **`False`** — legacy behavior
 
@@ -209,14 +209,14 @@ When `True`, messages that are added to a chat turn without being part of its ce
 - **Prompt generator results** are appended after the user message instead of being inserted at `"PromptGeneratorMessagePosition"`, and requests that follow a tool call send them unchanged. Prompt generators run once per turn, even if they give no results.
 - **Turn records**: these messages are stored in an in-memory record (`PromptCache.wl`), and the chat output cell of the turn gets a small `"PromptCacheID"` tagging rule that refers to the record. When the cell appears in the history of a later request, the record's messages are inserted before the cell's message, so they are sent the same way in every later request (if they no longer fit in the token budget, they are left out). Records are not saved with the notebook: after restarting the kernel, history is rebuilt from cells only, and the next request misses the cache once. The number of records kept in memory is bounded (`$maxPromptCacheRecords`), and is shared by all conversations.
 
-The messages in turn records are still marked as `"Temporary"`, so they are not displayed, saved with conversations, or used for chat titles and search context.
+The messages in turn records are still marked as `"Temporary"`, so they are not displayed, saved with conversations, or used for chat titles and search context. The chat data written to an output cell (`"ChatData"`) only includes the turn messages of its own turn, since earlier turns' are in their records.
 
 When `False`, prompt generator results are inserted at `"PromptGeneratorMessagePosition"` for each request and regenerated for each turn.
 
 ### Integration Points
 
 - **Dependencies**: None in `$autoSettingKeyDependencies`.
-- **Model-specific overrides**: Global default `True` in `$modelAutoSettings[Automatic, Automatic]`.
+- **Model-specific overrides**: Global default `True` in `$modelAutoSettings[Automatic, Automatic]`; `False` for the Anthropic and MistralAI services and the models listed above.
 - **LLM passthrough**: Not in `$llmConfigPassedKeys`.
 
 ## `"PromptGeneratorsEnabled"`
