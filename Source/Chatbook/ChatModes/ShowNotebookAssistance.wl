@@ -20,7 +20,7 @@ $notebookAssistanceBaseSettings = <|
     "AllowSelectionContext"     -> True,
     "AppName"                   -> "NotebookAssistance",
     "LLMEvaluator"              -> "WolframAIAssistant",
-    "MaxContextTokens"          -> 2^15,
+    "MaxContextTokens"          -> 2^18,
     "MaxToolResponses"          -> 5,
     "Model"                     -> <| "Service" -> "LLMKit", "Name" -> Automatic |>,
     "PromptGenerators"          -> { "RelatedDocumentationList" },
