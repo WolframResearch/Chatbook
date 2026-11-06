@@ -2284,12 +2284,14 @@ resetButton[ Dynamic[ tab_ ], Dynamic[ dmPrefCache_ ] ] :=
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*resetChatPreferences*)
-(* These must match the controls shown on the Notebooks tab. The model selector is shared with the Services tab, so
-   resetting either tab resets the model; updateDynamics[ "Preferences" ] rebuilds both tabs so they show the new value.
-   The cloud preferences cell doesn't track that trigger, so forceRefreshCloudPreferences rebuilds it instead. *)
+(* These must match the controls shown on the Notebooks tab, plus "Assistance" (see below). The model selector is shared
+   with the Services tab, so resetting either tab resets the model; updateDynamics[ "Preferences" ] rebuilds both tabs so
+   they show the new value. The cloud preferences cell doesn't track that trigger, so forceRefreshCloudPreferences
+   rebuilds it instead. *)
 $notebooksTabSettingKeys = {
-    (* The "Assistance" checkbox is currently disabled from appearing (see makeDefaultSettingsContent): *)
-    (* "Assistance", *)
+    (* The "Assistance" checkbox is currently hidden (see makeDefaultSettingsContent), but versions that showed it may
+       have stored "Assistance" -> True globally, and this reset is the only way to clear that from the UI: *)
+    "Assistance",
     "AutoFormat",
     "ChatHistoryLength",
     "IncludeHistory",
