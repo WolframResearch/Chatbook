@@ -45,6 +45,7 @@ Here are new instructions based on the current context that should be followed:
 (* Components that are only meant for a single response, so they are sent again in each turn that needs them: *)
 $perTurnBasePrompts = {
     "AutoAssistant",
+    "NotebookAssistanceInstructionsHeader", (* the heading of the three below *)
     "NotebookAssistanceGettingStarted",
     "NotebookAssistanceErrorMessage",
     "NotebookAssistanceExtraInstructions"
@@ -160,7 +161,7 @@ promptCacheHistoryMessages // endDefinition;
 dropReplayedTurnMessages // beginDefinition;
 
 dropReplayedTurnMessages[ messages_List ] :=
-    With[ { n = Max[ 0, Position[ messages, KeyValuePattern[ "Role" -> "User" ], { 1 }, Heads -> False ] ] },
+    With[ { n = lastUserInputPosition @ messages },
         Join[ DeleteCases[ Take[ messages, n ], _? promptCacheMessageQ ], Drop[ messages, n ] ]
     ];
 

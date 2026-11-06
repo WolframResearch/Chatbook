@@ -51,13 +51,13 @@ constructWithData[ settings_, messages_ ] :=
 sentMessages[ messages_ ] := KeyTake[ messages, { "Role", "Content" } ];
 
 (* Constructs the request that follows a tool call, as toolEvaluation in SendChat.wl does: the messages of the first
-   request come back in the settings' "Data", and are followed by the tool request and the tool response (simplified
-   here): *)
+   request come back in the settings' "Data" (toolLoopBaseMessages), and are followed by the tool request and the tool
+   response (simplified here): *)
 toolLoopMessages[ settings_, data_ ] :=
     Wolfram`Chatbook`Common`constructToolResponseMessages[
         <| settings, "Data" -> data |>,
         Join[
-            data[ "Messages" ],
+            Wolfram`Chatbook`SendChat`Private`toolLoopBaseMessages @ <| settings, "Data" -> data |>,
             {
                 <| "Role" -> "Assistant", "Content" -> "/wl\n1 + 1\n/exec", "ToolRequest" -> True |>,
                 <| "Role" -> "System", "Content" -> "2", "ToolResponse" -> True |>
@@ -635,6 +635,114 @@ VerificationTest[
     { { "System", _ }, { "User", "Next" }, { "Assistant", "Answer" } },
     SameTest -> MatchQ,
     TestID   -> "ChatData-FeedbackWithoutHistory@@Tests/PromptCache.wlt:630,1-638,2"
+]
+
+(* Turn messages can have the user role, and only the ones before the user's message are left out: *)
+VerificationTest[
+    Lookup[
+        Wolfram`Chatbook`Common`dropReplayedTurnMessages @ {
+            <| "Role" -> "System"   , "Content" -> "System prompt" |>,
+            <| "Role" -> "User"     , "Content" -> "Hello" |>,
+            <| "Role" -> "User"     , "Content" -> "Earlier", "Temporary" -> True, "PromptCache" -> True |>,
+            <| "Role" -> "Assistant", "Content" -> "Hi there" |>,
+            <| "Role" -> "User"     , "Content" -> "Next" |>,
+            <| "Role" -> "User"     , "Content" -> "Current", "Temporary" -> True, "PromptCache" -> True |>
+        },
+        "Content"
+    ],
+    { "System prompt", "Hello", "Hi there", "Next", "Current" },
+    SameTest -> MatchQ,
+    TestID   -> "ChatData-UserRoleTurnMessages@@Tests/PromptCache.wlt:641,1-656,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*System Prompt*)
+
+(* "BasePrompt" -> None removes the base prompt components of the settings, like it does without prompt cache
+   optimization: *)
+VerificationTest[
+    Table[
+        withCacheSettings[
+            <| "LLMEvaluator" -> "CodeAssistant", "BasePrompt" -> None, "PromptCacheOptimization" -> pco |>,
+            systemContent @ First @ constructWithData[ $settings, $firstCells ]
+        ],
+        { pco, { True, False } }
+    ],
+    { prompt_, prompt_ },
+    SameTest -> MatchQ,
+    TestID   -> "SystemPrompt-BasePromptNone@@Tests/PromptCache.wlt:664,1-675,2"
+]
+
+(* The system prompt doesn't change after a tool call, also when it has instructions that are disabled with a hint: *)
+VerificationTest[
+    withCacheSettings[
+        <| "ToolCallFrequency" -> 1 |>,
+        Module[ { first, data },
+            { first, data } = constructWithData[ $settings, $firstCells ];
+            systemContent @ toolLoopMessages[ $settings, data ] === systemContent @ first
+        ]
+    ],
+    True,
+    SameTest -> MatchQ,
+    TestID   -> "SystemPrompt-ToolLoop@@Tests/PromptCache.wlt:678,1-689,2"
+]
+
+(* The request after a tool call can be made outside the chat state of the first request (e.g. for automatic
+   assistance), where other components have been collected. It gets its system prompt from the turn's record: *)
+VerificationTest[
+    Module[ { first, data, second },
+        { first, data } = cacheRequest[ <| "PromptGenerators" -> { needsGenerator @ { "CellLabels" } } |>, $firstCells ];
+        second = withCacheSettings[
+            <| |>,
+            Wolfram`Chatbook`Common`needsBasePrompt[ "SpecialURIAudio" ];
+            toolLoopMessages[ $settings, data ]
+        ];
+        systemContent @ second === systemContent @ first
+    ],
+    True,
+    SameTest -> MatchQ,
+    TestID   -> "SystemPrompt-OtherChatState@@Tests/PromptCache.wlt:693,1-706,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Hint Contents*)
+
+(* Hints include the components they depend on that weren't sent yet: *)
+VerificationTest[
+    Module[ { messages },
+        messages = First @ cacheRequest[
+            <| "PromptGenerators" -> { needsGenerator @ { "SpecialURIAudio" } } |>,
+            $firstCells
+        ];
+        Last[ messages ][ "BasePromptComponents" ]
+    ],
+    _? (SubsetQ[ #, { "SpecialURI", "SpecialURIAudio" } ] &),
+    SameTest -> MatchQ,
+    TestID   -> "HintContents-Dependencies@@Tests/PromptCache.wlt:713,1-724,2"
+]
+
+(* The notebook assistance instructions are sent in each turn that needs them, along with their heading: *)
+VerificationTest[
+    Module[ { first, data, second },
+        { first, data } = cacheRequest[
+            <| "PromptGenerators" -> { needsGenerator @ { "NotebookAssistanceGettingStarted" } } |>,
+            $firstCells
+        ];
+        second = First @ cacheRequest[
+            <| "PromptGenerators" -> { needsGenerator @ { "NotebookAssistanceErrorMessage" } } |>,
+            {
+                Cell[ "Hello", "ChatInput" ],
+                Cell[ "Hi there", "ChatOutput", TaggingRules -> <| "PromptCacheID" -> data[ "PromptCacheID" ] |> ],
+                Cell[ "Next", "ChatInput" ]
+            }
+        ];
+        StringCount[ contentString /@ { Last @ first, Last @ second }, "Special Instructions for Notebook Assistance" ]
+    ],
+    { 1, 1 },
+    SameTest -> MatchQ,
+    TestID   -> "HintContents-NotebookAssistanceHeading@@Tests/PromptCache.wlt:727,1-746,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

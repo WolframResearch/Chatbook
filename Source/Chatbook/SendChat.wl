@@ -2425,16 +2425,7 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
             <| "ToolResponse" -> toolResponse, "ToolResponseString" -> output |>
         ];
 
-        (* With prompt cache optimization, the system prompt can't change, so these are disabled with a hint instead
-           (see disabledPromptHints in PromptCache.wl): *)
-        messages = ConfirmMatch[
-            If[ promptCacheOptimizationQ @ settings,
-                settings[ "Data", "Messages" ],
-                removeToolPreferencePrompt @ removeBasePrompt[ settings[ "Data", "Messages" ], { "AutoAssistant" } ]
-            ],
-            { __Association },
-            "Messages"
-        ];
+        messages = ConfirmMatch[ toolLoopBaseMessages @ settings, { __Association }, "Messages" ];
 
         roles = ConfirmMatch[ allowedMultimodalRoles @ settings, All | { __String }, "Roles" ];
 
@@ -2495,6 +2486,23 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 ];
 
 toolEvaluation // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toolLoopBaseMessages*)
+(* The messages of the turn's first request, which the request after a tool call starts with. Without prompt cache
+   optimization, the AutoAssistant instructions and the tool call frequency preference are removed from the system
+   prompt. With it, the system prompt can't change, so these are disabled with a hint instead (see disabledPromptHints
+   in PromptCache.wl): *)
+toolLoopBaseMessages // beginDefinition;
+
+toolLoopBaseMessages[ settings_? promptCacheOptimizationQ ] :=
+    settings[ "Data", "Messages" ];
+
+toolLoopBaseMessages[ settings_ ] :=
+    removeToolPreferencePrompt @ removeBasePrompt[ settings[ "Data", "Messages" ], { "AutoAssistant" } ];
+
+toolLoopBaseMessages // endDefinition;
 
 (* $noRepeatMessage = "\
 The user has already been provided with this result, so you do not need to repeat it.

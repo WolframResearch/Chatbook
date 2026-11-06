@@ -508,17 +508,22 @@ collectedBasePromptNames // endDefinition;
    needed them instead (see basePromptHints in PromptCache.wl).
 
    The settings-determined components are the ones that are collected while building the system message (persona and
-   settings base prompts, tool examples) plus the ones from needsSettingsBasePrompts. They are collected separately from
-   the components collected so far, which can include content-dependent ones (e.g. "NotebookAssistanceGettingStarted"),
-   and are kept in $staticBasePrompts: *)
+   settings base prompts, tool examples) plus the ones from needsSettingsBasePrompts. These are added after the system
+   message, like constructMessages does without prompt cache optimization, so that "BasePrompt" -> None removes all of
+   them. They are collected separately from the components collected so far, which can include content-dependent ones
+   (e.g. "NotebookAssistanceGettingStarted"), and are kept in $staticBasePrompts: *)
 withStaticBasePrompts // beginDefinition;
 withStaticBasePrompts // Attributes = { HoldRest };
 
 withStaticBasePrompts[ settings_? promptCacheOptimizationQ, eval_ ] :=
     Module[ { result, static },
         { result, static } = Block[ { $collectedPromptComponents = <| |> },
-            needsSettingsBasePrompts @ settings;
-            { eval, removeBasePrompt @ settings[ "ExcludedBasePrompts" ]; collectedBasePromptNames[ ] }
+            {
+                eval,
+                needsSettingsBasePrompts @ settings;
+                removeBasePrompt @ settings[ "ExcludedBasePrompts" ];
+                collectedBasePromptNames[ ]
+            }
         ];
         $staticBasePrompts = static;
         needsBasePrompt /@ static;
