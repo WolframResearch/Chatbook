@@ -311,6 +311,10 @@ constructMessages // endDefinition;
 (*droppedTemporaryMessageQ*)
 (* Temporary messages are regenerated for each request, except for the turn messages kept for prompt caching: *)
 droppedTemporaryMessageQ // beginDefinition;
+(* Notebook content that was sent earlier in the conversation (see ChatModes/Context.wl) is not sent again after the user
+   turns off notebook content: *)
+droppedTemporaryMessageQ[ settings_, KeyValuePattern[ "NotebookContext" -> True ] ] /;
+    ! TrueQ @ settings[ "AllowSelectionContext" ] := True;
 droppedTemporaryMessageQ[ settings_, message_ ] /; promptCacheMessageQ @ message := ! promptCacheOptimizationQ @ settings;
 droppedTemporaryMessageQ[ settings_, KeyValuePattern[ "Temporary" -> True ] ] := True;
 droppedTemporaryMessageQ[ settings_, _ ] := False;
@@ -412,11 +416,14 @@ addPrompts // beginDefinition;
 
 addPrompts[ settings_Association, messages_List ] := Enclose[
     Block[ { $contextImages = { } },
-        Module[ { custom, workspace, inline, sidebar, prompt, withImages },
+        Module[ { cache, custom, workspace, inline, sidebar, prompt, withImages },
+            cache      = promptCacheOptimizationQ @ settings;
             custom     = ConfirmMatch[ assembleCustomPrompt @ settings, None|_String, "Custom"    ];
-            workspace  = ConfirmMatch[ getWorkspacePrompt @ settings  , None|_String, "Workspace" ];
+            (* With prompt cache optimization, the notebook context of workspace and sidebar chats is sent once per
+               conversation instead (see notebookContextTurnMessages in ChatModes/Context.wl): *)
+            workspace  = ConfirmMatch[ If[ cache, None, getWorkspacePrompt @ settings ], None|_String, "Workspace" ];
             inline     = ConfirmMatch[ getInlineChatPrompt @ settings , None|_String, "Inline"    ];
-            sidebar    = ConfirmMatch[ getSidebarPrompt @ settings    , None|_String, "Sidebar"   ];
+            sidebar    = ConfirmMatch[ If[ cache, None, getSidebarPrompt @ settings ], None|_String, "Sidebar" ];
             prompt     = StringRiffle[ Select[ { custom, workspace, inline, sidebar }, StringQ ], "\n\n" ];
             withImages = ConfirmMatch[ addContextImages[ messages, $contextImages ], _List, "WithImages" ];
             addPrompts[ prompt, withImages ]
@@ -790,11 +797,28 @@ withTurnMessages[ settings_, cell_Cell, message_ ] :=
     With[ { turnMessages = promptCacheHistoryMessages[ settings, cell ] },
         If[ turnMessages === { },
             message,
-            Flatten @ { Reverse[ fittedTurnMessage[ settings, # ] & /@ Reverse @ turnMessages ], message }
+            Flatten @ {
+                dropOrphanContextImages @ Reverse[ fittedTurnMessage[ settings, # ] & /@ Reverse @ turnMessages ],
+                message
+            }
         ]
     ];
 
 withTurnMessages // endDefinition;
+
+(* The images of a notebook context are a separate message (see fullNotebookContextMessages in ChatModes/Context.wl).
+   They are smaller than the context message, so they can fit in the token budget when it doesn't. They are left out
+   then, so that the conversation doesn't seem to have a notebook context, which is then sent again. Their tokens have
+   already been counted against the budget, which only makes the budget a bit smaller in this rare case: *)
+dropOrphanContextImages // beginDefinition;
+
+dropOrphanContextImages[ messages_List ] :=
+    If[ MemberQ[ messages, KeyValuePattern @ { "Role" -> "System", "NotebookContext" -> True } ],
+        messages,
+        DeleteCases[ messages, KeyValuePattern[ "NotebookContext" -> True ] ]
+    ];
+
+dropOrphanContextImages // endDefinition;
 
 (* Turn messages are only included when they fit in the token budget as they are. Shortening them would give different
    text in every request, and they are not needed without the messages they were made for: *)

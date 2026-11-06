@@ -745,4 +745,47 @@ VerificationTest[
     TestID   -> "HintContents-NotebookAssistanceHeading@@Tests/PromptCache.wlt:727,1-746,2"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Notebook Context*)
+
+(* When the notebook context of a turn doesn't fit in the token budget, its images are left out with it, so that the
+   context is sent again (see notebookContextTurnMessages in ChatModes/Context.wl): *)
+VerificationTest[
+    Module[ { id, cells },
+        id = Wolfram`Chatbook`PromptCache`Private`setPromptCacheRecord[
+            CreateUUID[ ],
+            {
+                <|
+                    "Role"                 -> "System",
+                    "Content"              -> StringRepeat[ "notebook content ", 5000 ],
+                    "Temporary"            -> True,
+                    "PromptCache"          -> True,
+                    "NotebookContext"      -> True,
+                    "NotebookContextState" -> <| |>
+                |>,
+                <|
+                    "Role"            -> "User",
+                    "Content"         -> "IMAGES",
+                    "Temporary"       -> True,
+                    "PromptCache"     -> True,
+                    "NotebookContext" -> True
+                |>
+            }
+        ];
+        cells = {
+            Cell[ "Hello", "ChatInput" ],
+            Cell[ "Hi there", "ChatOutput", TaggingRules -> <| "PromptCacheID" -> id |> ],
+            Cell[ "Next", "ChatInput" ]
+        };
+        Cases[
+            First @ cacheRequest[ <| "AllowSelectionContext" -> True, "MaxContextTokens" -> 8000, "MergeMessages" -> False |>, cells ],
+            KeyValuePattern[ "Content" -> c_String ] :> c
+        ]
+    ],
+    { _, "Hello", "Hi there", "Next", "Generated prompt 1" },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookContext-OrphanImages@@Tests/PromptCache.wlt:754,1-789,2"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)
