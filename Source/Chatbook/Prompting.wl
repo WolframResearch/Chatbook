@@ -579,6 +579,15 @@ withBasePromptBuilder // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*withoutCollectingBasePrompts*)
+(* Evaluates eval without keeping the base prompt components it needs, e.g. for content that is not sent: *)
+withoutCollectingBasePrompts // beginDefinition;
+withoutCollectingBasePrompts // Attributes = { HoldFirst };
+withoutCollectingBasePrompts[ eval_ ] := Internal`InheritedBlock[ { $collectedPromptComponents }, eval ];
+withoutCollectingBasePrompts // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*needsBasePrompt*)
 needsBasePrompt // beginDefinition;
 needsBasePrompt[ name_String ] /; MemberQ[ $excludedBasePrompts, name ] := name;

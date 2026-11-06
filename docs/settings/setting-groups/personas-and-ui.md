@@ -264,6 +264,7 @@ When `Automatic` (default), resolves to `True` when using workspace chat, inline
 - **LLM passthrough**: Not in `$llmConfigPassedKeys` (used internally for context construction).
 - **Persona inheritance**: Not listed in `$nonInheritedPersonaValues`, so it is inherited from persona configurations.
 - **NotebookReader tool**: The [`NotebookReader`](tools.md#resolution) tool is only offered to the model when this is `True`.
+- **Prompt cache optimization**: With [`"PromptCacheOptimization"`](prompting.md#promptcacheoptimization), sidebar and workspace chats send the notebook content once per conversation. Turning this setting off leaves the content that was sent out of later requests.
 
 ### Preferences UI
 

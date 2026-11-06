@@ -1107,6 +1107,7 @@ fullSelection // endDefinition;
    of every request. Instead, it is sent once per conversation with the turn messages of the first input (see
    addTurnMessages in PromptCache.wl). Later inputs only get a short notice when the user's selection moved or the
    notebook changed since then, and the AI can read the current content with the NotebookReader tool if it needs to.
+   Without the tool, the full context is sent again instead.
 
    The context message and the notices record the state of the notebook they describe ("NotebookContextState"), so the
    state the AI last heard about is the one in the latest of these messages in the history. If the history has no
@@ -1136,10 +1137,6 @@ $notebookReaderHint = StringTemplate[ "\
 If the user's message refers to the notebook or to something they selected (for example \"this\", \"this cell\" or \
 \"here\"), use the `1` tool to see its current state before you respond. Otherwise, ignore this notice and don't \
 read the notebook." ];
-
-$notebookChangeNoReaderHint = "\
-If the user's message refers to the notebook or to something they selected (for example \"this\", \"this cell\" or \
-\"here\"), keep in mind that you haven't seen these changes.";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1179,8 +1176,12 @@ notebookContextTurnMessages0[ settings_Association, messages_List ] := Enclose[
             Throw @ { }
         ];
 
-        (* Update the prompts for searches with a smaller context around the current selection, which is not sent: *)
-        contextFromSelectionData[
+        (* Without the NotebookReader tool, the AI can't see the changes otherwise: *)
+        If[ ! toolSelectedQ[ "NotebookReader" ], Throw @ fullNotebookContextMessages[ settings, data ] ];
+
+        (* Update the prompts for searches with a smaller context around the current selection. It is not sent, so the
+           base prompt components it needs are not kept: *)
+        withoutCollectingBasePrompts @ contextFromSelectionData[
             data[ "Notebook" ],
             data[ "Info" ],
             selectionNeighborhood @ data,
@@ -1207,8 +1208,10 @@ contextFromSelectionData[ nbo_NotebookObject, info_, selectionData_Association, 
             $includeCellXML         = TrueQ @ $notebookEditorEnabled,
             (* The context is sent again unchanged in later requests, where relative times would be out of date: *)
             $includeRelativeTimes   = False,
-            $notebookMetadataString = getNotebookMetadataString[ nbo, info ]
+            $notebookMetadataString
         },
+        (* Set here, since Block initializers are evaluated before $includeRelativeTimes is changed: *)
+        $notebookMetadataString = getNotebookMetadataString[ nbo, info ];
         Module[ { settings, string },
             settings = ConfirmBy[ downScaledSettings @ settings0, AssociationQ, "Settings" ];
             string = ConfirmBy[ getContextFromSelection0[ selectionData, settings ], StringQ, "Context" ];
@@ -1372,10 +1375,7 @@ notebookChangeHint[ changes_List, data_Association, state_Association ] := <|
                 ],
                 " and "
             ],
-            If[ toolSelectedQ[ "NotebookReader" ],
-                TemplateApply[ $notebookReaderHint, { catalogToolName[ "NotebookReader" ] } ],
-                $notebookChangeNoReaderHint
-            ]
+            TemplateApply[ $notebookReaderHint, { catalogToolName[ "NotebookReader" ] } ]
         }
     ],
     "Temporary"            -> True,

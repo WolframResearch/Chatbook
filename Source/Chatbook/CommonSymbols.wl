@@ -463,6 +463,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `withTokenBudget;
 `withToolBox;
 `withWorkspaceGlobalProgress;
+`withoutCollectingBasePrompts;
 `wlTemplateBoxes;
 `wolframAlphaToolEvaluate;
 `writeInlineChatOutputCell;
