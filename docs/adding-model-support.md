@@ -84,7 +84,7 @@ Settings that model configurations commonly override, organized by category. See
 | `"ToolResponseRole"` | `"System"` / `"User"` | Message role for tool response messages |
 | `"ToolCallExamplePromptStyle"` | `"Basic"` / `Automatic` | Style of tool usage examples in system prompt |
 | `"ToolExamplePrompt"` | `Automatic` / `None` | Whether to include tool usage examples |
-| `"ToolCallRetryMessage"` | Boolean | Append retry guidance after tool responses |
+| `"ToolCallRetryMessage"` | Boolean | Append retry guidance after tool responses (in the system prompt with `"PromptCacheOptimization"`) |
 | `"SplitToolResponseMessages"` | Boolean | Split mixed content+tool-request messages |
 | `"MaxToolResponses"` | Integer | Maximum tool calls per turn |
 | `"DiscourageExtraToolCalls"` | Boolean | Add prompt text discouraging excessive tool calls |

@@ -120,7 +120,7 @@ See additional details in [Prompting Settings](setting-groups/prompting.md).
 | `"ToolOptions"` | `$DefaultToolOptions` | Per-tool option overrides mapping tool names to option associations. |
 | `"ToolSelectionType"` | `<\|\|>` | Per-tool global override: `All` (always enabled), `None` (always disabled), or `Inherited` (per-persona). |
 | `"ToolCallFrequency"` | `Automatic` | How often the LLM should use tools (`Automatic` or a number between `0` and `1`). |
-| `"ToolCallRetryMessage"` | `Automatic` | Whether to append a retry-guidance system message after each tool response. |
+| `"ToolCallRetryMessage"` | `Automatic` | Whether to append a retry-guidance system message after each tool response (with `"PromptCacheOptimization"`, the guidance is in the system prompt instead). |
 | `"ToolExamplePrompt"` | `Automatic` | Tool example prompt included in the system prompt to demonstrate tool usage patterns. |
 | `"ToolCallExamplePromptStyle"` | `Automatic` | Template style for tool call examples in the system prompt. |
 | `"ToolResponseRole"` | `Automatic` | Message role assigned to tool response messages sent back to the LLM. |

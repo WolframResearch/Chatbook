@@ -2425,11 +2425,7 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
             <| "ToolResponse" -> toolResponse, "ToolResponseString" -> output |>
         ];
 
-        messages = ConfirmMatch[
-            removeToolPreferencePrompt @ removeBasePrompt[ settings[ "Data", "Messages" ], { "AutoAssistant" } ],
-            { __Association },
-            "Messages"
-        ];
+        messages = ConfirmMatch[ toolLoopBaseMessages @ settings, { __Association }, "Messages" ];
 
         roles = ConfirmMatch[ allowedMultimodalRoles @ settings, All | { __String }, "Roles" ];
 
@@ -2490,6 +2486,23 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 ];
 
 toolEvaluation // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toolLoopBaseMessages*)
+(* The messages of the turn's first request, which the request after a tool call starts with. Without prompt cache
+   optimization, the AutoAssistant instructions and the tool call frequency preference are removed from the system
+   prompt. With it, the system prompt can't change, so these are disabled with a hint instead (see disabledPromptHints
+   in PromptCache.wl): *)
+toolLoopBaseMessages // beginDefinition;
+
+toolLoopBaseMessages[ settings_? promptCacheOptimizationQ ] :=
+    settings[ "Data", "Messages" ];
+
+toolLoopBaseMessages[ settings_ ] :=
+    removeToolPreferencePrompt @ removeBasePrompt[ settings[ "Data", "Messages" ], { "AutoAssistant" } ];
+
+toolLoopBaseMessages // endDefinition;
 
 (* $noRepeatMessage = "\
 The user has already been provided with this result, so you do not need to repeat it.
@@ -2606,8 +2619,11 @@ makeToolResponseMessage[ settings_, model_Association, response_, toolResponse_ 
         response,
         toolResponse
     ],
-    If[ TrueQ @ settings[ "ToolCallRetryMessage" ], $toolCallRetryMessage, Nothing ](* ,
-    If[ TrueQ @ discourageExtraToolCallsQ @ settings, $discourageExtraToolCallsMessage, Nothing ], *)
+    (* With prompt cache optimization, this is a base prompt component instead (see needsSettingsBasePrompts): *)
+    If[ TrueQ @ settings[ "ToolCallRetryMessage" ] && ! promptCacheOptimizationQ @ settings,
+        $toolCallRetryMessage,
+        Nothing
+    ]
 };
 
 makeToolResponseMessage // endDefinition;
@@ -2663,17 +2679,6 @@ $toolCallRetryMessage = <|
     "HoldTemporary" -> True
 |>;
 
-$discourageExtraToolCallsPrompt = "\
-IMPORTANT: Do not make any more tool calls unless absolutely necessary! \
-Stop and think about what the user was asking for. \
-Does the tool response give you enough information to answer the user's query? \
-If so, respond to the user now instead of making any additional tool calls.";
-
-$discourageExtraToolCallsMessage = <|
-    "Role"          -> "System",
-    "Content"       -> $discourageExtraToolCallsPrompt,
-    "HoldTemporary" -> True
-|>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
