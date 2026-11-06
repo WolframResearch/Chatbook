@@ -159,7 +159,7 @@ When `Automatic`, resolved by `autoMaxContextTokens` (`Settings.wl`), which disp
 The resolved value is used to initialize the token budget in `makeTokenBudget` (`ChatMessages.wl`), which multiplies it by `TokenBudgetMultiplier` to produce the working budget. During message construction:
 
 - Token pressure is tracked as `1.0 - ($tokenBudget / MaxContextTokens)`.
-- The cell string budget (`$cellStringBudget`) is dynamically reduced as pressure increases, dropping to `0` when fewer than `$reservedTokens` (500) remain. When `"PromptCacheOptimization"` is `True`, it stays at its initial value instead, and drops to `0` when less than 15% of `"MaxContextTokens"` is left.
+- The cell string budget (`$cellStringBudget`) is dynamically reduced as pressure increases, dropping to `0` when fewer than `$reservedTokens` (500) remain. When `"PromptCacheOptimization"` is `True`, it stays at its initial value for chat history instead (see [`"PromptCacheOptimization"`](prompting.md#promptcacheoptimization)).
 
 ### Dependent Settings
 

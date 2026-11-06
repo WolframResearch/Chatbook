@@ -610,8 +610,6 @@ During each chat turn, the `$toolCallCount` global variable (`CommonSymbols.wl`)
 
 Note: the comparison uses `>` (not `>=`), so the LLM can make up to `n + 1` tool calls before being stopped.
 
-When `"PromptCacheOptimization"` is `True`, the limit is doubled (`maxToolResponses` in `SendChat.wl`), since the earlier messages of the turn are mostly served from the prompt cache and each additional tool call costs less.
-
 ### Model-Specific Overrides
 
 - **`3`**: O1, O3, O4-Mini (OpenAI reasoning models)

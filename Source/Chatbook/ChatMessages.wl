@@ -750,7 +750,18 @@ makeChatMessages0[ settings_, { cells___, cell_ ? promptFunctionCellQ }, include
 
 makeChatMessages0[ settings0_, cells_List, includeSystem_ ] := Enclose[
     Module[ { settings, role, message, toMessage0, toMessage, cell, history, messages },
-        settings   = ConfirmBy[ <| settings0, "HistoryPosition" -> 0, "Cells" -> cells |>, AssociationQ, "Settings" ];
+        settings = ConfirmBy[
+            <|
+                settings0,
+                "HistoryPosition" -> 0,
+                "Cells"           -> cells,
+                (* Without a system message, cells are serialized for something other than chat history (e.g. the
+                   notebook context), which is only sent once, so the history limits for prompt caching don't apply: *)
+                If[ TrueQ @ includeSystem, Nothing, "PromptCacheOptimization" -> False ]
+            |>,
+            AssociationQ,
+            "Settings"
+        ];
         role       = If[ TrueQ @ includeSystem, makeCurrentRole @ settings, Missing[ ] ];
         cell       = ConfirmMatch[ Last[ cells, $Failed ], _Cell, "Cell" ];
         toMessage0 = Confirm[ getCellMessageFunction @ settings, "CellMessageFunction" ];
@@ -769,9 +780,12 @@ makeChatMessages0[ settings0_, cells_List, includeSystem_ ] := Enclose[
 
         (* Cells are converted newest first, so that older cells are the first to be shortened by the token budget: *)
         history = ConfirmMatch[
-            Flatten @ Reverse @ MapIndexed[
-                withTurnMessages[ settings, #1, toMessage[ #1, <| settings, "HistoryPosition" -> First[ #2 ] |> ] ] &,
-                Reverse @ Most @ cells
+            Flatten @ Reverse @ blockTrimmedHistory[
+                settings,
+                MapIndexed[
+                    withTurnMessages[ settings, #1, toMessage[ #1, <| settings, "HistoryPosition" -> First[ #2 ] |> ] ] &,
+                    Reverse @ Most @ cells
+                ]
             ],
             $$validMessageResults,
             "History"
@@ -785,6 +799,37 @@ makeChatMessages0[ settings0_, cells_List, includeSystem_ ] := Enclose[
 ];
 
 makeChatMessages0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*blockTrimmedHistory*)
+(* With prompt cache optimization, the cells that don't fit in the token budget are left out in blocks counted from the
+   start of the conversation. Otherwise, the oldest message that is sent (and the number of excised cells) would change
+   with every new message, and each request would miss the cache after the system prompt. This way, the history stays
+   the same for several requests. The history is given as one group of messages per cell, newest first: *)
+$historyTrimBlockSize = 8;
+
+blockTrimmedHistory // beginDefinition;
+
+blockTrimmedHistory[ settings_? promptCacheOptimizationQ, groups_List ] /; $cellStringBudget === 0 :=
+    Module[ { count, kept, dropped },
+        count   = Length @ groups;
+        (* The oldest cell that was kept may have been shortened to fit, so it is left out too: *)
+        kept    = Max[ 0, LengthWhile[ groups, ! excisedCellGroupQ @ # & ] - 1 ];
+        dropped = Min[ count, $historyTrimBlockSize * Ceiling[ (count - kept) / $historyTrimBlockSize ] ];
+        Join[ Take[ groups, count - dropped ], ConstantArray[ $excisedCellMessage, dropped ] ]
+    ];
+
+blockTrimmedHistory[ settings_, groups_List ] := groups;
+
+blockTrimmedHistory // endDefinition;
+
+
+$excisedCellMessage = <| "Role" -> "System", "Content" -> "[Cell Excised]" |>;
+
+excisedCellGroupQ // beginDefinition;
+excisedCellGroupQ[ group_ ] := MatchQ[ Last[ Flatten @ { group }, None ], KeyValuePattern[ "Content" -> "[Cell Excised]" ] ];
+excisedCellGroupQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -960,7 +1005,7 @@ tokenCheckedMessage[ as_Association, message_ ] := Enclose[
         $tokenBudget      = Max[ 0, budget - count ];
         $tokenPressure    = 1.0 - ($tokenBudget / as[ "MaxContextTokens" ]);
         $cellStringBudget = Which[
-                                $tokenBudget < reservedTokens @ as, 0,
+                                $tokenBudget < $reservedTokens, 0,
                                 (* Older messages would be shortened by a different amount after every new message,
                                    so they wouldn't be sent the same way in later requests: *)
                                 promptCacheOptimizationQ @ as, $initialCellStringBudget,
@@ -987,19 +1032,6 @@ tokenCheckedMessage[ as_Association, message_ ] := Enclose[
 tokenCheckedMessage // endDefinition;
 
 $tokenBudgetLog = Internal`Bag[ ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*reservedTokens*)
-(* The number of tokens left when no more messages are added. With prompt cache optimization, messages are not shortened
-   more and more as the conversation grows, so the history fills the budget, which doesn't count the system prompt (other
-   than the base prompt), the tool definitions, or the tool calls of the current turn. A larger part is kept free then.
-   NOTE: Once a conversation reaches this limit, the oldest messages that are left change with every new message, so
-   each later request misses the cache after the system prompt. *)
-reservedTokens // beginDefinition;
-reservedTokens[ as_? promptCacheOptimizationQ ] := Max[ $reservedTokens, Ceiling[ 0.15 * as[ "MaxContextTokens" ] ] ];
-reservedTokens[ _ ] := $reservedTokens;
-reservedTokens // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
