@@ -696,20 +696,13 @@ makeChatMessages[ settings_, cells_, includeSystem_ ] /; $chatState :=
     ];
 
 makeChatMessages[ settings_, cells_, includeSystem_ ] :=
-    Block[
-        {
-            $multimodalMessages      = TrueQ @ settings[ "Multimodal" ],
-            $tokenBudget             = makeTokenBudget @ settings,
-            $tokenPressure           = 0.0,
-            $initialCellStringBudget = makeCellStringBudget @ settings,
-            $chatInputIndicator      = mixedContentQ @ cells,
-            $cellStringBudget, $conversionRules
-        },
-        $conversionRules = settings[ "ConversionRules" ];
-        $cellStringBudget = $initialCellStringBudget;
-        If[ includeSystem && settings[ "BasePrompt" ] =!= None, tokenCheckedMessage[ settings, $fullBasePrompt ] ];
-        (* FIXME: need to account for persona/tool prompting as well *)
-        makeChatMessages0[ settings, cells, includeSystem ]
+    withTokenBudget[
+        settings,
+        Block[ { $chatInputIndicator = mixedContentQ @ cells },
+            If[ includeSystem && settings[ "BasePrompt" ] =!= None, tokenCheckedMessage[ settings, $fullBasePrompt ] ];
+            (* FIXME: need to account for persona/tool prompting as well *)
+            makeChatMessages0[ settings, cells, includeSystem ]
+        ]
     ];
 
 makeChatMessages // endDefinition;
@@ -785,6 +778,30 @@ makeCellStringBudget[ settings_Association ] := makeCellStringBudget @ settings[
 makeCellStringBudget[ max: $$size ] := max;
 makeCellStringBudget[ Except[ $$size ] ] := $defaultMaxCellStringLength;
 makeCellStringBudget // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*withTokenBudget*)
+withTokenBudget // beginDefinition;
+withTokenBudget // Attributes = { HoldRest };
+
+(* Evaluates eval with a new token budget made from settings. In a chat, the budget is otherwise shared by everything
+   that's serialized, since resolveAutoSettings only sets it once. *)
+withTokenBudget[ settings_Association, eval_ ] :=
+    Block[
+        {
+            $multimodalMessages      = TrueQ @ settings[ "Multimodal" ],
+            $tokenBudget             = makeTokenBudget @ settings,
+            $tokenPressure           = 0.0,
+            $initialCellStringBudget = makeCellStringBudget @ settings,
+            $cellStringBudget, $conversionRules
+        },
+        $conversionRules  = settings[ "ConversionRules" ];
+        $cellStringBudget = $initialCellStringBudget;
+        eval
+    ];
+
+withTokenBudget // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

@@ -263,6 +263,7 @@ When `Automatic` (default), resolves to `True` when using workspace chat, inline
 - **Model-specific overrides**: None in `$modelAutoSettings`.
 - **LLM passthrough**: Not in `$llmConfigPassedKeys` (used internally for context construction).
 - **Persona inheritance**: Not listed in `$nonInheritedPersonaValues`, so it is inherited from persona configurations.
+- **NotebookReader tool**: The [`NotebookReader`](tools.md#resolution) tool is only offered to the model when this is `True`.
 
 ### Preferences UI
 

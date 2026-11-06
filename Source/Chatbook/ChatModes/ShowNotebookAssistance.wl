@@ -24,7 +24,7 @@ $notebookAssistanceBaseSettings = <|
     "MaxToolResponses"          -> 5,
     "Model"                     -> <| "Service" -> "LLMKit", "Name" -> Automatic |>,
     "PromptGenerators"          -> { "RelatedDocumentationList" },
-    "Tools"                     -> { "NotebookEditor" },
+    "Tools"                     -> { "NotebookEditor", "NotebookReader" },
     "ToolOptions"               -> <|
         "WolframLanguageEvaluator" -> <| "AppendURIPrompt" -> True, "Method" -> "Session" |>
     |>

@@ -445,6 +445,8 @@ selectTools[ as_Association ] := Enclose[
         selectTools0 /@ selectedNames;
 
         $selectedTools = Select[ $selectedTools, toolEnabledQ ];
+        (* Don't offer NotebookReader when the user turned notebook content off (e.g. "Ignore notebook content"): *)
+        If[ ! TrueQ @ as[ "AllowSelectionContext" ], KeyDropFrom[ $selectedTools, "NotebookReader" ] ];
         selectSkillTool @ as;
         short = <| (toolShortName[ # ] -> # &) /@ Values[ $selectedTools ] |>;
 
@@ -884,6 +886,10 @@ parseSimpleToolCallParameterStrings // beginDefinition;
 
 parseSimpleToolCallParameterStrings[ { param_String }, argString_String ] :=
     <| param -> StringDelete[ argString, StartOfString ~~ WhitespaceCharacter... ~~ param ~~ $$argNameDelimiter ] |>;
+
+(* A call with no arguments, e.g. "/nb_read" for a tool whose parameters are all optional: *)
+parseSimpleToolCallParameterStrings[ paramNames: { __String }, "" ] :=
+    AssociationMap[ "" &, paramNames ];
 
 parseSimpleToolCallParameterStrings[ paramNames: { __String }, argString_String ] := Enclose[
     Catch @ Module[ { namedSplit, defaults, pairs, as },

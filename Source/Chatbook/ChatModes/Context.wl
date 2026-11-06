@@ -21,6 +21,8 @@ $contextPrompt              = None;
 $selectionPrompt            = None;
 $contextImages              = { };
 $sidebarSelectionContext    = None;
+$includeRelativeTimes       = True;
+$notebookReaderPageSize     = 50;
 
 $notebookContextTemplate = StringTemplate[ "\
 IMPORTANT: Below is some metadata and content from the user's currently selected notebook. \
@@ -183,6 +185,16 @@ resolveFocusedNotebook[ focused_ ] :=
 resolveFocusedNotebook // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*contextNotebook*)
+(* Gives { notebook, info } for the user's notebook that notebook context is taken from: the focused notebook in
+   workspace chats, otherwise the notebook that contains the chat (e.g. the notebook with the sidebar): *)
+contextNotebook // beginDefinition;
+contextNotebook[ settings_Association ] /; TrueQ @ $WorkspaceChat := resolveFocusedNotebook @ settings[ "FocusedNotebook" ];
+contextNotebook[ settings_Association ] := { $evaluationNotebook, Automatic };
+contextNotebook // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Context from other notebooks*)
 
@@ -274,12 +286,7 @@ getContextFromSelection // Options = {
 
 getContextFromSelection[ chatNB_NotebookObject, settings_Association, opts: OptionsPattern[ ] ] :=
     Module[ { userNotebook, info },
-        If[ TrueQ @ $WorkspaceChat,
-            { userNotebook, info } = resolveFocusedNotebook @ settings[ "FocusedNotebook" ];
-            ,
-            userNotebook = $evaluationNotebook;
-            info = Automatic;
-        ];
+        { userNotebook, info } = contextNotebook @ settings;
         getContextFromSelection[ chatNB, userNotebook, info, settings, opts ]
     ];
 
@@ -522,8 +529,16 @@ getNotebookMetadataString0[ info_Association ] := Enclose[
         modified = TrueQ @ info[ "ModifiedInMemory" ];
         date     = info[ "MemoryModificationTime" ];
 
+        (* Relative times are left out where they would go stale, e.g. in NotebookReader tool results: *)
         dateString = If[ modified && DateObjectQ @ date,
-                         ConfirmBy[ DateString @ date <> " (" <> relativeTimeString @ date <> ")", StringQ, "Date" ],
+                         ConfirmBy[
+                             If[ TrueQ @ $includeRelativeTimes,
+                                 DateString @ date <> " (" <> relativeTimeString @ date <> ")",
+                                 DateString @ date
+                             ],
+                             StringQ,
+                             "Date"
+                         ],
                          Missing[ ]
                      ];
 
@@ -674,6 +689,10 @@ insertSelectionIndicator[ { { beforeCells___Cell }, { selectedCell_Cell }, { aft
 
 insertSelectionIndicator[ cells_ ] :=
     insertSelectionIndicator[ cells, $currentSelectionIndicator ];
+
+(* No selection markers, e.g. when the NotebookReader tool reads the notebook from the beginning: *)
+insertSelectionIndicator[ { before_List, selected_List, after_List }, None ] :=
+    Join[ before, selected, after ];
 
 insertSelectionIndicator[
     { { beforeCells___Cell }, { }, { afterCells___Cell } },
@@ -1080,6 +1099,170 @@ fullSelection[ BoxData[ a_, b___ ] ] := BoxData[ RowBox @ { $leftSelectionIndica
 fullSelection[ TextData[ text_ ] ] := TextData @ Flatten @ { $leftSelectionIndicator, text, $rightSelectionIndicator };
 fullSelection[ RawData[ s_String ] ] := RawData @ StringJoin[ $leftSelectionIndicator, s, $rightSelectionIndicator ];
 fullSelection // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*NotebookReader Tool*)
+$noUserNotebookMessage = "There is no notebook to read: the user does not currently have a notebook open.";
+$emptyUserNotebookMessage = "The user's notebook is empty.";
+
+$notebookReaderPageTemplate = StringTemplate[ "\
+Below is the content of the user's notebook, cells %%First%% to %%Last%% of %%Total%%.
+
+<notebook>
+<metadata>
+%%NotebookMetadata%%
+</metadata>
+<content>
+%%NotebookContent%%
+</content>
+</notebook>
+
+%%Paging%%", Delimiters -> "%%" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*readUserNotebook*)
+(* Gives the current content of the user's notebook for the NotebookReader tool, from the same notebook and in the same
+   format as the automatic notebook context: *)
+readUserNotebook // beginDefinition;
+
+readUserNotebook[ settings_Association, scope: "selection"|"all", offset_Integer? Positive ] :=
+    readUserNotebook[ settings, scope, offset, contextNotebook @ settings ];
+
+readUserNotebook[ settings_, scope_, offset_, { nbo_NotebookObject, info_ } ] :=
+    Block[
+        {
+            (* Leave the chat's own notebook context state as it is: *)
+            $contextImages, $contextPrompt, $selectionPrompt, $lastContextPrompt, $lastSelectionPrompt,
+            (* Use the same format as getSidebarPrompt and getWorkspacePrompt: *)
+            $includeCellXML = TrueQ @ $notebookEditorEnabled,
+            $includeRelativeTimes = False
+        },
+        (* During a chat, serializing cells would otherwise use (and use up) what's left of the chat's token budget, so
+           the size of the result would depend on how long the chat is: *)
+        withTokenBudget[ downScaledSettings @ settings, readUserNotebook0[ nbo, info, settings, scope, offset ] ]
+    ];
+
+readUserNotebook[ _, _, _, _ ] :=
+    $noUserNotebookMessage;
+
+readUserNotebook // endDefinition;
+
+
+readUserNotebook0 // beginDefinition;
+
+(* The cells around the user's selection, as given by the automatic notebook context: *)
+readUserNotebook0[ nbo_, info_, settings_, "selection", _ ] :=
+    Replace[ getContextFromSelection[ None, nbo, info, settings ], None -> $emptyUserNotebookMessage ];
+
+(* A page of cells from the notebook, without selection markers: *)
+readUserNotebook0[ nbo_, info_, settings_, "all", offset_ ] := Enclose[
+    Catch @ Module[ { cells, total, last, content, metadata },
+
+        (* TODO: this reads cell information for every cell, which could be slow in very large notebooks *)
+        cells = ConfirmMatch[ includedCellObjects @ Cells @ nbo, { ___CellObject }, "Cells" ];
+        total = Length @ cells;
+
+        If[ total === 0, Throw @ $emptyUserNotebookMessage ];
+        If[ offset > total,
+            Throw @ StringJoin[
+                "The user's notebook has ", ToString @ total, " cells. Use an offset from 1 to ", ToString @ total, "."
+            ]
+        ];
+
+        { content, last } = ConfirmMatch[
+            readNotebookPage[
+                cells,
+                downScaledSettings @ settings,
+                offset,
+                Min[ total, offset + $notebookReaderPageSize - 1 ]
+            ],
+            { _String, _Integer },
+            "Page"
+        ];
+
+        metadata = ConfirmBy[ getNotebookMetadataString[ nbo, info ], StringQ, "Metadata" ];
+
+        TemplateApply[
+            $notebookReaderPageTemplate,
+            <|
+                "First"            -> offset,
+                "Last"             -> last,
+                "Total"            -> total,
+                "NotebookMetadata" -> metadata,
+                "NotebookContent"  -> ConfirmBy[ mergeCodeBlocks @ content, StringQ, "Merged" ],
+                "Paging"           -> If[ last < total,
+                                          "To read the next cells, use scope \"all\" with offset " <>
+                                              ToString[ last + 1 ] <> ".",
+                                          "This is the end of the notebook."
+                                      ]
+            |>
+        ]
+    ],
+    throwInternalFailure
+];
+
+readUserNotebook0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*readNotebookPage*)
+(* Gives { content, last } for the cells from first to at most last. The token budget is spent from the last cell
+   backwards, so cells that don't fit are excised from the start of the page, and nothing in the content says so.
+   When that happens, the page is read again without as many cells at its end, until nothing is excised. This way the
+   page always starts at first and the next offset comes right after the cells that were shown.
+   NOTE: each retry serializes the page again. If retries turn out to be slow in practice, the page size could be
+   lowered, or pages could be sized by serializing one cell at a time. *)
+readNotebookPage // beginDefinition;
+
+readNotebookPage[ cells: { __CellObject }, settings_Association, first_Integer, last_Integer ] := Enclose[
+    Module[ { content, excised },
+        Block[
+            {
+                (* Each try starts from the same budget: *)
+                $cellStringBudget = $cellStringBudget, $tokenBudget = $tokenBudget, $tokenPressure = $tokenPressure,
+                $notebookInstructionsPrompt = False, $currentSelectionIndicator = None, $lastMessageList = None
+            },
+            content = ConfirmBy[
+                getContextFromSelection0[
+                    <| "Before" -> cells[[ first ;; last ]], "Selected" -> { }, "After" -> { } |>,
+                    settings
+                ],
+                StringQ,
+                "Content"
+            ];
+            (* makeChatMessages0 sets $lastMessageList: *)
+            excised = ConfirmMatch[ excisedCellCount @ $lastMessageList, _Integer, "Excised" ]
+        ];
+        If[ excised > 0 && last > first,
+            readNotebookPage[ cells, settings, first, Max[ first, last - excised ] ],
+            { content, last }
+        ]
+    ],
+    throwInternalFailure
+];
+
+readNotebookPage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*excisedCellCount*)
+(* The number of cells excised from the start of a message list, which makeChatMessages0 combines into a leading
+   "[n Cells Excised]" system message: *)
+excisedCellCount // beginDefinition;
+
+excisedCellCount[ { KeyValuePattern @ { "Role" -> "System", "Content" -> content_String }, ___ } ] := First[
+    StringCases[
+        content,
+        StartOfString ~~ "[" ~~ n: DigitCharacter.. ~~ " Cells Excised]" ~~ EndOfString :> FromDigits @ n
+    ],
+    0
+];
+
+excisedCellCount[ _ ] := 0;
+
+excisedCellCount // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
