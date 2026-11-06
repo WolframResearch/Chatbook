@@ -332,6 +332,27 @@ VerificationTest[
     TestID   -> "SimpleToolMethod-NoArguments@@Tests/NotebookReader.wlt:293,1-333,2"
 ]
 
+(* NotebookReader results don't get the notice that the user does not see the tool output, since their images come
+   from the user's own notebook. Other tools still get it: *)
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`Common`$openToolCallBoxes = Automatic,
+            Wolfram`Chatbook`Common`$selectedTools     = KeyTake[
+                Wolfram`Chatbook`$DefaultTools,
+                { "NotebookReader", "WolframLanguageEvaluator" }
+            ]
+        },
+        Wolfram`Chatbook`SendChat`Private`checkToolMarkdownOutput[
+            Last @ Wolfram`Chatbook`Common`simpleToolRequestParser[ # ],
+            "![Image](attachment://content-abc12)"
+        ] & /@ { "/nb_read\nall", "/wl\nPlot[x, {x, 0, 1}]" }
+    ],
+    { "![Image](attachment://content-abc12)", _String? (StringContainsQ[ "The user does not see the output" ]) },
+    SameTest -> MatchQ,
+    TestID   -> "ToolResponse-NoMarkdownImageNotice@@Tests/NotebookReader.wlt:337,1-354,2"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Unavailable Notebooks*)
@@ -349,7 +370,7 @@ VerificationTest[
     ],
     _String? (StringContainsQ[ "no notebook to read" ]),
     SameTest -> MatchQ,
-    TestID   -> "NoNotebook@@Tests/NotebookReader.wlt:338,1-353,2"
+    TestID   -> "NoNotebook@@Tests/NotebookReader.wlt:359,1-374,2"
 ]
 
 VerificationTest[
@@ -363,7 +384,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "SelectionContextDisabled@@Tests/NotebookReader.wlt:355,1-367,2"
+    TestID   -> "SelectionContextDisabled@@Tests/NotebookReader.wlt:376,1-388,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

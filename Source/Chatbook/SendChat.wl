@@ -2400,12 +2400,7 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
                 "ToolRequest"  -> True,
                 "ToolRequests" -> { toolCall }
             |>,
-            makeToolResponseMessage[
-                settings,
-                (* NotebookReader results come from the user's own notebook, so the user already sees their images: *)
-                If[ toolCall[ "Name" ] === "NotebookReader", response, checkMarkdownOutput @ response ],
-                toolResponse
-            ]
+            makeToolResponseMessage[ settings, checkToolMarkdownOutput[ toolCall, response ], toolResponse ]
         };
 
         $finishReason = None;
@@ -2664,6 +2659,22 @@ toolResponseString[ as_, KeyValuePattern[ "String" -> output_ ] ] := toolRespons
 toolResponseString[ as_, output_String ] := output;
 toolResponseString[ as_, output_ ] := makeToolResponseString @ output;
 toolResponseString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*checkToolMarkdownOutput*)
+checkToolMarkdownOutput // beginDefinition;
+
+(* NotebookReader results come from the user's own notebook, so the user already sees their images.
+   Tool requests use the machine name of the tool (e.g. "notebook_reader"), so compare canonical names: *)
+checkToolMarkdownOutput[ request_LLMToolRequest, output_ ] /;
+    toolName[ request[ "Name" ], "Canonical" ] === "NotebookReader" :=
+        output;
+
+checkToolMarkdownOutput[ _, output_ ] :=
+    checkMarkdownOutput @ output;
+
+checkToolMarkdownOutput // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
