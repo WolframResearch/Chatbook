@@ -241,7 +241,7 @@ getInlineChatPrompt0[
                 "Selected" -> { cell   },
                 "After"    -> { after  }
             |>,
-            settings
+            notebookContextLimits @ settings
         ]
     ];
 
@@ -597,11 +597,22 @@ notebookContextLimits // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*withNotebookContextBudget*)
-(* In a chat, the notebook context is serialized with what's left of the chat's token budget, but no more than
-   $maxNotebookContextTokens: *)
+(* In a chat, the notebook context is serialized with its own token budget of $maxNotebookContextTokens instead of
+   what's left of the chat's budget, so it doesn't grow with larger chat budgets, and it's serialized the same way in
+   every request (e.g. after tool calls) and after the history is trimmed: *)
 withNotebookContextBudget // beginDefinition;
 withNotebookContextBudget // Attributes = { HoldFirst };
-withNotebookContextBudget[ eval_ ] := Block[ { $tokenBudget = Min[ $tokenBudget, $maxNotebookContextTokens ] }, eval ];
+
+withNotebookContextBudget[ eval_ ] :=
+    Block[
+        {
+            $tokenBudget      = $maxNotebookContextTokens,
+            $tokenPressure    = 0.0,
+            $cellStringBudget = $initialCellStringBudget
+        },
+        eval
+    ];
+
 withNotebookContextBudget // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

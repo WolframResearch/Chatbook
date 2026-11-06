@@ -756,7 +756,7 @@ makeChatMessages0[ settings0_, cells_List, includeSystem_ ] := Enclose[
                 "HistoryPosition" -> 0,
                 "Cells"           -> cells,
                 (* Without a system message, cells are serialized for something other than chat history (e.g. the
-                   notebook context), which is only sent once, so the history limits for prompt caching don't apply: *)
+                   notebook context or NotebookReader pages), so the history limits for prompt caching don't apply: *)
                 If[ TrueQ @ includeSystem, Nothing, "PromptCacheOptimization" -> False ]
             |>,
             AssociationQ,
@@ -768,7 +768,7 @@ makeChatMessages0[ settings0_, cells_List, includeSystem_ ] := Enclose[
 
         toMessage = Function @ With[
             { msg = toMessage0[ #1, <| #2, "TokenBudget" -> $tokenBudget, "TokenPressure" -> $tokenPressure |> ] },
-            tokenCheckedMessage[ settings, msg ]
+            tokenCheckedMessage[ #2, msg ]
         ];
 
         message = ConfirmMatch[
@@ -783,7 +783,11 @@ makeChatMessages0[ settings0_, cells_List, includeSystem_ ] := Enclose[
             Flatten @ Reverse @ blockTrimmedHistory[
                 settings,
                 MapIndexed[
-                    withTurnMessages[ settings, #1, toMessage[ #1, <| settings, "HistoryPosition" -> First[ #2 ] |> ] ] &,
+                    withTurnMessages[
+                        settings,
+                        #1,
+                        toMessage[ #1, <| settings, "HistoryPosition" -> First[ #2 ] |> ]
+                    ] &,
                     Reverse @ Most @ cells
                 ]
             ],
@@ -806,17 +810,19 @@ makeChatMessages0 // endDefinition;
 (* With prompt cache optimization, the cells that don't fit in the token budget are left out in blocks counted from the
    start of the conversation. Otherwise, the oldest message that is sent (and the number of excised cells) would change
    with every new message, and each request would miss the cache after the system prompt. This way, the history stays
-   the same for several requests. The history is given as one group of messages per cell, newest first: *)
+   the same for several requests. Blocks are larger for larger budgets (one cell for each 2^13 tokens, but at least
+   $historyTrimBlockSize cells). The history is given as one group of messages per cell, newest first: *)
 $historyTrimBlockSize = 8;
 
 blockTrimmedHistory // beginDefinition;
 
 blockTrimmedHistory[ settings_? promptCacheOptimizationQ, groups_List ] /; $cellStringBudget === 0 :=
-    Module[ { count, kept, dropped },
+    Module[ { count, kept, size, dropped },
         count   = Length @ groups;
-        (* The oldest cell that was kept may have been shortened to fit, so it is left out too: *)
+        (* The oldest cell that was kept may be missing turn messages that didn't fit, so it is left out too: *)
         kept    = Max[ 0, LengthWhile[ groups, ! excisedCellGroupQ @ # & ] - 1 ];
-        dropped = Min[ count, $historyTrimBlockSize * Ceiling[ (count - kept) / $historyTrimBlockSize ] ];
+        size    = historyTrimBlockSize @ settings;
+        dropped = Min[ count, size * Ceiling[ (count - kept) / size ] ];
         Join[ Take[ groups, count - dropped ], ConstantArray[ $excisedCellMessage, dropped ] ]
     ];
 
@@ -825,10 +831,23 @@ blockTrimmedHistory[ settings_, groups_List ] := groups;
 blockTrimmedHistory // endDefinition;
 
 
+historyTrimBlockSize // beginDefinition;
+
+historyTrimBlockSize[ KeyValuePattern[ "MaxContextTokens" -> n_? NumberQ ] ] :=
+    Max[ $historyTrimBlockSize, Ceiling[ n / 2^13 ] ];
+
+historyTrimBlockSize[ _ ] := $historyTrimBlockSize;
+
+historyTrimBlockSize // endDefinition;
+
+
 $excisedCellMessage = <| "Role" -> "System", "Content" -> "[Cell Excised]" |>;
 
 excisedCellGroupQ // beginDefinition;
-excisedCellGroupQ[ group_ ] := MatchQ[ Last[ Flatten @ { group }, None ], KeyValuePattern[ "Content" -> "[Cell Excised]" ] ];
+
+excisedCellGroupQ[ group_ ] :=
+    MatchQ[ Last[ Flatten @ { group }, None ], KeyValuePattern[ "Content" -> "[Cell Excised]" ] ];
+
 excisedCellGroupQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -866,16 +885,23 @@ dropOrphanContextImages[ messages_List ] :=
 dropOrphanContextImages // endDefinition;
 
 (* Turn messages are only included when they fit in the token budget as they are. Shortening them would give different
-   text in every request, and they are not needed without the messages they were made for: *)
+   text in every request, and they are not needed without the messages they were made for. When one doesn't fit, the
+   history ends there, so that smaller older messages don't take its place: *)
 fittedTurnMessage // beginDefinition;
 
 fittedTurnMessage[ settings_, message_ ] :=
-    If[ $cellStringBudget === 0 || TrueQ[ tokenCount[ settings, message ] > $tokenBudget ],
-        Nothing,
-        tokenCheckedMessage[ settings, message ]
+    Which[
+        $cellStringBudget === 0, Nothing,
+        TrueQ[ tokenCount[ settings, message ] > $tokenBudget ], endHistory[ ]; Nothing,
+        True, tokenCheckedMessage[ settings, message ]
     ];
 
 fittedTurnMessage // endDefinition;
+
+(* No more history messages are added (older cells are excised): *)
+endHistory // beginDefinition;
+endHistory[ ] := ( $tokenBudget = 0; $cellStringBudget = 0; );
+endHistory // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -997,6 +1023,12 @@ tokenCheckedMessage[ as_Association, message_ ] := Enclose[
         budget = ConfirmMatch[ $tokenBudget, $$size, "Budget" ];
 
         If[ count > budget,
+            (* With prompt cache optimization, a history message is not shortened to fit, since it would be shortened by
+               a different amount in every request. It is left out with all older messages instead: *)
+            If[ cachedHistoryMessageQ[ as, message ],
+                endHistory[ ];
+                Throw @ <| KeyTake[ message, "Role" ], "Content" -> "[Cell Excised]" |>
+            ];
             resized = cutMessageContent[ as, message, count, budget ];
             ConfirmAssert[ resized =!= message, "Resized" ];
             Throw @ tokenCheckedMessage[ as, resized ]
@@ -1032,6 +1064,16 @@ tokenCheckedMessage[ as_Association, message_ ] := Enclose[
 tokenCheckedMessage // endDefinition;
 
 $tokenBudgetLog = Internal`Bag[ ];
+
+
+cachedHistoryMessageQ // beginDefinition;
+
+cachedHistoryMessageQ[ as_? promptCacheOptimizationQ, _Association ] :=
+    TrueQ[ as[ "HistoryPosition" ] > 0 ];
+
+cachedHistoryMessageQ[ _, _ ] := False;
+
+cachedHistoryMessageQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

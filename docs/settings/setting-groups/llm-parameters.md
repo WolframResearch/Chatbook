@@ -169,7 +169,7 @@ The resolved value is used to initialize the token budget in `makeTokenBudget` (
 ### Chat Mode Overrides
 
 - **Context mode**: Scales to 25% via `$notebookContextLimitScale` (`ChatModes/Context.wl`).
-- **NotebookAssistance mode**: Fixed at `2^18` (262,144). The notebook context and `NotebookReader` pages are limited as if `MaxContextTokens` was at most `2^15` (`$maxNotebookContextTokens` in `ChatModes/Context.wl`), so they don't grow with it.
+- **NotebookAssistance mode**: Fixed at `2^18` (262,144). The notebook context doesn't grow with it: in a chat, it is serialized with its own token budget of `2^15` (`$maxNotebookContextTokens` in `ChatModes/Context.wl`), and `NotebookReader` pages are limited as if `MaxContextTokens` was `2^15`. Chat notebooks opened from the Notebook Assistant ("Open as chatbook") don't keep this value.
 - **ContentSuggestions mode**: Per content type (`2^12` for WL/Text, `2^15` for Notebook).
 
 Also used by `modelContextStringLimit` (`LLMUtilities.wl`), which converts to a character limit via `tokens * 2` (with fallback to 8,000).
