@@ -162,6 +162,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `cellTaggedQ;
 `channelCleanup;
 `chatExcludedQ;
+`chatEvaluatingInQ;
 `chatHandlerFunctionsKeys;
 `chatInputCellQ;
 `chatModelQ;

@@ -514,37 +514,70 @@ sidebarChatInputCellSendButton // beginDefinition;
 
 Attributes[ sidebarChatInputCellSendButton ] = { HoldAll };
 
-sidebarChatInputCellSendButton[ fieldContent_, input_, returnKeyDownQ_, chatEvalCell_ ] :=
-PaneSelector[
+sidebarChatInputCellSendButton[ fieldContent_, input_, returnKeyDownQ_, initializedQ_ ] :=
+With[
     {
-        False ->
-            Button[
-                blueHueButtonAppearance[ chatbookIcon[ "SendChatArrow", False, color @ "NA_BlueHueButtonIcon", 13 ], { 24.5, 24.5 } ],
-                If[ ! validInputStringQ @ fieldContent, fieldContent = "", input = fieldContent; fieldContent = ""; returnKeyDownQ = True ],
-                Appearance   -> "Suppressed",
-                BoxID        -> "NASidebarChatInputCellSendButton",
-                FrameMargins -> 0,
-                ImageSize    -> Automatic,
-                Method       -> "Preemptive"
-            ],
-        True ->
-            Button[
-                blueHueButtonAppearance[ chatbookIcon[ "StopChatButton", False, 21 ], { 24.5, 24.5 } ],
-                Needs[ "Wolfram`Chatbook`" -> None ];
-                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChat" ],
-                Appearance   -> "Suppressed",
-                BoxID        -> "NASidebarChatInputCellStopButton",
-                FrameMargins -> 0,
-                ImageSize    -> Automatic
-            ]
+        sendButton = Button[
+            blueHueButtonAppearance[ chatbookIcon[ "SendChatArrow", False, color @ "NA_BlueHueButtonIcon", 13 ], { 24.5, 24.5 } ],
+            If[ ! validInputStringQ @ fieldContent, fieldContent = "", input = fieldContent; fieldContent = ""; returnKeyDownQ = True ],
+            Appearance   -> "Suppressed",
+            BoxID        -> "NASidebarChatInputCellSendButton",
+            FrameMargins -> 0,
+            ImageSize    -> Automatic,
+            Method       -> "Preemptive"
+        ]
     },
-    Dynamic[ Wolfram`Chatbook`$ChatEvaluationCell === chatEvalCell ],
-    Alignment        -> { Automatic, Baseline },
-    BaselinePosition -> Baseline,
-    ImageSize        -> Automatic
+    (* The front end evaluates any kernel Dynamic in a DynamicModule with the module's variables, even if it doesn't use
+       them. When the sidebar is first opened from the menu, that can happen before the kernel knows the variables,
+       which printed FE`ExecuteInDynamicModule::novaldu (chatbar-8). So the kernel Dynamic is only shown once the
+       module's Initialization has run; this check runs in the front end: *)
+    PaneSelector[
+        {
+            False -> sendButton,
+            True  -> PaneSelector[
+                {
+                    False -> sendButton,
+                    True ->
+                        Button[
+                            blueHueButtonAppearance[ chatbookIcon[ "StopChatButton", False, 21 ], { 24.5, 24.5 } ],
+                            Needs[ "Wolfram`Chatbook`" -> None ];
+                            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChatIn", ParentCell @ EvaluationCell[ ] ],
+                            Appearance   -> "Suppressed",
+                            BoxID        -> "NASidebarChatInputCellStopButton",
+                            FrameMargins -> 0,
+                            ImageSize    -> Automatic
+                        ]
+                },
+                chatEvaluatingInDynamic @ ParentCell @ EvaluationCell[ ],
+                Alignment        -> { Automatic, Baseline },
+                BaselinePosition -> Baseline,
+                ImageSize        -> Automatic
+            ]
+        },
+        Dynamic @ FEPrivate`SameQ[ initializedQ, True ],
+        Alignment        -> { Automatic, Baseline },
+        BaselinePosition -> Baseline,
+        ImageSize        -> Automatic
+    ]
 ];
 
 sidebarChatInputCellSendButton // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*chatEvaluatingInDynamic*)
+chatEvaluatingInDynamic // beginDefinition;
+chatEvaluatingInDynamic // Attributes = { HoldFirst };
+
+(* The send/stop selectors of the assistant window and the sidebar show Stop only for a chat in their own container
+   (robustness-4). TrueQ keeps the value True or False, since the selectors have no default pane, and TrackedSymbols
+   makes it update only when a chat starts or ends: *)
+chatEvaluatingInDynamic[ container_ ] := Dynamic[
+    TrueQ @ chatEvaluatingInQ @ container,
+    TrackedSymbols :> { Wolfram`Chatbook`$ChatEvaluationCell }
+];
+
+chatEvaluatingInDynamic // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -557,7 +590,8 @@ makeSidebarChatInputCell[ ] := Cell[
         {
             Typeset`chatInputFieldCell, Typeset`chatEvalCell = { }(* don't use None *), Typeset`nbo, Typeset`sidebarCell,
             Typeset`fieldContent = "", Typeset`returnKeyDownQ = False, Typeset`input,
-            Typeset`focusArea = "" (* initialization is synchronous, else we could use a progress indicator here *)
+            Typeset`focusArea = "", (* initialization is synchronous, else we could use a progress indicator here *)
+            Typeset`initializedQ = False
         },
         EventHandler[
             Pane[
@@ -574,7 +608,7 @@ makeSidebarChatInputCell[ ] := Cell[
                                                 ImageSize          -> { Scaled[ 1 ], UpTo[ 100 ] },
                                                 Scrollbars         -> { False, Automatic }
                                             ],
-                                            sidebarChatInputCellSendButton[ Typeset`fieldContent, Typeset`input, Typeset`returnKeyDownQ, Typeset`chatEvalCell ]
+                                            sidebarChatInputCellSendButton[ Typeset`fieldContent, Typeset`input, Typeset`returnKeyDownQ, Typeset`initializedQ ]
                                         } }, Alignment -> { Left, Center }
                                     ],
                                     $inputFieldFrameOptions
@@ -630,6 +664,7 @@ makeSidebarChatInputCell[ ] := Cell[
             Typeset`chatInputFieldCell = EvaluationCell[ ];
             Typeset`sidebarCell        = ParentCell @ Typeset`chatInputFieldCell;
             Typeset`focusArea          = focusedNotebookDisplay[ Typeset`nbo, Typeset`sidebarCell ];
+            Typeset`initializedQ       = True;
         )
     ],
     "ChatInputField",
@@ -2806,7 +2841,7 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                                         (* use explicit keys for both buttons: the front end keeps animating the stop
                                            button's spinner in the default pane even while it's hidden, which burns CPU
                                            when idle. With no default pane, nothing shows for a value that matches no
-                                           key, so use =!=, which always gives True or False *)
+                                           key, so chatEvaluatingInDynamic always gives True or False *)
                                         PaneSelector[
                                             {
                                                 False -> Button[
@@ -2829,13 +2864,13 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                                                 True -> Button[
                                                     blueHueButtonAppearance[ chatbookIcon[ "StopChatButton", False, 21 ], { 24.5, 24.5 } ],
                                                     Needs[ "Wolfram`Chatbook`" -> None ];
-                                                    Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChat" ],
+                                                    Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChatIn", EvaluationNotebook[ ] ],
                                                     Appearance   -> "Suppressed",
                                                     BoxID        -> "NAStopChatButton",
                                                     FrameMargins -> 0
                                                 ]
                                             },
-                                            Dynamic[ Wolfram`Chatbook`$ChatEvaluationCell =!= None ],
+                                            chatEvaluatingInDynamic @ EvaluationNotebook[ ],
                                             Alignment -> { Automatic, Baseline }
                                         ]
                                     } },

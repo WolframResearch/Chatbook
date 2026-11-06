@@ -100,4 +100,91 @@ VerificationTest[
     TestID   -> "SidebarSend-PrebuiltResource@@Tests/SidebarChatInput.wlt:89,1-101,2"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Send/Stop Button*)
+
+(* The send/stop button shows Stop only for a chat in this sidebar (robustness-4/sidebar-5): *)
+VerificationTest[
+    $inputCellBoxes = Wolfram`Chatbook`Common`makeSidebarChatInputCell[ ];
+    $sendStopDynamic = FirstCase[
+        $inputCellBoxes,
+        PaneSelectorBox[ { False -> _, True -> _ }, d: (Dynamic|DynamicBox)[ ___ ], ___ ] /;
+            ! FreeQ[ d, Wolfram`Chatbook`Common`chatEvaluatingInQ ] :> HoldComplete @ d,
+        Missing[ "NotFound" ],
+        Infinity
+    ],
+    HoldComplete[ (Dynamic|DynamicBox)[
+        TrueQ[ Wolfram`Chatbook`Common`chatEvaluatingInQ[ ParentCell[ EvaluationCell[ ] ] ] ],
+        TrackedSymbols :> { Wolfram`Chatbook`$ChatEvaluationCell }
+    ] ],
+    SameTest -> MatchQ,
+    TestID   -> "SendButton-ScopedDynamic-robustness-4@@Tests/SidebarChatInput.wlt:111,1-126,2"
+]
+
+(* The front end evaluates a kernel Dynamic in a DynamicModule with the module's variables, even if it doesn't use them.
+   When the sidebar is first opened from the menu, that can happen before the kernel knows them, which printed
+   FE`ExecuteInDynamicModule::novaldu (chatbar-8). So the kernel Dynamic is behind a front end check that the
+   module's Initialization has run: *)
+VerificationTest[
+    $initGate = FirstCase[
+        $inputCellBoxes,
+        PaneSelectorBox[ { False -> _, True -> inner_ }, (Dynamic|DynamicBox)[ FEPrivate`SameQ[ Typeset`initializedQ$$, True ], ___ ], ___ ] :>
+            HoldComplete @ inner,
+        Missing[ "NotFound" ],
+        Infinity
+    ];
+    {
+        MatchQ[ $initGate, _HoldComplete ],
+        ! FreeQ[ $initGate, Wolfram`Chatbook`Common`chatEvaluatingInQ ],
+        Count[ $inputCellBoxes, HoldPattern[ Wolfram`Chatbook`Common`chatEvaluatingInQ ], Infinity, Heads -> True ]
+    },
+    { True, True, 1 },
+    SameTest -> MatchQ,
+    TestID   -> "SendButton-InitializationGate-chatbar-8@@Tests/SidebarChatInput.wlt:132,1-148,2"
+]
+
+VerificationTest[
+    $inputModule = FirstCase[ $inputCellBoxes, box: DynamicModuleBox[ { ___, HoldPattern[ Typeset`chatEvalCell$$ = _ ], ___ }, ___ ] :> HoldComplete @ box, None, Infinity ];
+    {
+        ! FreeQ[ $inputModule, HoldPattern[ DynamicModuleBox[ { ___, Typeset`initializedQ$$ = False, ___ }, ___ ] ] ],
+        ! FreeQ[ Cases[ $inputModule, HoldPattern[ Initialization :> init_ ] :> HoldComplete @ init, Infinity ], HoldPattern[ Typeset`initializedQ$$ = True ] ]
+    },
+    { True, True },
+    SameTest -> MatchQ,
+    TestID   -> "SendButton-InitializationSetsFlag-chatbar-8@@Tests/SidebarChatInput.wlt:150,1-159,2"
+]
+
+VerificationTest[
+    FirstCase[
+        $inputCellBoxes,
+        b: HoldPattern[ ButtonBox[ __ ] ] /; ! FreeQ[ b, "NASidebarChatInputCellStopButton" ] :>
+            FirstCase[ b, HoldPattern[ ButtonFunction :> f_ ] :> HoldComplete @ f, Missing[ ], Infinity ],
+        Missing[ ],
+        Infinity
+    ],
+    HoldComplete[ CompoundExpression[ _, Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChatIn", ParentCell[ EvaluationCell[ ] ] ] ] ],
+    SameTest -> MatchQ,
+    TestID   -> "SendButton-ScopedStop-robustness-4@@Tests/SidebarChatInput.wlt:161,1-172,2"
+]
+
+(* The front end draws the prebuilt sidebar cell, so it must match the source: *)
+VerificationTest[
+    Module[ { files },
+        files = FileNameJoin @ { PacletObject[ "Wolfram/Chatbook" ][ "Location" ], #, "TextResources", "ChatbookResources.tr" } & /@
+            { "FrontEnd", "DarkModeSupport" };
+        With[ { s = StringDelete[ ReadString @ #, WhitespaceCharacter ] },
+            {
+                StringContainsQ[ s, "Wolfram`Chatbook`Common`chatEvaluatingInQ[ParentCell[EvaluationCell[]]]" ],
+                StringContainsQ[ s, "\"StopChatIn\",ParentCell[EvaluationCell[]]" ],
+                StringContainsQ[ s, "FEPrivate`SameQ[Typeset`initializedQ$$,True]" ],
+                StringContainsQ[ s, "$ChatEvaluationCell===Typeset`chatEvalCell$$" ]
+            }
+        ] & /@ Select[ files, FileExistsQ ]
+    ],
+    { { True, True, True, False }.. },
+    SameTest -> MatchQ,
+    TestID   -> "SendButton-PrebuiltResource@@Tests/SidebarChatInput.wlt:175,1-191,2"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)
