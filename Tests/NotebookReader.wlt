@@ -285,6 +285,55 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Tool Calls*)
+
+(* A call with no arguments gives the default scope with the Simple tool method, which the Notebook Assistant uses by
+   default. A text call ("/nb_read" before "/exec") and a native call with no arguments (converted to "\n/nb_read\n")
+   both give an empty argument string: *)
+VerificationTest[
+    UsingFrontEnd @ Module[ { nb, tool, call, textCall, nativeCall, expected },
+        WithCleanup[
+            nb = CreateDocument @ { Cell[ "Some text", "Text" ], Cell[ "NO-ARGUMENTS-888", "Text" ] };
+            SelectionMove[ Last @ Cells @ nb, All, Cell ];
+            tool = Wolfram`Chatbook`$DefaultTools[ "NotebookReader" ];
+            call = Function[
+                Block[
+                    {
+                        Wolfram`Chatbook`Common`$selectedTools = <| "NotebookReader" -> tool |>,
+                        Wolfram`Chatbook`$WorkspaceChat        = True,
+                        Wolfram`Chatbook`$SidebarChat          = False,
+                        Wolfram`Chatbook`$ChatHandlerData      = <|
+                            "ChatNotebookSettings" -> <|
+                                AbsoluteCurrentChatSettings @ nb,
+                                "AllowSelectionContext" -> True,
+                                "FocusedNotebook"       -> nb
+                            |>
+                        |>
+                    },
+                    GenerateLLMToolResponse[
+                        LLMConfiguration @ <| "Tools" -> { tool } |>,
+                        Last @ Wolfram`Chatbook`Common`simpleToolRequestParser[ # ]
+                    ][ "Output" ]
+                ]
+            ];
+            textCall   = call[ "Let me look at your notebook.\n/nb_read" ];
+            nativeCall = call[ "\n/nb_read\n" ];
+            expected   = workspaceNotebookReader[ nb, <| |>, <| |> ];
+            {
+                textCall === expected,
+                nativeCall === expected,
+                StringContainsQ[ expected, "<selection>" ~~ __ ~~ "NO-ARGUMENTS-888" ]
+            },
+            NotebookClose @ nb
+        ]
+    ],
+    { True, True, True },
+    SameTest -> MatchQ,
+    TestID   -> "SimpleToolMethod-NoArguments@@Tests/NotebookReader.wlt:293,1-333,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Unavailable Notebooks*)
 VerificationTest[
     Block[
@@ -300,7 +349,7 @@ VerificationTest[
     ],
     _String? (StringContainsQ[ "no notebook to read" ]),
     SameTest -> MatchQ,
-    TestID   -> "NoNotebook@@Tests/NotebookReader.wlt:289,1-304,2"
+    TestID   -> "NoNotebook@@Tests/NotebookReader.wlt:338,1-353,2"
 ]
 
 VerificationTest[
@@ -314,7 +363,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "SelectionContextDisabled@@Tests/NotebookReader.wlt:306,1-318,2"
+    TestID   -> "SelectionContextDisabled@@Tests/NotebookReader.wlt:355,1-367,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
