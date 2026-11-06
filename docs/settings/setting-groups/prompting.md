@@ -192,6 +192,33 @@ NotebookAssistance mode (`ShowNotebookAssistance.wl`) overrides to `{"RelatedDoc
 
 Not exposed in the preferences UI.
 
+## `"PromptCacheOptimization"`
+
+Controls whether requests are built so that LLM providers can reuse cached prompt prefixes. Providers such as OpenAI cache the longest prefix of a request that matches an earlier request, which reduces latency and cost, but any change to an earlier message invalidates the cache from that point on.
+
+### Accepted Values
+
+- **`Automatic`** (default) — resolves via `$modelAutoSettings` (`Settings.wl`): `True` by default, `False` for the Anthropic service (LLMConnections moves every system message into the top-level system prompt, so turn messages would collect there), for the MistralAI service (its API rejects requests that end with a system message) and for models that need user role tool responses (DeepSeek reasoner and Flash, Qwen, Nemotron, Mistral), since turn messages are system messages after the user's message
+- **`True`** — use the prompt-cache-friendly behavior described below
+- **`False`** — legacy behavior
+
+### Behavior
+
+When `True`, messages that are added to a chat turn without being part of its cells are appended after the user's message and kept for later requests instead of being regenerated:
+
+- **Prompt generator results** are appended after the user message instead of being inserted at `"PromptGeneratorMessagePosition"`, and requests that follow a tool call send them unchanged. Prompt generators run once per turn, even if they give no results.
+- **Turn records**: these messages are stored in an in-memory record (`PromptCache.wl`), and the chat output cell of the turn gets a small `"PromptCacheID"` tagging rule that refers to the record. When the cell appears in the history of a later request, the record's messages are inserted before the cell's message, so they are sent the same way in every later request (if they no longer fit in the token budget, they are left out). Records are not saved with the notebook: after restarting the kernel, history is rebuilt from cells only, and the next request misses the cache once. The number of records kept in memory is bounded (`$maxPromptCacheRecords`), and is shared by all conversations.
+
+The messages in turn records are still marked as `"Temporary"`, so they are not displayed, saved with conversations, or used for chat titles and search context. The chat data written to an output cell (`"ChatData"`) only includes the turn messages of its own turn, since earlier turns' are in their records.
+
+When `False`, prompt generator results are inserted at `"PromptGeneratorMessagePosition"` for each request and regenerated for each turn.
+
+### Integration Points
+
+- **Dependencies**: None in `$autoSettingKeyDependencies`.
+- **Model-specific overrides**: Global default `True` in `$modelAutoSettings[Automatic, Automatic]`; `False` for the Anthropic and MistralAI services and the models listed above.
+- **LLM passthrough**: Not in `$llmConfigPassedKeys`.
+
 ## `"PromptGeneratorsEnabled"`
 
 **Not yet implemented.** Registered in `$defaultChatSettings` (`Settings.wl`) with a default value of `Automatic` and a `(* TODO *)` comment, but not referenced or used anywhere in the codebase. The intended purpose appears to be controlling which prompt generators are enabled, but the actual mechanism is currently handled by other settings: `"PromptGenerators"` directly specifies which generators to use, and `"ExperimentalFeatures"` can conditionally enable additional generators. Since this setting is not read by any code, changing its value has no effect.
@@ -209,6 +236,8 @@ The default is a fixed numeric value (`2`), not `Automatic`. When `Automatic`, r
 Used in `augmentChatMessages` (`ChatMessages.wl`): after chat messages are constructed and optionally merged (via `MergeMessages`), prompt generators produce additional context strings. These strings are wrapped as message Associations with `"Role"` set to the `PromptGeneratorMessageRole` value, `"Content"` set to the generated text, `"Temporary" -> True` (marking them for exclusion in subsequent chat turns), and `"PromptGenerated" -> True` (so that the requests after tool calls in the same turn reuse them). The messages are then inserted via `Insert[merged, generatedMessages, genPos]`, where `genPos` is this setting's resolved value. A position of `2` places the generated messages after the first message in the list (typically the system prompt), ensuring they appear early in the context before user/assistant conversation history.
 
 If the position is invalid (e.g., out of bounds for the message list), `throwFailure["InvalidPromptGeneratorPosition", genPos]` is called. The value can be any valid `Insert` position specification (positive or negative integer).
+
+This setting is ignored when `"PromptCacheOptimization"` is `True`: generated messages are then appended after the user message (see [`"PromptCacheOptimization"`](#promptcacheoptimization)).
 
 ### Integration Points
 
