@@ -652,6 +652,49 @@ VerificationTest[
     TestID   -> "AddPrompts-ToolLoopDoesNotRepeatContext@@Tests/Context.wlt:586,1-653,2"
 ]
 
+(* The requests after a tool call are rebuilt from the saved messages, so they keep the images of the user's message,
+   and send the same user message as the first request: *)
+VerificationTest[
+    Module[ { image, question, first, data, saved, second },
+        image    = <| "Type" -> "Image", "Data" -> ConstantImage[ Red, { 8, 8 } ] |>;
+        question = <|
+            "Role"    -> "User",
+            "Content" -> { <| "Type" -> "Text", "Data" -> "What color is this image?" |>, image }
+        |>;
+        { first, data } = Reap[
+            ConstructWorkspaceContextMessages[
+                $plotCells,
+                $plotSettings,
+                { <| "Role" -> "System", "Content" -> "sys" |>, question }
+            ],
+            Wolfram`Chatbook`Common`$chatDataTag
+        ];
+        saved  = Last @ Cases[ data, KeyValuePattern[ "Messages" -> m_ ] :> m, Infinity ];
+        second = ConstructWorkspaceContextMessages[
+            $plotCells,
+            $plotSettings,
+            Join[
+                saved,
+                {
+                    <| "Role" -> "Assistant", "Content" -> "calling tool", "ToolRequest" -> True |>,
+                    <| "Role" -> "User", "Content" -> "<tool_response>2</tool_response>", "ToolResponse" -> True |>
+                }
+            ]
+        ];
+        {
+            Lookup[ second, "Role" ],
+            (* One image from the selected plot, and the image from the user: *)
+            Count[ first[[ 2 ]], KeyValuePattern[ "Type" -> "Image" ], Infinity ],
+            Count[ second, KeyValuePattern[ "Type" -> "Image" ], Infinity ],
+            MemberQ[ second[[ 2, "Content" ]], image ],
+            second[[ 2 ]] === first[[ 2 ]]
+        }
+    ],
+    { { "System", "User", "Assistant", "User" }, 2, 2, True, True },
+    SameTest -> MatchQ,
+    TestID   -> "ToolLoop-KeepsUserMessageImages@@Tests/Context.wlt:657,1-696,2"
+]
+
 VerificationTest[
     {
         Wolfram`Chatbook`ChatMessages`Private`replaceAddedPrompts[ "sys", "ctx" ],
@@ -674,7 +717,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "ReplaceAddedPrompts-ReplacesEarlierSection@@Tests/Context.wlt:655,1-678,2"
+    TestID   -> "ReplaceAddedPrompts-ReplacesEarlierSection@@Tests/Context.wlt:698,1-721,2"
 ]
 
 VerificationTest[
@@ -694,7 +737,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "AddPrompts-NoPromptKeepsMessages@@Tests/Context.wlt:680,1-698,2"
+    TestID   -> "AddPrompts-NoPromptKeepsMessages@@Tests/Context.wlt:723,1-741,2"
 ]
 
 VerificationTest[
@@ -723,7 +766,7 @@ VerificationTest[
     ],
     { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "PrepareMessagesForLLM-RemovesAddedPromptTags@@Tests/Context.wlt:700,1-727,2"
+    TestID   -> "PrepareMessagesForLLM-RemovesAddedPromptTags@@Tests/Context.wlt:743,1-770,2"
 ]
 
 VerificationTest[
@@ -747,7 +790,7 @@ VerificationTest[
     ],
     { "GENERATED-DOCS-XYZ", True, True },
     SameTest -> MatchQ,
-    TestID   -> "PrepareMessagesForLLM-StripsAddedPromptsAfterGeneratedLeadingMessage@@Tests/Context.wlt:729,1-751,2"
+    TestID   -> "PrepareMessagesForLLM-StripsAddedPromptsAfterGeneratedLeadingMessage@@Tests/Context.wlt:772,1-794,2"
 ]
 
 VerificationTest[
@@ -765,7 +808,7 @@ VerificationTest[
         KeyValuePattern @ { "Role" -> "User", "Content" -> "hi" }
     },
     SameTest -> MatchQ,
-    TestID   -> "PrepareMessagesForLLM-StripsAddedPromptsBeforeRoleConversion@@Tests/Context.wlt:753,1-769,2"
+    TestID   -> "PrepareMessagesForLLM-StripsAddedPromptsBeforeRoleConversion@@Tests/Context.wlt:796,1-812,2"
 ]
 
 VerificationTest[
@@ -783,7 +826,7 @@ VerificationTest[
         KeyValuePattern @ { "role" -> "user", "content" -> "hi" }
     },
     SameTest -> MatchQ,
-    TestID   -> "PrepareMessagesForHTTPRequest-StripsAddedPrompts@@Tests/Context.wlt:771,1-787,2"
+    TestID   -> "PrepareMessagesForHTTPRequest-StripsAddedPrompts@@Tests/Context.wlt:814,1-830,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

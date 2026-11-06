@@ -379,7 +379,13 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] :
         cellTags = CurrentValue[ evalCell, CellTags ];
         cell = activeAIAssistantCell[
             container,
-            Association[ settings, "Container" :> container, "CellObject" :> cellObject, "Task" :> task ],
+            Association[
+                settings,
+                "Data"       -> frontEndChatData @ data,
+                "Container"  :> container,
+                "CellObject" :> cellObject,
+                "Task"       :> task
+            ],
             cellTags
         ];
 
@@ -480,9 +486,22 @@ writeChatOutputData // beginDefinition;
 writeChatOutputData[ cell_CellObject, data_Association ] /; $cloudNotebooks := Null;
 
 writeChatOutputData[ cell_CellObject, data_Association ] :=
-    LogChatTiming[ CurrentChatSettings[ cell, "Data" ] = data, "WriteChatOutputData" ];
+    LogChatTiming[ CurrentChatSettings[ cell, "Data" ] = frontEndChatData @ data, "WriteChatOutputData" ];
 
 writeChatOutputData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*frontEndChatData*)
+frontEndChatData // beginDefinition;
+
+(* The messages keep their images for the requests that follow tool calls, but the output cell doesn't need them: *)
+frontEndChatData[ data: KeyValuePattern[ "Messages" -> messages_List ] ] :=
+    <| data, "Messages" -> revertMultimodalContent @ messages |>;
+
+frontEndChatData[ data_Association ] := data;
+
+frontEndChatData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -4032,7 +4051,8 @@ BaseEncode @ BinarySerialize[
                     #, "Messages", Missing[ "NoMessages" ],
                     If[ ! MatchQ[ #, { ___Association } ],
                         Missing[ "UnexpectedMessages" ]
-                        , (* remove any surrounding non-user prompts and response messages *)
+                        , (* remove any surrounding non-user prompts and response messages, and the images *)
+                        revertMultimodalContent @
                         If[ MatchQ[ Last @ #, KeyValuePattern[ { "Role" -> Except[ "User" ] } ] ], Most, Identity ] @
                             If[ MatchQ[ First @ #, KeyValuePattern[ { "Role" -> Except[ "User" ] } ] ], Rest, Identity ] @
                                 #
