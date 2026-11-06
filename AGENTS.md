@@ -207,3 +207,5 @@ Both of these will evaluate the code in an entirely separate process.
 Note: To print input form from wolframscript, use `Print[ToString[expr, InputForm]]`.
 
 You only need to use this wolframscript fallback if you're certain that your changes will affect the tools, or if the tools stop working as expected. The WolframLanguageEvaluator tool is designed to produce better output for AI than wolframscript.
+
+Setting `$AllowInternet` persists in future sessions. Be sure to set back to `True` if you change it, or only modify it via `Block`.
