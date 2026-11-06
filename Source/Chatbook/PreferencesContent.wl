@@ -762,20 +762,14 @@ makeModelNameSelector[ dmPrefCache_, service_, model_, modelNameSelector_, state
             StringQ @ current && ! MemberQ[ models, KeyValuePattern[ "Name" -> current ] ],
                 items = Join[ { popupValue @ current, Delimiter }, items ],
             ! StringQ @ current,
-                items = Join[ { Automatic -> "Automatic", Delimiter }, items ]
+                items = Join[ { Automatic -> tr[ "Automatic" ], Delimiter }, items ]
         ];
 
         PopupMenu[
             Dynamic[
                 extractModelName @ Lookup[ dmPrefCache, "Model" ],
                 Function[
-                    If[ StringQ @ #,
-                        dmPrefCache[ "ServiceDefaultModel" ] = Replace[
-                            Lookup[ dmPrefCache, "ServiceDefaultModel", <| |> ],
-                            Except[ _Association ] -> <| |>
-                        ];
-                        modelSelectCallback[ #, dmPrefCache, service, model ]
-                    ]
+                    If[ StringQ @ #, modelSelectCallback[ #, dmPrefCache, service, model ] ]
                 ]
             ],
             items,
@@ -859,7 +853,7 @@ modelSelectCallback[ selected_String(* The value chosen via PopupMenu *), dmPref
     (* Remember the selected model for the given service, so it will be automatically chosen
        when choosing this service again: *)
     dmPrefCache[ "ServiceDefaultModel" ] = CurrentChatSettings[ $FrontEnd, "ServiceDefaultModel" ] = Append[
-        Lookup[ dmPrefCache, "ServiceDefaultModel" ],
+        Replace[ Lookup[ dmPrefCache, "ServiceDefaultModel" ], Except[ _? AssociationQ ] :> <| |> ],
         service -> model
     ];
     ,
@@ -2126,7 +2120,10 @@ disconnectService[ Dynamic[ dmPrefCache_ ], service_String ] :=
         SetEnvironment[ key -> None ];
         clearConnectionCache @ service;
         If[ extractServiceName @ Lookup[ dmPrefCache, "Model" ] === service,
-            dmPrefCache[ "Model" ] = CurrentChatSettings[ $FrontEnd, "Model" ] = $DefaultModel
+            dmPrefCache[ "Model" ] = CurrentChatSettings[ $FrontEnd, "Model" ] = $DefaultModel;
+            (* Rebuild the panel so the service and model selectors show the new default model: *)
+            updateDynamics[ "Preferences" ];
+            forceRefreshCloudPreferences[ ]
         ];
         updateDynamics[ "Services" ]
     ];
@@ -2287,15 +2284,23 @@ resetButton[ Dynamic[ tab_ ], Dynamic[ dmPrefCache_ ] ] :=
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*resetChatPreferences*)
+(* These must match the controls shown on the Notebooks tab, plus "Assistance" (see below). The model selector is shared
+   with the Services tab, so resetting either tab resets the model; updateDynamics[ "Preferences" ] rebuilds both tabs so
+   they show the new value. The cloud preferences cell doesn't track that trigger, so forceRefreshCloudPreferences
+   rebuilds it instead. *)
 $notebooksTabSettingKeys = {
+    (* The "Assistance" checkbox is currently hidden (see makeDefaultSettingsContent), but versions that showed it may
+       have stored "Assistance" -> True globally, and this reset is the only way to clear that from the UI: *)
     "Assistance",
     "AutoFormat",
     "ChatHistoryLength",
     "IncludeHistory",
     "LLMEvaluator",
     "MergeMessages",
+    "Model",
     "Multimodal",
     "OpenAIAPICompletionURL",
+    "ServiceDefaultModel",
     "Temperature",
     "ToolCallFrequency",
     "ToolsEnabled",
@@ -2310,6 +2315,7 @@ resetChatPreferences[ Dynamic[ dmPrefCache_ ], "Notebooks" ] := (
     unsetChatSettingsKeys[ $FrontEnd, $notebooksTabSettingKeys ];
     dmPrefCache = CurrentChatSettings[ $FrontEnd ];
     updateDynamics[ "Preferences" ];
+    forceRefreshCloudPreferences[ ];
 );
 
 resetChatPreferences[ Dynamic[ dmPrefCache_ ], "Personas" ] := (
@@ -2338,6 +2344,7 @@ resetChatPreferences[ Dynamic[ dmPrefCache_ ], "Services" ] := (
     LLMServices`ResetServices[ ];
     InvalidateServiceCache[ ];
     updateDynamics[ "Preferences" ];
+    forceRefreshCloudPreferences[ ];
 );
 
 resetChatPreferences // endDefinition;

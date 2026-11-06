@@ -900,7 +900,7 @@ unsetToolKey[ cells_List, parent_String, key_ ] :=
     Scan[ unsetToolKey[ #, parent, key ] &, cells ];
 
 unsetToolKey[ scope_, parent_String, key_ ] := (
-    If[ KeyExistsQ[ Replace[ cv[ scope, parent ], Except[ _Association ] -> <| |> ], key ],
+    If[ MatchQ[ cv[ scope, parent ], KeyValuePattern[ key -> _ ] ],
         unsetCV[ scope, parent, key ]
     ];
     If[ MatchQ[ cv[ scope, parent ], <| |> | { } ], unsetCV[ scope, parent ] ];

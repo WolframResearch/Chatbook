@@ -35,7 +35,7 @@ VerificationTest[
     {
         FreeQ[ $setterBoxes, DynamicWrapperBox ],
         FreeQ[ $setterBoxes, Initialization ],
-        FirstCase[ $setterBoxes, DynamicModuleBox[ { _ = v_String }, ___ ] :> v, Missing[ ], { 0 } ]
+        FirstCase[ $setterBoxes, DynamicModuleBox[ { Verbatim[ Set ][ _, v_String ] }, ___ ] :> v, Missing[ ], { 0 } ]
     },
     { True, True, "Full" },
     SameTest -> MatchQ,

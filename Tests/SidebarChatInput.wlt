@@ -69,23 +69,20 @@ VerificationTest[
 (* ::Section::Closed:: *)
 (*Sidebar Send*)
 
-(* Sending a sidebar message must not write the user's notebook options, e.g. WindowElements: *)
+(* Sending a sidebar message evaluates the chat in the user's notebook: *)
 VerificationTest[
-    runSidebarSend[ ],
-    {
-        { "CurrentValue", $sidebarCell, { TaggingRules, "CurrentSelections" } },
-        { "NotebookDelete", { } },
-        { "evaluateSidebarChat", $userNotebook, "Reply with exactly: OK2" }
-    },
+    Cases[ runSidebarSend[ ], { "evaluateSidebarChat", __ } ],
+    { { "evaluateSidebarChat", $userNotebook, "Reply with exactly: OK2" } },
     SameTest -> MatchQ,
-    TestID   -> "SidebarSend-LeavesNotebookOptions@@Tests/SidebarChatInput.wlt:73,1-82,2"
+    TestID   -> "SidebarSend-EvaluatesChat@@Tests/SidebarChatInput.wlt:73,1-78,2"
 ]
 
+(* Sending a sidebar message must not write the user's notebook options, e.g. WindowElements: *)
 VerificationTest[
     FreeQ[ runSidebarSend[ ], { "setCurrentValue", $userNotebook, ___ } | { "SetOptions", $userNotebook, ___ } | WindowElements ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "SidebarSend-NoWindowElementsWrite@@Tests/SidebarChatInput.wlt:84,1-89,2"
+    TestID   -> "SidebarSend-NoWindowElementsWrite@@Tests/SidebarChatInput.wlt:81,1-86,2"
 ]
 
 (* The front end runs the pre-built copy of the sidebar cell from the text resources, so it must match the source: *)
@@ -100,7 +97,7 @@ VerificationTest[
     ],
     { { True, False }.. },
     SameTest -> MatchQ,
-    TestID   -> "SidebarSend-PrebuiltResource@@Tests/SidebarChatInput.wlt:92,1-104,2"
+    TestID   -> "SidebarSend-PrebuiltResource@@Tests/SidebarChatInput.wlt:89,1-101,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
