@@ -538,6 +538,150 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*History Limits*)
+
+(* The requests for a conversation with more and more history (each in its own chat state, like in a chat): *)
+historyRequests[ extra_Association ] := Table[
+    First @ cacheRequest[
+        <| "MaxContextTokens" -> 20000, "MaxCellStringLength" -> 2000, "PromptGenerators" -> { }, extra |>,
+        Flatten @ {
+            Cell[ StringRepeat[ "first message ", 300 ], "ChatInput" ],
+            Table[ { Cell[ StringRepeat[ "answer ", 400 ], "ChatOutput" ], Cell[ "question", "ChatInput" ] }, n ]
+        }
+    ],
+    { n, 3 }
+];
+
+(* Each request is a prefix of the next one, since older messages are shortened by the same amount in every request: *)
+VerificationTest[
+    Table[
+        With[ { requests = sentMessages /@ historyRequests @ <| "PromptCacheOptimization" -> cache |> },
+            And @@ MapThread[ Take[ #2, Length @ #1 ] === #1 &, { Most @ requests, Rest @ requests } ]
+        ],
+        { cache, { True, False } }
+    ],
+    { True, False },
+    SameTest -> MatchQ,
+    TestID   -> "History-FixedCellStringLength@@Tests/PromptCache.wlt:556,1-566,2"
+]
+
+(* The requests of a conversation that grows past the token budget, with answers of different lengths and turn
+   messages, each request in its own chat state: *)
+trimmedHistoryRequests[ ] := Module[ { extra, cells, requests, request, data },
+    extra = <|
+        "MaxContextTokens" -> 6000,
+        "MaxCellStringLength" -> 2000,
+        "PromptGenerators" -> { LLMPromptGenerator[ StringRepeat[ "doc ", 100 ] &, "Messages" ] }
+    |>;
+    cells    = { };
+    requests = { };
+    Do[
+        AppendTo[ cells, Cell[ "question " <> ToString @ i, "ChatInput" ] ];
+        { request, data } = cacheRequest[ extra, cells ];
+        AppendTo[ requests, sentMessages @ request ];
+        AppendTo[
+            cells,
+            Cell[
+                StringRepeat[ "answer ", If[ OddQ @ i, 400, 40 ] ],
+                "ChatOutput",
+                TaggingRules -> <| "PromptCacheID" -> data[ "PromptCacheID" ] |>
+            ]
+        ],
+        { i, 30 }
+    ];
+    requests
+];
+
+excisedCellCount[ messages_ ] := Total @ Flatten @ StringCases[
+    Cases[ messages, KeyValuePattern[ "Content" -> s_String ] :> s ],
+    "[" ~~ n: DigitCharacter.. ~~ " Cells Excised]" :> ToExpression @ n
+];
+
+(* Once the history doesn't fit, cells are left out in blocks counted from the start of the conversation, so the
+   requests in between are prefixes of each other: *)
+VerificationTest[
+    Module[ { requests, counts, pairs },
+        requests = trimmedHistoryRequests[ ];
+        counts   = excisedCellCount /@ requests;
+        pairs    = Select[
+            Transpose @ { Most @ requests, Rest @ requests, Most @ counts, Rest @ counts },
+            #[[ 3 ]] === #[[ 4 ]] && #[[ 3 ]] > 0 &
+        ];
+        {
+            Max @ counts > 0,
+            AllTrue[ counts, Divisible[ #, 8 ] & ],
+            OrderedQ @ counts,
+            Length @ pairs >= 2,
+            AllTrue[ pairs, Take[ #[[ 2 ]], Length @ #[[ 1 ]] ] === #[[ 1 ]] & ]
+        }
+    ],
+    { True, True, True, True, True },
+    SameTest -> MatchQ,
+    TestID   -> "History-BlockTrimming@@Tests/PromptCache.wlt:602,1-621,2"
+]
+
+(* A history message that doesn't fit is left out with all older ones instead of being shortened, which would give a
+   different message in every request: *)
+VerificationTest[
+    Module[ { request },
+        request = First @ cacheRequest[
+            <| "MaxContextTokens" -> 9000, "MaxCellStringLength" -> 16000, "PromptGenerators" -> { } |>,
+            {
+                Cell[ "question 1", "ChatInput" ],
+                Cell[ StringRepeat[ "y ", 50 ], "ChatOutput" ],
+                Cell[ "question 2", "ChatInput" ],
+                Cell[ StringRepeat[ "x ", 7900 ], "ChatOutput" ],
+                Cell[ "question 3", "ChatInput" ]
+            }
+        ];
+        {
+            FreeQ[ request, s_String /; StringStartsQ[ s, "x x" ] && StringLength @ s < 15800 ],
+            FreeQ[ request, "question 1" ],
+            excisedCellCount @ request
+        }
+    ],
+    { True, True, 4 },
+    SameTest -> MatchQ,
+    TestID   -> "History-NoShortenedMessages@@Tests/PromptCache.wlt:625,1-646,2"
+]
+
+(* Blocks are larger for larger budgets, so that a long history doesn't change more often: *)
+VerificationTest[
+    Wolfram`Chatbook`ChatMessages`Private`historyTrimBlockSize /@ {
+        <| "MaxContextTokens" -> 6000 |>,
+        <| "MaxContextTokens" -> 2^15 |>,
+        <| "MaxContextTokens" -> 2^18 |>,
+        <| "MaxContextTokens" -> Infinity |>
+    },
+    { 8, 8, 32, 8 },
+    SameTest -> MatchQ,
+    TestID   -> "History-BlockSize@@Tests/PromptCache.wlt:649,1-659,2"
+]
+
+(* Cells that are serialized for something other than chat history (e.g. the notebook context) are shortened with the
+   token budget like without prompt cache optimization, since they are only sent once: *)
+VerificationTest[
+    Table[
+        withCacheSettings[
+            <| "MaxContextTokens" -> 4000, "MaxCellStringLength" -> 2000, "PromptCacheOptimization" -> cache |>,
+            StringLength /@ Lookup[
+                Wolfram`Chatbook`Common`makeChatMessages[
+                    $settings,
+                    Table[ Cell[ StringRepeat[ "text ", 300 ], "Text" ], 12 ],
+                    False
+                ],
+                "Content"
+            ]
+        ],
+        { cache, { True, False } }
+    ],
+    { lengths_, lengths_ },
+    SameTest -> MatchQ,
+    TestID   -> "History-OnlyForChatHistory@@Tests/PromptCache.wlt:663,1-681,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Records*)
 
 (* The record ID is written to the output cell's tagging rules: *)
@@ -551,7 +695,7 @@ VerificationTest[
     ],
     KeyValuePattern[ "PromptCacheID" -> "abc" ],
     SameTest -> MatchQ,
-    TestID   -> "Records-TaggingRules@@Tests/PromptCache.wlt:544,1-555,2"
+    TestID   -> "Records-TaggingRules@@Tests/PromptCache.wlt:688,1-699,2"
 ]
 
 VerificationTest[
@@ -567,7 +711,7 @@ VerificationTest[
     ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "Records-NoTaggingRules@@Tests/PromptCache.wlt:557,1-571,2"
+    TestID   -> "Records-NoTaggingRules@@Tests/PromptCache.wlt:701,1-715,2"
 ]
 
 (* The number of records kept in memory is bounded: *)
@@ -582,7 +726,7 @@ VerificationTest[
     ],
     _Integer? (# <= 10 &),
     SameTest -> MatchQ,
-    TestID   -> "Records-Bounded@@Tests/PromptCache.wlt:574,1-586,2"
+    TestID   -> "Records-Bounded@@Tests/PromptCache.wlt:718,1-730,2"
 ]
 
 (* Regenerated responses have pages, which use the other definition: *)
@@ -596,7 +740,7 @@ VerificationTest[
     ],
     KeyValuePattern @ { "PromptCacheID" -> "abc", "PageData" -> KeyValuePattern[ "PageCount" -> 2 ] },
     SameTest -> MatchQ,
-    TestID   -> "Records-TaggingRulesPages@@Tests/PromptCache.wlt:589,1-600,2"
+    TestID   -> "Records-TaggingRulesPages@@Tests/PromptCache.wlt:733,1-744,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -623,7 +767,7 @@ VerificationTest[
     Cases[ secondTurnChatData[ ][ "Data", "Messages" ], KeyValuePattern[ "Content" -> c_String ] :> c ],
     { _String, "Hello", "Hi there", "Next", "Generated prompt 2", "Answer" },
     SameTest -> MatchQ,
-    TestID   -> "ChatData-CurrentTurnMessages@@Tests/PromptCache.wlt:622,1-627,2"
+    TestID   -> "ChatData-CurrentTurnMessages@@Tests/PromptCache.wlt:766,1-771,2"
 ]
 
 (* Feedback without the chat history includes the user's message and the response, but not the turn messages: *)
@@ -634,7 +778,7 @@ VerificationTest[
     ],
     { { "System", _ }, { "User", "Next" }, { "Assistant", "Answer" } },
     SameTest -> MatchQ,
-    TestID   -> "ChatData-FeedbackWithoutHistory@@Tests/PromptCache.wlt:630,1-638,2"
+    TestID   -> "ChatData-FeedbackWithoutHistory@@Tests/PromptCache.wlt:774,1-782,2"
 ]
 
 (* Turn messages can have the user role, and only the ones before the user's message are left out: *)
@@ -652,7 +796,7 @@ VerificationTest[
     ],
     { "System prompt", "Hello", "Hi there", "Next", "Current" },
     SameTest -> MatchQ,
-    TestID   -> "ChatData-UserRoleTurnMessages@@Tests/PromptCache.wlt:641,1-656,2"
+    TestID   -> "ChatData-UserRoleTurnMessages@@Tests/PromptCache.wlt:785,1-800,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -671,7 +815,7 @@ VerificationTest[
     ],
     { prompt_, prompt_ },
     SameTest -> MatchQ,
-    TestID   -> "SystemPrompt-BasePromptNone@@Tests/PromptCache.wlt:664,1-675,2"
+    TestID   -> "SystemPrompt-BasePromptNone@@Tests/PromptCache.wlt:808,1-819,2"
 ]
 
 (* The system prompt doesn't change after a tool call, also when it has instructions that are disabled with a hint: *)
@@ -685,7 +829,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "SystemPrompt-ToolLoop@@Tests/PromptCache.wlt:678,1-689,2"
+    TestID   -> "SystemPrompt-ToolLoop@@Tests/PromptCache.wlt:822,1-833,2"
 ]
 
 (* The request after a tool call can be made outside the chat state of the first request (e.g. for automatic
@@ -702,7 +846,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "SystemPrompt-OtherChatState@@Tests/PromptCache.wlt:693,1-706,2"
+    TestID   -> "SystemPrompt-OtherChatState@@Tests/PromptCache.wlt:837,1-850,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -720,7 +864,7 @@ VerificationTest[
     ],
     _? (SubsetQ[ #, { "SpecialURI", "SpecialURIAudio" } ] &),
     SameTest -> MatchQ,
-    TestID   -> "HintContents-Dependencies@@Tests/PromptCache.wlt:713,1-724,2"
+    TestID   -> "HintContents-Dependencies@@Tests/PromptCache.wlt:857,1-868,2"
 ]
 
 (* The notebook assistance instructions are sent in each turn that needs them, along with their heading: *)
@@ -742,15 +886,15 @@ VerificationTest[
     ],
     { 1, 1 },
     SameTest -> MatchQ,
-    TestID   -> "HintContents-NotebookAssistanceHeading@@Tests/PromptCache.wlt:727,1-746,2"
+    TestID   -> "HintContents-NotebookAssistanceHeading@@Tests/PromptCache.wlt:871,1-890,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Notebook Context*)
 
-(* When the notebook context of a turn doesn't fit in the token budget, its images are left out with it, so that the
-   context is sent again (see notebookContextTurnMessages in ChatModes/Context.wl): *)
+(* When the notebook context of a turn doesn't fit in the token budget, the history ends there, and its images are left
+   out with it, so that the context is sent again (see notebookContextTurnMessages in ChatModes/Context.wl): *)
 VerificationTest[
     Module[ { id, cells },
         id = Wolfram`Chatbook`PromptCache`Private`setPromptCacheRecord[
@@ -783,9 +927,9 @@ VerificationTest[
             KeyValuePattern[ "Content" -> c_String ] :> c
         ]
     ],
-    { _, "Hello", "Hi there", "Next", "Generated prompt 1" },
+    { _, "[2 Cells Excised]", "Next", "Generated prompt 1" },
     SameTest -> MatchQ,
-    TestID   -> "NotebookContext-OrphanImages@@Tests/PromptCache.wlt:754,1-789,2"
+    TestID   -> "NotebookContext-OrphanImages@@Tests/PromptCache.wlt:898,1-933,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

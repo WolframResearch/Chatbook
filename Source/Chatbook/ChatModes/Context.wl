@@ -16,6 +16,9 @@ $notebookInstructionsPrompt = True;
 $currentSelectionIndicator  = { $leftSelectionIndicator, $rightSelectionIndicator };
 $notebookContextLimitScale  = 0.25;
 $downScaledSettings         = { "MaxCellStringLength", "MaxContextTokens", "MaxOutputCellStringLength" };
+(* The notebook context and NotebookReader pages are limited as if MaxContextTokens was at most this, so that they don't
+   grow with larger chat budgets (e.g. the Notebook Assistant's): *)
+$maxNotebookContextTokens   = 2^15;
 $maxContextImages           = 5;
 $contextPrompt              = None;
 $selectionPrompt            = None;
@@ -232,13 +235,13 @@ getInlineChatPrompt0[
     { before___CellObject, cell_, after___CellObject }
 ] :=
     Block[ { $selectionInfo = info, $includeCellXML = TrueQ @ $notebookEditorEnabled },
-        getContextFromSelection0[
+        withNotebookContextBudget @ getContextFromSelection0[
             <|
                 "Before"   -> { before },
                 "Selected" -> { cell   },
                 "After"    -> { after  }
             |>,
-            settings
+            notebookContextLimits @ settings
         ]
     ];
 
@@ -324,7 +327,11 @@ getContextFromSelection[
 
             If[ selectionData === None, Throw @ None ];
 
-            string = ConfirmBy[ getContextFromSelection0[ selectionData, settings ], StringQ, "Context" ];
+            string = ConfirmBy[
+                withNotebookContextBudget @ getContextFromSelection0[ selectionData, settings ],
+                StringQ,
+                "Context"
+            ];
 
             ConfirmBy[ mergeCodeBlocks @ string, StringQ, "Merged" ]
         ]
@@ -572,10 +579,41 @@ downScaledSettings // beginDefinition;
 
 downScaledSettings[ settings_Association ] := <|
     settings,
-    Floor[ $notebookContextLimitScale * KeyTake[ settings, $downScaledSettings ] ]
+    Floor[ $notebookContextLimitScale * KeyTake[ notebookContextLimits @ settings, $downScaledSettings ] ]
 |>;
 
 downScaledSettings // endDefinition;
+
+
+notebookContextLimits // beginDefinition;
+
+notebookContextLimits[ settings: KeyValuePattern[ "MaxContextTokens" -> n_? NumberQ ] ] :=
+    <| settings, "MaxContextTokens" -> Min[ n, $maxNotebookContextTokens ] |>;
+
+notebookContextLimits[ settings_Association ] := settings;
+
+notebookContextLimits // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*withNotebookContextBudget*)
+(* In a chat, the notebook context is serialized with its own token budget of $maxNotebookContextTokens instead of
+   what's left of the chat's budget, so it doesn't grow with larger chat budgets, and it's serialized the same way in
+   every request (e.g. after tool calls) and after the history is trimmed: *)
+withNotebookContextBudget // beginDefinition;
+withNotebookContextBudget // Attributes = { HoldFirst };
+
+withNotebookContextBudget[ eval_ ] :=
+    Block[
+        {
+            $tokenBudget      = $maxNotebookContextTokens,
+            $tokenPressure    = 0.0,
+            $cellStringBudget = $initialCellStringBudget
+        },
+        eval
+    ];
+
+withNotebookContextBudget // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1214,7 +1252,11 @@ contextFromSelectionData[ nbo_NotebookObject, info_, selectionData_Association, 
         $notebookMetadataString = getNotebookMetadataString[ nbo, info ];
         Module[ { settings, string },
             settings = ConfirmBy[ downScaledSettings @ settings0, AssociationQ, "Settings" ];
-            string = ConfirmBy[ getContextFromSelection0[ selectionData, settings ], StringQ, "Context" ];
+            string = ConfirmBy[
+                withNotebookContextBudget @ getContextFromSelection0[ selectionData, settings ],
+                StringQ,
+                "Context"
+            ];
             ConfirmBy[ mergeCodeBlocks @ string, StringQ, "Merged" ]
         ]
     ],

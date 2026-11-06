@@ -1158,4 +1158,100 @@ VerificationTest[
     TestID   -> "PromptCache-NotebookContextOtherChats@@Tests/Context.wlt:1152,1-1159,2"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Notebook Context Limits*)
+
+(* The notebook context and NotebookReader pages don't grow with larger chat budgets: *)
+VerificationTest[
+    Lookup[
+        Wolfram`Chatbook`ChatModes`Context`Private`downScaledSettings /@ {
+            <| "MaxContextTokens" -> 2^15, "MaxCellStringLength" -> 16384, "MaxOutputCellStringLength" -> 1000 |>,
+            <| "MaxContextTokens" -> 2^18, "MaxCellStringLength" -> 16384, "MaxOutputCellStringLength" -> 1000 |>
+        },
+        "MaxContextTokens"
+    ],
+    { 8192, 8192 },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookContextLimits-DownScaledSettings@@Tests/Context.wlt:1166,1-1177,2"
+]
+
+(* Gives the length of a notebook context serialized in a chat with the given state of the chat's token budget: *)
+chatContextLength // Attributes = { HoldFirst };
+chatContextLength[ eval_, budget_, cellStringBudget_ ] := Block[
+    {
+        Wolfram`Chatbook`Common`$chatState               = True,
+        Wolfram`Chatbook`Common`$tokenBudget             = budget,
+        Wolfram`Chatbook`Common`$tokenPressure           = 0.0,
+        Wolfram`Chatbook`Common`$initialCellStringBudget = 16384,
+        Wolfram`Chatbook`Common`$cellStringBudget        = cellStringBudget
+    },
+    StringLength @ eval
+];
+
+(* In a chat, the notebook context is serialized with its own token budget, so it doesn't depend on the length of the
+   history or grow with larger chat budgets: *)
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`Common`$contextPrompt   = None,
+            Wolfram`Chatbook`Common`$selectionPrompt = None,
+            Wolfram`Chatbook`$ChatHandlerData        = <| |>
+        },
+        UsingFrontEnd @ Module[ { nb, settings, length },
+            WithCleanup[
+                nb = NotebookPut @ Notebook @ Table[ Cell[ StringRepeat[ "word ", 1000 ], "Text" ], 60 ];
+                SelectionMove[ First @ Cells @ nb, All, Cell ];
+                settings = <| AbsoluteCurrentChatSettings @ nb, "MaxContextTokens" -> 2^18, "Multimodal" -> False |>;
+                length[ budget_, cellStringBudget_ ] := chatContextLength[
+                    Wolfram`Chatbook`ChatModes`Common`getContextFromSelection[ None, nb, settings ],
+                    budget,
+                    cellStringBudget
+                ];
+                { length[ 2^18, 16384 ] === length[ 2^10, 0 ], length[ 2^18, 16384 ] < 0.8 * 51 * 5000 },
+                NotebookClose @ nb
+            ]
+        ]
+    ],
+    { True, True },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookContextLimits-ChatBudget@@Tests/Context.wlt:1194,1-1219,2"
+]
+
+(* The same goes for the notebook context of inline chats, where long cells are kept: *)
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`Common`$contextPrompt   = None,
+            Wolfram`Chatbook`Common`$selectionPrompt = None,
+            Wolfram`Chatbook`$ChatHandlerData        = <| |>
+        },
+        UsingFrontEnd @ Module[ { nb, cell, length },
+            WithCleanup[
+                nb = NotebookPut @ Notebook @ {
+                    Cell[ "Some text", "Text" ],
+                    Cell[ StringRepeat[ "selected ", 900 ], "Text" ],
+                    Cell[ "More text", "Text" ]
+                };
+                cell = Cells[ nb ][[ 2 ]];
+                length[ max_ ] := chatContextLength[
+                    Wolfram`Chatbook`ChatModes`Context`Private`getInlineChatPrompt0[
+                        <| AbsoluteCurrentChatSettings @ nb, "MaxContextTokens" -> max, "Multimodal" -> False |>,
+                        None,
+                        cell,
+                        nb
+                    ],
+                    2^18,
+                    16384
+                ];
+                { length[ 2^18 ] === length[ 2^15 ], length[ 2^18 ] > 8100 },
+                NotebookClose @ nb
+            ]
+        ]
+    ],
+    { True, True },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookContextLimits-InlineChat@@Tests/Context.wlt:1222,1-1255,2"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)
