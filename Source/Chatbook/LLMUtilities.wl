@@ -489,7 +489,10 @@ extractBodyChunks0[ fail: Failure[ "BodyChunkProcessingFailure", _ ] ] /;
         ]
     ] := { };
 
-(* Other potential streamed API errors (e.g. overloaded_error) surfaces as a Failure instead of a silent blank *)
+(* Any other failure in a stream, such as an "APIError" with status 200 or an unexpected chunk that the connection
+   reports as a "BodyChunkProcessingFailure", is returned so that writeChunk shows it in the chat output instead of
+   ending in an internal failure. Error events such as overloaded_error, and HTTP errors, are handled by the rules
+   above: *)
 extractBodyChunks0[ failure_Failure ] :=
     Throw[ failure, $bodyChunksTag ];
 
