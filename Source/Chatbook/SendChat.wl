@@ -3936,10 +3936,7 @@ attachMinimizedIcon[ chatCell_CellObject, label_ ] :=
         cell = makeMinimizedIconCell[ label, chatCell ];
         NotebookDelete @ Cells[ prev, AttachedCell -> True, CellStyle -> "MinimizedChatIcon" ];
         With[ { prev = prev, cell = cell },
-            If[ TrueQ @ BoxForm`sufficientVersionQ[ 13.2 ],
-                FE`Evaluate @ FEPrivate`AddCellTrayWidget[ prev, "MinimizedChatIcon" -> <| "Content" -> cell |> ],
-                AttachCell[ prev, cell, { "CellBracket", Top }, { 0, 0 }, { Right, Top } ]
-            ]
+            FE`Evaluate @ FEPrivate`AddCellTrayWidget[ prev, "MinimizedChatIcon" -> <| "Content" -> cell |> ]
         ]
     ];
 
