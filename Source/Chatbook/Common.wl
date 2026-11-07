@@ -265,8 +265,6 @@ KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
     "ResourceNotInstalled"            -> "The resource `1` is not installed.",
     "ResponsesAPIUnavailable"         -> "The \"Responses\" request method requires newer versions of the Wolfram/LLMFunctions and LLMConnections paclets.",
     "ServerMessageHeader"             -> "The server responded with the following message: \n\n",
-    "ServerMessageTemplate"           -> "The server responded with the following message: \n\n`1`",
-    "ServerOverloaded"                -> "The server is currently overloaded with other requests. Please try again later.",
     "ServerResponseEmpty"             -> "No content was received from server.",
     "ToolNotFound"                    -> "Tool `1` not found.",
     "UnknownResponse"                 -> "Unexpected response from server",

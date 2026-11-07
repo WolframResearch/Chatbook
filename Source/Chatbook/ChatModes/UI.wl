@@ -249,15 +249,6 @@ removeSidebarChatSubDockedCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*removeSidebarTopCell*)
-removeSidebarTopCell // beginDefinition;
-
-removeSidebarTopCell[ nbo_NotebookObject, sidebarTopCell_CellObject ] := NotebookDelete @ sidebarTopCell;
-
-removeSidebarTopCell // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
 (*makeSidebarChatScrollingCell*)
 
 makeSidebarChatScrollingCell // beginDefinition;
@@ -890,31 +881,6 @@ Button[
 ]
 
 chatbarMinimizeButton // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*menuTick*)
-menuTick[ Dynamic[ val_ ], text_ ] :=
-Row[
-    {
-        Style[
-            Graphics[
-                Line[ { { -0.4, 0.5 }, { 0, 0 }, { 0.8, 1 } } ],
-                AspectRatio      -> Automatic,
-                BaselinePosition -> (Center -> Center),
-                BaseStyle        -> { AbsoluteThickness[ 1.5 ], LightDarkSwitched[ GrayLevel[ 0.35 ], GrayLevel[ 0.892 ] ], JoinForm[ "Round" ], CapForm[ "Round" ] },
-                ImagePadding     -> { { 2, 2 }, { 2, 2 } },
-                ImageSize        -> { 14, 14 }
-            ],
-            ShowContents -> Dynamic @ val
-        ],
-        Spacer[ 3 ],
-        text
-    },
-    StripOnInput -> True
-]
-
-
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2986,24 +2952,6 @@ saveWorkspaceChatInput[ cell_CellObject, input_ ] :=
 
 saveWorkspaceChatInput // endDefinition;
 
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*workspaceChatInitializer*)
-workspaceChatInitializer // beginDefinition;
-
-(* :!CodeAnalysis::BeginBlock:: *)
-(* :!CodeAnalysis::Disable::NoVariables::DynamicModule:: *)
-workspaceChatInitializer[ expr_ ] :=
-    DynamicModule[
-        { },
-        expr,
-        Initialization :> initializeWorkspaceChat[ ],
-        SynchronousInitialization -> False
-    ];
-(* :!CodeAnalysis::EndBlock:: *)
-
-workspaceChatInitializer // endDefinition;
-
 $workspaceChatInitialized = False;
 
 (* ::**************************************************************************************************************:: *)
@@ -3797,8 +3745,6 @@ assistantMessageButtons[ includeFeedback_, sidebarCellQ_ ] := assistantMessageBu
                     Method     -> "Queued"
                 ],
                 Item[ Spacer[ 0 ], ItemSize -> Fit ],
-                (* Waiting for sharing functionality to be implemented: *)
-                (* Tooltip[ assistantShareAsActionMenu[ Dynamic[ Typeset`cell ] ], tr[ "WorkspaceOutputRaftShareAsTooltip" ] ], *)
                 If[ TrueQ @ includeFeedback,
                     Splice @ {
                         Button[
@@ -3900,73 +3846,6 @@ DynamicModule[ { Typeset`menuActiveQ = False },
 (* :!CodeAnalysis::EndBlock:: *)
 
 assistantCopyAsActionMenu // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*assistantShareAsActionMenu*)
-assistantShareAsActionMenu // beginDefinition;
-
-(* :!CodeAnalysis::BeginBlock:: *)
-(* :!CodeAnalysis::Disable::NoVariables::DynamicModule:: *)
-assistantShareAsActionMenu[ Dynamic[ cell_ ] ] :=
-DynamicModule[ { Typeset`menuActiveQ = False },
-    EventHandler[
-        PaneSelector[
-            {
-                "Default" ->
-                    Framed[
-                        chatbookIcon[ "WorkspaceOutputRaftShareIcon" , False, color @ "NA_OutputRaftIcon" ],
-                        Background -> color @ "NA_NotebookBackground", RoundingRadius -> 3, FrameMargins -> 0, FrameStyle -> color @ "NA_NotebookBackground",
-                        Alignment -> { Center, Center }, ImageSize -> { 22, 22 } ],
-                "Hover" ->
-                    Framed[
-                        chatbookIcon[ "WorkspaceOutputRaftShareIcon" , False, color @ "NA_OutputRaftIcon" ],
-                        Background -> color @ "NA_OutputRaftBackgroundHover", RoundingRadius -> 3, FrameMargins -> 0, FrameStyle -> color @ "NA_OutputRaftBackgroundHover",
-                        Alignment -> { Center, Center }, ImageSize -> { 22, 22 } ],
-                "Down" ->
-                    Framed[
-                        chatbookIcon[ "WorkspaceOutputRaftShareIcon" , False, color @ "NA_OutputRaftIconPressed" ],
-                        Background -> color @ "NA_OutputRaftBackgroundPressed", RoundingRadius -> 3, FrameMargins -> 0, FrameStyle -> color @ "NA_OutputRaftBackgroundPressed",
-                        Alignment -> { Center, Center }, ImageSize -> { 22, 22 } ] },
-            Dynamic[
-                Which[
-                    Typeset`menuActiveQ, "Down",
-                    CurrentValue[ "MouseOver" ], "Hover",
-                    True, "Default" ] ],
-            ImageSize -> Automatic ],
-        {
-            "MouseDown" :> (
-                Typeset`menuActiveQ = True;
-                AttachCell[ EvaluationBox[ ],
-                    Cell[ BoxData @ ToBoxes @
-                        DynamicModule[ { },
-                            Framed[
-                                Grid[
-                                    {
-                                        { Style[ tr[ "WorkspaceOutputRaftShareAs" ], FontColor -> color @ "NA_RaftMenuHeaderFont", FontSize -> 12 ] },
-                                        { assistantActionMenuItem[ tr[ "WorkspaceOutputRaftShareAsCloudDeployment" ], ChatbookAction[ "ShareAsCloudDeployment", cell ] ] },
-                                        { assistantActionMenuItem[ tr[ "WorkspaceOutputRaftShareAsPDF" ], ChatbookAction[ "ShareAsPDF", cell ] ] },
-                                        { assistantActionMenuItem[ tr[ "WorkspaceOutputRaftShareAsImage" ], ChatbookAction[ "ShareAsImage", cell ] ] }
-                                    },
-                                    Alignment -> Left,
-                                    BaseStyle -> { FontFamily -> "Source Sans Pro" },
-                                    Spacings -> { 0, { 0, 0.5, { 0 } } }
-                                ],
-                                Background -> color @ "NA_RaftMenuBackground", FrameStyle -> color @ "NA_RaftMenuFrame", ImageSize -> 158, RoundingRadius -> 4 ],
-                            InheritScope -> True,
-                            Initialization :> (True), (* Deinitialization won't run without an Init *)
-                            Deinitialization :> (Typeset`menuActiveQ = False)
-                        ],
-                        CellTags -> "CustomActionMenu",
-                        Magnification -> Inherited * 0.85 ],
-                    { Right, Bottom }, 0, { Right, Top }, (* Because this is an attached cell, it has to exist within the NA window *)
-                    RemovalConditions -> "MouseExit" ]) },
-        PassEventsDown -> True,
-        Method -> "Preemptive",
-        PassEventsUp -> True ] ]
-(* :!CodeAnalysis::EndBlock:: *)
-
-assistantShareAsActionMenu // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -5216,56 +5095,12 @@ withWorkspaceGlobalProgress[ nbo_NotebookObject, eval_ ] := Enclose[
 
 withWorkspaceGlobalProgress // endDefinition;
 
-
-(* Work around VertexColors not understanding LightDarkSwitched. *)
-$workspaceChatProgressBar := With[
-    {
-        darkModeQ = AbsoluteCurrentValue[ FrontEnd`EvaluationNotebook[ ], LightDark ] === "Dark"
-    },
-    {(* (* save for posterity *)
-        background  = Replace[ color @ "NA_ProgressBarEdgeColor",   l_LightDarkSwitched :> If[ darkModeQ, Last, First ][ l ] ],
-        colorCenter = Replace[ color @ "NA_ProgressBarCenterColor", l_LightDarkSwitched :> If[ darkModeQ, Last, First ][ l ] ],
-        colorEdges  = Replace[ color @ "NA_ProgressBarEdgeColor",   l_LightDarkSwitched :> If[ darkModeQ, Last, First ][ l ] ],
-        *)
-        background  = Replace[ LightDarkSwitched[ RGBColor[ "#128ED1" ], RGBColor[ "#7FC7FB" ] ], l_LightDarkSwitched :> If[ darkModeQ, Last, First ][ l ] ],
-        colorCenter = Replace[ LightDarkSwitched[ RGBColor[ "#E0F2FC" ], RGBColor[ "#F5F5F5" ] ], l_LightDarkSwitched :> If[ darkModeQ, Last, First ][ l ] ],
-        colorEdges  = Replace[ LightDarkSwitched[ RGBColor[ "#128ED1" ], RGBColor[ "#7FC7FB" ] ], l_LightDarkSwitched :> If[ darkModeQ, Last, First ][ l ] ],
-        duration    = 2.5
-    },
-    Graphics[
-        {
-            Thickness[ 1 ],
-            Dynamic @ TemplateBox[
-                { Clock[ { -0.2, 1.0 }, duration ], Clock[ { 0.0, 1.2 }, duration ] },
-                "WorkspaceChatProgressBar",
-                DisplayFunction -> Function[
-                    LineBox[
-                        {
-                            { #1, 0 },
-                            { (#1 + #2) / 2, 0 },
-                            { #2, 0 }
-                        },
-                        VertexColors -> { colorEdges, colorCenter, colorEdges }
-                    ]
-                ]
-            ]
-        },
-        AspectRatio      -> Full,
-        Background       -> background,
-        ImageMargins     -> 0,
-        ImageSize        -> { Full, 6 },
-        PlotRange        -> { { 0, 1 }, Automatic },
-        PlotRangePadding -> None
-    ]
-];
-
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
 addToMXInitialization[
     $inlineToWorkspaceConversionRules;
     $defaultUserImage;
-    $smallNotebookIcon;
 ];
 
 End[ ];

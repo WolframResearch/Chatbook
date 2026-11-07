@@ -240,13 +240,6 @@ parseToolCallID[ string_String? StringQ ] :=
 parseToolCallID // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*fullToolCallStringQ*)
-fullToolCallStringQ // beginDefinition;
-fullToolCallStringQ[ string_String? StringQ ] := StringQ @ parseToolCallID @ string;
-fullToolCallStringQ // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*makeToolCallBoxLabel*)
 makeToolCallBoxLabel // beginDefinition;

@@ -640,7 +640,7 @@ processContextPromptString // beginDefinition;
 processContextPromptString[ prompt_String ] := Enclose[
     Module[ { noXML, noSelection },
         noXML = ConfirmBy[ stripCellXML @ prompt, StringQ, "NoXML" ];
-        noSelection = ConfirmBy[ (*stripSelectionIndicators @*) noXML, StringQ, "NoSelection" ];
+        noSelection = ConfirmBy[ noXML, StringQ, "NoSelection" ];
         ConfirmBy[ mergeCodeBlocks @ noSelection, StringQ, "Merged" ]
     ],
     throwInternalFailure
@@ -654,13 +654,6 @@ processContextPromptString // endDefinition;
 stripCellXML // beginDefinition;
 stripCellXML[ prompt_String ] := StringDelete[ prompt, { "<cell" ~~ Except[ "\n" ]... ~~ ">\n", "\n</cell>" } ];
 stripCellXML // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*stripSelectionIndicators*)
-stripSelectionIndicators // beginDefinition;
-stripSelectionIndicators[ s_String ] := StringDelete[ s, { $leftSelectionIndicator, $rightSelectionIndicator } ];
-stripSelectionIndicators // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

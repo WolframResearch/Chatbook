@@ -156,7 +156,6 @@ $forcedVectorDBDownloads = { };
 
 $embeddingDimension      = 384;
 $maxNeighbors            = 250;
-$maxEmbeddingDistance    = 150.0;
 $embeddingService        = "Local";
 $embeddingModel          = "SentenceBERT";
 $embeddingAuthentication = Automatic;
@@ -167,13 +166,6 @@ $maxEmbeddingCacheSize      = 1000;
 
 
 $conversationVectorSearchPenalty = 1.0;
-
-$relatedQueryCount = 5;
-$relatedDocsCount  = 20;
-$querySampleCount  = 10;
-
-$relevantFileCount = 3;
-$maxExtraFiles     = 20;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -324,7 +316,6 @@ $usearchIndexReleaseTask = None;
 (*Messages*)
 Chatbook::InvalidVectorDatabaseName         = "Expected a string for vector database name instead of `1`";
 Chatbook::InvalidVectorDatabaseValues       = "Expected a list of strings for vector database values instead of `1`";
-Chatbook::VectorDatabaseValuesFileNotFound  = "Values file not found: `1`";
 Chatbook::InvalidVectorDatabaseDimensions   = "Dimensions of vectors (`1`) do not match expected dimensions (`2`)";
 Chatbook::InvalidVectorDatabaseValuesLength = "The number of values (`1`) does not match the number of vectors (`2`)";
 
@@ -2312,24 +2303,6 @@ getSnippetFunction[ name_String ] := getSnippetFunction[ name, $vectorDatabases[
 getSnippetFunction[ name_String, $$unspecified ] := Identity;
 getSnippetFunction[ name_String, function_ ] := function;
 getSnippetFunction // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*getSnippetAssetFunction*)
-getSnippetAssetFunction // beginDefinition;
-
-getSnippetAssetFunction[ name_String ] := Enclose[
-    Module[ { dir, file, snippets, function },
-        dir = ConfirmBy[ $thisPaclet[ "AssetLocation", "Snippets" ], DirectoryQ, "Directory" ];
-        file = ConfirmBy[ FileNameJoin @ { dir, name <> ".wxf" }, FileExistsQ, "File" ];
-        snippets = ConfirmBy[ Developer`ReadWXFFile @ file, AssociationQ, "Snippets" ];
-        function = With[ { s = snippets }, Lookup[ s, # ] & ];
-        If[ TrueQ @ $mxFlag, function, getSnippetAssetFunction[ name ] = function ]
-    ],
-    throwInternalFailure
-];
-
-getSnippetAssetFunction // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

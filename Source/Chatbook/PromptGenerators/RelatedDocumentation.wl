@@ -11,7 +11,6 @@ Needs[ "Wolfram`Chatbook`Common`"                  ];
 (* ::Section::Closed:: *)
 (*Configuration*)
 $snippetDebug                  = True;
-$snippetType                   = "Text";
 $documentationSnippetVersion  := $snippetVersion;
 $snippetFetchBatchSize         = 15;
 $baseURL                       = "https://www.wolframcloud.com/obj/wolframai-content/DocumentationSnippets";
@@ -113,9 +112,6 @@ $snippetDownloadFailure = None;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Messages*)
-Chatbook::CloudDownloadError = "\
-Unable to download required data from the cloud. Please try again later.";
-
 Chatbook::SnippetDownloadDeclined = "\
 Documentation resources are not available because the download was cancelled. \
 Evaluate InstallDocumentationResources[] to install them.";
@@ -1013,28 +1009,6 @@ selectSnippetsFromResponseSmall // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*scoreSnippetLine*)
-scoreSnippetLine // beginDefinition;
-
-scoreSnippetLine[ $$assistantTypeTag ] :=
-    Nothing;
-
-scoreSnippetLine[ line_String ] /; StringMatchQ[ StringTrim @ line, $$assistantTypeTag, IgnoreCase -> True ] :=
-    Nothing;
-
-scoreSnippetLine[ line_String ] := Enclose[
-    Module[ { scoreString, id, score },
-        { scoreString, id } = ConfirmMatch[ StringSplit[ line, Whitespace ], { _String, _String }, "Split" ];
-        score = ToExpression @ ConfirmBy[ scoreString, StringMatchQ @ NumberString, "Score" ];
-        <| "Score" -> score, "ID" -> id |>
-    ],
-    $Failed &
-];
-
-scoreSnippetLine // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*selectSnippetsFromString*)
 selectSnippetsFromString // beginDefinition;
 selectSnippetsFromString[ response_String, ids: { ___String } ] := DeleteDuplicates @ StringCases[ response, ids ];
@@ -1137,7 +1111,6 @@ $snippetIDCounters = <| |>;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Documentation Snippets*)
-$documentationSnippets = <| |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
