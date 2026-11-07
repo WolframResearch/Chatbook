@@ -497,24 +497,22 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association
                 ]
             ];
 
-            blockChatObject[
-                If[ ListQ @ $lastMessages && StringQ @ $lastChatString,
-                    With[
-                        {
-                            chat = constructChatObject @ mergeToolCallMessages @ Append[
-                                $lastMessages,
-                                <| "Role" -> "Assistant", "Content" -> $lastChatString |>
-                            ] // LogChatTiming[ "ConstructChatObject" ]
-                        },
-                        If[ TrueQ @ settings[ "AutoSaveConversations" ],
-                            SaveChat[ nbo, chat, settings, "AutoSaveOnly" -> True ]
-                        ];
-                        applyChatPost[ chat, settings, nbo, $aborted ]
-                    ],
-                    applyChatPost[ None, settings, nbo, $aborted ];
-                    Null
-                ];
-            ]
+            If[ ListQ @ $lastMessages && StringQ @ $lastChatString,
+                With[
+                    {
+                        chat = constructChatObject @ mergeToolCallMessages @ Append[
+                            $lastMessages,
+                            <| "Role" -> "Assistant", "Content" -> $lastChatString |>
+                        ] // LogChatTiming[ "ConstructChatObject" ]
+                    },
+                    If[ TrueQ @ settings[ "AutoSaveConversations" ],
+                        SaveChat[ nbo, chat, settings, "AutoSaveOnly" -> True ]
+                    ];
+                    applyChatPost[ chat, settings, nbo, $aborted ]
+                ],
+                applyChatPost[ None, settings, nbo, $aborted ];
+                Null
+            ];
         ]
     ];
 
@@ -534,22 +532,6 @@ applyChatPost[ chat_, settings_, nbo_, aborted: True|False ] := (
 );
 
 applyChatPost // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*blockChatObject*)
-blockChatObject // beginDefinition;
-blockChatObject // Attributes = { HoldFirst };
-blockChatObject[ eval_ ] /; Quiet @ PacletNewerQ[ PacletObject[ "Wolfram/LLMFunctions" ], "1.1.0" ] := eval;
-blockChatObject[ eval_ ] := Block[ { chatObject = delayedChatObject, delayedChatObject }, eval ];
-blockChatObject // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*delayedChatObject*)
-delayedChatObject // beginDefinition;
-delayedChatObject[ args___ ] := delayedChatObject[ args ] = System`ChatObject @ args;
-delayedChatObject // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

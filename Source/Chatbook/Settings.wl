@@ -419,7 +419,7 @@ $modelAutoSettings[ Automatic, "GPT5" ] = <|
     "MaxContextTokens"           -> 400000,
     "Multimodal"                 -> True,
     "PresencePenalty"            -> Missing[ "NotSupported" ],
-    "Reasoning"                  :> If[ TrueQ @ $gpt5Reasoning, "Minimal", Missing[ "NotSupported" ] ],
+    "Reasoning"                  -> "Minimal",
     "StopTokens"                 -> Missing[ "NotSupported" ],
     "Temperature"                -> Missing[ "NotSupported" ],
     "TokenizerName"              -> "gpt-4o",
@@ -430,7 +430,7 @@ $modelAutoSettings[ Automatic, "GPT5" ] = <|
 
 $modelAutoSettings[ Automatic, "GPT51" ] = <|
     $modelAutoSettings[ Automatic, "GPT5" ],
-    "Reasoning" :> If[ TrueQ @ $gpt5Reasoning, "None", Missing[ "NotSupported" ] ]
+    "Reasoning" -> "None"
 |>;
 
 $modelAutoSettings[ Automatic, "GPT52" ] = <|
@@ -446,7 +446,7 @@ $modelAutoSettings[ Automatic, "GPT53" ] =
 $modelAutoSettings[ Automatic, "GPT53Chat" ] = <|
     $modelAutoSettings[ Automatic, "GPT53" ],
     "MaxContextTokens" -> 128000,
-    "Reasoning" :> If[ TrueQ @ $gpt5Reasoning, "Medium", Missing[ "NotSupported" ] ] (* TODO: Doesn't support parameter value of 'none'. *)
+    "Reasoning" -> "Medium" (* TODO: Doesn't support parameter value of 'none'. *)
 |>;
 
 $modelAutoSettings[ Automatic, "GPT54Plus" ] = <|
@@ -467,8 +467,6 @@ $modelAutoSettings[ Automatic, "GPT54Plus" ] = <|
 $modelAutoSettings[ Automatic, "GPT54Mini" ] = <|
     "MaxContextTokens" -> 400000
 |>;
-
-$gpt5Reasoning := $gpt5Reasoning = pacletVersionAtLeastQ[ "Wolfram/LLMFunctions", "2.2.5" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)

@@ -395,7 +395,6 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `sendChat;
 `sendFeedback;
 `serializeSpeechInput;
-`serviceFrameworkAvailable;
 `serviceIcon;
 `serviceName;
 `setCV;

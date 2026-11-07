@@ -615,17 +615,10 @@ initTools // endDefinition;
 installLLMFunctions // beginDefinition;
 
 installLLMFunctions[ ] := Enclose[
-    Module[ { before, paclet, opts, reload },
+    Module[ { before, paclet, reload },
         before = Quiet @ PacletObject[ "Wolfram/LLMFunctions" ];
         paclet = ConfirmBy[ PacletInstall[ "Wolfram/LLMFunctions" ], PacletObjectQ, "PacletInstall" ];
-
-        If[ ! TrueQ @ Quiet @ PacletNewerQ[ paclet, "1.2.1" ],
-            opts = If[ $CloudEvaluation, PacletSite -> "https://pacletserver.wolfram.com", UpdatePacletSites -> True ];
-            paclet = ConfirmBy[ PacletInstall[ "Wolfram/LLMFunctions", opts ], PacletObjectQ, "PacletUpdate" ];
-            ConfirmAssert[ PacletNewerQ[ paclet, "1.2.1" ], "PacletVersion" ];
-            reload = True,
-            reload = PacletObjectQ @ before && PacletNewerQ[ paclet, before ]
-        ];
+        reload = PacletObjectQ @ before && PacletNewerQ[ paclet, before ];
 
         If[ TrueQ @ reload, reloadLLMFunctions[ ] ];
         Needs[ "Wolfram`LLMFunctions`" -> None ];

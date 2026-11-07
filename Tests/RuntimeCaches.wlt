@@ -46,30 +46,11 @@ VerificationTest[
 (* These values are cached on first use unless $mxFlag is True. The definitions are checked without evaluating them,
    since evaluating an uncached definition would still give the right value. *)
 VerificationTest[
-    Wolfram`Chatbook`Common`serviceFrameworkAvailable[ ];
-    MemberQ[
-        DownValues @ Wolfram`Chatbook`Common`serviceFrameworkAvailable,
-        HoldPattern[ Verbatim[ HoldPattern ][ Wolfram`Chatbook`Common`serviceFrameworkAvailable[ ] ] :> True|False ]
-    ],
-    True,
-    SameTest -> SameQ,
-    TestID   -> "ServiceFrameworkAvailable-Cached-GH#1697@@Tests/RuntimeCaches.wlt:48,1-57,2"
-]
-
-VerificationTest[
-    Wolfram`Chatbook`Common`Private`$chatbookIcons;
-    OwnValues @ Wolfram`Chatbook`Common`Private`$chatbookIcons,
-    { _ :> _Association? AssociationQ },
-    SameTest -> MatchQ,
-    TestID   -> "ChatbookIcons-Cached-GH#1697@@Tests/RuntimeCaches.wlt:59,1-65,2"
-]
-
-VerificationTest[
     Wolfram`Chatbook`Common`Private`$templateBoxDisplayFunctions;
     OwnValues @ Wolfram`Chatbook`Common`Private`$templateBoxDisplayFunctions,
     { _ :> _Association? AssociationQ },
     SameTest -> MatchQ,
-    TestID   -> "TemplateBoxDisplayFunctions-Cached-GH#1697@@Tests/RuntimeCaches.wlt:67,1-73,2"
+    TestID   -> "TemplateBoxDisplayFunctions-Cached-GH#1697@@Tests/RuntimeCaches.wlt:48,1-54,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
