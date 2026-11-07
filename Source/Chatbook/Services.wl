@@ -18,7 +18,7 @@ $ContextAliases[ "sf`"  ] = "ServiceFramework`";
 $llmKit                := $llmKit = $VersionNumber >= 14.1;
 $llmKitService         := LogChatTiming @ getLLMKitService[ ];
 $fallbackLLMKitService := "LLMKit";
-$llmKitPrefix          := If[ TrueQ @ serviceFrameworkAvailable[ ], "LLMKit", "" ];
+$llmKitPrefix          := "LLMKit";
 $allowConnectionDialog  = True;
 $enableLLMServices      = Automatic;
 $modelListCache         = <| |>;
@@ -141,27 +141,6 @@ getUpdatedLLMKitService[ ] := Enclose[
 ];
 
 getUpdatedLLMKitService // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*serviceFrameworkAvailable*)
-serviceFrameworkAvailable // beginDefinition;
-
-serviceFrameworkAvailable[ ] :=
-    With[ { res = serviceFrameworkAvailable @ PacletObject[ "ServiceFramework" ] },
-        If[ TrueQ @ $mxFlag,
-            res, (* Never cache result if building MX file *)
-            serviceFrameworkAvailable[ ] = res
-        ]
-    ];
-
-serviceFrameworkAvailable[ sf_PacletObject? PacletObjectQ ] :=
-    Not @ TrueQ @ PacletNewerQ[ "0.1.0", sf ];
-
-serviceFrameworkAvailable[ _ ] :=
-    False;
-
-serviceFrameworkAvailable // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

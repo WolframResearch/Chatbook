@@ -338,7 +338,7 @@ $modelAutoSettings[ Automatic, "GPT5" ] = <|
 (* GPT-5.1 inherits from GPT-5, overrides one setting *)
 $modelAutoSettings[ Automatic, "GPT51" ] = <|
     $modelAutoSettings[ Automatic, "GPT5" ],
-    "Reasoning" :> If[ TrueQ @ $gpt5Reasoning, "None", Missing[ "NotSupported" ] ]
+    "Reasoning" -> "None"
 |>;
 
 (* GPT-5.2 inherits from GPT-5.1, adds more overrides *)

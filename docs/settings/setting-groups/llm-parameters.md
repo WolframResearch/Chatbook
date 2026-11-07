@@ -195,8 +195,8 @@ When `Automatic`, resolved via `$modelAutoSettings` lookup (no custom `resolveAu
 
 ### Model-Specific Overrides
 
-- **GPT-5**: Resolves to `"Minimal"` if `$gpt5Reasoning` is `True` (i.e., `Wolfram/LLMFunctions` paclet is newer than version `2.2.4`), otherwise `Missing["NotSupported"]`.
-- **GPT-5.1**: Resolves to `"None"` under the same paclet version condition, otherwise `Missing["NotSupported"]`.
+- **GPT-5**: Resolves to `"Minimal"`.
+- **GPT-5.1**: Resolves to `"None"`.
 - No other model families define a `"Reasoning"` override.
 
 When the `"Responses"` request method is used, plain effort levels are expanded to request reasoning summaries. See [`"RequestMethod"`](model-and-service.md#requestmethod).

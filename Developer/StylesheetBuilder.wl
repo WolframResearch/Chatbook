@@ -45,7 +45,6 @@ $styleDataFile              = FileNameJoin @ { $assetLocation, "Styles.wl" };
 $workspaceStyleDataFile     = FileNameJoin @ { $assetLocation, "WorkspaceStyles.wl" };
 $sidebarDataFile            = FileNameJoin @ { $assetLocation, "SidebarStyles.wl" };
 $pacletDirectory            = DirectoryName[ $inputFileName, 2 ];
-$iconManifestFile           = FileNameJoin @ { $pacletDirectory, "Assets", "Icons.wxf" };
 $displayFunctionsFile       = FileNameJoin @ { $pacletDirectory, "Assets", "DisplayFunctions.wxf" };
 $coreExtensionsTarget       = FileNameJoin @ { $pacletDirectory, "FrontEnd", "Assets", "Extensions", "CoreExtensions.nb" };
 $styleSheetTarget           = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Chatbook.nb" };
@@ -227,8 +226,6 @@ $suppressButtonAppearance = Dynamic @ FEPrivate`FrontEndResource[
 
 $iconFiles = FileNames[ "*.wl", $iconDirectory ];
 $iconNames = FileBaseName /@ $iconFiles;
-
-Developer`WriteWXFFile[ $iconManifestFile, AssociationMap[ RawBoxes @ TemplateBox[ { }, #1 ] &, $iconNames ] ];
 
 
 
