@@ -12,8 +12,6 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (*Config*)
 $cloudRasterizerLocation = "/Chatbook/API/RasterizerService";
 
-$checkEvaluationCell := $VersionNumber <= 13.2; (* Flag that determines whether to use workarounds for #187 *)
-
 (* Used to determine whether or not interactive input (e.g. ChoiceDialog, DialogInput) can be used: *)
 $dialogInputAllowed := ! Or[
     TrueQ @ $SynchronousEvaluation,
@@ -236,7 +234,6 @@ cellTaggedQ[ ___                               ] := False;
 (* ::Subsection::Closed:: *)
 (*checkEvaluationCell*)
 checkEvaluationCell // beginDefinition;
-checkEvaluationCell[ cell_ ] /; $checkEvaluationCell := rootEvaluationCell @ cell;
 checkEvaluationCell[ $Failed ] := rootEvaluationCell @ $Failed;
 checkEvaluationCell[ cell_CellObject ] := cell;
 checkEvaluationCell // endDefinition;

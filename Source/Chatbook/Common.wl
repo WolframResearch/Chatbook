@@ -136,13 +136,6 @@ $closedChatCellOptions :=
         Sequence @@ { CellMargins -> -2, CellOpen -> False, CellFrame -> 0, ShowCellBracket -> False }
     ];
 
-$versionRequirements = <|
-    "AccentedCells"            -> 14.0,
-    "DynamicSplit"             -> 13.3,
-    "TaskWriteOutput"          -> 14.0,
-    "TrackScrollingWhenPlaced" -> 14.0
-|>;
-
 (* Delayed so that loading the MX file gives False: $BuildingMX is only set while building it and isn't saved in it *)
 $mxFlag := TrueQ @ Wolfram`ChatbookInternal`$BuildingMX;
 $resourceFunctionContext = "Wolfram`Chatbook`ResourceFunctions`";
@@ -1650,8 +1643,6 @@ $inlineExpressionRules := $inlineExpressionRules =
 (*sufficientVersionQ*)
 sufficientVersionQ // beginDefinition;
 sufficientVersionQ[ version_? NumberQ ] := TrueQ[ $VersionNumber >= version ];
-sufficientVersionQ[ id_String ] := sufficientVersionQ[ id ] = sufficientVersionQ[ id, $versionRequirements[ id ] ];
-sufficientVersionQ[ id_, version_? NumberQ ] := sufficientVersionQ @ version;
 sufficientVersionQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1659,8 +1650,6 @@ sufficientVersionQ // endDefinition;
 (*insufficientVersionQ*)
 insufficientVersionQ // beginDefinition;
 insufficientVersionQ[ version_? NumberQ ] := TrueQ[ $VersionNumber < version ];
-insufficientVersionQ[ id_String ] := insufficientVersionQ[ id ] = insufficientVersionQ[ id, $versionRequirements[ id ] ];
-insufficientVersionQ[ id_, version_? NumberQ ] := insufficientVersionQ @ version;
 insufficientVersionQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

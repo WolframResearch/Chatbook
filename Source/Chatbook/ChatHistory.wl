@@ -200,8 +200,6 @@ filterChatCells // endDefinition;
 (*accentIncludedCells*)
 accentIncludedCells // beginDefinition;
 
-accentIncludedCells[ ___ ] /; insufficientVersionQ[ "AccentedCells" ] := Null;
-
 accentIncludedCells[ ___, $Failed, ___ ] := Null;
 
 accentIncludedCells[ cell_CellObject ] :=
@@ -225,7 +223,6 @@ accentIncludedCells0 // endDefinition;
 (* ::Subsection::Closed:: *)
 (*removeCellAccents*)
 removeCellAccents // beginDefinition;
-removeCellAccents[ ___ ] /; insufficientVersionQ[ "AccentedCells" ] := Null;
 removeCellAccents[ nbo_NotebookObject ] := FE`Evaluate @ FEPrivate`AccentedCellsSet[ nbo, { } ];
 removeCellAccents[ cell_CellObject ] := removeCellAccents @ parentNotebook @ cell;
 removeCellAccents[ $Failed ] := Null;

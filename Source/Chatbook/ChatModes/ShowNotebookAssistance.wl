@@ -410,7 +410,7 @@ autoShowNotebookAssistance // beginDefinition;
 
 (* The cell insertion prompt was deprecated in 15.0 but keep this in case we use the prompt in some other interface. *)
 (* SIDEBAR: "Need help getting started?" prompt in the cell insertion bar *)
-autoShowNotebookAssistance[ "CellInsertionPoint", obj0_, opts: OptionsPattern[ ] ] /; sufficientVersionQ[ 15.0 ] := Enclose[
+autoShowNotebookAssistance[ "CellInsertionPoint", obj0_, opts: OptionsPattern[ ] ] := Enclose[
     Catch @ Module[ { nbo, newCell, uuid, sidebarInfo, sidebarCell, cellObject },
         nbo = ConfirmMatch[ EvaluationNotebook[ ], _NotebookObject, "Notebook" ];
         uuid = ConfirmBy[ createUUID[ ], StringQ, "UUID" ];
@@ -463,22 +463,6 @@ autoShowNotebookAssistance[ "CellInsertionPoint", obj0_, opts: OptionsPattern[ ]
         ];
 
         Null (* so output from this evaluation passes the ConfirmMatch check in ShowNotebookAssistance *)
-    ],
-    throwInternalFailure
-];
-
-autoShowNotebookAssistance[ "CellInsertionPoint", obj0_, opts: OptionsPattern[ ] ] := Enclose[
-    Catch @ Module[ { nbo, cells, obj },
-        nbo = ConfirmMatch[ EvaluationNotebook[ ], _NotebookObject, "Notebook" ];
-        cells = ConfirmMatch[ Cells @ nbo, { ___CellObject }, "Cells" ];
-        obj = ConfirmMatch[ If[ obj0 === Automatic, nbo, obj0 ], _CellObject|_NotebookObject, "Object" ];
-
-        (* It's an empty notebook, so start workspace chat with the getting started prompt: *)
-        If[ cells === { }, Throw @ ShowNotebookAssistance[ obj, "GettingStarted", opts ] ];
-
-        (* Otherwise open an inline chat without initial evaluation: *)
-        SelectionMove[ nbo, Previous, Cell ];
-        ShowNotebookAssistance[ obj, "Inline", opts ]
     ],
     throwInternalFailure
 ];

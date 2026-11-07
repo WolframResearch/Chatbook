@@ -4,7 +4,6 @@ Wolfram`ChatbookStartupDump`$loadStart = SessionTime[ ];
 	loading code, which clears names in the Wolfram`Chatbook` context
 *)
 Wolfram`ChatbookStartupDump`$ContextInfo = {$Context, $ContextPath, $ContextAliases};
-Wolfram`ChatbookStartupDump`$versionString = TextString @ $VersionNumber <> "." <> TextString @ $ReleaseNumber;
 
 (*----------------------------*)
 (* Add CreateNotebook["Chat"] *)

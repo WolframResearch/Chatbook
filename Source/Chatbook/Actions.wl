@@ -1092,7 +1092,7 @@ chatContextDialogChatContextPreprompt[ existingSetting_ ] := {
                 InputField[
                     Dynamic @ fieldContent,
                     String,
-                    BaseStyle         -> { "DialogText", FontColor -> If[ sufficientVersionQ[ 14.3 ], ThemeColor[ "Foreground" ], Black ] },
+                    BaseStyle         -> { "DialogText", FontColor -> ThemeColor[ "Foreground" ] },
                     ContinuousAction  -> False,
                     FrameMargins      -> 4,
                     ImageSize         -> Scaled[ 1 ],
@@ -1130,7 +1130,7 @@ chatContextDialogInputFormCell[ existingSetting_, tag_String ] :=
                 InputField[
                     Dynamic @ fieldContent,
                     Hold[Expression], (* Can't be ContinuousAction -> True *)
-                    BaseStyle         -> {"Input", FormatType -> StandardForm, FontColor -> If[ sufficientVersionQ[ 14.3 ], ThemeColor[ "Foreground" ], Black ], ShowSyntaxStyles -> True},
+                    BaseStyle         -> {"Input", FormatType -> StandardForm, FontColor -> ThemeColor[ "Foreground" ], ShowSyntaxStyles -> True},
                     FrameMargins      -> 4,
                     ImageSize         -> Scaled[ 1 ],
                     ReturnEntersInput -> False,

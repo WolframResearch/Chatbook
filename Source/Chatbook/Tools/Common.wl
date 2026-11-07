@@ -612,27 +612,7 @@ getToolSelectionTypes // endDefinition;
 (*initTools*)
 initTools // beginDefinition;
 
-initTools[ ] := initTools[ ] = (
-
-    If[ $CloudEvaluation && $VersionNumber <= 13.2,
-
-        If[ PacletFind[ "ServiceConnection_OpenAI" ] === { },
-            PacletInstall[ "ServiceConnection_OpenAI", PacletSite -> "https://pacletserver.wolfram.com" ]
-        ];
-
-        WithCleanup[
-            Unprotect @ TemplateObject,
-            TemplateObject // Options = DeleteDuplicatesBy[
-                Append[ Options @ TemplateObject, MetaInformation -> <| |> ],
-                ToString @* First
-            ],
-            Protect @ TemplateObject
-        ]
-    ];
-
-
-    installLLMFunctions[ ];
-);
+initTools[ ] := initTools[ ] = ( installLLMFunctions[ ]; );
 
 initTools // endDefinition;
 

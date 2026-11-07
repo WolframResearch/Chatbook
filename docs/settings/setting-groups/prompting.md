@@ -147,8 +147,6 @@ Four built-in generators are registered in `$defaultPromptGenerators` (`DefaultP
 - **`"RelatedWolframAlphaResults"`** — queries Wolfram Alpha for relevant results via `RelatedWolframAlphaResults` from `RelatedWolframAlphaResults.wl`
 - **`"WebSearch"`** — performs web searches using the Tavily API, requiring a `TAVILY_API_KEY` system credential
 
-Requires Wolfram Engine 14.1+ (`LLMPromptGenerator` support); on older versions, `toPromptGenerator` returns `Nothing` for all generators.
-
 ### Resolution
 
 Resolution occurs in two stages:
