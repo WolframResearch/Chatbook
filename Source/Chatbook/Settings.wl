@@ -189,9 +189,12 @@ $modelAutoSettings[ "Anthropic", "ClaudeOpus41" ] = <|
     "MaxTokens" -> 32000
 |>;
 
+(* From 4.6 on, every Claude model has a 1M window and 128k output, as the Models API reports in max_input_tokens and
+   max_tokens; 4.5 and earlier keep Claude4's 200000 and 64000. Later tiers inherit both values: *)
 $modelAutoSettings[ "Anthropic", "Claude46" ] = <|
     $modelAutoSettings[ "Anthropic", "Claude4" ],
-    "MaxTokens" -> 128000
+    "MaxContextTokens" -> 1000000,
+    "MaxTokens"        -> 128000
 |>;
 
 (* Temperature is rejected from 4.7 onward, and by every 5.x model: *)
@@ -200,16 +203,14 @@ $modelAutoSettings[ "Anthropic", "Claude47Plus" ] = <|
     "Temperature" -> Missing[ "NotSupported" ]
 |>;
 
-(* Opus 5 and Sonnet 5 carry a 1M window, not the 200000 inherited from Claude4. A future Haiku 5
-   with a smaller window would need a BaseID-keyed override, the way ClaudeOpus41 does. *)
+(* The Anthropic route needs nothing beyond Claude47Plus for 5.x; the OpenRouter Claude5 entry and ClaudeFable5 build
+   on this one. A future 5.x model with a smaller window would need a BaseID-keyed override, the way ClaudeOpus41 does. *)
 $modelAutoSettings[ "Anthropic", "Claude5" ] = <|
-    $modelAutoSettings[ "Anthropic", "Claude47Plus" ],
-    "MaxContextTokens" -> 1000000
+    $modelAutoSettings[ "Anthropic", "Claude47Plus" ]
 |>;
 
 $modelAutoSettings[ "Anthropic", "ClaudeFable5" ] = <|
     $modelAutoSettings[ "Anthropic", "Claude5" ],
-    "MaxContextTokens" -> 1000000,
     (* few-shot tool examples trigger fable-5's reasoning_extraction refusal *)
     "ToolExamplePrompt" -> None,
     (* permitted: Automatic | "None" | "low"|"medium"|"high"|"max" | "adaptive" | Quantity[n,"Tokens"] *)

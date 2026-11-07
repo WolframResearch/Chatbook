@@ -604,7 +604,7 @@ All model families currently defined in `chooseModelFamily0` (`Models.wl`):
 | `"Claude2"` | `{ "Claude", "2.0"\|"2.1" }` | `Anthropic` |
 | `"Claude3"` | `{ "Claude", "3", ___ }` | `Anthropic` |
 | `"Claude4"` | `{ "Claude", "Haiku"\|"Sonnet"\|"Opus", "4", ___ }` | `Anthropic` |
-| `"Claude46"` | `{ "Claude", "Haiku"\|"Sonnet"\|"Opus", "4", "6", ___ }` | `Anthropic` (128k output; inherits from Claude4) |
+| `"Claude46"` | `{ "Claude", "Haiku"\|"Sonnet"\|"Opus", "4", "6", ___ }` | `Anthropic` (1M context, 128k output; inherits from Claude4) |
 | `"Claude47Plus"` | `{ "Claude", "Haiku"\|"Sonnet"\|"Opus", "4", "7"\|"8"\|"9", ___ }` | `Anthropic` (temperature unsupported; inherits from Claude46) |
 | `"Claude5"` | `{ "Claude", "Haiku"\|"Sonnet"\|"Opus", "5", ___ }` | `Anthropic`, `OpenRouter` (1M context; inherits from Claude47Plus). Covers Opus 5 and Sonnet 5. |
 | `"ClaudeFable5"` | `{ "Claude", "Fable", "5", ___ }` | `Anthropic`, `OpenRouter` (thinking mandatory). Covers Fable 5.1 too: the trailing `___` absorbs the point release, so `claude-fable-5-1` and `anthropic/claude-fable-5.1` both land here. `BaseID` is `"ClaudeFable51"`, the handle for a 5.1-only override if one is ever needed. |

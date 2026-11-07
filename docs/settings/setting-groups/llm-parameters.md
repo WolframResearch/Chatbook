@@ -147,7 +147,8 @@ When `Automatic`, resolved by `autoMaxContextTokens` (`Settings.wl`), which disp
 
 | Model | Value |
 | ----- | ----- |
-| Claude 3/4 | `200000` |
+| Claude 3, Claude 4 through 4.5 | `200000` |
+| Claude 4.6 and later | `1000000` |
 | GPT-4o | `128000` |
 | Gemini 2+, GPT-4.1 | `1047576` |
 | GPT-5 | `400000` |
