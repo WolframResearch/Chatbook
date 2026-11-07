@@ -1537,19 +1537,49 @@ makeMessageContent // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*allowedMultimodalRoles*)
 allowedMultimodalRoles // beginDefinition;
-allowedMultimodalRoles[ settings_ ] := allowedMultimodalRoles0 @ toModelName @ settings[ "Model" ];
+
+(* A family or service may declare which roles can carry an image; anything undeclared falls back to
+   the model name check below. It has to be declarable per service because the same model can be
+   restricted on one route and not another: OpenRouter's Anthropic adapter rejects an image_url block
+   in a system message, which is where Chatbook puts tool result images, so "anthropic/claude-fable-5"
+   declares { "User" } there, while the Anthropic service accepts that image and stays unrestricted. *)
+
+(* A model given by name alone belongs to the same service that makeLLMConfiguration0 gives it: *)
+allowedMultimodalRoles[ settings: KeyValuePattern[ "Model" -> name_String ] ] :=
+    allowedMultimodalRoles @ <| settings, "Model" -> { serviceName @ name, name } |>;
+
+(* Declared roles are keyed by service, so only a model that names one is looked up. A resolved model made from a bare
+   name has no service, and resolving a model with no name fails, so neither is looked up: *)
+allowedMultimodalRoles[
+    settings: KeyValuePattern[ "Model" -> KeyValuePattern @ { "Service" -> _String, "Name" -> _ } | { _String, _ } ]
+] :=
+    Replace[
+        autoModelSetting[ settings, "MultimodalRoles" ],
+        Except[ { __String } ] :> allowedMultimodalRoles0 @ settings[ "Model" ]
+    ];
+
+allowedMultimodalRoles[ settings_ ] :=
+    allowedMultimodalRoles0 @ settings[ "Model" ];
+
 allowedMultimodalRoles // endDefinition;
 
 
 allowedMultimodalRoles0 // beginDefinition;
 
-allowedMultimodalRoles0[ model_String ] := allowedMultimodalRoles0[ model ] =
-    If[ StringContainsQ[ model, WordBoundary~~"gpt-4o"~~WordBoundary ],
+allowedMultimodalRoles0[ KeyValuePattern[ "Name"|"Model" -> name_ ] ] :=
+    allowedMultimodalRoles0 @ name;
+
+allowedMultimodalRoles0[ { _String, name_ } ] :=
+    allowedMultimodalRoles0 @ name;
+
+allowedMultimodalRoles0[ name_String ] := allowedMultimodalRoles0[ name ] =
+    If[ StringContainsQ[ toModelName @ name, WordBoundary~~"gpt-4o"~~WordBoundary ],
         { "User" },
         All
     ];
 
-allowedMultimodalRoles0[ _Missing ] := All;
+(* Nothing to check, as with Automatic or a missing model, means no restriction: *)
+allowedMultimodalRoles0[ _ ] := All;
 
 allowedMultimodalRoles0 // endDefinition;
 
