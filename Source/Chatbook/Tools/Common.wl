@@ -198,13 +198,6 @@ getToolByName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*getToolByShortName*)
-getToolByShortName // beginDefinition;
-getToolByShortName[ cmd_String ] := SelectFirst[ $toolBox, toolShortName[ #1 ] === cmd & ];
-getToolByShortName // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
 (*toolName*)
 toolName // beginDefinition;
 toolName[ tool_ ] := toolName[ tool, Automatic ];

@@ -117,7 +117,6 @@ formatRaw // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*Table Item String Patterns*)
 $$delimiterItem = $$ws ~~ (":"|"") ~~ $$ws ~~ "-".. ~~ $$ws ~~ (":"|"") ~~ $$ws;
-$$delimiterRow  = $$delimiterItem ~~ ("|" ~~ $$delimiterItem)..;
 
 
 emptyTableItemQ[ ""               ] := True;

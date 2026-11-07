@@ -135,16 +135,6 @@ relatedDocumentationListGenerator[ messages: $$chatMessages ] :=
 
 relatedDocumentationListGenerator // endDefinition;
 
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*relatedWolframAlphaQueriesGenerator*)
-relatedWolframAlphaQueriesGenerator // beginDefinition;
-
-relatedWolframAlphaQueriesGenerator[ messages: $$chatMessages ] :=
-    LogChatTiming @ RelatedWolframAlphaQueries[ messages, "Prompt" ];
-
-relatedWolframAlphaQueriesGenerator // endDefinition;
-
 (* TODO: prompt generator selectors that work like tool selections *)
 
 (* ::**************************************************************************************************************:: *)

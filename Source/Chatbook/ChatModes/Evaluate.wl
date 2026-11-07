@@ -13,8 +13,6 @@ Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 $$inlineChatInput   = Cell[ __, "ChatInput" , ___ ];
 $$inlineChatOutput  = Cell[ __, "ChatOutput", ___ ];
 $$inlineMessage     = $$inlineChatInput|$$inlineChatOutput;
-$$inlineMessages    = { $$inlineMessage.. };
-$$inlineMessagesIn  = { $$inlineMessage..., $$inlineChatInput  };
 $$inlineMessagesOut = { $$inlineMessage..., $$inlineChatOutput };
 
 (* ::**************************************************************************************************************:: *)
@@ -125,38 +123,6 @@ evaluateSidebarChat[ nbo_NotebookObject, sidebarCell_CellObject, input_, Dynamic
 ];
 
 evaluateSidebarChat // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*evaluateevaluateChatbarChat*)
-evaluateChatbarChat // beginDefinition;
-
-evaluateChatbarChat[ nbo_NotebookObject, anchor:_CellObject | None, selectionAtTopQ:True|False, input_ ] := Enclose[
-    Module[ { text, uuid, cellExpr, cellObject },
-
-        cellObject = None;
-        text = makeBoxesInputMoreTextLike @ input;
-        uuid = ConfirmBy[ createUUID[ ], StringQ, "UUID" ];
-
-        cellExpr = Cell[ text, "ChatInput", CellTags -> uuid ];
-
-        (* FIXME: could really use selection snapshot... *)
-        If[ anchor === None || MatchQ[ anchor, _CellObject ] && FailureQ @ Developer`CellInformation @ anchor,
-            SelectionMove[ nbo, If[ selectionAtTopQ, Before, After ], Notebook, AutoScroll -> True ];
-            NotebookWrite[ nbo, cellExpr ]
-            ,
-            NotebookWrite[ NotebookLocationSpecifier[ anchor, "After" ], cellExpr ]
-        ];
-        cellObject = First[ Cells[ nbo, CellTags -> uuid, CellStyle -> "ChatInput" ], Missing[ "CellNotAvailable" ] ];
-        ConfirmMatch[ cellObject, _CellObject, "FooterChatInputCellObject" ];
-        setCurrentValue[ cellObject, CellTags, Inherited ];
-
-        ConfirmMatch[ ChatCellEvaluate[ cellObject, nbo ], _ChatObject|Null, "ChatCellEvaluate" ]
-    ],
-    throwInternalFailure
-];
-
-evaluateChatbarChat // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

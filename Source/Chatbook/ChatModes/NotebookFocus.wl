@@ -192,17 +192,6 @@ DynamicModule[
 
 focusedNotebookDisplay0 // endDefinition;
 
-
-$enableNotebookFocusLabel := $enableNotebookFocusLabel = Tooltip[
-    chatbookIcon[ "WorkspaceFocusIndicatorUncheck", False ],
-    tr[ "WorkspaceFocusIndicatorEnableTooltip" ]
-];
-
-$disableNotebookFocusLabel := $disableNotebookFocusLabel = Tooltip[
-    chatbookIcon[ "WorkspaceFocusIndicatorCheck", False ],
-    tr[ "WorkspaceFocusIndicatorDisableTooltip" ]
-];
-
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*setFocusWindowTitle*)
@@ -280,8 +269,6 @@ currentNotebookButtonLabel[ title_ ] := Mouseover[
 ];
 
 currentNotebookButtonLabel // endDefinition;
-
-$smallNotebookIcon := $smallNotebookIcon = chatbookIcon[ "WorkspaceFocusIndicatorNotebook", False ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
