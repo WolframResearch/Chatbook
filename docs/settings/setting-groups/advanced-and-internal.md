@@ -180,7 +180,7 @@ The default `$DefaultChatProcessingFunctions` (`Settings.wl`) is defined using `
 | `"ChatSubmit"` | `Automatic` | Submits prepared messages to the LLM service. When `Automatic`, resolves to `` LLMServices`ChatSubmit `` or `URLSubmit` depending on the code path. |
 | `"FormatChatOutput"` | `FormatChatOutput` | Formats LLM response text for notebook display. Dispatches on a `"Status"` key (`"Streaming"`, `"Finished"`, `"Waiting"`) and converts Markdown to formatted notebook expressions via `reformatTextData`. |
 | `"FormatToolCall"` | `FormatToolCall` | Formats tool call data for display in the notebook. Takes a raw tool call string and parsed data association. |
-| `"WriteChatOutputCell"` | `WriteChatOutputCell` | Writes the formatted output cell to the notebook. For inline chat, delegates to `writeInlineChatOutputCell`; for regular chat, uses `NotebookWrite`. |
+| `"WriteChatOutputCell"` | `WriteChatOutputCell` | Writes the formatted output cell to the notebook using `NotebookWrite`. |
 
 ### Resolution
 

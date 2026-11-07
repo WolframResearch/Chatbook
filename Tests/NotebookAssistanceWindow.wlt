@@ -423,4 +423,46 @@ VerificationTest[
     TestID   -> "MovedNotice-SharesTitlePlace@@Tests/NotebookAssistanceWindow.wlt:392,1-424,2"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Default Types*)
+
+(* A NotebookObject opens the sidebar by default, and a CellObject uses the given (or default) type on its parent
+   notebook: *)
+VerificationTest[
+    UsingFrontEnd @ Module[ { nbo, cell, results },
+        nbo  = CreateDocument[ { Cell[ "1 + 1", "Input" ] }, Visible -> False ];
+        cell = First @ Cells @ nbo;
+        WithCleanup[
+            (* Symbols instead of pure functions, since LogChatTiming names the timing after the head: *)
+            Block[
+                {
+                    Wolfram`Chatbook`ChatModes`ShowNotebookAssistance`Private`showNotebookAssistanceSidebar,
+                    Wolfram`Chatbook`ChatModes`ShowNotebookAssistance`Private`showNotebookAssistanceWindow
+                },
+                Wolfram`Chatbook`ChatModes`ShowNotebookAssistance`Private`showNotebookAssistanceSidebar[ nb_, ___ ] := { "Sidebar", nb };
+                Wolfram`Chatbook`ChatModes`ShowNotebookAssistance`Private`showNotebookAssistanceWindow[ nb_, ___ ]  := { "Window" , nb };
+                results = {
+                    ShowNotebookAssistance @ nbo,
+                    ShowNotebookAssistance @ cell,
+                    ShowNotebookAssistance[ cell, "Sidebar" ],
+                    ShowNotebookAssistance[ cell, "Window" ],
+                    ShowNotebookAssistance[ cell, Automatic ]
+                }
+            ],
+            NotebookClose @ nbo
+        ];
+        results /. nbo -> "Notebook"
+    ],
+    {
+        { "Sidebar", "Notebook" },
+        { "Sidebar", "Notebook" },
+        { "Sidebar", "Notebook" },
+        { "Window" , "Notebook" },
+        { "Window" , "Notebook" }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ShowNotebookAssistance-DefaultTypes@@Tests/NotebookAssistanceWindow.wlt:432,1-466,2"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)

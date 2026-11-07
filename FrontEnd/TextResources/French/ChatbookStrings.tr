@@ -248,7 +248,6 @@
 "ChatbarOptionsGettingData" -> "R\[EAcute]cup\[EAcute]ration du profil utilisateur\[Ellipsis]",
 
 "MenuItemShowNotebookAssistanceWindow" -> "Chat AI Assistant\[Ellipsis]",
-"MenuItemShowNotebookAssistanceInline" -> "AI Assistant pour la s\[EAcute]lection",
 "MenuItemShowContentSuggestions" -> "Suggestion de contenu par l\[CloseCurlyQuote]IA",
 
 "SidebarToolbarButtonTooltipHideSidebar" -> "Masquer l\[CloseCurlyQuote]assistant du notebook",
@@ -296,9 +295,6 @@
 "WorkspaceFocusIndicatorFocus" -> "Focus :",
 "WorkspaceFocusIndicatorMenuTooltip" -> "Choisissez un notebook sur lequel vous vous concentrerez pour obtenir un contexte suppl\[EAcute]mentaire.",
 "WorkspaceFocusIndicatorMenuAutomatic" -> "Choisir automatiquement",
-
-"InlineChatButtonTooltipClose" -> "Fermer",
-"InlineChatButtonTooltipViewNotebookAssist" -> "Voir dans le chat de l\[CloseCurlyQuote]assistant du notebook",
 
 "NotebookAssistanceInputGettingStarted" -> "Aide\[Hyphen]moi \[AGrave] d\[EAcute]marrer",
 "NotebookAssistanceInputErrorMessage" -> "Qu\[CloseCurlyQuote]est\[Hyphen]ce qui n\[CloseCurlyQuote]a pas fonctionn\[EAcute]\[NonBreakingSpace]?",

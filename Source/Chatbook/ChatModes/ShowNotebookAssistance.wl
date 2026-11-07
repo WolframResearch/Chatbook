@@ -40,13 +40,6 @@ $notebookAssistanceWorkspaceSettings := <|
     "WorkspaceChat"         -> True
 |>;
 
-$notebookAssistanceInlineSettings := <|
-    $notebookAssistanceBaseSettings,
-    "AutoGenerateTitle"     -> False,
-    "AutoSaveConversations" -> False,
-    "InlineChat"            -> True
-|>;
-
 NotebookAssistanceSidebarSettings // beginDefinition;
 NotebookAssistanceSidebarSettings[ ] := $notebookAssistanceSidebarSettings
 NotebookAssistanceSidebarSettings // endDefinition;
@@ -78,7 +71,7 @@ $workspaceChatNotebookOptions := Sequence[
     |>
 ];
 
-$$notebookAssistanceMenuItem = "Inline"|"Window"|"ContentSuggestions";
+$$notebookAssistanceMenuItem = "Window"|"ContentSuggestions";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -106,21 +99,6 @@ EnableNotebookAssistance // endExportedDefinition;
 (* ::Subsection::Closed:: *)
 (*$notebookAssistanceMenuItems*)
 $notebookAssistanceMenuItems = <|
-    "Inline" :> FrontEnd`AddMenuCommands[
-        "OpenHelpLink",
-        {
-            MenuItem[
-                FrontEndResource[ "ChatbookStrings", "MenuItemShowNotebookAssistanceInline" ],
-                FrontEnd`KernelExecute[
-                    Needs[ "Wolfram`Chatbook`" -> None ];
-                    Symbol[ "Wolfram`Chatbook`ShowNotebookAssistance" ][ "Inline" ]
-                ],
-                FrontEnd`MenuEvaluator -> Automatic,
-                FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { "Control", "Shift" } ]
-            ]
-        }
-    ],
-
     "Window" :> FrontEnd`AddMenuCommands[
         "OpenHelpLink",
         {
@@ -190,13 +168,13 @@ Chatbook::MissingNotebookAssistanceInput = "No code assistance input defined for
 Chatbook::InvalidExtraInstructions       = "Expected a string or None instead of `1` for ExtraInstructions.";
 
 GeneralUtilities`SetUsage[ ShowNotebookAssistance, "\
-ShowNotebookAssistance[] shows code assistance in a new or existing window.
+ShowNotebookAssistance[] shows code assistance for the currently selected notebook.
 ShowNotebookAssistance[\"type$\"] shows code assistance of the specified type for the currently selected notebook.
 ShowNotebookAssistance[obj$, \"type$\"] shows code assistance of the specified type for the given front end object obj$.
 
-* The value for \"type$\" can be \"Window\", \"Inline\", Automatic, or a string representing a predefined configuration.
-* The value for obj$ can be a NotebookObject or a CellObject.
-* The default value for \"type$\" is \"Window\" when obj$ is a NotebookObject, and \"Inline\" for a CellObject.
+* The value for \"type$\" can be \"Sidebar\", \"Window\", Automatic, or a string representing a predefined configuration.
+* The value for obj$ can be a NotebookObject or a CellObject. A CellObject uses its parent notebook.
+* The default value for \"type$\" is \"Sidebar\".
 * ShowNotebookAssistance accepts the following options:
 | EvaluateInput     | False     | Whether to evaluate the initial chat input                                      |
 | ExtraInstructions | None      | Additional instructions to include in the system prompt for the LLM             |
@@ -204,7 +182,6 @@ ShowNotebookAssistance[obj$, \"type$\"] shows code assistance of the specified t
 | NewChat           | Automatic | Whether to start a new chat                                                     |
 * If EvaluateInput is True, a value must be given for Input or InputName.
 * Specifying NewChat \[Rule] True will clear the existing code assistance chat (if any).
-* The setting for NewChat has no effect for Inline code assistance.
 * Possible values for \"name$\" in Key[\"name$\"] can be found in Keys[$NotebookAssistanceInputs].\
 " ];
 
@@ -214,14 +191,14 @@ ShowNotebookAssistance[obj$, \"type$\"] shows code assistance of the specified t
 
 (* The zero argument form uses "Window" by default pre 15.0, "Sidebar" otherwise: *)
 ShowNotebookAssistance[ opts: OptionsPattern[ ] ] /; BoxForm`sufficientVersionQ[ 15.0 ] :=
-    catchMine @ ShowNotebookAssistance[ "Sidebar" | "SideBar", opts ];
+    catchMine @ ShowNotebookAssistance[ "Sidebar", opts ];
 
 ShowNotebookAssistance[ opts: OptionsPattern[ ] ] :=
     catchMine @ ShowNotebookAssistance[ "Window", opts ];
 
-(* Uses "Window" if given a NotebookObject: *)
+(* Same defaults if given a NotebookObject: *)
 ShowNotebookAssistance[ nbo_NotebookObject, opts: OptionsPattern[ ] ] /; BoxForm`sufficientVersionQ[ 15.0 ] :=
-    catchMine @ ShowNotebookAssistance[ nbo, "Sidebar" | "SideBar", opts ];
+    catchMine @ ShowNotebookAssistance[ nbo, "Sidebar", opts ];
 
 ShowNotebookAssistance[ nbo_NotebookObject, opts: OptionsPattern[ ] ] :=
     catchMine @ ShowNotebookAssistance[ nbo, "Window", opts ];
@@ -286,46 +263,22 @@ ShowNotebookAssistance[ nbo: _NotebookObject|None, "Window"|Automatic, opts: Opt
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*Inline*)
-ShowNotebookAssistance[ "Inline", opts: OptionsPattern[ ] ] :=
-    catchMine @ withChatState @ LogChatTiming @ ShowNotebookAssistance[ InputNotebook[ ], "Inline", opts ];
-
-ShowNotebookAssistance[ nbo_NotebookObject, "Inline", opts: OptionsPattern[ ] ] :=
-    catchMine @ withChatState @ withExtraInstructions[
-        OptionValue[ "ExtraInstructions" ],
-        showNotebookAssistanceInline[
-            nbo,
-            LogChatTiming @ validateOptionInput @ OptionValue[ "Input" ],
-            OptionValue[ "EvaluateInput" ],
-            OptionValue[ "ChatNotebookSettings" ]
-        ]
-    ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
 (*From CellObjects*)
 
-(* A CellObject uses "Inline" by default: *)
-ShowNotebookAssistance[ cell_CellObject, opts: OptionsPattern[ ] ] :=
-    catchMine @ ShowNotebookAssistance[ cell, "Inline", opts ];
-
-(* If given a CellObject, move selection to the cell, then use "Inline" on the parent notebook: *)
-ShowNotebookAssistance[ cell0_CellObject, "Inline"|Automatic, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
-    withChatState @ Module[ { cell, nbo },
-        (* Use the top-level parent in case cell0 is an attached or inline cell: *)
-        cell = ConfirmMatch[ topParentCell @ cell0, _CellObject, "Cell" ];
+(* A CellObject uses the default type of its parent notebook: *)
+ShowNotebookAssistance[ cell_CellObject, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
+    withChatState @ Module[ { nbo },
         nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "Notebook" ];
-        SelectionMove[ cell, All, Cell ];
-        ShowNotebookAssistance[ nbo, "Inline", opts ]
+        ShowNotebookAssistance[ nbo, opts ]
     ],
     throwInternalFailure
 ];
 
-(* If given a CellObject, use "Window" on the parent notebook: *)
-ShowNotebookAssistance[ cell_CellObject, "Window", opts: OptionsPattern[ ] ] := catchMine @ Enclose[
+(* If given a CellObject and a type, use that type on the parent notebook: *)
+ShowNotebookAssistance[ cell_CellObject, type: "Sidebar"|"SideBar"|"Window"|Automatic, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
     withChatState @ Module[ { nbo },
         nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "Notebook" ];
-        ShowNotebookAssistance[ nbo, "Window", opts ]
+        ShowNotebookAssistance[ nbo, type, opts ]
     ],
     throwInternalFailure
 ];
@@ -334,14 +287,6 @@ ShowNotebookAssistance[ cell_CellObject, "Window", opts: OptionsPattern[ ] ] := 
 (* ::Subsection::Closed:: *)
 (*Named Aliases*)
 $aliasRules = <|
-    "ErrorMessage" -> <|
-        "DefaultObject" :> EvaluationCell[ ],
-        "Type"          -> "Inline",
-        "Options"       -> <|
-            "Input"         -> Key[ "ErrorMessage" ],
-            "EvaluateInput" -> True
-        |>
-    |>,
     "GettingStarted" -> <|
         "DefaultObject" :> EvaluationNotebook[ ],
         "Type"          -> "Window",
@@ -351,11 +296,6 @@ $aliasRules = <|
             "NewChat"              -> True,
             "ChatNotebookSettings" -> <| "MinimumResponsesToSave" -> 2 |>
         |>
-    |>,
-    "NotebookToolbarInline" -> <|
-        "DefaultObject" :> EvaluationNotebook[ ],
-        "Type"          -> "Inline",
-        "Options"       -> <| |>
     |>,
     "NotebookToolbarWindow" -> <|
         "DefaultObject" :> EvaluationNotebook[ ],
@@ -391,7 +331,7 @@ ShowNotebookAssistance[ alias: $$alias, opts: OptionsPattern[ ] ] := catchMine @
 
 ShowNotebookAssistance[ obj: _CellObject|_NotebookObject, alias: $$alias, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
     Module[ { type, options },
-        type = ConfirmMatch[ $aliasRules[ alias, "Type" ], "Window"|"Inline", "Type" ];
+        type = ConfirmMatch[ $aliasRules[ alias, "Type" ], "Window", "Type" ];
         options = ConfirmBy[ $aliasRules[ alias, "Options" ], AssociationQ, "Options" ];
         ShowNotebookAssistance[ obj, type, opts, Sequence @@ Normal[ options, Association ] ]
     ],
@@ -467,22 +407,6 @@ autoShowNotebookAssistance[ "CellInsertionPoint", obj0_, opts: OptionsPattern[ ]
     throwInternalFailure
 ];
 
-autoShowNotebookAssistance[ "CellInsertionPoint", obj0_, opts: OptionsPattern[ ] ] := Enclose[
-    Catch @ Module[ { nbo, cells, obj },
-        nbo = ConfirmMatch[ EvaluationNotebook[ ], _NotebookObject, "Notebook" ];
-        cells = ConfirmMatch[ Cells @ nbo, { ___CellObject }, "Cells" ];
-        obj = ConfirmMatch[ If[ obj0 === Automatic, nbo, obj0 ], _CellObject|_NotebookObject, "Object" ];
-
-        (* It's an empty notebook, so start workspace chat with the getting started prompt: *)
-        If[ cells === { }, Throw @ ShowNotebookAssistance[ obj, "GettingStarted", opts ] ];
-
-        (* Otherwise open an inline chat without initial evaluation: *)
-        SelectionMove[ nbo, Previous, Cell ];
-        ShowNotebookAssistance[ obj, "Inline", opts ]
-    ],
-    throwInternalFailure
-];
-
 autoShowNotebookAssistance // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -532,52 +456,6 @@ validateOptionInput[ Key[ name_String ] ] :=
     ];
 
 validateOptionInput // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
-(*Inline Notebook Assistance*)
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*showNotebookAssistanceInline*)
-showNotebookAssistanceInline // beginDefinition;
-
-showNotebookAssistanceInline[ nbo_NotebookObject, input_, evaluate_, settings0_Association ] := Enclose[
-    Module[ { settings, attached },
-
-        settings = ConfirmBy[
-            mergeChatSettings @ { $notebookAssistanceInlineSettings, settings0 },
-            AssociationQ,
-            "Settings"
-        ];
-
-        attached = attachInlineChatInput[ nbo, settings ];
-
-        setInlineInputAndEvaluate[ attached, input, evaluate ]
-    ],
-    throwInternalFailure
-];
-
-showNotebookAssistanceInline[ _ ] :=
-    Beep[ "No notebook selected for code assistance." ];
-
-showNotebookAssistanceInline // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*setInlineInputAndEvaluate*)
-setInlineInputAndEvaluate // beginDefinition;
-
-setInlineInputAndEvaluate[ attached_CellObject, input_, evaluate_ ] := (
-    If[ validInputStringQ @ input, $WorkspaceChatInput = input ];
-    If[ TrueQ @ evaluate, evaluateAttachedInlineChat[ ] ];
-    attached
-);
-
-setInlineInputAndEvaluate[ Null, input_, evaluate_ ] :=
-    Null;
-
-setInlineInputAndEvaluate // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

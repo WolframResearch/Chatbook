@@ -182,20 +182,6 @@ VerificationTest[
     TestID   -> "Caches-EntityBoxes@@Tests/FormattingCaches.wlt:171,1-183,2"
 ]
 
-VerificationTest[
-    cacheBehavior[
-        {
-            Wolfram`Chatbook`Formatting`Private`$inlineTemplateBoxesCache,
-            Wolfram`Chatbook`Formatting`Private`$maxInlineTemplateBoxesCacheSize
-        },
-        Wolfram`Chatbook`Formatting`Private`checkTemplateBoxes[ #, True ] &,
-        Table[ RowBox @ { ToString @ i }, { i, 10 } ]
-    ],
-    $cacheBehavior,
-    SameTest -> MatchQ,
-    TestID   -> "Caches-InlineTemplateBoxes@@Tests/FormattingCaches.wlt:185,1-197,2"
-]
-
 (* WolframAlpha is replaced here, so that the test doesn't need the internet: *)
 VerificationTest[
     Block[ { WolframAlpha = RowBox @ { ## } & },
@@ -210,7 +196,7 @@ VerificationTest[
     ],
     $cacheBehavior,
     SameTest -> MatchQ,
-    TestID   -> "Caches-FreeformBoxes@@Tests/FormattingCaches.wlt:200,1-214,2"
+    TestID   -> "Caches-FreeformBoxes@@Tests/FormattingCaches.wlt:186,1-200,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

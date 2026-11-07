@@ -27,12 +27,12 @@ floatingButtonGrid[ cell_Cell, lang_ ] :=
         cellObj = topParentCell @ EvaluationCell[ ];
         Grid[
             {
-                checkTemplateBoxes @ Which[
+                Which[
                     TrueQ @ currentChatContainerSetting[ cellObj, "WorkspaceChat" ],
                         codeBlockWorkspaceButtons[ lang, EvaluationCell[ ], True ],
                     TrueQ @ currentChatContainerSetting[ cellObj, "SidebarChat" ],
                         codeBlockWorkspaceButtons[ lang, EvaluationCell[ ], "Sidebar" ],
-                    True, (* Chatbook or inline *)
+                    True, (* Chatbook *)
                         codeBlockButtons[ lang, EvaluationCell[ ], False ]
                 ]
             },
@@ -50,7 +50,7 @@ floatingButtonGrid[ string_, lang_ ] := RawBoxes @ templateBox[
     {
         ToBoxes @ Grid[
             {
-                checkTemplateBoxes @ codeBlockButtons[ lang, string, False ]
+                codeBlockButtons[ lang, string, False ]
             },
             Alignment -> Top,
             Spacings  -> 0.2
@@ -93,23 +93,6 @@ plaintextLanguageQ // beginDefinition;
 plaintextLanguageQ[ language_String ] := MemberQ[ { "text", "plaintext" }, ToLowerCase @ language ];
 plaintextLanguageQ[ ___ ] := False;
 plaintextLanguageQ // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*checkTemplateBoxes*)
-checkTemplateBoxes // beginDefinition;
-checkTemplateBoxes[ boxes_ ] := checkTemplateBoxes[ boxes, $InlineChat ];
-(* The boxes are usually a list, so they're wrapped in Key, since Lookup would otherwise look up each element: *)
-checkTemplateBoxes[ boxes_, True ] := Lookup[
-    $inlineTemplateBoxesCache,
-    Key @ boxes,
-    addToCache[ $inlineTemplateBoxesCache, $maxInlineTemplateBoxesCacheSize, boxes, inlineTemplateBoxes @ boxes ]
-];
-checkTemplateBoxes[ boxes_, _ ] := boxes;
-checkTemplateBoxes // endDefinition;
-
-$inlineTemplateBoxesCache        = <| |>;
-$maxInlineTemplateBoxesCacheSize = 100;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

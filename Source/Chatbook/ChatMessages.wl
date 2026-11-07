@@ -214,9 +214,6 @@ constructMessages // beginDefinition;
 
 constructMessages[ _Association? AssociationQ, { } ] := { };
 
-constructMessages[ settings_Association? AssociationQ, cells: { __CellObject } ] /; $InlineChat :=
-    constructInlineMessages @ settings;
-
 constructMessages[ settings_Association? AssociationQ, cells: { __CellObject } ] :=
     constructMessages[ settings, notebookRead @ cells ];
 
@@ -363,36 +360,16 @@ dynamicOutputCellQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*constructInlineMessages*)
-constructInlineMessages // beginDefinition;
-
-constructInlineMessages[ settings_ ] :=
-    constructInlineMessages[ settings, $inlineChatState ];
-
-constructInlineMessages[ settings_, state_Association ] :=
-    constructInlineMessages[ settings, state, state[ "MessageCells" ] ];
-
-constructInlineMessages[ settings_, state_, Dynamic[ cells_ ] ] :=
-    constructInlineMessages[ settings, state, cells ];
-
-constructInlineMessages[ settings_, state_, cells: { __Cell } ] :=
-    constructMessages[ settings, cells ];
-
-constructInlineMessages // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*addPrompts*)
 addPrompts // beginDefinition;
 
 addPrompts[ settings_Association, messages_List ] := Enclose[
     Block[ { $contextImages = { } },
-        Module[ { custom, workspace, inline, sidebar, prompt, withImages },
+        Module[ { custom, workspace, sidebar, prompt, withImages },
             custom     = ConfirmMatch[ assembleCustomPrompt @ settings, None|_String, "Custom"    ];
             workspace  = ConfirmMatch[ getWorkspacePrompt @ settings  , None|_String, "Workspace" ];
-            inline     = ConfirmMatch[ getInlineChatPrompt @ settings , None|_String, "Inline"    ];
             sidebar    = ConfirmMatch[ getSidebarPrompt @ settings    , None|_String, "Sidebar"   ];
-            prompt     = StringRiffle[ Select[ { custom, workspace, inline, sidebar }, StringQ ], "\n\n" ];
+            prompt     = StringRiffle[ Select[ { custom, workspace, sidebar }, StringQ ], "\n\n" ];
             withImages = ConfirmMatch[ addContextImages[ messages, $contextImages ], _List, "WithImages" ];
             addPrompts[ prompt, withImages ]
         ]

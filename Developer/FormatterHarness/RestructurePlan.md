@@ -233,7 +233,7 @@ cells. A split point that isn't also a token boundary makes the static cells dif
   `$$mdRow2` on long pipe-free lines matters (still quadratic at regex speed: 133 ms on an 18 KB line). It would have
   to be golden-identical, with the shields that keep today's behavior.
 * **Committed-block streaming cache** (the streaming design, PRs 5–7). Trigger: drive-frontend runs show refreshes
-  matter for long dynamic content. Inline chat and cloud notebooks have no static split, so they reformat the whole
+  matter for long dynamic content. Cloud notebooks have no static split, so they reformat the whole
   response on every refresh, about 1.7 ms/KB after PR 2. The streaming design measured 20.4 → 2.8 ms per refresh on
   10 KB of prose.
 * **Replacing `$dynamicSplitRules` with a scanner, and final-cell reuse.** These depend on the block cache.
@@ -314,8 +314,8 @@ bold cells 1646 → 28 ms; 7 KB of escaped prose 1081 → 57 ms. PR 3 measured w
 ### 4.3 What stays slow
 
 * A refresh still reformats all dynamic content: about 1.7 ms/KB for prose after PR 2. That's small for typical
-  answers, because the static split keeps dynamic content under 1.6 KB across the corpus. Inline chat and cloud
-  notebooks don't split. The fix is the committed-block cache (§2.8).
+  answers, because the static split keeps dynamic content under 1.6 KB across the corpus. Cloud notebooks don't
+  split. The fix is the committed-block cache (§2.8).
 * `$$mdRow2` is still quadratic at regex speed (an 18 KB pipe-free line takes 133 ms). The ` ``code`` ` rule is
   quadratic in text with many ` `` `. `parseToolCallString` takes about 0.8 s on a 10 KB one-line tool result; it's
   worth profiling as a follow-up, since there is probably another exact pattern fix there.
@@ -463,7 +463,7 @@ Inline code unescaping (157) and the serializer re-escaping it (166) cancel each
   * (c) also add the incremental streaming block cache.
 
   *Recommendation: (a) now.* Revisit (b) if block quirk fixes pile up, and (c) only if drive-frontend runs show slow
-  refreshes on long answers (inline chat and cloud have no static split).
+  refreshes on long answers (cloud has no static split).
 * **D4. Paragraph-level inline precedence** (§5.2 C: literal `**` around `` `Plot` ``, link labels with code). Options:
   * (a) leave;
   * (b) a separate PR after PR 8 that sends paragraph text through the full inline rules (changes 6–10 corpus files

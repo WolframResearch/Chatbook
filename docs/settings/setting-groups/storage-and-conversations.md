@@ -23,7 +23,6 @@ The `AutoSaveConversations` setting depends on `ConversationUUID` being a valid 
 ### Chat Mode Overrides
 
 - **Workspace chat and sidebar chat**: automatically generate a new UUID when starting a new conversation (`ChatModes/UI.wl`) or when initialized via NotebookAssistance settings (`ChatModes/ShowNotebookAssistance.wl`).
-- **Inline chat**: does not set a UUID (falls back to `None`).
 
 When loading a saved conversation, the stored UUID is restored to `CurrentChatSettings` for the target notebook or cell.
 
@@ -63,7 +62,6 @@ When `True`, conversations are saved after each chat evaluation. The `autoSaveQ`
 ### Chat Mode Overrides
 
 - **Workspace chat and sidebar chat**: set to `True` (with a new `ConversationUUID`).
-- **Inline chat**: set to `False`.
 
 ### Integration Points
 

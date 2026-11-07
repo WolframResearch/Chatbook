@@ -13,7 +13,6 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (*Configuration*)
 $dynamicTriggers = <|
     "ChatBlock"            :> $chatBlockTrigger,
-    "InlineChatScrollPane" :> $inlineChatScrollPaneTrigger,
     "Models"               :> $modelsTrigger,
     "Personas"             :> $personasTrigger,
     "Preferences"          :> $preferencesTrigger,

@@ -29,7 +29,6 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$DefaultToolOptions;
 `$DefaultTools;
 `$IncludedCellWidget;
-`$InlineChat;
 `$InstalledTools;
 `$LastChatbookFailure;
 `$LastChatbookFailureText;
@@ -226,7 +225,6 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "$DefaultSkills",
     "$DefaultToolOptions",
     "$DefaultTools",
-    "$InlineChat",
     "$InstalledTools",
     "$LastChatbookFailure",
     "$LastChatbookFailureText",

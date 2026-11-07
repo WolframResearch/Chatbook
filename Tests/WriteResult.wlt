@@ -145,11 +145,11 @@ VerificationTest[
         Keys @ Wolfram`Chatbook`Common`$staticCodeBlockCache
     ],
     {
-        { "wl", "m = {{2, -1}, {-1, 2}};\nEigenvalues[m]", False, False, False, False, False },
-        { "wl", "In[1]:= Eigenvalues[m]\nOut[1]= {3, 1}", False, False, False, False, False },
-        { "Python", "import numpy as np\nprint(np.linalg.eigvals([[2, -1], [-1, 2]]))", False, False, False, False, False },
-        { "json", "{\"matrix\": [[2, -1], [-1, 2]]}", False, False, False, False, False },
-        { "", "lambda = 3, 1", False, False, False, False, False }
+        { "wl", "m = {{2, -1}, {-1, 2}};\nEigenvalues[m]", False, False, False, False },
+        { "wl", "In[1]:= Eigenvalues[m]\nOut[1]= {3, 1}", False, False, False, False },
+        { "Python", "import numpy as np\nprint(np.linalg.eigvals([[2, -1], [-1, 2]]))", False, False, False, False },
+        { "json", "{\"matrix\": [[2, -1], [-1, 2]]}", False, False, False, False },
+        { "", "lambda = 3, 1", False, False, False, False }
     },
     SameTest -> MatchQ,
     TestID   -> "StaticCodeBlockCache-Populated-While-Streaming@@Tests/WriteResult.wlt:142,1-156,2"

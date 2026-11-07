@@ -89,7 +89,7 @@ When dynamic splitting is enabled (`$dynamicSplit` is `True`), the `splitDynamic
 
 When disabled, all streaming content remains in a single dynamic cell until the response completes.
 
-Dynamic splitting is also disabled in headless mode (`$headlessChat`), inline chat (`$InlineChat`), cloud notebooks (`$cloudNotebooks`), and when the Wolfram Engine version is insufficient (`insufficientVersionQ["DynamicSplit"]`).
+Dynamic splitting is also disabled in headless mode (`$headlessChat`), cloud notebooks (`$cloudNotebooks`), and when the Wolfram Engine version is insufficient (`insufficientVersionQ["DynamicSplit"]`).
 
 ### Integration Points
 

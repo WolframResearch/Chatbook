@@ -248,7 +248,6 @@
 "ChatbarOptionsGettingData" -> "Recuperando perfil de usuario\[Ellipsis]",
 
 "MenuItemShowNotebookAssistanceWindow" -> "Chat de AI Assistant\[Ellipsis]",
-"MenuItemShowNotebookAssistanceInline" -> "AI Assistant para la selecci\[OAcute]n",
 "MenuItemShowContentSuggestions" -> "Sugerencia de contenido de IA",
 
 "SidebarToolbarButtonTooltipHideSidebar" -> "Ocultar asistente de cuaderno",
@@ -296,9 +295,6 @@
 "WorkspaceFocusIndicatorFocus" -> "Enfoque:",
 "WorkspaceFocusIndicatorMenuTooltip" -> "Seleccione un cuaderno en el cual enfocarse para obtener contexto adicional",
 "WorkspaceFocusIndicatorMenuAutomatic" -> "Seleccionar autom\[OAcute]ticamente",
-
-"InlineChatButtonTooltipClose" -> "Cerrar",
-"InlineChatButtonTooltipViewNotebookAssist" -> "Ver en chat de asistencia de cuadernos",
 
 "NotebookAssistanceInputGettingStarted" -> "Ay\[UAcute]dame a comenzar",
 "NotebookAssistanceInputErrorMessage" -> "\[DownQuestion]Qu\[EAcute] sali\[OAcute] mal?",

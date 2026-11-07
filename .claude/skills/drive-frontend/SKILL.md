@@ -166,7 +166,6 @@ last cell and type `'` first, which turns the new cell into a `ChatInput`.
 | History overlay | `NAHistoryFirstPage`, `NAHistoryPageLeft`, `NAHistoryPageRight`, `NAHistoryLastPage`, `NAHistorySearchButton` |
 | Sidebar (use `--in sidebar`) | `NASidebarNewChat`, `NASidebarSourcesToggle`, `NASidebarHistoryToggle`, `NASidebarOpenAsAssistantWindowButton`, `NASidebarClose`, `AttachedChatInputField`, `NASidebarChatInputCellSendButton` |
 | Chat bar (bottom of notebooks) | `AttachedChatInputField`, `NAChatbarChatInputCellSendButton`, `NAChatbarOptionsButton` |
-| Inline chat | `NACloseInlineChat`, `NAPopOutAsWorkspaceChat` |
 
 Find more with `grep -rn 'BoxID' Source/Chatbook`. Controls built with `EventHandler` (tool-call expanders, focus
 checkboxes, "Copy as" menus, code block buttons) have no BoxID: locate them in a screenshot and `click --image U,V`.
