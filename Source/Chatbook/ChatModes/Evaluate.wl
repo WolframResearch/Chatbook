@@ -118,7 +118,6 @@ evaluateSidebarChat // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(* ::Subsubsection::Closed:: *)
 (*makeBoxesInputMoreTextLike*)
 makeBoxesInputMoreTextLike // beginDefinition;
 

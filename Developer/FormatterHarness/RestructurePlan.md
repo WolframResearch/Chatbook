@@ -218,7 +218,7 @@ cells. A split point that isn't also a token boundary makes the static cells dif
 * The Common interface (CommonSymbols.wl) defined here: `reformatTextData`, `$dynamicSplitRules`,
   `$resultCellCache`, `$staticCodeBlockCache`, `$useStaticCodeBlockCache`, `$customToolFormatter`,
   `$simpleToolMethod`, `floatingButtonGrid`, `insertCodeBelow`, `makeInteractiveCodeCell`, `toolAutoFormatter`,
-  `toolShortNameQ`, `stringToBoxes`, `boxDataQ`, `assistantMessageBox(Active)` and `userMessageBox`.
+  `toolShortNameQ`, `stringToBoxes`, `boxDataQ` and `assistantMessageBoxActive`.
 * Box shapes that Serialization.wl, Explode.wl and Actions.wl match: the InlineSection PaneBox/StyleBox, the bullet
   `TextData` prefix, `TextTableForm` with the HeadedColumns TagBox, the `MarkdownImage` TagBox, the `ImageNotFound`
   template, `ChatCodeBlockTemplate` (plus the Sidebar variant), the three-argument
