@@ -100,13 +100,6 @@ $dialogStyles = Notebook[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*headerStyle*)
-headerStyle // beginDefinition;
-headerStyle[ expr_, opts___ ] := Style[ expr, FontWeight -> Bold, opts ];
-headerStyle // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*dialogHeader*)
 dialogHeader // beginDefinition;
 dialogHeader[ expr_           ] := dialogHeader[ expr, Automatic ];
@@ -128,13 +121,6 @@ dialogBody // beginDefinition;
 dialogBody[ expr_           ] := dialogBody[ expr, Automatic ];
 dialogBody[ expr_, margins_ ] := dialogPane[ expr, "DialogBody", margins ];
 dialogBody // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*spanAcross*)
-spanAcross // beginDefinition;
-spanAcross[ expr_ ] := { expr, SpanFromLeft };
-spanAcross // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

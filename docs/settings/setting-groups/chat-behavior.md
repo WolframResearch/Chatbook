@@ -112,7 +112,6 @@ Additionally, `truncateString` is used throughout `Serialization.wl` for other c
 Special local overrides within `Serialization.wl`:
 
 - `GridBox` table rendering temporarily sets `$maxOutputCellStringLength = 2*$cellPageWidth` for table cell content.
-- `getExamplesString` (documentation example extraction) temporarily sets it to `100` for compact example summaries.
 - Cells matching `$$noTruncateStyle` (`"AlphabeticalListing"`) temporarily set it to `Infinity` to disable truncation entirely.
 
 ### Chat Mode Overrides

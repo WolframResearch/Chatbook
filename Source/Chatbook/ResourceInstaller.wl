@@ -45,16 +45,6 @@ $unsavedResourceProperties = {
     "Usage"
 };
 
-$minimalResourceProperties = {
-    "Description",
-    "DocumentationLink",
-    "LatestUpdate",
-    "ReleaseDate",
-    "RepositoryLocation",
-    "UUID",
-    "Version"
-};
-
 $resourceBrowseURLs = <|
     "Prompt"  -> "https://resources.wolframcloud.com/PromptRepository/category/personas",
     "LLMTool" -> "https://resources.wolframcloud.com/LLMToolRepository"

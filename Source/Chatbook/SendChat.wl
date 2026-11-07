@@ -3268,28 +3268,6 @@ prepareChatOutputPage[ target_CellObject, cell_Cell ] := Enclose[
 
 prepareChatOutputPage // endDefinition;
 
-
-deleteFEObjectIfKernelQuit // beginDefinition;
-
-deleteFEObjectIfKernelQuit[ expr_, Hold[ objToDelete_ ] ] :=
-DynamicModule[ { kernelWasQuitQ = False, originalSessionID = $SessionID }, (* front-end boxes memoize the $SessionID that created them *)
-    DynamicWrapper[
-        PaneSelector[
-            { False -> expr, True -> Spacer @ 0 }, (* hide content while we wait for the cell to delete *)
-            Dynamic @ kernelWasQuitQ,
-            ImageSize -> Automatic],
-
-        If[ kernelWasQuitQ, NotebookDelete @ objToDelete ],
-
-        SynchronousUpdating -> False
-    ],
-
-    Initialization :> (kernelWasQuitQ = (originalSessionID =!= $SessionID)) (* whenever the cell re-draws, check the $SessionID *)
-];
-
-deleteFEObjectIfKernelQuit // endDefinition;
-
-
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*activeAIAssistantCell*)
@@ -4385,27 +4363,6 @@ textLink[ label_, url_String ] := ButtonBox[
 ];
 
 textLink // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*errorBoxes*)
-errorBoxes // ClearAll;
-
-(* TODO: define error messages for other documented responses *)
-errorBoxes[ as: KeyValuePattern[ "Error" -> "ServerResponseEmpty" ] ] :=
-    ToBoxes @ messageFailure[ "ServerResponseEmpty", as ];
-
-errorBoxes[ as: KeyValuePattern[ "StatusCode" -> 429 ] ] :=
-    ToBoxes @ messageFailure[ "RateLimitReached", as ];
-
-errorBoxes[ as: KeyValuePattern[ "StatusCode" -> code: Except[ 100|200 ] ] ] :=
-    ToBoxes @ messageFailure[ "UnknownStatusCode", as ];
-
-errorBoxes[ failure_Failure ] :=
-    ToBoxes @ failure;
-
-errorBoxes[ as___ ] :=
-    ToBoxes @ messageFailure[ "UnknownResponse", as ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

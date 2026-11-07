@@ -486,16 +486,6 @@ checkResponse // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*displayError*)
-displayError // beginDefinition;
-
-displayError[ nbo_NotebookObject ] :=
-    CurrentValue[ nbo, { TaggingRules, "ErrorText" } ];
-
-displayError // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*createImageFile*)
 createImageFile // beginDefinition;
 createImageFile[ data_Association ] := createImageFile @ data[ "Image" ];

@@ -618,14 +618,6 @@ cleanupStaleChats // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*getAttachmentsForSaving*)
-getAttachmentsForSaving // beginDefinition;
-getAttachmentsForSaving[ messages_ ] := getAttachmentsForSaving[ messages, GetAttachments[ messages, All ] ];
-getAttachmentsForSaving[ messages_, as_Association ] := If[ AllTrue[ as, SameAs @ <| |> ], None, as ];
-getAttachmentsForSaving // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*prepareMessagesForSaving*)
 prepareMessagesForSaving // beginDefinition;
 
