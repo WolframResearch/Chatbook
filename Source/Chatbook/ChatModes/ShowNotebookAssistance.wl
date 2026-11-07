@@ -136,11 +136,11 @@ ShowNotebookAssistance[obj$, \"type$\"] shows code assistance of the specified t
 
 (* The zero argument form uses "Sidebar" by default: *)
 ShowNotebookAssistance[ opts: OptionsPattern[ ] ] :=
-    catchMine @ ShowNotebookAssistance[ "Sidebar" | "SideBar", opts ];
+    catchMine @ ShowNotebookAssistance[ "Sidebar", opts ];
 
 (* Uses "Sidebar" if given a NotebookObject: *)
 ShowNotebookAssistance[ nbo_NotebookObject, opts: OptionsPattern[ ] ] :=
-    catchMine @ ShowNotebookAssistance[ nbo, "Sidebar" | "SideBar", opts ];
+    catchMine @ ShowNotebookAssistance[ nbo, "Sidebar", opts ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
