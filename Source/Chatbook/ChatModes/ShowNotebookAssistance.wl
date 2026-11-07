@@ -85,91 +85,13 @@ $$notebookAssistanceMenuItem = "Inline"|"Window"|"ContentSuggestions";
 (*EnableNotebookAssistance*)
 EnableNotebookAssistance // beginDefinition;
 
-EnableNotebookAssistance[ ] :=
-    catchMine @ EnableNotebookAssistance @ Automatic;
-
-EnableNotebookAssistance[ Automatic ] := catchMine @
-    If[ $VersionNumber >= 14.1,
-        enableNotebookAssistance @ { "Window", "ContentSuggestions" },
-        enableNotebookAssistance @ { "Window" }
-    ];
-
-EnableNotebookAssistance[ keys: { $$notebookAssistanceMenuItem.. } ] :=
-    catchMine @ enableNotebookAssistance @ DeleteDuplicates @ keys;
-
-EnableNotebookAssistance[ key: $$notebookAssistanceMenuItem ] :=
-    catchMine @ enableNotebookAssistance @ { key };
+(* Menu items were moved into the front end proper for 15.0, so there is nothing left to enable: *)
+EnableNotebookAssistance[ ] := Null;
+EnableNotebookAssistance[ Automatic ] := Null;
+EnableNotebookAssistance[ { $$notebookAssistanceMenuItem.. } ] := Null;
+EnableNotebookAssistance[ $$notebookAssistanceMenuItem ] := Null;
 
 EnableNotebookAssistance // endExportedDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*$notebookAssistanceMenuItems*)
-$notebookAssistanceMenuItems = <|
-    "Inline" :> FrontEnd`AddMenuCommands[
-        "OpenHelpLink",
-        {
-            MenuItem[
-                FrontEndResource[ "ChatbookStrings", "MenuItemShowNotebookAssistanceInline" ],
-                FrontEnd`KernelExecute[
-                    Needs[ "Wolfram`Chatbook`" -> None ];
-                    Symbol[ "Wolfram`Chatbook`ShowNotebookAssistance" ][ "Inline" ]
-                ],
-                FrontEnd`MenuEvaluator -> Automatic,
-                FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { "Control", "Shift" } ]
-            ]
-        }
-    ],
-
-    "Window" :> FrontEnd`AddMenuCommands[
-        "OpenHelpLink",
-        {
-            MenuItem[
-                FrontEndResource[ "ChatbookStrings", "MenuItemShowNotebookAssistanceWindow" ],
-                FrontEnd`KernelExecute[
-                    Needs[ "Wolfram`Chatbook`" -> None ];
-                    Symbol[ "Wolfram`Chatbook`ShowNotebookAssistance" ][ "Window", "NewChat" -> "Toggle" ]
-                ],
-                FrontEnd`MenuEvaluator -> Automatic,
-                Evaluate[
-                    If[ $OperatingSystem === "MacOSX",
-                        FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { "Control" } ],
-                        FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { "Command" } ]
-                    ]
-                ]
-            ]
-        }
-    ],
-
-    "ContentSuggestions" :> FrontEnd`AddMenuCommands[
-        "DuplicatePreviousOutput",
-        {
-            MenuItem[
-                FrontEndResource[ "ChatbookStrings", "MenuItemShowContentSuggestions" ],
-                FrontEnd`KernelExecute[
-                    Needs[ "Wolfram`Chatbook`" -> None ];
-                    Symbol[ "Wolfram`Chatbook`ShowContentSuggestions" ][ ]
-                ],
-                FrontEnd`MenuEvaluator -> Automatic,
-                Evaluate[
-                    If[ $OperatingSystem === "MacOSX",
-                        FrontEnd`MenuKey[ "k", FrontEnd`Modifiers -> { "Control" } ],
-                        FrontEnd`MenuKey[ "k", FrontEnd`Modifiers -> { "Command" } ]
-                    ]
-                ],
-                Method -> "Queued"
-            ]
-        }
-    ]
-|>;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*enableNotebookAssistance*)
-enableNotebookAssistance // beginDefinition;
-enableNotebookAssistance[ k: { $$notebookAssistanceMenuItem.. } ] /; BoxForm`sufficientVersionQ[ 15.0 ] := Null
-enableNotebookAssistance[ k: { $$notebookAssistanceMenuItem.. } ] := FrontEndExecute @ Lookup[ $notebookAssistanceMenuItems, k ];
-enableNotebookAssistance // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -190,13 +112,13 @@ Chatbook::MissingNotebookAssistanceInput = "No code assistance input defined for
 Chatbook::InvalidExtraInstructions       = "Expected a string or None instead of `1` for ExtraInstructions.";
 
 GeneralUtilities`SetUsage[ ShowNotebookAssistance, "\
-ShowNotebookAssistance[] shows code assistance in a new or existing window.
+ShowNotebookAssistance[] shows code assistance in the sidebar of the currently selected notebook.
 ShowNotebookAssistance[\"type$\"] shows code assistance of the specified type for the currently selected notebook.
 ShowNotebookAssistance[obj$, \"type$\"] shows code assistance of the specified type for the given front end object obj$.
 
-* The value for \"type$\" can be \"Window\", \"Inline\", Automatic, or a string representing a predefined configuration.
+* The value for \"type$\" can be \"Sidebar\", \"Window\", \"Inline\", Automatic, or a string representing a predefined configuration.
 * The value for obj$ can be a NotebookObject or a CellObject.
-* The default value for \"type$\" is \"Window\" when obj$ is a NotebookObject, and \"Inline\" for a CellObject.
+* The default value for \"type$\" is \"Sidebar\" when obj$ is a NotebookObject, and \"Inline\" for a CellObject.
 * ShowNotebookAssistance accepts the following options:
 | EvaluateInput     | False     | Whether to evaluate the initial chat input                                      |
 | ExtraInstructions | None      | Additional instructions to include in the system prompt for the LLM             |
@@ -212,19 +134,13 @@ ShowNotebookAssistance[obj$, \"type$\"] shows code assistance of the specified t
 (* ::Subsection::Closed:: *)
 (*Defaults*)
 
-(* The zero argument form uses "Window" by default pre 15.0, "Sidebar" otherwise: *)
-ShowNotebookAssistance[ opts: OptionsPattern[ ] ] /; BoxForm`sufficientVersionQ[ 15.0 ] :=
-    catchMine @ ShowNotebookAssistance[ "Sidebar" | "SideBar", opts ];
-
+(* The zero argument form uses "Sidebar" by default: *)
 ShowNotebookAssistance[ opts: OptionsPattern[ ] ] :=
-    catchMine @ ShowNotebookAssistance[ "Window", opts ];
+    catchMine @ ShowNotebookAssistance[ "Sidebar", opts ];
 
-(* Uses "Window" if given a NotebookObject: *)
-ShowNotebookAssistance[ nbo_NotebookObject, opts: OptionsPattern[ ] ] /; BoxForm`sufficientVersionQ[ 15.0 ] :=
-    catchMine @ ShowNotebookAssistance[ nbo, "Sidebar" | "SideBar", opts ];
-
+(* Uses "Sidebar" if given a NotebookObject: *)
 ShowNotebookAssistance[ nbo_NotebookObject, opts: OptionsPattern[ ] ] :=
-    catchMine @ ShowNotebookAssistance[ nbo, "Window", opts ];
+    catchMine @ ShowNotebookAssistance[ nbo, "Sidebar", opts ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -796,11 +712,8 @@ attachToLeft[ source_NotebookObject, current_NotebookObject ] := Enclose[
             WindowSize    -> { width, Automatic }
         ];
 
-        If[ (* Starting in Mac 14.2, we can make sure the assistant notebook is on right "space". *)
-            And[
-                BoxForm`sufficientVersionQ[14.2],
-                Internal`CachedSystemInformation["FrontEnd", "OperatingSystem"] === "MacOSX"
-            ],
+        If[ (* On Mac, make sure the assistant notebook is on the right "space". *)
+            Internal`CachedSystemInformation["FrontEnd", "OperatingSystem"] === "MacOSX",
             FE`Evaluate @ Evaluate @ FEPrivate`MoveToActiveDesktop @ current
         ];
 

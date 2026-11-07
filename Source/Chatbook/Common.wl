@@ -1355,7 +1355,7 @@ $chatbookIcons := Enclose[
 (*$templateBoxDisplayFunctions*)
 $templateBoxDisplayFunctions := Enclose[
     Module[ { file, functions },
-        file = ConfirmBy[ $thisPaclet[ "AssetLocation", If[ BoxForm`sufficientVersionQ[ 14.3 ], "DisplayFunctionsDark", "DisplayFunctions" ] ], FileExistsQ, "File" ];
+        file = ConfirmBy[ $thisPaclet[ "AssetLocation", "DisplayFunctionsDark" ], FileExistsQ, "File" ];
         functions = ConfirmBy[ Developer`ReadWXFFile @ file, AssociationQ, "Functions" ];
         If[ TrueQ @ $mxFlag, functions, $templateBoxDisplayFunctions = functions ]
     ],

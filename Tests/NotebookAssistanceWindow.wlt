@@ -419,4 +419,23 @@ VerificationTest[
     TestID   -> "MovedNotice-SharesTitlePlace@@Tests/NotebookAssistanceWindow.wlt:388,1-420,2"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Default Type*)
+
+(* Without a type, ShowNotebookAssistance opens the sidebar (these forms used to fail with InvalidArguments): *)
+VerificationTest[
+    UsingFrontEnd @ Module[ { nbo, results },
+        nbo = CreateDocument[ { Cell[ "1+1", "Input" ] } ];
+        WithCleanup[
+            results = { ShowNotebookAssistance @ nbo, ShowNotebookAssistance[ ] },
+            NotebookClose @ nbo
+        ];
+        results
+    ],
+    { Except[ _Failure ], Except[ _Failure ] },
+    SameTest -> MatchQ,
+    TestID   -> "DefaultTypeIsSidebar@@Tests/NotebookAssistanceWindow.wlt:427,1-439,2"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)
