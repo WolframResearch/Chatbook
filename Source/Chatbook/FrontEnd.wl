@@ -10,7 +10,6 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Config*)
-$cloudRasterizerLocation = "/Chatbook/API/RasterizerService";
 
 $checkEvaluationCell := $VersionNumber <= 13.2; (* Flag that determines whether to use workarounds for #187 *)
 
@@ -22,153 +21,6 @@ $dialogInputAllowed := ! Or[
 ];
 
 $efficientCurrentValue = True;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
-(*Tasks*)
-
-$feTaskDebug           = False;
-$feTasks               = { };
-$feTaskTrigger         = 0;
-$feTaskLog             = Internal`Bag[ ];
-$feTaskCreationCount   = 0;
-$feTaskEvaluationCount = 0;
-$allTaskWidgetsCleared = False;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*initFETaskWidget*)
-initFETaskWidget // beginDefinition;
-
-initFETaskWidget[ nbo_NotebookObject ] /; $cloudNotebooks :=
-    Null;
-
-initFETaskWidget[ nbo_NotebookObject ] := (
-    (* Clear the existing task widget first, since there may be more than one chat notebook visible.
-       We don't want to duplicate task execution due to dynamics firing for both. *)
-    clearExistingFETaskWidget[ ];
-    $feTaskWidgetCell = AttachCell[
-        nbo,
-        $feTaskWidgetContent,
-        { Left, Bottom },
-        0,
-        { Left, Bottom },
-        RemovalConditions -> { "EvaluatorQuit" }
-    ]
-);
-
-initFETaskWidget // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*clearExistingFETaskWidget*)
-clearExistingFETaskWidget // beginDefinition;
-
-clearExistingFETaskWidget[ ] :=
-    If[ ! TrueQ @ $allTaskWidgetsCleared
-        ,
-        Scan[
-            NotebookDelete @ Cells[ #, AttachedCell -> True, CellStyle -> "FETaskWidget" ] &,
-            Notebooks[ ]
-        ];
-        $allTaskWidgetsCleared = True
-        ,
-        Quiet @ NotebookDelete @ $feTaskWidgetCell
-    ];
-
-clearExistingFETaskWidget // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*$feTaskWidgetContent*)
-$feTaskWidgetContent = Cell[
-    BoxData @ ToBoxes @ Dynamic[
-        catchAlways[
-            $feTaskTrigger;
-            runFETasks[ ];
-            If[ TrueQ @ $feTaskDebug,
-                $feTaskDebugPanel,
-                Pane[ "", ImageSize -> { 0, 0 } ]
-            ]
-        ]
-        ,
-        TrackedSymbols :> { $feTaskTrigger }
-    ],
-    "FETaskWidget"
-];
-
-$feTaskDebugPanel := Framed[
-    Grid[
-        {
-            {
-                Row @ { "Created: "  , $feTaskCreationCount   },
-                Row @ { "Pending: "  , Length @ $feTasks      },
-                Row @ { "Evaluated: ", $feTaskEvaluationCount }
-            }
-        },
-        BaseStyle  -> { "Text", FontSize -> 12 },
-        Dividers   -> Center,
-        FrameStyle -> color @ "FETaskDebugPanelFrame",
-        Spacings   -> 1
-    ],
-    Background   -> color @ "FETaskDebugPanelBackground",
-    FrameMargins -> { { 5, 5 }, { 0, 0 } },
-    FrameStyle   -> None
-];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*createFETask*)
-createFETask // beginDefinition;
-createFETask // Attributes = { HoldFirst };
-
-createFETask[ eval_ ] /; $cloudNotebooks :=
-    eval;
-
-createFETask[ eval_ ] :=
-    With[ { inline = $InlineChat, state = $inlineChatState, id = $chatEvaluationID, t = $chatStartTime },
-        If[ $feTaskDebug, Internal`StuffBag[ $feTaskLog, <| "Task" -> Hold @ eval, "Created" -> AbsoluteTime[ ] |> ] ];
-        (* FIXME: This Block is a bit of a hack: *)
-        AppendTo[
-            $feTasks,
-            Hold @ Block[
-                {
-                    $InlineChat       = inline,
-                    $inlineChatState  = state,
-                    $chatEvaluationID = id,
-                    $chatStartTime    = t
-                },
-                eval
-            ]
-        ];
-        ++$feTaskCreationCount;
-        ++$feTaskTrigger
-    ];
-
-createFETask // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*runFETasks*)
-runFETasks // beginDefinition;
-
-runFETasks[ ] := runFETasks @ $feTasks;
-runFETasks[ { } ] := $feTaskTrigger;
-
-runFETasks[ { t_, ts___ } ] :=
-    Block[ { createFETask = # & },
-        $feTasks = { ts };
-        runFETasks @ t;
-        ++$feTaskTrigger
-    ];
-
-runFETasks[ Hold[ eval_ ] ] := (
-    If[ $feTaskDebug, Internal`StuffBag[ $feTaskLog, <| "Task" -> Hold @ eval, "Evaluated" -> AbsoluteTime[ ] |> ] ];
-    ++$feTaskEvaluationCount;
-    eval
-);
-
-runFETasks // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -218,12 +70,6 @@ $evaluationCell :=
             cell
         ]
     ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*cellObjectQ*)
-cellObjectQ[ cell_CellObject ] := MatchQ[ Developer`CellInformation @ cell, KeyValuePattern @ { } ];
-cellObjectQ[ ___             ] := False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -559,24 +405,6 @@ toFileName0[ file_ ] := file;
 toFileName0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*fromFETimestamp*)
-(* TODO: use this when passing notebook info to the LLM *)
-fromFETimestamp // beginDefinition;
-
-fromFETimestamp[ t_Real ] := Enclose[
-    Module[ { date, string, relative },
-        date     = ConfirmBy[ TimeZoneConvert @ DateObject[ t, TimeZone -> 0 ], DateObjectQ, "Date" ];
-        string   = ConfirmBy[ DateString[ date, { "ISODateTime", ".", "Millisecond" } ], StringQ, "String" ];
-        relative = ConfirmBy[ relativeTimeString @ date, StringQ, "Relative" ];
-        string<>" ("<>relative<>")"
-    ],
-    throwInternalFailure
-];
-
-fromFETimestamp // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*parentCell*)
 parentCell // beginDefinition;
@@ -585,42 +413,6 @@ parentCell[ obj: _CellObject|_BoxObject ] /; $cloudNotebooks := cloudParentCell 
 (* parentCell[ obj: _CellObject ] /; cellTaggedQ[ obj, "SidebarTopCell" ] := $Failed; (* don't let side bar cells recurse to the top *) *)
 parentCell[ obj: _CellObject|_BoxObject ] := ParentCell @ obj;
 parentCell // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*nextCell*)
-nextCell // beginDefinition;
-nextCell // Options = { CellStyle -> Automatic };
-
-nextCell[ cell_CellObject, opts: OptionsPattern[ ] ] :=
-    If[ TrueQ @ $cloudNotebooks,
-        cloudNextCell[ cell, OptionValue[ CellStyle ] ],
-        NextCell[ cell, opts ]
-    ];
-
-nextCell // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*cloudNextCell*)
-cloudNextCell // beginDefinition;
-
-cloudNextCell[ cell_CellObject, style_ ] :=
-    cloudNextCell[ cell, parentNotebook @ cell, style ];
-
-cloudNextCell[ cell_CellObject, nbo_NotebookObject, style_ ] :=
-    cloudNextCell[ cell, Cells @ nbo, style ];
-
-cloudNextCell[ cell_, { ___, cell_, next_CellObject, ___ }, Automatic ] :=
-    next;
-
-cloudNextCell[ cell_, { ___, cell_, after__CellObject }, style_ ] :=
-    SelectFirst[ { after }, MemberQ[ cellStyles @ #, style ] &, None ];
-
-cloudNextCell[ _CellObject, _, _ ] :=
-    None;
-
-cloudNextCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -903,21 +695,6 @@ evaluationNotebook // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*withNoRenderUpdates*)
-withNoRenderUpdates // beginDefinition;
-withNoRenderUpdates // Attributes = { HoldRest };
-
-withNoRenderUpdates[ nbo_NotebookObject, evaluation_ ] :=
-    WithCleanup[
-        FrontEndExecute @ FrontEnd`NotebookSuspendScreenUpdates @ nbo,
-        evaluation,
-        FrontEndExecute @ FrontEnd`NotebookResumeScreenUpdates @ nbo
-    ];
-
-withNoRenderUpdates // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
 (*parentNotebook*)
 parentNotebook // beginDefinition;
 parentNotebook[ obj: _CellObject|_BoxObject ] := parentNotebook[ obj, Notebooks @ obj ];
@@ -971,45 +748,6 @@ appendCellObject // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Boxes*)
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*getBoxObjectFromBoxID*)
-getBoxObjectFromBoxID // beginDefinition;
-
-getBoxObjectFromBoxID[ obj_, None ] :=
-    None;
-
-getBoxObjectFromBoxID[ cell_CellObject, uuid_ ] :=
-    Module[ { nbo, sidebarCell },
-        nbo = parentNotebook @ cell;
-        If[ MatchQ[ nbo, _NotebookObject ],
-            If[ TrueQ @ $SidebarChat,
-                sidebarCell = Last[ ParentCell[ cell, All ], cell ];
-                MathLink`CallFrontEnd @ FrontEnd`BoxReferenceBoxObject[
-                    FE`BoxReference[ nbo, { { uuid } } ],
-                    FE`SearchStart -> sidebarCell,
-                    FE`SearchStop  -> sidebarCell
-                ]
-                ,
-                MathLink`CallFrontEnd @ FrontEnd`BoxReferenceBoxObject[
-                    FE`BoxReference[ nbo, { { uuid } } ],
-                    FE`SearchStart -> "StartFromBeginning",
-                    FE`SearchStop  -> "StopAtEnd"
-                ]
-            ]
-            ,
-            (* Getting the parent notebook can fail if the cell has been deleted: *)
-            If[ ! TrueQ @ cellObjectQ @ cell,
-                (* The cell is actually gone so return an appropriate `Missing` object: *)
-                Missing[ "CellRemoved", cell ],
-                (* The cell still exists, so something happened. Time to panic: *)
-                throwInternalFailure @ getBoxObjectFromBoxID[ cell, uuid ]
-            ]
-        ]
-    ];
-
-getBoxObjectFromBoxID // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1488,7 +1226,6 @@ replaceCellContext // endDefinition;
 (* ::Section::Closed:: *)
 (*Package Footer*)
 addToMXInitialization[
-    $feTaskDebug = False;
     $cloudCellFixes;
 ];
 

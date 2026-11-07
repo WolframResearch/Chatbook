@@ -164,34 +164,6 @@ makeSidebarMenuContent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*backButtonAppearance*)
-backButtonAppearanceBasic // beginDefinition;
-
-backButtonAppearanceBasic[ label_, frameStyle_, frameMargins_, size_ ] :=
-Framed[
-    label,
-    Alignment -> { Center, Center },
-    BaselinePosition -> Baseline,
-    FrameMargins -> frameMargins,
-    FrameStyle -> Directive[ AbsoluteThickness[ 1 ], frameStyle ],
-    ImageSize -> size,
-    RoundingRadius -> 2 ]
-
-backButtonAppearanceBasic // endDefinition;
-
-backButtonAppearance // beginDefinition;
-
-backButtonAppearance[ label_, frameMargins_, size_ ] :=
-NotebookTools`Mousedown[
-    backButtonAppearanceBasic[ label, GrayLevel[ 0.785 ], frameMargins, size ],
-    backButtonAppearanceBasic[ label, Lighter @ GrayLevel[ 0.785 ], frameMargins, size ],
-    backButtonAppearanceBasic[ label, Darker @ GrayLevel[ 0.785 ], frameMargins, size ],
-    BaselinePosition -> Baseline ]
-
-backButtonAppearance // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
 (*Default Notebook Toolbar*)
 CreateToolbarContent[ ] := DynamicModule[{
 	nbObj,
@@ -699,18 +671,6 @@ With[
 		]
 	]
 ]
-
-(*=========================================*)
-(* Common preferences content construction *)
-(*=========================================*)
-
-showSnapshotModelsQ[] :=
-	TrueQ @ CurrentValue[$FrontEnd, {
-		PrivateFrontEndOptions,
-		"InterfaceSettings",
-		"Chatbook",
-		"ShowSnapshotModels"
-	}]
 
 (*
 
@@ -2128,24 +2088,15 @@ currentValueOrigin[
 	targetObj : _CellObject,
 	keyPath_List
 ] := Module[{
-	value,
-	inlineValue
+	value
 },
 	value = absoluteCurrentValueOrigin[targetObj, keyPath];
 
-	(* This was causing dynamics to update on every keystroke, so it's disabled for now: *)
-	(* inlineValue = nestedLookup[
-		Options[targetObj],
-		keyPath,
-		None
-	]; *)
-	inlineValue = value;
-
 	Which[
-		inlineValue === None,
+		value === None,
 			{"Inherited", value},
 		True,
-			{"Inline", inlineValue}
+			{"Inline", value}
 	]
 ]
 
@@ -2164,42 +2115,8 @@ currentValueOrigin[
 currentValueOrigin // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*getModelsMenuItems*)
-getModelsMenuItems[] := Module[{
-	items
-},
-	items = Select[getModelList[], chatModelQ];
-
-	RaiseAssert[MatchQ[items, {___String}]];
-
-	items = Sort[items];
-
-	If[!TrueQ[showSnapshotModelsQ[]],
-		items = Select[ items, Not @* snapshotModelQ ];
-	];
-
-	items = AssociationMap[standardizeModelData, items];
-
-	RaiseAssert[MatchQ[items, <| (_?StringQ -> _?AssociationQ)... |>]];
-
-	items
-]
-
-
-(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Menu construction helpers*)
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*alignedMenuIcon*)
-SetFallthroughError[alignedMenuIcon]
-
-alignedMenuIcon[possible_, current_, icon_] := alignedMenuIcon[styleListItem[possible, current], icon]
-alignedMenuIcon[check_, icon_] := Row[{check, " ", resizeMenuIcon[icon]}]
-(* If menu item does not utilize a checkmark, use an invisible one to ensure it is left-aligned with others *)
-alignedMenuIcon[icon_] := alignedMenuIcon[Style["\[Checkmark]", ShowContents -> False], icon]
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2295,62 +2212,6 @@ getPersonaMenuIcon[ expr_, "Full" ] := getPersonaMenuIcon @ expr;
 (* ::Subsubsection::Closed:: *)
 (*getPersonaIcon*)
 getPersonaIcon[ expr_ ] := getPersonaMenuIcon[ expr, "Full" ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*Model property lookup helpers*)
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*getModelMenuIcon*)
-SetFallthroughError[getModelMenuIcon]
-
-getModelMenuIcon[settings_?AssociationQ] := Module[{},
-	Replace[Lookup[settings, "Icon", None], {
-		None | _Missing -> Style["", ShowContents -> False],
-		icon_ :> icon
-	}]
-]
-
-(* If "Full" is specified, resolve TemplateBox icons into their literal
-   icon data, so that they will render correctly in places where the Chatbook.nb
-   stylesheet is not available. *)
-getModelMenuIcon[settings_?AssociationQ, "Full"] :=
-	Replace[getModelMenuIcon[settings], {
-		RawBoxes[TemplateBox[{}, iconStyle_?StringQ]] :> (
-			chatbookIcon[iconStyle, False]
-		),
-		icon_ :> icon
-	}]
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*Generic Utilities*)
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*nestedLookup*)
-SetFallthroughError[nestedLookup]
-Attributes[nestedLookup] = {HoldRest}
-
-nestedLookup[as:KeyValuePattern[{}], {keys___}, default_] :=
-	Replace[
-		GeneralUtilities`ToAssociations[as][keys],
-		{
-			Missing["KeyAbsent", ___] :> default,
-			_[keys] :> default
-		}
-	]
-
-nestedLookup[as_, key:Except[_List], default_] :=
-	With[{keys = key},
-		If[ ListQ[keys],
-			nestedLookup[as, keys, default],
-			nestedLookup[as, {keys}, default]
-		]
-	]
-
-nestedLookup[as_, keys_] := nestedLookup[as, keys, Missing["KeySequenceAbsent", keys]]
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

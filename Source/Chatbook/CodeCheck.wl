@@ -636,14 +636,6 @@ generateBracketFixes[ascode : KeyValuePattern[{"Status" -> "ToFix"}], fixes_] :=
 		]
 	]
 
-countMCUCerrors[patterns_]:=Count[patterns["InspectionObjects"], CodeInspector`InspectionObject["GroupMissingCloser" | "UnexpectedCloser", _, __]]
-
-(* ::Subsection::Closed:: *)
-(*Patterns*)
-
-
-$$AllBracketsPatterns= Alternatives[$$FatalGroupMissingCloserFatalUnexpectedCloser, $$FatalUnexpectedCloser, $$FatalGroupMissingCloser]
-
 (* ::Subsection:: *)
 (*MCUC*)
 
@@ -1221,22 +1213,6 @@ checkSnakeInSetDelayed[codeTokenized_, stringPositions_List]:=
 pSnakeUnder=CallNode[LeafNode[Symbol,"Times",<||>],{__,CallNode[LeafNode[Symbol,"Blank",<||>],{},_]},_];
 pSnakeUnderInSetDelayed= CallNode[LeafNode[Symbol,"SetDelayed",<||>],{CallNode[LeafNode[Symbol,_,_],{___,pSnakeUnder,___},_],_},_];
 
-scanSnakeAllButSingle[codeTokenized_, positions_List]:=
-(
-		positions
-		//
-		Select[Not@MatchQ[codeTokenized[[Span @@ #]], pSnakeSingleTokens] &]
-		//
-		Map[{codeTokenized[[First@#, -1, Key@Source, 1]], codeTokenized[[Last@#, -1, Key@Source, -1]]} &]
-		//
-		Replace[	{	{}	->	Nothing
-						,
-						p:{__} :>	CodeInspector`InspectionObject["BadMultiSnakeUsage","Bad Snake Usage", "Fatal",
-										Association@{ConfidenceLevel -> 1, Source->p}]
-					}
-		]
-)
-
 (* all snakes: "a_b", "a_1" "a_b__1_a2___" *)
 pSnakeAll={$lnSymbol,$lnUnders,($lnSymbol|$lnInteger|$lnUnders)..,Repeated[$lnOpensquare,{0,1}]};
 
@@ -1592,7 +1568,6 @@ Wolfram`Chatbook`CodeCheck`$CodeCheckDebug=False
 (*End Private*)
 
 
-ifn = $InputFileName
 End[ ];
 
 

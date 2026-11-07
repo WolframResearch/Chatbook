@@ -237,7 +237,6 @@ formatPersonaData[ name_String, as_Association, link_, desc_, version_, icon_, o
     formatIcon @ icon,
     formatName[ origin, personaDisplayName @ name, link ],
     "", (* used for Grid's ItemSize -> Fit *)
-    (* formatDescription @ desc, *) (* not enough room for a fixed-width dialog where the "Name" column can be quite large *)
     formatVersion @ version,
     Which[
         FileExistsQ @ ResourceInstallLocation[ "Prompt", name ], uninstallButton[ name, True, "\[LongDash]" ],
@@ -278,19 +277,6 @@ formatName[ origin_String, name: Except[ $$unspecified ], link_ ] :=
     ];
 
 formatName // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*formatDescription*)
-formatDescription // beginDefinition;
-formatDescription[ _Missing ] := Style["\[LongDash]", FontColor -> color @ "ManagerGridFont_1"];
-formatDescription[ desc_String ] :=
-    Pane[(* If desc becomes a text resource then use FEPrivate`TruncateStringToWidth *)
-        If[StringLength[desc] > #nChars, StringTake[desc, UpTo[#nChars - 2]] <> "\[Ellipsis]", desc],
-        ImageSize -> {Full, Automatic},
-        ImageSizeAction -> "Clip"
-    ]&[<|"nChars" -> 30|>];
-formatDescription // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

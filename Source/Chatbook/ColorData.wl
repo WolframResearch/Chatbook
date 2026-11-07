@@ -2627,11 +2627,6 @@ shortenReals // beginDefinition;
 shortenReals[str_] := StringReplace[str, "." ~~ x:Longest[DigitCharacter..] :> "." <> StringTake[x, UpTo[$digits + 2]]];
 shortenReals // endDefinition;
 
-roundColor // beginDefinition;
-roundColor[c:LightDarkSwitched[___]] := roundColor /@ c;
-roundColor[c_?ColorQ] := Replace[c, r_Real :> Round[r, 10.`^-$digits], {1}];
-roundColor // endDefinition;
-
 
 remakeDispatch // beginDefinition
 
