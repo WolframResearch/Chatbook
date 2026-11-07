@@ -193,38 +193,6 @@ withChatEvaluationCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*forceRedrawCellFrameLabels*)
-forceRedrawCellFrameLabels // beginDefinition;
-
-(* Workaround for dynamic in send/stop button not updating in cloud: *)
-forceRedrawCellFrameLabels[ cell_CellObject ] /; $CloudEvaluation && chatInputCellQ @ cell :=
-    Module[ { labels },
-        labels = Replace[
-            CurrentValue[ cell, CellFrameLabels ],
-            Except[ { { _, _ }, { _, _ } } ] :> $defaultCellFrameLabels
-        ];
-        SetOptions[ cell, CellFrameLabels -> None ];
-        SetOptions[ cell, CellFrameLabels -> labels ];
-    ];
-
-forceRedrawCellFrameLabels[ cell_ ] := Null;
-
-forceRedrawCellFrameLabels // endDefinition;
-
-
-$defaultCellFrameLabels = {
-    {
-        None,
-        Cell[
-            BoxData[ DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatButton" ][ #1, { 24, 24 }, 12, 18 ] ]&[ RGBColor[ "#a3c9f2" ] ] ],
-            Background -> None
-        ]
-    },
-    { None, None }
-};
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
 (*withEvaluationCell*)
 withEvaluationCell // beginDefinition;
 withEvaluationCell // Attributes = { HoldRest };

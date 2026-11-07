@@ -24,13 +24,11 @@ System`HoldCompleteForm;
 `$chatInputStyles;
 `$chatOutputStyles;
 `$excludeHistoryStyles;
-`$nestedCellStyles;
 `$$chatDelimiterStyle;
 `$$chatIgnoredStyle;
 `$$chatInputStyle;
 `$$chatOutputStyle;
 `$$excludeHistoryStyle;
-`$$nestedCellStyle;
 
 `$$serviceCaller;
 `$$cloudObject;
@@ -123,10 +121,6 @@ $chatIgnoredStyles    = { "ChatExcluded" };
 $chatInputStyles      = { "ChatInput", "SideChat", "ChatQuery", "ChatSystemInput", "NotebookAssistant`Sidebar`ChatInput" };
 $chatOutputStyles     = { "ChatOutput", "AssistantOutput", "AssistantOutputWarning", "AssistantOutputError", "NotebookAssistant`Sidebar`ChatOutput" };
 $excludeHistoryStyles = { "SideChat" };
-$nestedCellStyles     = { "InlineFunctionReference", "InlineModifierReference", "InlinePersonaReference",
-                          "ChatMenu", "ChatWidget", "InheritFromParent"
-                          (* TODO: add a style name to cell dingbat cells and add it here *)
-                        };
 
 $maxChatCells := OptionValue[ CreateChatNotebook, "ChatHistoryLength" ];
 
@@ -190,7 +184,6 @@ $$chatIgnoredStyle    = cellStylePattern @ $chatIgnoredStyles;
 $$chatInputStyle      = cellStylePattern @ $chatInputStyles;
 $$chatOutputStyle     = cellStylePattern @ $chatOutputStyles;
 $$excludeHistoryStyle = cellStylePattern @ $excludeHistoryStyles;
-$$nestedCellStyle     = cellStylePattern @ $nestedCellStyles;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

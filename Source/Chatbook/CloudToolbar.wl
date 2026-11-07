@@ -202,13 +202,6 @@ createCloudPreferencesContent[ ] := createCloudPreferencesContent[ ] =
 createCloudPreferencesContent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*cloudModelSelector*)
-cloudModelSelector // beginDefinition;
-cloudModelSelector[ ] := makeModelSelector[ "Cloud" ];
-cloudModelSelector // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Docked Cell Contents*)
 

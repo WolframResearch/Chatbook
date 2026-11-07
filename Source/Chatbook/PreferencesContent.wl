@@ -19,7 +19,6 @@ Needs[ "Wolfram`Chatbook`UI`"               ];
 (*Configuration*)
 $preferencesWidth        = 640;
 $cloudPreferencesHeight  = 415;
-$cloudEvaluationNotebook = None;
 
 $preferencesPages = { "Services", "Notebooks", "Personas", "Tools" };
 $$preferencesPage = Alternatives @@ $preferencesPages;
@@ -1723,55 +1722,6 @@ makeServiceGridRow // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*deleteServiceButton*)
-deleteServiceButton // beginDefinition;
-
-deleteServiceButton[ _, "OpenAI" ] := Framed[
-    Button[
-        chatbookExpression[ "ToolManagerBin", color @ "PreferencesContentServicesDeleteIconAlt" ],
-        Null,
-        Enabled -> False,
-        $deleteServiceButtonOptions
-    ],
-    $deleteServiceButtonFrameOptions
-];
-
-deleteServiceButton[ Dynamic[ dmPrefCache_ ], service_String ] := Tooltip[
-    Framed[
-        Button[
-            $trashBin,
-            Needs[ "LLMServices`" -> None ];
-            LLMServices`UnregisterService @ service;
-            disconnectService[ Dynamic @ dmPrefCache, service ];
-            updateDynamics[ { "Services", "Preferences" } ],
-            $deleteServiceButtonOptions
-        ],
-        $deleteServiceButtonFrameOptions
-    ],
-    tr[ "PreferencesContentUnregisterTooltip" ]
-];
-
-deleteServiceButton // endDefinition;
-
-
-$deleteServiceButtonOptions = Sequence[
-    Appearance     -> "Suppressed",
-    ContentPadding -> False,
-    FrameMargins   -> 0,
-    ImageMargins   -> 0,
-    Method         -> "Queued"
-];
-
-
-$deleteServiceButtonFrameOptions = Sequence[
-    ContentPadding -> False,
-    FrameMargins   -> 0,
-    FrameStyle     -> Transparent,
-    ImageMargins   -> 0
-];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*makeServiceAuthenticationDisplay*)
 makeServiceAuthenticationDisplay // beginDefinition;
 
@@ -2238,14 +2188,6 @@ $loadingPopupMenu = PopupMenu[ "x", { "x" -> ProgressIndicator[ Appearance -> { 
 (* ::Subsection::Closed:: *)
 (*$verticalSpacer*)
 $verticalSpacer = { Pane[ "", ImageSize -> { Automatic, 20 } ], SpanFromLeft };
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*$trashBin*)
-$trashBin := Mouseover[
-    chatbookExpression[ "ToolManagerBin", color @ "PreferencesContentServicesDeleteIcon" ],
-    chatbookExpression[ "ToolManagerBin", color @ "PreferencesContentServicesDeleteIconHover" ]
-];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

@@ -318,22 +318,6 @@ replaceSpecialCharacters[ string_String? StringQ ] := StringReplace[
 replaceSpecialCharacters // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*unreadableFileFailure*)
-unreadableFileFailure // beginDefinition;
-
-unreadableFileFailure[ file_ ] :=
-    Failure[
-        "FileUnreadable",
-        <|
-            "MessageTemplate" -> "Cannot read content from `1`.",
-            "MessageParameters" -> { file }
-        |>
-    ];
-
-unreadableFileFailure // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*fastFileHash*)
 fastFileHash // beginDefinition;
@@ -344,19 +328,6 @@ fastFileHash // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*File Format Utilities*)
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*$fileFormats*)
-$fileFormats := ToLowerCase @ Union[ $ImportFormats, $ExportFormats ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*fileFormatQ*)
-fileFormatQ // beginDefinition;
-fileFormatQ[ fmt_String ] := fileFormatQ[ fmt ] = MemberQ[ $fileFormats, ToLowerCase @ fmt ];
-fileFormatQ[ _ ] := False
-fileFormatQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1449,7 +1420,7 @@ chatTime // endDefinition;
 (* ::Section::Closed:: *)
 (*Package Footer*)
 addToMXInitialization[
-    Scan[ fileFormatQ, $fileFormats ];
+    Null
 ];
 
 End[ ];

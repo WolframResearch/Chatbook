@@ -1544,24 +1544,6 @@ clearMinimizedChats // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*clearMinimizedChat*)
-clearMinimizedChat // beginDefinition;
-
-clearMinimizedChat[ attached_CellObject, parentCell_CellObject ] :=
-    Module[ { next },
-        NotebookDelete @ attached;
-        next = NextCell @ parentCell;
-        If[ MemberQ[ cellStyles @ next, $$chatOutputStyle ] && TrueQ[ ! CurrentValue[ next, CellOpen ] ],
-            NotebookDelete @ next;
-            next,
-            Nothing
-        ]
-    ];
-
-clearMinimizedChat // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*toAPIKey*)
 (* TODO: All this API key stuff can go away once LLMServices is available *)
 toAPIKey[ key_String ] := key;

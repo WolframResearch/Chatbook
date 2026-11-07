@@ -700,27 +700,6 @@ modelDate[ { ___String } ] :=
 modelDate // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*fineTunedModelName*)
-fineTunedModelName // beginDefinition;
-
-fineTunedModelName[ name_String ] :=
-    fineTunedModelName @ StringSplit[ name, ":" ];
-
-fineTunedModelName[ { "ft", rest__ } ] :=
-    fineTunedModelName @ { rest };
-
-fineTunedModelName[ { model_String, id__String } ] :=
-    StringJoin[
-        StringDelete[ modelDisplayName @ model, " ("~~__~~")"~~EndOfString ],
-        " (",
-        Replace[ { id }, "" -> "::", { 1 } ],
-        ")"
-    ];
-
-fineTunedModelName // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*modelIcon*)
 modelIcon // beginDefinition;

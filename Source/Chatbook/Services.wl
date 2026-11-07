@@ -21,7 +21,6 @@ $fallbackLLMKitService := "LLMKit";
 $llmKitPrefix          := If[ TrueQ @ serviceFrameworkAvailable[ ], "LLMKit", "" ];
 $allowConnectionDialog  = True;
 $enableLLMServices      = Automatic;
-$modelListCache         = <| |>;
 $noModelListCache       = <| |>;
 $noModelListCacheTime   = 60;
 $modelSortOrder         = { "Preview", "Snapshot", "FineTuned", "Date", "DisplayName" };
@@ -176,11 +175,6 @@ modelListCachedQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*$availableServiceNames*)
-$availableServiceNames := getAvailableServiceNames[ ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
 (*getAvailableServiceNames*)
 getAvailableServiceNames // beginDefinition;
 getAvailableServiceNames // Options = { "IncludeHidden" -> True };
@@ -195,14 +189,6 @@ getAvailableServiceNames[ services_Association, opts: OptionsPattern[ ] ] :=
     ];
 
 getAvailableServiceNames // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*getServiceInformation*)
-getServiceInformation // beginDefinition;
-getServiceInformation[ service_String ] := getServiceInformation[ service, $availableServices ];
-getServiceInformation[ service_String, services_Association ] := Lookup[ services, service, Missing[ "NotAvailable" ] ];
-getServiceInformation // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
