@@ -150,7 +150,7 @@ VerificationTest[
     },
     { True, True, False },
     SameTest -> MatchQ,
-    TestID   -> "RelatedWolframAlphaResults-UsingDocumentationQ-Generators"
+    TestID   -> "RelatedWolframAlphaResults-UsingDocumentationQ-Generators@@Tests/RelatedWolframAlphaResults.wlt:145,1-154,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
@@ -169,7 +169,7 @@ VerificationTest[
         "SampleQueries" -> { ___String }
     },
     SameTest -> MatchQ,
-    TestID   -> "RelatedWolframAlphaResults-HandlerData@@Tests/RelatedWolframAlphaResults.wlt:149,1-161,2"
+    TestID   -> "RelatedWolframAlphaResults-HandlerData@@Tests/RelatedWolframAlphaResults.wlt:161,1-173,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -186,7 +186,7 @@ VerificationTest[
         LLMEvaluator   -> <| "Model" -> { "OpenAI", "invalid-model-name" }, Authentication -> Verbatim[ Automatic ] |>
     ],
     _Failure,
-    If[ $VersionNumber >= 14.3, { }, { ServiceExecute::apierr } ],
+    { },
     SameTest -> MatchQ,
-    TestID   -> "RelatedWolframAlphaResults-ErrorHandling-LLMServices@@Tests/RelatedWolframAlphaResults.wlt:168,1-180,2"
+    TestID   -> "RelatedWolframAlphaResults-ErrorHandling-LLMServices@@Tests/RelatedWolframAlphaResults.wlt:180,1-192,2"
 ]

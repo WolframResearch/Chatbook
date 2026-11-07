@@ -89,7 +89,7 @@ When dynamic splitting is enabled (`$dynamicSplit` is `True`), the `splitDynamic
 
 When disabled, all streaming content remains in a single dynamic cell until the response completes.
 
-Dynamic splitting is also disabled in headless mode (`$headlessChat`), inline chat (`$InlineChat`), cloud notebooks (`$cloudNotebooks`), and when the Wolfram Engine version is insufficient (`insufficientVersionQ["DynamicSplit"]`).
+Dynamic splitting is also disabled in headless mode (`$headlessChat`), inline chat (`$InlineChat`), and cloud notebooks (`$cloudNotebooks`).
 
 ### Integration Points
 
@@ -266,11 +266,11 @@ Whether to auto-scroll the notebook to follow new output as it is placed during 
 
 - **`True`** — the output cell includes `PrivateCellOptions -> {"TrackScrollingWhenPlaced" -> True}`, enabling auto-scroll during streaming; after the final reformatted cell is written, `scrollOutput` calls `SelectionMove` with `AutoScroll -> True` to scroll to the completed output
 - **`False`** — auto-scrolling is disabled entirely
-- **`Automatic`** (default) — resolves based on Wolfram Engine version (see Resolution)
+- **`Automatic`** (default) — resolves to `True` (see Resolution)
 
 ### Resolution
 
-Resolved via `scrollOutputQ` (`SendChat.wl`), which checks whether the Wolfram Engine version meets the minimum requirement of 14.0 (defined in `$versionRequirements` in `Common.wl` via `sufficientVersionQ["TrackScrollingWhenPlaced"]`); if the version is sufficient, auto-scrolling is enabled, otherwise it is disabled.
+Resolved via `scrollOutputQ` (`SendChat.wl`), which resolves an unspecified value to `True`, so auto-scrolling is enabled by default.
 
 Note: `scrollOutputQ` has a two-argument form `scrollOutputQ[settings, cell]` that always returns `False` — this is used when computing the `"ScrollOutput"` key for the `reformatCell` path, meaning the post-write `SelectionMove`-based scrolling does not occur for reformatted cells (the `PrivateCellOptions`-based scrolling during streaming is sufficient).
 

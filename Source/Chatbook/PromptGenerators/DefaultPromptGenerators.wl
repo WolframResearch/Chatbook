@@ -186,7 +186,6 @@ applyPromptGenerators // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*toPromptGenerator*)
 toPromptGenerator // beginDefinition;
-toPromptGenerator[ ___ ] /; $VersionNumber < 14.1 := Nothing;
 toPromptGenerator[ name_String ] := toPromptGenerator @ $defaultPromptGenerators @ name;
 toPromptGenerator[ generator: HoldPattern[ _LLMPromptGenerator ] ] := generator;
 toPromptGenerator[ other_ ] := throwFailure[ "InvalidPromptGenerator", other ];

@@ -1771,7 +1771,7 @@ writeChunk0[ Dynamic[ container_ ], cell_, chunk_String, text_String ] := (
 
     (* FIXME: figure out what to do here when there's a custom formatter *)
     With[ { newContent = appendStringContent[ container[ "DynamicContent" ], text ] },
-        If[ Not @ Or[ $InlineChat, Not @ TrueQ @ $dynamicSplit, insufficientVersionQ[ "DynamicSplit" ], $cloudNotebooks ],
+        If[ Not @ Or[ $InlineChat, Not @ TrueQ @ $dynamicSplit, $cloudNotebooks ],
             (* Convert as much of the dynamic content as possible to static boxes and write to cell: *)
             With[ { splitString = splitDynamicContent @ newContent },
                 If[ Length @ splitString > 1,
@@ -3804,7 +3804,7 @@ scrollOutputQ // beginDefinition;
 
 scrollOutputQ[ settings_Association ] :=
     TrueQ @ Replace[ settings[ "TrackScrollingWhenPlaced" ],
-                     $$unspecified :> sufficientVersionQ[ "TrackScrollingWhenPlaced" ]
+                     $$unspecified :> True
             ];
 
 scrollOutputQ[ settings_Association, cell_ ] := False;

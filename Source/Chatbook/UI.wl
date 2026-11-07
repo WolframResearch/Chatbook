@@ -272,30 +272,16 @@ mainToolbarMenuContent // endDefinition;
 (*makeToolbarMenuContent*)
 
 makeToolbarMenuContent[ menuCell_, nbObj_NotebookObject ] := Enclose[
-	Module[ { items, item1, item2, new },
+	Module[ { items, item2, new },
 
 		items = ConfirmBy[ makeChatActionMenu[ "Toolbar", nbObj ], ListQ, "Items" ];
-
-		(* 14.2+ we don't need to show that chat features are enabled anymore as they are on by default *)
-		item1 = If[ insufficientVersionQ @ 14.2,
-			<|
-				"Type"    -> "Custom",
-				"Content" ->
-					Pane[
-						makeEnableAIChatFeaturesLabel @ True,
-						ImageMargins -> { { 5, 5 }, { 2.5, 2.5 } }
-					]
-			|>
-			,
-			Nothing
-		];
 
 		item2 = Pane[
 			makeAutomaticResultAnalysisCheckbox @ nbObj,
 			ImageMargins -> { { 5, 5 }, { 2.5, 2.5 } }
 		];
 
-		new = Join[ { item1, <| "Type" -> "Custom", "Content" -> item2 |> }, items ];
+		new = Join[ { <| "Type" -> "Custom", "Content" -> item2 |> }, items ];
 
 		(* The default toolbar's menu frame is 231 points, but has 1 pt of ImageMargins and 4 total FrameMargins, so use ~226 for a good fit *)
 		MakeMenu[ new, ImageSize -> 225, TaggingRules -> <| "IsRoot" -> True |> ]
@@ -2285,10 +2271,6 @@ getPersonaMenuIcon[ KeyValuePattern[ "Default" -> icon_ ] ] := getPersonaMenuIco
 getPersonaMenuIcon[ _Missing | _Association | None ] := RawBoxes @ TemplateBox[ { }, "PersonaUnknown" ];
 getPersonaMenuIcon[ icon_ ] := inlineChatbookExpressions @ icon;
 
-(* If "Full" is specified, resolve TemplateBox icons into their literal
-   icon data, so that they will render correctly in places where the Chatbook.nb
-   stylesheet is not available. *)
-getPersonaMenuIcon[ expr_, "Full" ] /; $VersionNumber < 14.2 := InlineTemplateBoxes @ getPersonaMenuIcon @ expr;
 getPersonaMenuIcon[ expr_, "Full" ] := getPersonaMenuIcon @ expr;
 
 (* ::**************************************************************************************************************:: *)

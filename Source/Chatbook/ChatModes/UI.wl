@@ -4064,7 +4064,6 @@ $inlineToWorkspaceConversionRules := $inlineToWorkspaceConversionRules = Dispatc
 (* ::Subsection::Closed:: *)
 (*SaveAsChatNotebook*)
 SaveAsChatNotebook // beginDefinition;
-(* FIXME: This seems to often lead to a crash in 14.1, so we might need a version check to make this 14.2+ *)
 SaveAsChatNotebook[ nbo_NotebookObject ] := catchMine @ saveAsChatNB @ nbo;
 SaveAsChatNotebook // endExportedDefinition;
 

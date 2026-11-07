@@ -15,7 +15,7 @@ $ContextAliases[ "sf`"  ] = "ServiceFramework`";
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$llmKit                := $llmKit = $VersionNumber >= 14.1;
+$llmKit                 = True;
 $llmKitService         := LogChatTiming @ getLLMKitService[ ];
 $fallbackLLMKitService := "LLMKit";
 $llmKitPrefix          := If[ TrueQ @ serviceFrameworkAvailable[ ], "LLMKit", "" ];
