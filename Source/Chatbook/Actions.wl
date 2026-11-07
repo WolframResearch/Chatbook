@@ -105,6 +105,7 @@ chatbookAction[ "RemoveCellAccents"               , args___ ] := removeCellAccen
 chatbookAction[ "Send"                            , args___ ] := SendChat @ args;
 chatbookAction[ "SendFeedback"                    , args___ ] := SendFeedback @ args;
 chatbookAction[ "StopChat"                        , args___ ] := StopChat @ args;
+chatbookAction[ "StopChatIn"                      , args___ ] := stopChatIn @ args;
 chatbookAction[ "TabLeft"                         , args___ ] := TabLeft @ args;
 chatbookAction[ "TabRight"                        , args___ ] := TabRight @ args;
 chatbookAction[ "ToggleFormatting"                , args___ ] := ToggleFormatting @ args;
@@ -494,24 +495,22 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association
                 ]
             ];
 
-            blockChatObject[
-                If[ ListQ @ $lastMessages && StringQ @ $lastChatString,
-                    With[
-                        {
-                            chat = constructChatObject @ mergeToolCallMessages @ Append[
-                                $lastMessages,
-                                <| "Role" -> "Assistant", "Content" -> $lastChatString |>
-                            ] // LogChatTiming[ "ConstructChatObject" ]
-                        },
-                        If[ TrueQ @ settings[ "AutoSaveConversations" ],
-                            SaveChat[ nbo, chat, settings, "AutoSaveOnly" -> True ]
-                        ];
-                        applyChatPost[ chat, settings, nbo, $aborted ]
-                    ],
-                    applyChatPost[ None, settings, nbo, $aborted ];
-                    Null
-                ];
-            ]
+            If[ ListQ @ $lastMessages && StringQ @ $lastChatString,
+                With[
+                    {
+                        chat = constructChatObject @ mergeToolCallMessages @ Append[
+                            $lastMessages,
+                            <| "Role" -> "Assistant", "Content" -> $lastChatString |>
+                        ] // LogChatTiming[ "ConstructChatObject" ]
+                    },
+                    If[ TrueQ @ settings[ "AutoSaveConversations" ],
+                        SaveChat[ nbo, chat, settings, "AutoSaveOnly" -> True ]
+                    ];
+                    applyChatPost[ chat, settings, nbo, $aborted ]
+                ],
+                applyChatPost[ None, settings, nbo, $aborted ];
+                Null
+            ];
         ]
     ];
 
@@ -531,22 +530,6 @@ applyChatPost[ chat_, settings_, nbo_, aborted: True|False ] := (
 );
 
 applyChatPost // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*blockChatObject*)
-blockChatObject // beginDefinition;
-blockChatObject // Attributes = { HoldFirst };
-blockChatObject[ eval_ ] /; Quiet @ PacletNewerQ[ PacletObject[ "Wolfram/LLMFunctions" ], "1.1.0" ] := eval;
-blockChatObject[ eval_ ] := Block[ { chatObject = delayedChatObject, delayedChatObject }, eval ];
-blockChatObject // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*delayedChatObject*)
-delayedChatObject // beginDefinition;
-delayedChatObject[ args___ ] := delayedChatObject[ args ] = System`ChatObject @ args;
-delayedChatObject // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -776,6 +759,38 @@ StopChat[ $Failed ] :=
     ];
 
 StopChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*stopChatIn*)
+stopChatIn // beginDefinition;
+
+(* The stop buttons of the assistant window and the sidebar only stop a chat that is evaluating in their own container,
+   in case another chat started after the button was drawn. The no-argument StopChat also stops a chat that has no
+   output cell yet: *)
+stopChatIn[ container_ ] := If[ TrueQ @ chatEvaluatingInQ @ container, StopChat[ ] ];
+
+stopChatIn // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*chatEvaluatingInQ*)
+chatEvaluatingInQ // beginDefinition;
+
+(* True if the chat that is evaluating ($ChatEvaluationCell) is in the given container: a notebook (the assistant
+   window, whose chat cells are top-level cells) or a cell that contains the chat's cell (the sidebar). The send/stop
+   buttons call this from a Dynamic that only tracks $ChatEvaluationCell, so the front end calls below only run when
+   a chat starts or ends: *)
+chatEvaluatingInQ[ container_ ] := chatEvaluatingInQ[ container, $ChatEvaluationCell ];
+
+chatEvaluatingInQ[ nbo_NotebookObject, cell_CellObject ] := parentNotebook @ cell === nbo;
+
+chatEvaluatingInQ[ container_CellObject, cell_CellObject ] :=
+    MemberQ[ NestWhileList[ parentCell, cell, MatchQ[ _CellObject ], 1, 10 ], container ];
+
+chatEvaluatingInQ[ _, _ ] := False;
+
+chatEvaluatingInQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1057,7 +1072,7 @@ chatContextDialogChatContextPreprompt[ existingSetting_ ] := {
                 InputField[
                     Dynamic @ fieldContent,
                     String,
-                    BaseStyle         -> { "DialogText", FontColor -> If[ sufficientVersionQ[ 14.3 ], ThemeColor[ "Foreground" ], Black ] },
+                    BaseStyle         -> { "DialogText", FontColor -> ThemeColor[ "Foreground" ] },
                     ContinuousAction  -> False,
                     FrameMargins      -> 4,
                     ImageSize         -> Scaled[ 1 ],
@@ -1095,7 +1110,7 @@ chatContextDialogInputFormCell[ existingSetting_, tag_String ] :=
                 InputField[
                     Dynamic @ fieldContent,
                     Hold[Expression], (* Can't be ContinuousAction -> True *)
-                    BaseStyle         -> {"Input", FormatType -> StandardForm, FontColor -> If[ sufficientVersionQ[ 14.3 ], ThemeColor[ "Foreground" ], Black ], ShowSyntaxStyles -> True},
+                    BaseStyle         -> {"Input", FormatType -> StandardForm, FontColor -> ThemeColor[ "Foreground" ], ShowSyntaxStyles -> True},
                     FrameMargins      -> 4,
                     ImageSize         -> Scaled[ 1 ],
                     ReturnEntersInput -> False,
@@ -1494,24 +1509,6 @@ clearMinimizedChats[ nbo_NotebookObject, cells_List ] :=
     ];
 
 clearMinimizedChats // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*clearMinimizedChat*)
-clearMinimizedChat // beginDefinition;
-
-clearMinimizedChat[ attached_CellObject, parentCell_CellObject ] :=
-    Module[ { next },
-        NotebookDelete @ attached;
-        next = NextCell @ parentCell;
-        If[ MemberQ[ cellStyles @ next, $$chatOutputStyle ] && TrueQ[ ! CurrentValue[ next, CellOpen ] ],
-            NotebookDelete @ next;
-            next,
-            Nothing
-        ]
-    ];
-
-clearMinimizedChat // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

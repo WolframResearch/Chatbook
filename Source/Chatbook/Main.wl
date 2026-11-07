@@ -178,6 +178,7 @@ $ChatbookContexts = {
     "Wolfram`Chatbook`Personas`",
     "Wolfram`Chatbook`PreferencesContent`",
     "Wolfram`Chatbook`PreferencesUtils`",
+    "Wolfram`Chatbook`PromptCache`",
     "Wolfram`Chatbook`PromptGenerators`",
     "Wolfram`Chatbook`Prompting`",
     "Wolfram`Chatbook`Reasoning`",

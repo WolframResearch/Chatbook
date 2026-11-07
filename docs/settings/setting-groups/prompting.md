@@ -147,8 +147,6 @@ Four built-in generators are registered in `$defaultPromptGenerators` (`DefaultP
 - **`"RelatedWolframAlphaResults"`** — queries Wolfram Alpha for relevant results via `RelatedWolframAlphaResults` from `RelatedWolframAlphaResults.wl`
 - **`"WebSearch"`** — performs web searches using the Tavily API, requiring a `TAVILY_API_KEY` system credential
 
-Requires Wolfram Engine 14.1+ (`LLMPromptGenerator` support); on older versions, `toPromptGenerator` returns `Nothing` for all generators.
-
 ### Resolution
 
 Resolution occurs in two stages:
@@ -192,6 +190,40 @@ NotebookAssistance mode (`ShowNotebookAssistance.wl`) overrides to `{"RelatedDoc
 
 Not exposed in the preferences UI.
 
+## `"PromptCacheOptimization"`
+
+Controls whether requests are built so that LLM providers can reuse cached prompt prefixes. Providers such as OpenAI cache the longest prefix of a request that matches an earlier request, which reduces latency and cost, but any change to an earlier message invalidates the cache from that point on.
+
+### Accepted Values
+
+- **`Automatic`** (default) — resolves via `$modelAutoSettings` (`Settings.wl`): `True` by default, `False` for the Anthropic service (LLMConnections moves every system message into the top-level system prompt, so turn messages would collect there), for the MistralAI service (its API rejects requests that end with a system message) and for models that need user role tool responses (DeepSeek reasoner and Flash, Qwen, Nemotron, Mistral), since turn messages are system messages after the user's message
+- **`True`** — use the prompt-cache-friendly behavior described below
+- **`False`** — legacy behavior
+
+### Behavior
+
+When `True`, messages that are added to a chat turn without being part of its cells are appended after the user's message and kept for later requests instead of being regenerated:
+
+- **Prompt generator results** are appended after the user message instead of being inserted at `"PromptGeneratorMessagePosition"`, and requests that follow a tool call send them unchanged. Prompt generators run once per turn, even if they give no results.
+- **Turn records**: these messages are stored in an in-memory record (`PromptCache.wl`), and the chat output cell of the turn gets a small `"PromptCacheID"` tagging rule that refers to the record. When the cell appears in the history of a later request, the record's messages are inserted before the cell's message, so they are sent the same way in every later request (if they no longer fit in the token budget, they are left out). Records are not saved with the notebook: after restarting the kernel, history is rebuilt from cells only, and the next request misses the cache once. The number of records kept in memory is bounded (`$maxPromptCacheRecords`), and is shared by all conversations.
+
+- **System prompt**: only includes the base prompt components that are determined by the settings (persona and settings `"BasePrompt"`, the tools, `"AutoFormat"`, etc.; see `withStaticBasePrompts` in `Prompting.wl`), so it is the same for every request of a conversation, and for other conversations with the same settings.
+- **Base prompt hints**: components that become needed because of the content of the conversation (e.g. `"MarkdownImageBox"` when the notebook context contains images, or `"SpecialURIAudio"` after a tool returns audio) are sent once per conversation in a `<system-hint>` turn message instead. Components that are only meant for one response (`"AutoAssistant"` and the notebook assistance instructions, `$perTurnBasePrompts` in `PromptCache.wl`) are sent in each turn that needs them, worded as instructions for that response. Hints that are needed after a tool call are added to the turn messages of the current turn, before the response; this misses the cache once for the earlier tool calls of that turn. Tool calls made for automatic assistance don't get base prompt hints, since they don't run in a chat state (they do get the "disable" hints below).
+- **Disabled instructions**: instructions that are removed from the system prompt after a tool call in legacy mode (`"AutoAssistant"` and the `"ToolCallFrequency"` preference) are disabled with a hint for the rest of the response instead.
+- **Tool call retry**: when `"ToolCallRetryMessage"` is `True`, its instructions are a base prompt component (`"ToolCallRetry"`) instead of a temporary message after each tool response. Like the other base prompt components, they are left out with `"BasePrompt" -> None`.
+- **History length limits**: older messages in the chat history are shortened to `"MaxCellStringLength"` instead of a limit that shrinks as the conversation grows (token pressure), so they are sent the same way in every request. A history message that doesn't fit in the token budget is left out with all older ones instead of being shortened, and so is a turn message that doesn't fit. The left-out cells are rounded up to blocks counted from the start of the conversation (`blockTrimmedHistory` in `ChatMessages.wl`; one cell for each `2^13` tokens of `"MaxContextTokens"`, but at least 8), so the oldest message that is sent, and the number of excised cells, stay the same for several requests instead of changing with every new message. This only applies to chat history: cells that are serialized for something else (the notebook context, `NotebookReader` pages, content suggestions) are shortened as before.
+- **Notebook context** (sidebar and workspace chats with `"AllowSelectionContext"`): the content of the user's notebook is sent once per conversation, as a turn message of the first input, instead of being added to the system prompt of every request. Images from the notebook context are sent in a separate user message after it. Later inputs get a short `<system-hint>` notice when the user switched notebooks, moved their selection, or the notebook changed since the last notebook context or notice in the conversation, based on a cheap fingerprint (selected cells and the front end's content hash, which also changes with some notebook options, such as the window size or position, the magnification, opened or closed cell groups, and tagging rules; see `notebookContextTurnMessages` in `ChatModes/Context.wl`). With the `NotebookReader` tool, the AI can read the current content when the user's message refers to the notebook. Without it, the full context is sent again instead of the notice. Turning `"AllowSelectionContext"` off leaves the notebook content that was sent out of later requests (this misses the cache once). Other notebook content that was sent, e.g. cells that were excluded later or a notebook the user switched away from, stays in the conversation; starting a new chat clears it. In the sidebar, `"AllowSelectionContext"` is `False` until the user turns notebook content on.
+
+The messages in turn records are still marked as `"Temporary"`, so they are not displayed, saved with conversations, or used for chat titles and search context. The chat data written to an output cell (`"ChatData"`) only includes the turn messages of its own turn, since earlier turns' are in their records.
+
+When `False`, prompt generator results are inserted at `"PromptGeneratorMessagePosition"` for each request and regenerated for each turn, the system prompt includes every base prompt component that is needed for the current request, and the notebook context of sidebar and workspace chats is added to the system prompt for every request.
+
+### Integration Points
+
+- **Dependencies**: None in `$autoSettingKeyDependencies`.
+- **Model-specific overrides**: Global default `True` in `$modelAutoSettings[Automatic, Automatic]`; `False` for the Anthropic and MistralAI services and the models listed above.
+- **LLM passthrough**: Not in `$llmConfigPassedKeys`.
+
 ## `"PromptGeneratorsEnabled"`
 
 **Not yet implemented.** Registered in `$defaultChatSettings` (`Settings.wl`) with a default value of `Automatic` and a `(* TODO *)` comment, but not referenced or used anywhere in the codebase. The intended purpose appears to be controlling which prompt generators are enabled, but the actual mechanism is currently handled by other settings: `"PromptGenerators"` directly specifies which generators to use, and `"ExperimentalFeatures"` can conditionally enable additional generators. Since this setting is not read by any code, changing its value has no effect.
@@ -209,6 +241,8 @@ The default is a fixed numeric value (`2`), not `Automatic`. When `Automatic`, r
 Used in `augmentChatMessages` (`ChatMessages.wl`): after chat messages are constructed and optionally merged (via `MergeMessages`), prompt generators produce additional context strings. These strings are wrapped as message Associations with `"Role"` set to the `PromptGeneratorMessageRole` value, `"Content"` set to the generated text, `"Temporary" -> True` (marking them for exclusion in subsequent chat turns), and `"PromptGenerated" -> True` (so that the requests after tool calls in the same turn reuse them). The messages are then inserted via `Insert[merged, generatedMessages, genPos]`, where `genPos` is this setting's resolved value. A position of `2` places the generated messages after the first message in the list (typically the system prompt), ensuring they appear early in the context before user/assistant conversation history.
 
 If the position is invalid (e.g., out of bounds for the message list), `throwFailure["InvalidPromptGeneratorPosition", genPos]` is called. The value can be any valid `Insert` position specification (positive or negative integer).
+
+This setting is ignored when `"PromptCacheOptimization"` is `True`: generated messages are then appended after the user message (see [`"PromptCacheOptimization"`](#promptcacheoptimization)).
 
 ### Integration Points
 

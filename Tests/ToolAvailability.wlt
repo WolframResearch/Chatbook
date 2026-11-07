@@ -153,4 +153,77 @@ VerificationTest[
     SameTest -> MatchQ,
     TestID   -> "FileReader-MissingFile@@Tests/ToolAvailability.wlt:142,1-155,2"
 ]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*NotebookReader*)
+VerificationTest[
+    KeyExistsQ[ Wolfram`Chatbook`$DefaultTools, "NotebookReader" ],
+    True,
+    SameTest -> SameQ,
+    TestID   -> "NotebookReader-DefaultToolDefinition@@Tests/ToolAvailability.wlt:160,1-165,2"
+]
+
+(* Only sidebar and Notebook Assistant window chats have a user notebook to read: *)
+VerificationTest[
+    Table[
+        Block[ { Wolfram`Chatbook`$WorkspaceChat = workspace, Wolfram`Chatbook`$SidebarChat = sidebar },
+            Wolfram`Chatbook`$DefaultTools[ "NotebookReader" ][ "Data" ][ "Enabled" ]
+        ],
+        { workspace, { True, False } },
+        { sidebar, { True, False } }
+    ],
+    { { True, True }, { True, False } },
+    SameTest -> SameQ,
+    TestID   -> "NotebookReader-Enabled@@Tests/ToolAvailability.wlt:168,1-179,2"
+]
+
+VerificationTest[
+    {
+        Wolfram`Chatbook`$DefaultTools[ "NotebookReader" ][ "Data" ][ "Hidden" ],
+        MemberQ[ #[ "Name" ] & /@ Wolfram`Chatbook`ToolManager`Private`getFullToolList[ ], "notebook_reader" ]
+    },
+    { True, False },
+    SameTest -> SameQ,
+    TestID   -> "NotebookReader-Hidden@@Tests/ToolAvailability.wlt:181,1-189,2"
+]
+
+(* The tool is selected for the Notebook Assistant window and the sidebar, but not for chat notebooks, and not when
+   notebook content is turned off (the sidebar's "Ignore notebook content" is checked by default): *)
+VerificationTest[
+    Map[
+        Function[
+            settings,
+            Block[
+                {
+                    Wolfram`Chatbook`$ChatHandlerData       = Wolfram`Chatbook`$ChatHandlerData,
+                    Wolfram`Chatbook`Common`$lastCellObject = Wolfram`Chatbook`Common`$lastCellObject,
+                    Wolfram`Chatbook`Common`$lastTask       = Wolfram`Chatbook`Common`$lastTask,
+                    Wolfram`Chatbook`Common`$tokenBudgetLog = Wolfram`Chatbook`Common`$tokenBudgetLog
+                },
+                MemberQ[
+                    #[ "Data" ][ "CanonicalName" ] & /@ Wolfram`Chatbook`Common`withChatState[
+                        Wolfram`Chatbook`Common`resolveAutoSettings[
+                            <| Wolfram`Chatbook`Common`$defaultChatSettings, settings |>
+                        ][ "Tools" ]
+                    ],
+                    "NotebookReader"
+                ]
+            ]
+        ],
+        {
+            Wolfram`Chatbook`ChatModes`Common`$notebookAssistanceWorkspaceSettings,
+            <|
+                Wolfram`Chatbook`ChatModes`Common`$notebookAssistanceWorkspaceSettings,
+                "AllowSelectionContext" -> False
+            |>,
+            Wolfram`Chatbook`NotebookAssistanceSidebarSettings[ ],
+            <| Wolfram`Chatbook`NotebookAssistanceSidebarSettings[ ], "AllowSelectionContext" -> True |>,
+            <| |>
+        }
+    ],
+    { True, False, False, True, False },
+    SameTest -> SameQ,
+    TestID   -> "NotebookReader-SelectedTools@@Tests/ToolAvailability.wlt:193,1-228,2"
+]
 (* :!CodeAnalysis::EndBlock:: *)

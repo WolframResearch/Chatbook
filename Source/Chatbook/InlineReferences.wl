@@ -807,8 +807,6 @@ styleFunctionArgument[ argument_ ] := Style[ argument, FontSize -> 0.9*Inherited
 
 styleFunctionArgument // endDefinition;
 
-specArg[ expr_, opts___ ] := Style[ expr, opts, FontWeight -> Bold, FontColor -> Gray ];
-
 
 
 (* ::Subsection::Closed:: *)
@@ -1154,21 +1152,6 @@ personaInputBox[ name_String, uuid_ ] := DynamicModule[ { string = name, cell },
 ];
 
 personaInputBox // endDefinition;
-
-
-
-(* ::Subsubsection::Closed:: *)
-(*processPersonaInput (unused?)*)
-
-
-processPersonaInput // beginDefinition;
-
-processPersonaInput[ string_String, { cell_CellObject }, cell_CellObject ] := Null;
-
-processPersonaInput[ string_String, _List, cell_CellObject ] :=
-    writeStaticPersonaBox[ cell, personaInputSetting @ string ];
-
-processPersonaInput // endDefinition;
 
 
 
@@ -2105,105 +2088,6 @@ insertWLTemplate[ name_String, parent_CellObject, nbo_NotebookObject ] :=
 		NotebookWrite[ parent, cellExpr ];
 		FrontEnd`MoveCursorToInputField[ nbo, uuid ]
 	];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
-(*Cloud Docked Cell*)
-
-$cloudInlineReferenceButtons = Block[ { NotebookTools`Mousedown = Mouseover[ #1, #2 ] & },
-    Grid[
-        {
-            {
-                Style[ tr[ "InlineReferencesInsertLabel" ], "Text" ],
-                Button[
-                    First @ personaTemplateBoxes[ 1, "Persona", "Chosen", "PersonaInsertButton" ],
-                    With[ { name = InputString[ tr[ "InlineReferencesInsertPersonaPrompt" ] ], uuid = createUUID[ ] },
-                        If[ MemberQ[ $personaNames, name ],
-                            NotebookWrite[
-                                EvaluationNotebook[ ],
-                                Append[
-                                    personaTemplateCell[ name, "Chosen", uuid ],
-                                    TaggingRules -> <| "PersonaName" -> name |>
-                                ]
-                            ];
-                            CurrentValue[
-                                EvaluationNotebook[ ], (* FIXME: figure out how to get selected cell in cloud *)
-                                { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" }
-                            ] = name;
-                            ,
-                            If[ StringQ @ name,
-                                MessageDialog @ trStringTemplate[ "InlineReferencesInsertPersonaFail" ][
-                                    <| "name" -> name |>
-                                ]
-                            ]
-                        ]
-                    ],
-                    Appearance -> $suppressButtonAppearance,
-                    Method     -> "Queued"
-                ],
-                Button[
-                    First @ modifierTemplateBoxes[ 1, "Modifier", { }, "Chosen", "ModifierInsertButton" ],
-                    With[ { s = InputString[ tr[ "InlineReferencesInsertModifierPrompt" ] ], uuid = createUUID[ ] },
-                        Replace[
-                            functionInputSetting @ s,
-                            { name_String, args___String } :>
-                                If[ MemberQ[ $modifierNames, name ],
-                                    NotebookWrite[
-                                        EvaluationNotebook[ ],
-                                        Append[
-                                            modifierTemplateCell[ name, { args }, "Chosen", uuid ],
-                                            TaggingRules -> <|
-                                                "PromptModifierName" -> name,
-                                                "PromptArguments"    -> { args }
-                                            |>
-                                        ]
-                                    ]
-                                    ,
-                                    If[ StringQ @ name,
-                                        MessageDialog @ trStringTemplate[ "InlineReferencesInsertModifierFail" ][
-                                            <| "name" -> name |>
-                                        ]
-                                    ]
-                                ]
-                        ]
-                    ],
-                    Appearance -> $suppressButtonAppearance,
-                    Method     -> "Queued"
-                ],
-                Button[
-                    First @ functionTemplateBoxes[ 1, "Function", { }, "Chosen", "FunctionInsertButton" ],
-                    With[ { s = InputString[ tr[ "InlineReferencesInsertFunctionPrompt" ] ], uuid = createUUID[ ] },
-                        Replace[
-                            functionInputSetting @ s,
-                            { name_String, args___String } :>
-                                If[ MemberQ[ $functionNames, name ],
-                                    NotebookWrite[
-                                        EvaluationNotebook[ ],
-                                        Append[
-                                            functionTemplateCell[ name, { args }, "Chosen", uuid ],
-                                            TaggingRules -> <|
-                                                "PromptFunctionName" -> name,
-                                                "PromptArguments"    -> { args }
-                                            |>
-                                        ]
-                                    ]
-                                    ,
-                                    If[ StringQ @ name,
-                                        MessageDialog @ trStringTemplate[ "InlineReferencesInsertFunctionFail" ][
-                                            <| "name" -> name |>
-                                        ]
-                                    ]
-                                ]
-                        ]
-                    ],
-                    Appearance -> $suppressButtonAppearance,
-                    Method     -> "Queued"
-                ]
-            }
-        },
-        Spacings -> 0.5
-    ]
-];
 
 
 (* ::Section::Closed:: *)

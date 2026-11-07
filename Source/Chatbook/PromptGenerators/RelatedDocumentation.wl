@@ -11,7 +11,6 @@ Needs[ "Wolfram`Chatbook`Common`"                  ];
 (* ::Section::Closed:: *)
 (*Configuration*)
 $snippetDebug                  = True;
-$snippetType                   = "Text";
 $documentationSnippetVersion  := $snippetVersion;
 $snippetFetchBatchSize         = 15;
 $baseURL                       = "https://www.wolframcloud.com/obj/wolframai-content/DocumentationSnippets";
@@ -73,7 +72,7 @@ user's latest message.";
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$snippetVersion*)
-$snippetVersion := $snippetVersion = If[ $VersionNumber >= 15.0, "15-0-0-13528852", "14-3-0-11967661" ];
+$snippetVersion = "15-0-0-13528852";
 
 (* "Descriptions" has a short description of each snippet of the other two, for catalogs ("CatalogPrompt"). *)
 $streamableSnippetVersions := $streamableSnippetVersions = <|
@@ -87,7 +86,6 @@ $streamableSnippetVersions := $streamableSnippetVersions = <|
 (* Expected archive sizes and SHA-256 hashes for downloaded snippet archives (keyed by name and version): *)
 $streamableSnippetArchiveInfo = <|
     { "Descriptions"  , "1.0.0"           } -> {  9565194, "e34724b651e0818a7ad6ae140c28385713bf876fa753c1da901e521c7f309d8a" },
-    { "Documentation" , "14-3-0-11967661" } -> { 38099319, "064bac98325395906fc65788baa1b1411ce9c1ed990a8182a42154119747f9e4" },
     { "Documentation" , "15-0-0-13528852" } -> { 37084178, "a8962c418468149bf3d57a8664051bfd567fdd645c19e3ba33675e834af61510" },
     { "ResourceSystem", "1.1.0"           } -> {  9948586, "306b693c986200479069616b24c3658331dba79075246988ae635af6f646b178" }
 |>;
@@ -114,9 +112,6 @@ $snippetDownloadFailure = None;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Messages*)
-Chatbook::CloudDownloadError = "\
-Unable to download required data from the cloud. Please try again later.";
-
 Chatbook::SnippetDownloadDeclined = "\
 Documentation resources are not available because the download was cancelled. \
 Evaluate InstallDocumentationResources[] to install them.";
@@ -1014,28 +1009,6 @@ selectSnippetsFromResponseSmall // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*scoreSnippetLine*)
-scoreSnippetLine // beginDefinition;
-
-scoreSnippetLine[ $$assistantTypeTag ] :=
-    Nothing;
-
-scoreSnippetLine[ line_String ] /; StringMatchQ[ StringTrim @ line, $$assistantTypeTag, IgnoreCase -> True ] :=
-    Nothing;
-
-scoreSnippetLine[ line_String ] := Enclose[
-    Module[ { scoreString, id, score },
-        { scoreString, id } = ConfirmMatch[ StringSplit[ line, Whitespace ], { _String, _String }, "Split" ];
-        score = ToExpression @ ConfirmBy[ scoreString, StringMatchQ @ NumberString, "Score" ];
-        <| "Score" -> score, "ID" -> id |>
-    ],
-    $Failed &
-];
-
-scoreSnippetLine // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*selectSnippetsFromString*)
 selectSnippetsFromString // beginDefinition;
 selectSnippetsFromString[ response_String, ids: { ___String } ] := DeleteDuplicates @ StringCases[ response, ids ];
@@ -1138,7 +1111,6 @@ $snippetIDCounters = <| |>;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Documentation Snippets*)
-$documentationSnippets = <| |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

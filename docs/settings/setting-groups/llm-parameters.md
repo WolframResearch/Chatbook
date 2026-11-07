@@ -159,7 +159,7 @@ When `Automatic`, resolved by `autoMaxContextTokens` (`Settings.wl`), which disp
 The resolved value is used to initialize the token budget in `makeTokenBudget` (`ChatMessages.wl`), which multiplies it by `TokenBudgetMultiplier` to produce the working budget. During message construction:
 
 - Token pressure is tracked as `1.0 - ($tokenBudget / MaxContextTokens)`.
-- The cell string budget (`$cellStringBudget`) is dynamically reduced as pressure increases, dropping to `0` when fewer than `$reservedTokens` (500) remain.
+- The cell string budget (`$cellStringBudget`) is dynamically reduced as pressure increases, dropping to `0` when fewer than `$reservedTokens` (500) remain. When `"PromptCacheOptimization"` is `True`, it stays at its initial value for chat history instead (see [`"PromptCacheOptimization"`](prompting.md#promptcacheoptimization)).
 
 ### Dependent Settings
 
@@ -169,7 +169,7 @@ The resolved value is used to initialize the token budget in `makeTokenBudget` (
 ### Chat Mode Overrides
 
 - **Context mode**: Scales to 25% via `$notebookContextLimitScale` (`ChatModes/Context.wl`).
-- **NotebookAssistance mode**: Fixed at `2^15` (32,768).
+- **NotebookAssistance mode**: Fixed at `2^18` (262,144). The notebook context doesn't grow with it: in a chat, it is serialized with its own token budget of `2^15` (`$maxNotebookContextTokens` in `ChatModes/Context.wl`), and `NotebookReader` pages are limited as if `MaxContextTokens` was `2^15`. Chat notebooks opened from the Notebook Assistant ("Open as chatbook") don't keep this value.
 - **ContentSuggestions mode**: Per content type (`2^12` for WL/Text, `2^15` for Notebook).
 
 Also used by `modelContextStringLimit` (`LLMUtilities.wl`), which converts to a character limit via `tokens * 2` (with fallback to 8,000).
@@ -195,8 +195,8 @@ When `Automatic`, resolved via `$modelAutoSettings` lookup (no custom `resolveAu
 
 ### Model-Specific Overrides
 
-- **GPT-5**: Resolves to `"Minimal"` if `$gpt5Reasoning` is `True` (i.e., `Wolfram/LLMFunctions` paclet is newer than version `2.2.4`), otherwise `Missing["NotSupported"]`.
-- **GPT-5.1**: Resolves to `"None"` under the same paclet version condition, otherwise `Missing["NotSupported"]`.
+- **GPT-5**: Resolves to `"Minimal"`.
+- **GPT-5.1**: Resolves to `"None"`.
 - No other model families define a `"Reasoning"` override.
 
 When the `"Responses"` request method is used, plain effort levels are expanded to request reasoning summaries. See [`"RequestMethod"`](model-and-service.md#requestmethod).
@@ -318,7 +318,7 @@ Any non-negative numeric value (`$$size` pattern: non-negative `_Integer` or `_R
 
 The token budget is computed by `makeTokenBudget` (`ChatMessages.wl`): `Ceiling[MaxContextTokens * TokenBudgetMultiplier]`. When set to an unspecified value (`Missing`, `Automatic`, or `Inherited`), the token budget equals `MaxContextTokens` unchanged.
 
-This budget is assigned to `$tokenBudget` in `makeChatMessages` (`ChatMessages.wl`) and is decremented as each message is added to the context. When a message's token count exceeds the remaining budget, it is truncated via `cutMessageContent`. Token pressure is tracked as `1.0 - ($tokenBudget / MaxContextTokens)`, and the cell string budget (`$cellStringBudget`) dynamically decreases as pressure rises, dropping to `0` when fewer than `$reservedTokens` (500) tokens remain.
+This budget is assigned to `$tokenBudget` in `makeChatMessages` (`ChatMessages.wl`) and is decremented as each message is added to the context. When a message's token count exceeds the remaining budget, it is truncated via `cutMessageContent`. Token pressure is tracked as `1.0 - ($tokenBudget / MaxContextTokens)`, and the cell string budget (`$cellStringBudget`) dynamically decreases as pressure rises, dropping to `0` when fewer than `$reservedTokens` (500) tokens remain (see `"PromptCacheOptimization"` for how this differs with prompt cache optimization).
 
 ### Integration Points
 

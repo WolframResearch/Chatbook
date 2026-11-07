@@ -333,19 +333,15 @@ VerificationTest[
         before = Length @ ListSavedChats[ "NotebookAssistance" ];
         WithCleanup[
             { new, uuid, log } = replaceAssistantWindow[ source, False ];
-            results = {
-                log,
-                Cells[ new, AttachedCell -> True, CellStyle -> "AttachedOverlayMenu" ],
-                Length @ ListSavedChats[ "NotebookAssistance" ] === before
-            },
+            results = { log, Length @ ListSavedChats[ "NotebookAssistance" ] === before },
             Quiet @ NotebookClose @ new;
             NotebookClose @ source
         ];
         results
     ],
-    { { }, { }, True },
+    { { }, True },
     SameTest -> MatchQ,
-    TestID   -> "MovedNotice-NotSaved@@Tests/NotebookAssistanceWindow.wlt:330,1-349,2"
+    TestID   -> "MovedNotice-NotSaved@@Tests/NotebookAssistanceWindow.wlt:330,1-345,2"
 ]
 
 (* A saved chat gets the notice in the new window: *)
@@ -354,16 +350,16 @@ VerificationTest[
         source = CreateDocument[ { }, Visible -> False ];
         WithCleanup[
             { new, uuid, log } = replaceAssistantWindow[ source, True ];
-            results = { log === { new }, Cells[ new, AttachedCell -> True, CellStyle -> "AttachedOverlayMenu" ] },
+            results = log === { new },
             Quiet @ DeleteChat[ "NotebookAssistance", uuid ];
             Quiet @ NotebookClose @ new;
             NotebookClose @ source
         ];
         results
     ],
-    { True, { } },
+    True,
     SameTest -> MatchQ,
-    TestID   -> "MovedNotice-Saved@@Tests/NotebookAssistanceWindow.wlt:352,1-367,2"
+    TestID   -> "MovedNotice-Saved@@Tests/NotebookAssistanceWindow.wlt:348,1-363,2"
 ]
 
 (* The notice is a docked cell, so the loading overlay of the window's initialization doesn't remove it: *)
@@ -384,7 +380,7 @@ VerificationTest[
     ],
     { { "WorkspaceChatMovedToHistoryDockedCell" }, { "WorkspaceChatMovedToHistoryDockedCell" }, { } },
     SameTest -> MatchQ,
-    TestID   -> "MovedNotice-SurvivesLoadingOverlay@@Tests/NotebookAssistanceWindow.wlt:370,1-388,2"
+    TestID   -> "MovedNotice-SurvivesLoadingOverlay@@Tests/NotebookAssistanceWindow.wlt:366,1-384,2"
 ]
 
 (* The notice and the chat's title share the place below the top stripe, so there is at most one of them and the
@@ -420,7 +416,26 @@ VerificationTest[
         Cell[ "TOOLBAR" ]
     },
     SameTest -> MatchQ,
-    TestID   -> "MovedNotice-SharesTitlePlace@@Tests/NotebookAssistanceWindow.wlt:392,1-424,2"
+    TestID   -> "MovedNotice-SharesTitlePlace@@Tests/NotebookAssistanceWindow.wlt:388,1-420,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Default Type*)
+
+(* Without a type, ShowNotebookAssistance opens the sidebar (these forms used to fail with InvalidArguments): *)
+VerificationTest[
+    UsingFrontEnd @ Module[ { nbo, results },
+        nbo = CreateDocument[ { Cell[ "1+1", "Input" ] } ];
+        WithCleanup[
+            results = { ShowNotebookAssistance @ nbo, ShowNotebookAssistance[ ] },
+            NotebookClose @ nbo
+        ];
+        results
+    ],
+    { Except[ _Failure ], Except[ _Failure ] },
+    SameTest -> MatchQ,
+    TestID   -> "DefaultTypeIsSidebar@@Tests/NotebookAssistanceWindow.wlt:427,1-439,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -462,7 +477,7 @@ VerificationTest[
         { "Window" , "Notebook" }
     },
     SameTest -> MatchQ,
-    TestID   -> "ShowNotebookAssistance-DefaultTypes@@Tests/NotebookAssistanceWindow.wlt:432,1-466,2"
+    TestID   -> "ShowNotebookAssistance-DefaultTypes@@Tests/NotebookAssistanceWindow.wlt:447,1-481,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

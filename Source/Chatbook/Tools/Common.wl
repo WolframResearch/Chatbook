@@ -198,13 +198,6 @@ getToolByName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*getToolByShortName*)
-getToolByShortName // beginDefinition;
-getToolByShortName[ cmd_String ] := SelectFirst[ $toolBox, toolShortName[ #1 ] === cmd & ];
-getToolByShortName // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
 (*toolName*)
 toolName // beginDefinition;
 toolName[ tool_ ] := toolName[ tool, Automatic ];
@@ -445,6 +438,8 @@ selectTools[ as_Association ] := Enclose[
         selectTools0 /@ selectedNames;
 
         $selectedTools = Select[ $selectedTools, toolEnabledQ ];
+        (* Don't offer NotebookReader when the user turned notebook content off (e.g. "Ignore notebook content"): *)
+        If[ ! TrueQ @ as[ "AllowSelectionContext" ], KeyDropFrom[ $selectedTools, "NotebookReader" ] ];
         selectSkillTool @ as;
         short = <| (toolShortName[ # ] -> # &) /@ Values[ $selectedTools ] |>;
 
@@ -610,27 +605,7 @@ getToolSelectionTypes // endDefinition;
 (*initTools*)
 initTools // beginDefinition;
 
-initTools[ ] := initTools[ ] = (
-
-    If[ $CloudEvaluation && $VersionNumber <= 13.2,
-
-        If[ PacletFind[ "ServiceConnection_OpenAI" ] === { },
-            PacletInstall[ "ServiceConnection_OpenAI", PacletSite -> "https://pacletserver.wolfram.com" ]
-        ];
-
-        WithCleanup[
-            Unprotect @ TemplateObject,
-            TemplateObject // Options = DeleteDuplicatesBy[
-                Append[ Options @ TemplateObject, MetaInformation -> <| |> ],
-                ToString @* First
-            ],
-            Protect @ TemplateObject
-        ]
-    ];
-
-
-    installLLMFunctions[ ];
-);
+initTools[ ] := initTools[ ] = ( installLLMFunctions[ ]; );
 
 initTools // endDefinition;
 
@@ -640,17 +615,10 @@ initTools // endDefinition;
 installLLMFunctions // beginDefinition;
 
 installLLMFunctions[ ] := Enclose[
-    Module[ { before, paclet, opts, reload },
+    Module[ { before, paclet, reload },
         before = Quiet @ PacletObject[ "Wolfram/LLMFunctions" ];
         paclet = ConfirmBy[ PacletInstall[ "Wolfram/LLMFunctions" ], PacletObjectQ, "PacletInstall" ];
-
-        If[ ! TrueQ @ Quiet @ PacletNewerQ[ paclet, "1.2.1" ],
-            opts = If[ $CloudEvaluation, PacletSite -> "https://pacletserver.wolfram.com", UpdatePacletSites -> True ];
-            paclet = ConfirmBy[ PacletInstall[ "Wolfram/LLMFunctions", opts ], PacletObjectQ, "PacletUpdate" ];
-            ConfirmAssert[ PacletNewerQ[ paclet, "1.2.1" ], "PacletVersion" ];
-            reload = True,
-            reload = PacletObjectQ @ before && PacletNewerQ[ paclet, before ]
-        ];
+        reload = PacletObjectQ @ before && PacletNewerQ[ paclet, before ];
 
         If[ TrueQ @ reload, reloadLLMFunctions[ ] ];
         Needs[ "Wolfram`LLMFunctions`" -> None ];
@@ -884,6 +852,10 @@ parseSimpleToolCallParameterStrings // beginDefinition;
 
 parseSimpleToolCallParameterStrings[ { param_String }, argString_String ] :=
     <| param -> StringDelete[ argString, StartOfString ~~ WhitespaceCharacter... ~~ param ~~ $$argNameDelimiter ] |>;
+
+(* A call with no arguments, e.g. "/nb_read" for a tool whose parameters are all optional: *)
+parseSimpleToolCallParameterStrings[ paramNames: { __String }, "" ] :=
+    AssociationMap[ "" &, paramNames ];
 
 parseSimpleToolCallParameterStrings[ paramNames: { __String }, argString_String ] := Enclose[
     Catch @ Module[ { namedSplit, defaults, pairs, as },

@@ -77,47 +77,6 @@ graphicsBoxQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*validGraphicsQ*)
-validGraphicsQ // beginDefinition;
-validGraphicsQ[ g_? graphicsQ ] := getPinkBoxErrors @ Unevaluated @ g === { };
-validGraphicsQ[ ___ ] := False;
-validGraphicsQ // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*getPinkBoxErrors*)
-getPinkBoxErrors // beginDefinition;
-(* TODO: hook this up to evaluator outputs and CellToString to give feedback about pink boxes *)
-
-getPinkBoxErrors[ { } ] :=
-    { };
-
-getPinkBoxErrors[ cells: _CellObject | { __CellObject } ] :=
-    getPinkBoxErrors @ NotebookRead @ cells;
-
-getPinkBoxErrors[ cells: _Cell | { __Cell } ] :=
-    Module[ { nbo },
-        UsingFrontEnd @ WithCleanup[
-            nbo = NotebookPut[ Notebook @ Flatten @ { cells }, Visible -> False ],
-            SelectionMove[ nbo, All, Notebook ];
-            MathLink`CallFrontEnd @ FrontEnd`GetErrorsInSelectionPacket @ nbo,
-            NotebookClose @ nbo
-        ]
-    ];
-
-getPinkBoxErrors[ data: _TextData | _BoxData | { __BoxData } ] :=
-    getPinkBoxErrors @ Cell @ data;
-
-getPinkBoxErrors[ exprs_List ] :=
-    getPinkBoxErrors[ Cell @* BoxData /@ MakeBoxes /@ Unevaluated @ exprs ];
-
-getPinkBoxErrors[ expr_ ] :=
-    getPinkBoxErrors @ { Cell @ BoxData @ MakeBoxes @ expr };
-
-getPinkBoxErrors // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
 (*image2DQ*)
 (* Matches against the head in addition to checking ImageQ to avoid passing Image3D when a 2D image is expected: *)
 image2DQ // beginDefinition;

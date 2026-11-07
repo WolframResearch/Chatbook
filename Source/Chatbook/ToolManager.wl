@@ -204,7 +204,7 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List, opts : OptionsPattern[ ] 
                                         (* Checkbox grid: *)
                                         linkedPane[
                                             Grid[
-                                                (*fitLastColumn @*) Table[
+                                                Table[
                                                     If[ And[
                                                             StringQ @ personaToolLookup @ tools[[ i, "CanonicalName" ]],
                                                             UnsameQ[
@@ -407,20 +407,6 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List, opts : OptionsPattern[ ] 
     ];
 
 CreateLLMToolManagerPanel // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*fitLastColumn*)
-fitLastColumn // beginDefinition;
-
-fitLastColumn[ grid_? MatrixQ ] :=
-    MapAt[
-        Item[ #, ItemSize -> { Fit, Automatic }, Alignment -> { Left, Automatic } ] &,
-        grid,
-        { All, -1 }
-    ];
-
-fitLastColumn // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -900,7 +886,7 @@ unsetToolKey[ cells_List, parent_String, key_ ] :=
     Scan[ unsetToolKey[ #, parent, key ] &, cells ];
 
 unsetToolKey[ scope_, parent_String, key_ ] := (
-    If[ KeyExistsQ[ Replace[ cv[ scope, parent ], Except[ _Association ] -> <| |> ], key ],
+    If[ MatchQ[ cv[ scope, parent ], KeyValuePattern[ key -> _ ] ],
         unsetCV[ scope, parent, key ]
     ];
     If[ MatchQ[ cv[ scope, parent ], <| |> | { } ], unsetCV[ scope, parent ] ];

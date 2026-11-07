@@ -303,7 +303,12 @@ VerificationTest[
     };
     $plotQuestion = <| "Role" -> "User", "Content" -> "Describe the selected plot in one short sentence." |>;
     $plotInput    = { <| "Role" -> "System", "Content" -> "You are a helpful assistant." |>, $plotQuestion };
-    $plotSettings = <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-4.1" |>, "Multimodal" -> True |>;
+    (* These test the context in the system prompt, which is only used without prompt cache optimization: *)
+    $plotSettings = <|
+        "Model"                   -> <| "Service" -> "OpenAI", "Name" -> "gpt-4.1" |>,
+        "Multimodal"              -> True,
+        "PromptCacheOptimization" -> False
+    |>;
     { $plotMessages, $plotData } = Reap[
         ConstructWorkspaceContextMessages[ $plotCells, $plotSettings, $plotInput ],
         Wolfram`Chatbook`Common`$chatDataTag
@@ -312,7 +317,7 @@ VerificationTest[
     { Length @ $plotMessages, Length @ $plotSaved },
     { 2, 3 },
     SameTest -> MatchQ,
-    TestID   -> "GetContextFromSelection-SelectedGraphics-Setup@@Tests/Context.wlt:299,1-316,2"
+    TestID   -> "GetContextFromSelection-SelectedGraphics-Setup@@Tests/Context.wlt:299,1-321,2"
 ]
 
 VerificationTest[
@@ -331,7 +336,7 @@ VerificationTest[
         <| "Type" -> "Text", "Data" -> "Describe the selected plot in one short sentence." |>
     },
     SameTest -> MatchQ,
-    TestID   -> "GetContextFromSelection-SelectedGraphicsFoldedIntoUserMessage@@Tests/Context.wlt:318,1-335,2"
+    TestID   -> "GetContextFromSelection-SelectedGraphicsFoldedIntoUserMessage@@Tests/Context.wlt:323,1-340,2"
 ]
 
 VerificationTest[
@@ -341,7 +346,7 @@ VerificationTest[
     },
     { $plotQuestion, $plotQuestion },
     SameTest -> MatchQ,
-    TestID   -> "GetContextFromSelection-SelectedGraphicsSavedWithoutImages@@Tests/Context.wlt:337,1-345,2"
+    TestID   -> "GetContextFromSelection-SelectedGraphicsSavedWithoutImages@@Tests/Context.wlt:342,1-350,2"
 ]
 
 VerificationTest[
@@ -364,7 +369,7 @@ VerificationTest[
     ],
     { { "System", "User", "Assistant", "User" }, 1 },
     SameTest -> MatchQ,
-    TestID   -> "GetContextFromSelection-SelectedGraphicsToolLoopSendsImagesOnce@@Tests/Context.wlt:347,1-368,2"
+    TestID   -> "GetContextFromSelection-SelectedGraphicsToolLoopSendsImagesOnce@@Tests/Context.wlt:352,1-373,2"
 ]
 
 VerificationTest[
@@ -378,7 +383,7 @@ VerificationTest[
     ],
     { { "System", "User" }, True, True },
     SameTest -> MatchQ,
-    TestID   -> "GetContextFromSelection-SelectedGraphicsTextFallback@@Tests/Context.wlt:370,1-382,2"
+    TestID   -> "GetContextFromSelection-SelectedGraphicsTextFallback@@Tests/Context.wlt:375,1-387,2"
 ]
 
 VerificationTest[
@@ -411,7 +416,7 @@ VerificationTest[
     ],
     { { "System", "User" }, 1, 1, 1, { "System", "User", "User" } },
     SameTest -> MatchQ,
-    TestID   -> "MergeMessages-MergesUserHistoryAcrossContextImage@@Tests/Context.wlt:384,1-415,2"
+    TestID   -> "MergeMessages-MergesUserHistoryAcrossContextImage@@Tests/Context.wlt:389,1-420,2"
 ]
 
 VerificationTest[
@@ -432,7 +437,7 @@ VerificationTest[
         { "![Image](attachment://content-2)", <| "Type" -> "Image", "Data" -> "img2" |> }
     },
     SameTest -> MatchQ,
-    TestID   -> "ContextImageParts-PairsLinksAndDeduplicates@@Tests/Context.wlt:417,1-436,2"
+    TestID   -> "ContextImageParts-PairsLinksAndDeduplicates@@Tests/Context.wlt:422,1-441,2"
 ]
 
 VerificationTest[
@@ -473,7 +478,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "SelectContextImages-PrefersSelectedAndNearbyImages@@Tests/Context.wlt:438,1-477,2"
+    TestID   -> "SelectContextImages-PrefersSelectedAndNearbyImages@@Tests/Context.wlt:443,1-482,2"
 ]
 
 VerificationTest[
@@ -493,7 +498,7 @@ VerificationTest[
     ],
     "![Image](attachment://content-" <> ToString[ # ] <> ")" & /@ Range[ 5 ],
     SameTest -> MatchQ,
-    TestID   -> "SelectContextImages-NoSelectionPreservesNotebookOrder@@Tests/Context.wlt:479,1-497,2"
+    TestID   -> "SelectContextImages-NoSelectionPreservesNotebookOrder@@Tests/Context.wlt:484,1-502,2"
 ]
 
 VerificationTest[
@@ -508,7 +513,7 @@ VerificationTest[
         <| "Role" -> "User", "Content" -> "input" |>
     },
     SameTest -> MatchQ,
-    TestID   -> "MergeMessageData-KeepsTemporaryMessagesSeparate@@Tests/Context.wlt:499,1-512,2"
+    TestID   -> "MergeMessageData-KeepsTemporaryMessagesSeparate@@Tests/Context.wlt:504,1-517,2"
 ]
 
 VerificationTest[
@@ -534,7 +539,7 @@ VerificationTest[
         KeyValuePattern @ { "Content" -> "retry", "Temporary" -> True }
     },
     SameTest -> MatchQ,
-    TestID   -> "MergeMessages-MergesOutgoingTemporaryBoundaryAfterSaving@@Tests/Context.wlt:514,1-538,2"
+    TestID   -> "MergeMessages-MergesOutgoingTemporaryBoundaryAfterSaving@@Tests/Context.wlt:519,1-543,2"
 ]
 
 VerificationTest[
@@ -577,7 +582,7 @@ VerificationTest[
         <| "Role" -> "Assistant", "Content" -> "out" |>
     },
     SameTest -> MatchQ,
-    TestID   -> "FoldContextImageMessage-FoldsIntoNextNonTemporaryUserMessage@@Tests/Context.wlt:540,1-581,2"
+    TestID   -> "FoldContextImageMessage-FoldsIntoNextNonTemporaryUserMessage@@Tests/Context.wlt:545,1-586,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -587,10 +592,11 @@ VerificationTest[
     Module[ { cells, settings, marker, count, hasTags, first, data, saved, second, data2, saved2, third },
         cells    = { Cell[ "Project codename: SILVERFISH", "Text" ], Cell[ "1 + 1", "Input" ] };
         settings = <|
-            "Model"            -> <| "Service" -> "OpenAI", "Name" -> "gpt-4.1" |>,
-            "Multimodal"       -> False,
-            "Prompts"          -> { "CUSTOM-PROMPT-XYZ" },
-            "UserInstructions" -> "USER-INSTRUCTIONS-XYZ"
+            "Model"                   -> <| "Service" -> "OpenAI", "Name" -> "gpt-4.1" |>,
+            "Multimodal"              -> False,
+            "Prompts"                 -> { "CUSTOM-PROMPT-XYZ" },
+            "UserInstructions"        -> "USER-INSTRUCTIONS-XYZ",
+            "PromptCacheOptimization" -> False
         |>;
         marker = "IMPORTANT: Below is some metadata";
         count  = Function[ messages,
@@ -649,7 +655,50 @@ VerificationTest[
     ],
     { ConstantArray[ { 1, 1, 1, 1 }, 3 ], { False, False, False }, { True, True }, True },
     SameTest -> MatchQ,
-    TestID   -> "AddPrompts-ToolLoopDoesNotRepeatContext@@Tests/Context.wlt:586,1-653,2"
+    TestID   -> "AddPrompts-ToolLoopDoesNotRepeatContext@@Tests/Context.wlt:591,1-659,2"
+]
+
+(* The requests after a tool call are rebuilt from the saved messages, so they keep the images of the user's message,
+   and send the same user message as the first request: *)
+VerificationTest[
+    Module[ { image, question, first, data, saved, second },
+        image    = <| "Type" -> "Image", "Data" -> ConstantImage[ Red, { 8, 8 } ] |>;
+        question = <|
+            "Role"    -> "User",
+            "Content" -> { <| "Type" -> "Text", "Data" -> "What color is this image?" |>, image }
+        |>;
+        { first, data } = Reap[
+            ConstructWorkspaceContextMessages[
+                $plotCells,
+                $plotSettings,
+                { <| "Role" -> "System", "Content" -> "sys" |>, question }
+            ],
+            Wolfram`Chatbook`Common`$chatDataTag
+        ];
+        saved  = Last @ Cases[ data, KeyValuePattern[ "Messages" -> m_ ] :> m, Infinity ];
+        second = ConstructWorkspaceContextMessages[
+            $plotCells,
+            $plotSettings,
+            Join[
+                saved,
+                {
+                    <| "Role" -> "Assistant", "Content" -> "calling tool", "ToolRequest" -> True |>,
+                    <| "Role" -> "User", "Content" -> "<tool_response>2</tool_response>", "ToolResponse" -> True |>
+                }
+            ]
+        ];
+        {
+            Lookup[ second, "Role" ],
+            (* One image from the selected plot, and the image from the user: *)
+            Count[ first[[ 2 ]], KeyValuePattern[ "Type" -> "Image" ], Infinity ],
+            Count[ second, KeyValuePattern[ "Type" -> "Image" ], Infinity ],
+            MemberQ[ second[[ 2, "Content" ]], image ],
+            second[[ 2 ]] === first[[ 2 ]]
+        }
+    ],
+    { { "System", "User", "Assistant", "User" }, 2, 2, True, True },
+    SameTest -> MatchQ,
+    TestID   -> "ToolLoop-KeepsUserMessageImages@@Tests/Context.wlt:663,1-702,2"
 ]
 
 VerificationTest[
@@ -674,7 +723,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "ReplaceAddedPrompts-ReplacesEarlierSection@@Tests/Context.wlt:655,1-678,2"
+    TestID   -> "ReplaceAddedPrompts-ReplacesEarlierSection@@Tests/Context.wlt:704,1-727,2"
 ]
 
 VerificationTest[
@@ -694,7 +743,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "AddPrompts-NoPromptKeepsMessages@@Tests/Context.wlt:680,1-698,2"
+    TestID   -> "AddPrompts-NoPromptKeepsMessages@@Tests/Context.wlt:729,1-747,2"
 ]
 
 VerificationTest[
@@ -723,7 +772,7 @@ VerificationTest[
     ],
     { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "PrepareMessagesForLLM-RemovesAddedPromptTags@@Tests/Context.wlt:700,1-727,2"
+    TestID   -> "PrepareMessagesForLLM-RemovesAddedPromptTags@@Tests/Context.wlt:749,1-776,2"
 ]
 
 VerificationTest[
@@ -747,7 +796,7 @@ VerificationTest[
     ],
     { "GENERATED-DOCS-XYZ", True, True },
     SameTest -> MatchQ,
-    TestID   -> "PrepareMessagesForLLM-StripsAddedPromptsAfterGeneratedLeadingMessage@@Tests/Context.wlt:729,1-751,2"
+    TestID   -> "PrepareMessagesForLLM-StripsAddedPromptsAfterGeneratedLeadingMessage@@Tests/Context.wlt:778,1-800,2"
 ]
 
 VerificationTest[
@@ -765,7 +814,7 @@ VerificationTest[
         KeyValuePattern @ { "Role" -> "User", "Content" -> "hi" }
     },
     SameTest -> MatchQ,
-    TestID   -> "PrepareMessagesForLLM-StripsAddedPromptsBeforeRoleConversion@@Tests/Context.wlt:753,1-769,2"
+    TestID   -> "PrepareMessagesForLLM-StripsAddedPromptsBeforeRoleConversion@@Tests/Context.wlt:802,1-818,2"
 ]
 
 VerificationTest[
@@ -783,8 +832,390 @@ VerificationTest[
         KeyValuePattern @ { "role" -> "user", "content" -> "hi" }
     },
     SameTest -> MatchQ,
-    TestID   -> "PrepareMessagesForHTTPRequest-StripsAddedPrompts@@Tests/Context.wlt:771,1-787,2"
+    TestID   -> "PrepareMessagesForHTTPRequest-StripsAddedPrompts@@Tests/Context.wlt:820,1-836,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Prompt Cache Optimization*)
+
+(* Constructs the messages of the inputs of a workspace chat about the same notebook, evaluating changes[[ i ]][ nb ]
+   before input i + 1. A change can also give settings to update for the later inputs. Each request gets the earlier
+   requests' messages as history, including their turn messages, and starts without the context prompts for searches,
+   like a new chat evaluation. Gives the requests, the context prompt for searches after the last request, and the last
+   request built again (like regenerating its response): *)
+workspaceInputs // Attributes = { HoldRest };
+workspaceInputs[ cells_, settings0_Association, changes_List ] := UsingFrontEnd @ Module[
+    { nb, settings, history, requests, request, data, contextPrompt },
+    WithCleanup[
+        nb = NotebookPut @ Notebook @ cells;
+        SelectionMove[ First @ Cells @ nb, All, Cell ];
+        settings = <|
+            AbsoluteCurrentChatSettings @ nb,
+            "AllowSelectionContext"   -> True,
+            "ConversationUUID"        -> CreateUUID[ ],
+            "FocusedNotebook"         -> nb,
+            "Model"                   -> <| "Service" -> "OpenAI", "Name" -> "gpt-4.1" |>,
+            "Multimodal"              -> False,
+            "PromptCacheOptimization" -> True,
+            "PromptGenerators"        -> { },
+            "Tools"                   -> { "NotebookReader" },
+            settings0
+        |>;
+        Block[
+            {
+                Wolfram`Chatbook`$WorkspaceChat             = True,
+                Wolfram`Chatbook`Common`$evaluationNotebook = nb,
+                Wolfram`Chatbook`Common`$selectedTools      =
+                    KeyTake[ Wolfram`Chatbook`$DefaultTools, settings[ "Tools" ] ],
+                Wolfram`Chatbook`Common`$contextPrompt      = None,
+                Wolfram`Chatbook`Common`$selectionPrompt    = None,
+                Wolfram`Chatbook`$ChatHandlerData           = <| |>
+            },
+            history = {
+                <| "Role" -> "System", "Content" -> "sys" |>,
+                <| "Role" -> "User", "Content" -> "What is this?" |>
+            };
+            requests = { };
+            Do[
+                Wolfram`Chatbook`Common`$contextPrompt = Wolfram`Chatbook`Common`$selectionPrompt = None;
+                { request, data } = Reap[
+                    Wolfram`Chatbook`Common`constructMessages[ settings, history ],
+                    Wolfram`Chatbook`Common`$chatDataTag
+                ];
+                AppendTo[ requests, request ];
+                If[ i <= Length @ changes,
+                    settings = <| settings, Replace[ changes[[ i ]][ nb ], Except[ _Association ] -> <| |> ] |>;
+                    history  = Join[
+                        Association[ Flatten @ data ][ "Messages" ],
+                        {
+                            <| "Role" -> "Assistant", "Content" -> "It's a notebook." |>,
+                            <| "Role" -> "User", "Content" -> "And now?" |>
+                        }
+                    ]
+                ],
+                { i, Length @ changes + 1 }
+            ];
+            contextPrompt = Wolfram`Chatbook`Common`$contextPrompt;
+            { requests, contextPrompt, Wolfram`Chatbook`Common`constructMessages[ settings, history ] }
+        ],
+        NotebookClose @ nb
+    ]
+];
+
+(* The requests of two inputs with change[ nb ] in between. With extra = True, the result also includes the context
+   prompt for searches after the second request, and the second request built again: *)
+twoWorkspaceInputs // Attributes = { HoldRest };
+twoWorkspaceInputs[ cells_, settings0_Association, change_ ] := First @ workspaceInputs[ cells, settings0, { change } ];
+twoWorkspaceInputs[ cells_, settings0_Association, change_, True ] :=
+    With[ { result = workspaceInputs[ cells, settings0, { change } ] }, Join[ First @ result, Rest @ result ] ];
+
+$contextMarker = "IMPORTANT: Below is some metadata";
+$codenameCells = { Cell[ "Project codename: SILVERFISH", "Text" ], Cell[ "1 + 1", "Input" ] };
+
+contentString[ message_ ] := StringJoin @ Cases[ Flatten @ { message[ "Content" ] }, s_String | KeyValuePattern[ "Data" -> s_String ] :> s ];
+
+(* The notebook context is sent after the user message instead of in the system prompt: *)
+VerificationTest[
+    Module[ { first },
+        { first } = Take[ twoWorkspaceInputs[ $codenameCells, <| |>, Identity ], 1 ];
+        {
+            Lookup[ first, "Role" ],
+            StringFreeQ[ contentString @ first[[ 1 ]], $contextMarker ],
+            StringContainsQ[ contentString @ first[[ 3 ]], { $contextMarker, "SILVERFISH" }, IgnoreCase -> False ]
+        }
+    ],
+    { { "System", "User", "System" }, True, True },
+    SameTest -> MatchQ,
+    TestID   -> "PromptCache-NotebookContextTurnMessage@@Tests/Context.wlt:919,1-931,2"
+]
+
+(* It's only sent once, and nothing is added for the next input when nothing changed: *)
+VerificationTest[
+    Module[ { first, second },
+        { first, second } = twoWorkspaceInputs[ $codenameCells, <| |>, Identity ];
+        {
+            Take[ KeyTake[ second, { "Role", "Content" } ], Length @ first ] === KeyTake[ first, { "Role", "Content" } ],
+            Lookup[ Drop[ second, Length @ first ], "Role" ],
+            StringCount[ StringJoin[ contentString /@ second ], $contextMarker ]
+        }
+    ],
+    { True, { "Assistant", "User" }, 1 },
+    SameTest -> MatchQ,
+    TestID   -> "PromptCache-NotebookContextOnce@@Tests/Context.wlt:934,1-946,2"
+]
+
+(* When the selection moved, the next input gets a short notice: *)
+VerificationTest[
+    Module[ { first, second, notice },
+        { first, second } = twoWorkspaceInputs[ $codenameCells, <| |>, SelectionMove[ Last @ Cells @ #, All, Cell ] & ];
+        notice = contentString @ Last @ second;
+        {
+            Lookup[ Drop[ second, Length @ first ], "Role" ],
+            StringContainsQ[ notice, "moved their selection" ],
+            StringFreeQ[ notice, { "has changed", $contextMarker } ]
+        }
+    ],
+    { { "Assistant", "User", "System" }, True, True },
+    SameTest -> MatchQ,
+    TestID   -> "PromptCache-NotebookContextSelectionMoved@@Tests/Context.wlt:949,1-962,2"
+]
+
+(* When the content changed, the next input gets a short notice: *)
+VerificationTest[
+    Module[ { first, second, notice },
+        { first, second } = twoWorkspaceInputs[
+            $codenameCells,
+            <| |>,
+            NotebookWrite[ Last @ Cells @ #, Cell[ "2 + 2", "Input" ] ] &
+        ];
+        notice = contentString @ Last @ second;
+        { Lookup[ Drop[ second, Length @ first ], "Role" ], StringContainsQ[ notice, "the notebook has changed" ] }
+    ],
+    { { "Assistant", "User", "System" }, True },
+    SameTest -> MatchQ,
+    TestID   -> "PromptCache-NotebookContextEdited@@Tests/Context.wlt:965,1-978,2"
+]
+
+(* Images in the notebook context are sent in a separate user message after it: *)
+VerificationTest[
+    Module[ { first },
+        { first } = Take[
+            twoWorkspaceInputs[
+                { Cell[ "Some text", "Text" ], Cell[ BoxData @ ToBoxes @ Plot[ Sin[ x ], { x, 0, 2 Pi } ], "Output" ] },
+                <| "Multimodal" -> True |>,
+                Identity
+            ],
+            1
+        ];
+        {
+            Lookup[ first, "Role" ],
+            first[[ 2, "Content" ]],
+            Count[ first[[ 4 ]], KeyValuePattern[ "Type" -> "Image" ], Infinity ]
+        }
+    ],
+    { { "System", "User", "System", "User" }, "What is this?", 1 },
+    SameTest -> MatchQ,
+    TestID   -> "PromptCache-NotebookContextImages@@Tests/Context.wlt:981,1-1000,2"
+]
+
+(* Regenerating the response to the second input gives the notice again, since what the AI last saw comes from the
+   history: *)
+VerificationTest[
+    Module[ { first, second, contextPrompt, again },
+        { first, second, contextPrompt, again } = twoWorkspaceInputs[
+            $codenameCells,
+            <| |>,
+            SelectionMove[ Last @ Cells @ #, All, Cell ] &,
+            True
+        ];
+        { StringContainsQ[ contentString @ Last @ second, "moved their selection" ], again === second }
+    ],
+    { True, True },
+    SameTest -> MatchQ,
+    TestID   -> "PromptCache-NotebookContextRegenerate@@Tests/Context.wlt:1004,1-1017,2"
+]
+
+(* When nothing changed, prompt generators still get the notebook context for their searches: *)
+VerificationTest[
+    Module[ { first, second, contextPrompt, again },
+        { first, second, contextPrompt, again } = twoWorkspaceInputs[ $codenameCells, <| |>, Identity, True ];
+        StringContainsQ[ contextPrompt, "SILVERFISH" ]
+    ],
+    True,
+    SameTest -> MatchQ,
+    TestID   -> "PromptCache-NotebookContextSearchPrompt@@Tests/Context.wlt:1020,1-1028,2"
+]
+
+(* When the NotebookReader tool is available, the notice says how to read the notebook, with the tool's name as the
+   model knows it: *)
+VerificationTest[
+    Table[
+        Block[
+            {
+                Wolfram`Chatbook`Common`$selectedTools    = KeyTake[ Wolfram`Chatbook`$DefaultTools, { "NotebookReader" } ],
+                Wolfram`Chatbook`Common`$simpleToolMethod = simple
+            },
+            StringCases[
+                Wolfram`Chatbook`ChatModes`Context`Private`notebookChangeHint[
+                    { "Selection" },
+                    <| "Info" -> <| "WindowTitle" -> "Test" |> |>,
+                    <| |>
+                ][ "Content" ],
+                "use the " ~~ name: Except[ WhitespaceCharacter ].. ~~ " tool" :> name
+            ]
+        ],
+        { simple, { False, True } }
+    ],
+    { { "notebook_reader" }, { "/nb_read" } },
+    SameTest -> MatchQ,
+    TestID   -> "PromptCache-NotebookContextReaderNotice@@Tests/Context.wlt:1032,1-1053,2"
+]
+
+(* A notice is only sent once for each change: *)
+VerificationTest[
+    Module[ { requests },
+        requests = First @ workspaceInputs[
+            $codenameCells,
+            <| |>,
+            { SelectionMove[ Last @ Cells @ #, All, Cell ] &, Identity }
+        ];
+        StringCount[ StringJoin[ contentString /@ Last @ requests ], "moved their selection" ]
+    ],
+    1,
+    SameTest -> MatchQ,
+    TestID   -> "PromptCache-NotebookContextNoticeOnce@@Tests/Context.wlt:1056,1-1068,2"
+]
+
+(* Without the NotebookReader tool, the AI can't read the notebook, so the full context is sent again when something
+   changed: *)
+VerificationTest[
+    Module[ { first, second },
+        { first, second } = twoWorkspaceInputs[
+            $codenameCells,
+            <| "Tools" -> { } |>,
+            SelectionMove[ Last @ Cells @ #, All, Cell ] &
+        ];
+        {
+            StringCount[ StringJoin[ contentString /@ Drop[ second, Length @ first ] ], $contextMarker ],
+            StringFreeQ[ StringJoin[ contentString /@ second ], "moved their selection" ]
+        }
+    ],
+    { 1, True },
+    SameTest -> MatchQ,
+    TestID   -> "PromptCache-NotebookContextWithoutReader@@Tests/Context.wlt:1072,1-1087,2"
+]
+
+(* The context is built without relative times, since it is sent again unchanged in later requests: *)
+VerificationTest[
+    Module[ { file, first, second, context },
+        file = FileNameJoin @ { $TemporaryDirectory, "NotebookContext-" <> CreateUUID[ ] <> ".nb" };
+        WithCleanup[
+            { first, second } = twoWorkspaceInputs[
+                $codenameCells,
+                <| "Tools" -> { } |>,
+                (NotebookSave[ #, file ]; NotebookWrite[ Last @ Cells @ #, Cell[ "2 + 2", "Input" ] ]) &
+            ];
+            context = StringJoin[ contentString /@ Drop[ second, Length @ first ] ];
+            { StringContainsQ[ context, "MemoryModificationTime" ], StringFreeQ[ context, { "ago)", "just now" } ] },
+            Quiet @ DeleteFile @ file
+        ]
+    ],
+    { True, True },
+    SameTest -> MatchQ,
+    TestID   -> "PromptCache-NotebookContextNoRelativeTimes@@Tests/Context.wlt:1090,1-1107,2"
+]
+
+(* After the user turns off notebook content, the content that was sent earlier is not sent again: *)
+VerificationTest[
+    Module[ { first, second },
+        { first, second } = twoWorkspaceInputs[ $codenameCells, <| |>, <| "AllowSelectionContext" -> False |> & ];
+        StringCount[ StringJoin[ contentString /@ second ], $contextMarker ]
+    ],
+    0,
+    SameTest -> MatchQ,
+    TestID   -> "PromptCache-NotebookContextTurnedOff@@Tests/Context.wlt:1110,1-1118,2"
+]
+
+(* After a change, prompt generators get a smaller context around the current selection for their searches: *)
+VerificationTest[
+    Module[ { first, second, contextPrompt, again },
+        { first, second, contextPrompt, again } = twoWorkspaceInputs[
+            $codenameCells,
+            <| |>,
+            SelectionMove[ Last @ Cells @ #, All, Cell ] &,
+            True
+        ];
+        StringQ @ contextPrompt
+    ],
+    True,
+    SameTest -> MatchQ,
+    TestID   -> "PromptCache-NotebookContextSearchPromptChanged@@Tests/Context.wlt:1121,1-1134,2"
+]
+
+(* That context is not sent, so the base prompt components it needs are not kept (they would be sent as hints): *)
+VerificationTest[
+    Wolfram`Chatbook`Common`withBasePromptBuilder[
+        twoWorkspaceInputs[
+            { Cell[ "Some text", "Text" ], Cell[ BoxData @ ToBoxes @ Plot[ Sin[ x ], { x, 0, 2 Pi } ], "Output" ] },
+            <| "Multimodal" -> True |>,
+            SelectionMove[ Last @ Cells @ #, All, Cell ] &
+        ];
+        MemberQ[ Wolfram`Chatbook`Common`collectedBasePromptNames[ ], "ConversionGraphics" ]
+    ],
+    False,
+    SameTest -> MatchQ,
+    TestID   -> "PromptCache-NotebookContextSearchPromptHints@@Tests/Context.wlt:1137,1-1149,2"
+]
+
+(* Other chats don't get the notebook context as turn messages: *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`$WorkspaceChat = False, Wolfram`Chatbook`$SidebarChat = False },
+        Wolfram`Chatbook`Common`notebookContextTurnMessages[ <| "AllowSelectionContext" -> True |>, { } ]
+    ],
+    { },
+    SameTest -> MatchQ,
+    TestID   -> "PromptCache-NotebookContextOtherChats@@Tests/Context.wlt:1152,1-1159,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Notebook Context Limits*)
+
+(* The notebook context and NotebookReader pages don't grow with larger chat budgets: *)
+VerificationTest[
+    Lookup[
+        Wolfram`Chatbook`ChatModes`Context`Private`downScaledSettings /@ {
+            <| "MaxContextTokens" -> 2^15, "MaxCellStringLength" -> 16384, "MaxOutputCellStringLength" -> 1000 |>,
+            <| "MaxContextTokens" -> 2^18, "MaxCellStringLength" -> 16384, "MaxOutputCellStringLength" -> 1000 |>
+        },
+        "MaxContextTokens"
+    ],
+    { 8192, 8192 },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookContextLimits-DownScaledSettings@@Tests/Context.wlt:1166,1-1177,2"
+]
+
+(* Gives the length of a notebook context serialized in a chat with the given state of the chat's token budget: *)
+chatContextLength // Attributes = { HoldFirst };
+chatContextLength[ eval_, budget_, cellStringBudget_ ] := Block[
+    {
+        Wolfram`Chatbook`Common`$chatState               = True,
+        Wolfram`Chatbook`Common`$tokenBudget             = budget,
+        Wolfram`Chatbook`Common`$tokenPressure           = 0.0,
+        Wolfram`Chatbook`Common`$initialCellStringBudget = 16384,
+        Wolfram`Chatbook`Common`$cellStringBudget        = cellStringBudget
+    },
+    StringLength @ eval
+];
+
+(* In a chat, the notebook context is serialized with its own token budget, so it doesn't depend on the length of the
+   history or grow with larger chat budgets: *)
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`Common`$contextPrompt   = None,
+            Wolfram`Chatbook`Common`$selectionPrompt = None,
+            Wolfram`Chatbook`$ChatHandlerData        = <| |>
+        },
+        UsingFrontEnd @ Module[ { nb, settings, length },
+            WithCleanup[
+                nb = NotebookPut @ Notebook @ Table[ Cell[ StringRepeat[ "word ", 1000 ], "Text" ], 60 ];
+                SelectionMove[ First @ Cells @ nb, All, Cell ];
+                settings = <| AbsoluteCurrentChatSettings @ nb, "MaxContextTokens" -> 2^18, "Multimodal" -> False |>;
+                length[ budget_, cellStringBudget_ ] := chatContextLength[
+                    Wolfram`Chatbook`ChatModes`Common`getContextFromSelection[ None, nb, settings ],
+                    budget,
+                    cellStringBudget
+                ];
+                { length[ 2^18, 16384 ] === length[ 2^10, 0 ], length[ 2^18, 16384 ] < 0.8 * 51 * 5000 },
+                NotebookClose @ nb
+            ]
+        ]
+    ],
+    { True, True },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookContextLimits-ChatBudget@@Tests/Context.wlt:1194,1-1219,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
-

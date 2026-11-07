@@ -1,7 +1,7 @@
 PacletObject[ <|
     "Name"           -> "Wolfram/Chatbook",
     "PublisherID"    -> "Wolfram",
-    "Version"        -> "2.7.86",
+    "Version"        -> "2.7.103",
     "WolframVersion" -> "15.0+",
     "Description"    -> "Wolfram Notebooks + LLMs",
     "License"        -> "MIT",
@@ -38,7 +38,6 @@ PacletObject[ <|
                 { "DisplayFunctions"    , "DisplayFunctions.wxf"     },
                 { "DisplayFunctionsDark", "DisplayFunctionsDark.wxf" },
                 { "Snippets"            , "Snippets"                 },
-                { "Icons"               , "Icons.wxf"                },
                 { "SandboxMessages"     , "SandboxMessages.wl"       },
                 { "Skills"              , "Skills"                   },
                 { "TemplateBoxOptions"  , "TemplateBoxOptions.wxf"   },

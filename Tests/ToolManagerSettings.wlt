@@ -29,15 +29,24 @@ VerificationTest[
     storeKeys[ { TaggingRules, "ChatNotebookSettings", keys___ } ] := { keys };
 
     storeRead[ keys_List ] := Replace[
-        Fold[ Replace[ #1, { as_Association :> Lookup[ as, #2, Inherited ], _ -> Inherited } ] &, $store, keys ],
+        Fold[
+            Replace[ #1, { as: _Association | { ___Rule } :> Lookup[ as, #2, Inherited ], _ -> Inherited } ] &,
+            $store,
+            keys
+        ],
         Missing[ ___ ] -> Inherited
     ];
 
+    (* Like the front end, parents may be stored as rule lists (e.g. in notebooks saved by older versions): *)
     storeWrite[ { key_ }, Inherited, as_Association ] := KeyDrop[ as, key ];
     storeWrite[ { key_ }, value_, as_Association ] := Append[ as, key -> value ];
     storeWrite[ { key_, rest__ }, value_, as_Association ] := Append[
         as,
-        key -> storeWrite[ { rest }, value, Replace[ Lookup[ as, key, <| |> ], Except[ _Association ] -> <| |> ] ]
+        key -> storeWrite[
+            { rest },
+            value,
+            Replace[ Lookup[ as, key, <| |> ], { rules: { ___Rule } :> Association @ rules, Except[ _Association ] -> <| |> } ]
+        ]
     ];
 
     withFakeStore[ eval_ ] := Block[
@@ -80,7 +89,7 @@ VerificationTest[
     ,
     { _Function, _Function, _Function },
     SameTest -> MatchQ,
-    TestID   -> "Definitions@@Tests/ToolManagerSettings.wlt:26,1-84,2"
+    TestID   -> "Definitions@@Tests/ToolManagerSettings.wlt:26,1-93,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -91,7 +100,7 @@ VerificationTest[
     withFakeStore[ checkboxHandler[ False ]; checkboxHandler[ True ] ],
     <| |>,
     SameTest -> MatchQ,
-    TestID   -> "CheckboxRoundTrip@@Tests/ToolManagerSettings.wlt:89,1-95,2"
+    TestID   -> "CheckboxRoundTrip@@Tests/ToolManagerSettings.wlt:98,1-104,2"
 ]
 
 VerificationTest[
@@ -99,7 +108,7 @@ VerificationTest[
     withFakeStore[ popupHandler[ None ]; popupHandler[ Inherited ] ],
     <| |>,
     SameTest -> MatchQ,
-    TestID   -> "PopupRoundTrip@@Tests/ToolManagerSettings.wlt:97,1-103,2"
+    TestID   -> "PopupRoundTrip@@Tests/ToolManagerSettings.wlt:106,1-112,2"
 ]
 
 VerificationTest[
@@ -107,7 +116,7 @@ VerificationTest[
     withFakeStore[ popupHandler[ None ]; clearAction[ ] ],
     <| |>,
     SameTest -> MatchQ,
-    TestID   -> "ClearButton@@Tests/ToolManagerSettings.wlt:105,1-111,2"
+    TestID   -> "ClearButton@@Tests/ToolManagerSettings.wlt:114,1-120,2"
 ]
 
 VerificationTest[
@@ -118,7 +127,26 @@ VerificationTest[
     withFakeStore[ clearAction[ ] ],
     <| "ToolSelections" -> <| "Other" -> <| "PlainChat" -> True |> |> |>,
     SameTest -> MatchQ,
-    TestID   -> "ClearButtonKeepsOtherTools@@Tests/ToolManagerSettings.wlt:113,1-122,2"
+    TestID   -> "ClearButtonKeepsOtherTools@@Tests/ToolManagerSettings.wlt:122,1-131,2"
+]
+
+VerificationTest[
+    $store = <|
+        "ToolSelections"    -> { "DocumentationSearcher" -> { "PlainChat" -> True }, "Other" -> { "PlainChat" -> True } },
+        "ToolSelectionType" -> { "DocumentationSearcher" -> All }
+    |>;
+    withFakeStore[ clearAction[ ] ],
+    <| "ToolSelections" -> <| "Other" -> { "PlainChat" -> True } |> |>,
+    SameTest -> MatchQ,
+    TestID   -> "ClearButtonRuleLists@@Tests/ToolManagerSettings.wlt:133,1-142,2"
+]
+
+VerificationTest[
+    $store = <| "ToolSelectionType" -> { "DocumentationSearcher" -> All } |>;
+    withFakeStore[ popupHandler[ Inherited ] ],
+    <| |>,
+    SameTest -> MatchQ,
+    TestID   -> "PopupInheritedRuleList@@Tests/ToolManagerSettings.wlt:144,1-150,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

@@ -135,16 +135,6 @@ relatedDocumentationListGenerator[ messages: $$chatMessages ] :=
 
 relatedDocumentationListGenerator // endDefinition;
 
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*relatedWolframAlphaQueriesGenerator*)
-relatedWolframAlphaQueriesGenerator // beginDefinition;
-
-relatedWolframAlphaQueriesGenerator[ messages: $$chatMessages ] :=
-    LogChatTiming @ RelatedWolframAlphaQueries[ messages, "Prompt" ];
-
-relatedWolframAlphaQueriesGenerator // endDefinition;
-
 (* TODO: prompt generator selectors that work like tool selections *)
 
 (* ::**************************************************************************************************************:: *)
@@ -186,7 +176,6 @@ applyPromptGenerators // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*toPromptGenerator*)
 toPromptGenerator // beginDefinition;
-toPromptGenerator[ ___ ] /; $VersionNumber < 14.1 := Nothing;
 toPromptGenerator[ name_String ] := toPromptGenerator @ $defaultPromptGenerators @ name;
 toPromptGenerator[ generator: HoldPattern[ _LLMPromptGenerator ] ] := generator;
 toPromptGenerator[ other_ ] := throwFailure[ "InvalidPromptGenerator", other ];

@@ -19,7 +19,6 @@ Needs[ "Wolfram`Chatbook`UI`"               ];
 (*Configuration*)
 $preferencesWidth        = 640;
 $cloudPreferencesHeight  = 415;
-$cloudEvaluationNotebook = None;
 
 $preferencesPages = { "Services", "Notebooks", "Personas", "Tools" };
 $$preferencesPage = Alternatives @@ $preferencesPages;
@@ -762,20 +761,14 @@ makeModelNameSelector[ dmPrefCache_, service_, model_, modelNameSelector_, state
             StringQ @ current && ! MemberQ[ models, KeyValuePattern[ "Name" -> current ] ],
                 items = Join[ { popupValue @ current, Delimiter }, items ],
             ! StringQ @ current,
-                items = Join[ { Automatic -> "Automatic", Delimiter }, items ]
+                items = Join[ { Automatic -> tr[ "Automatic" ], Delimiter }, items ]
         ];
 
         PopupMenu[
             Dynamic[
                 extractModelName @ Lookup[ dmPrefCache, "Model" ],
                 Function[
-                    If[ StringQ @ #,
-                        dmPrefCache[ "ServiceDefaultModel" ] = Replace[
-                            Lookup[ dmPrefCache, "ServiceDefaultModel", <| |> ],
-                            Except[ _Association ] -> <| |>
-                        ];
-                        modelSelectCallback[ #, dmPrefCache, service, model ]
-                    ]
+                    If[ StringQ @ #, modelSelectCallback[ #, dmPrefCache, service, model ] ]
                 ]
             ],
             items,
@@ -859,7 +852,7 @@ modelSelectCallback[ selected_String(* The value chosen via PopupMenu *), dmPref
     (* Remember the selected model for the given service, so it will be automatically chosen
        when choosing this service again: *)
     dmPrefCache[ "ServiceDefaultModel" ] = CurrentChatSettings[ $FrontEnd, "ServiceDefaultModel" ] = Append[
-        Lookup[ dmPrefCache, "ServiceDefaultModel" ],
+        Replace[ Lookup[ dmPrefCache, "ServiceDefaultModel" ], Except[ _? AssociationQ ] :> <| |> ],
         service -> model
     ];
     ,
@@ -1722,59 +1715,10 @@ makeServiceGrid // endDefinition;
 makeServiceGridRow // beginDefinition;
 
 makeServiceGridRow[ Dynamic[ dmPrefCache_ ], name_String, data_Association ] := {
-    makeServiceAuthenticationDisplay[ Dynamic @ dmPrefCache, name, resizeMenuIcon @ inlineChatbookExpressions @ serviceIcon @ data ]
+    makeServiceAuthenticationDisplay[ Dynamic @ dmPrefCache, name, resizeMenuIcon @ serviceIcon @ data ]
 };
 
 makeServiceGridRow // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*deleteServiceButton*)
-deleteServiceButton // beginDefinition;
-
-deleteServiceButton[ _, "OpenAI" ] := Framed[
-    Button[
-        chatbookExpression[ "ToolManagerBin", color @ "PreferencesContentServicesDeleteIconAlt" ],
-        Null,
-        Enabled -> False,
-        $deleteServiceButtonOptions
-    ],
-    $deleteServiceButtonFrameOptions
-];
-
-deleteServiceButton[ Dynamic[ dmPrefCache_ ], service_String ] := Tooltip[
-    Framed[
-        Button[
-            $trashBin,
-            Needs[ "LLMServices`" -> None ];
-            LLMServices`UnregisterService @ service;
-            disconnectService[ Dynamic @ dmPrefCache, service ];
-            updateDynamics[ { "Services", "Preferences" } ],
-            $deleteServiceButtonOptions
-        ],
-        $deleteServiceButtonFrameOptions
-    ],
-    tr[ "PreferencesContentUnregisterTooltip" ]
-];
-
-deleteServiceButton // endDefinition;
-
-
-$deleteServiceButtonOptions = Sequence[
-    Appearance     -> "Suppressed",
-    ContentPadding -> False,
-    FrameMargins   -> 0,
-    ImageMargins   -> 0,
-    Method         -> "Queued"
-];
-
-
-$deleteServiceButtonFrameOptions = Sequence[
-    ContentPadding -> False,
-    FrameMargins   -> 0,
-    FrameStyle     -> Transparent,
-    ImageMargins   -> 0
-];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2026,7 +1970,7 @@ popupValue[ value_String, label: Except[ $$unspecified ] ] :=
 popupValue[ value_String, label: Except[ $$unspecified ], icon: Except[ $$unspecified ] ] :=
     If[ TrueQ @ $noIcons,
         value -> label,
-        value -> Row[ { resizeMenuIcon @ inlineChatbookExpressions @ icon, label }, Spacer[ 1 ] ]
+        value -> Row[ { resizeMenuIcon @ icon, label }, Spacer[ 1 ] ]
     ];
 
 popupValue // endDefinition;
@@ -2126,7 +2070,10 @@ disconnectService[ Dynamic[ dmPrefCache_ ], service_String ] :=
         SetEnvironment[ key -> None ];
         clearConnectionCache @ service;
         If[ extractServiceName @ Lookup[ dmPrefCache, "Model" ] === service,
-            dmPrefCache[ "Model" ] = CurrentChatSettings[ $FrontEnd, "Model" ] = $DefaultModel
+            dmPrefCache[ "Model" ] = CurrentChatSettings[ $FrontEnd, "Model" ] = $DefaultModel;
+            (* Rebuild the panel so the service and model selectors show the new default model: *)
+            updateDynamics[ "Preferences" ];
+            forceRefreshCloudPreferences[ ]
         ];
         updateDynamics[ "Services" ]
     ];
@@ -2170,12 +2117,7 @@ credentialKey // endDefinition;
 (*savedConnectionQ*)
 savedConnectionQ // beginDefinition;
 
-savedConnectionQ[ service_String ] /; ! serviceFrameworkAvailable[ ] := (
-    Needs[ "OAuth`" -> None ];
-    MatchQ[ ServiceConnections`SavedConnections @ service, { __ } ]
-);
-
-savedConnectionQ[ service_String ] /; serviceFrameworkAvailable[ ] :=
+savedConnectionQ[ service_String ] :=
     MatchQ[ serviceObjects @ service, { __ } ];
 
 savedConnectionQ // endDefinition;
@@ -2187,12 +2129,7 @@ serviceObjects := serviceObjects = Symbol[ "System`ServiceObjects" ];
 (*serviceConnectionQ*)
 serviceConnectionQ // beginDefinition;
 
-serviceConnectionQ[ service_String ] /; ! serviceFrameworkAvailable[ ] := (
-    Needs[ "OAuth`" -> None ];
-    MatchQ[ ServiceConnections`ServiceConnections @ service, { __ } ]
-);
-
-serviceConnectionQ[ service_String ] /; serviceFrameworkAvailable[ ] :=
+serviceConnectionQ[ service_String ] :=
     savedConnectionQ @ service;
 
 serviceConnectionQ // endDefinition;
@@ -2205,20 +2142,7 @@ clearConnectionCache // beginDefinition;
 clearConnectionCache[ service_String ] :=
     clearConnectionCache[ service, True ];
 
-clearConnectionCache[ service_String, delete: True|False ] /; ! serviceFrameworkAvailable[ ] := (
-    Needs[ "Wolfram`LLMFunctions`" -> None ];
-    If[ delete,
-        Needs[ "OAuth`" -> None ];
-        ServiceConnections`DeleteConnection /@ ServiceConnections`SavedConnections @ service;
-        ServiceConnections`DeleteConnection /@ ServiceConnections`ServiceConnections @ service;
-    ];
-    If[ AssociationQ @ Wolfram`LLMFunctions`APIs`Common`$ConnectionCache,
-        KeyDropFrom[ Wolfram`LLMFunctions`APIs`Common`$ConnectionCache, service ]
-    ];
-    InvalidateServiceCache[ ];
-);
-
-clearConnectionCache[ service_String, delete: True|False ] /; serviceFrameworkAvailable[ ] := (
+clearConnectionCache[ service_String, delete: True|False ] := (
     Needs[ "Wolfram`LLMFunctions`" -> None ];
     If[ delete,
         DeleteObject @ serviceObjects @ service;
@@ -2241,14 +2165,6 @@ $loadingPopupMenu = PopupMenu[ "x", { "x" -> ProgressIndicator[ Appearance -> { 
 (* ::Subsection::Closed:: *)
 (*$verticalSpacer*)
 $verticalSpacer = { Pane[ "", ImageSize -> { Automatic, 20 } ], SpanFromLeft };
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*$trashBin*)
-$trashBin := Mouseover[
-    chatbookExpression[ "ToolManagerBin", color @ "PreferencesContentServicesDeleteIcon" ],
-    chatbookExpression[ "ToolManagerBin", color @ "PreferencesContentServicesDeleteIconHover" ]
-];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -2287,15 +2203,23 @@ resetButton[ Dynamic[ tab_ ], Dynamic[ dmPrefCache_ ] ] :=
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*resetChatPreferences*)
+(* These must match the controls shown on the Notebooks tab, plus "Assistance" (see below). The model selector is shared
+   with the Services tab, so resetting either tab resets the model; updateDynamics[ "Preferences" ] rebuilds both tabs so
+   they show the new value. The cloud preferences cell doesn't track that trigger, so forceRefreshCloudPreferences
+   rebuilds it instead. *)
 $notebooksTabSettingKeys = {
+    (* The "Assistance" checkbox is currently hidden (see makeDefaultSettingsContent), but versions that showed it may
+       have stored "Assistance" -> True globally, and this reset is the only way to clear that from the UI: *)
     "Assistance",
     "AutoFormat",
     "ChatHistoryLength",
     "IncludeHistory",
     "LLMEvaluator",
     "MergeMessages",
+    "Model",
     "Multimodal",
     "OpenAIAPICompletionURL",
+    "ServiceDefaultModel",
     "Temperature",
     "ToolCallFrequency",
     "ToolsEnabled",
@@ -2310,6 +2234,7 @@ resetChatPreferences[ Dynamic[ dmPrefCache_ ], "Notebooks" ] := (
     unsetChatSettingsKeys[ $FrontEnd, $notebooksTabSettingKeys ];
     dmPrefCache = CurrentChatSettings[ $FrontEnd ];
     updateDynamics[ "Preferences" ];
+    forceRefreshCloudPreferences[ ];
 );
 
 resetChatPreferences[ Dynamic[ dmPrefCache_ ], "Personas" ] := (
@@ -2338,6 +2263,7 @@ resetChatPreferences[ Dynamic[ dmPrefCache_ ], "Services" ] := (
     LLMServices`ResetServices[ ];
     InvalidateServiceCache[ ];
     updateDynamics[ "Preferences" ];
+    forceRefreshCloudPreferences[ ];
 );
 
 resetChatPreferences // endDefinition;

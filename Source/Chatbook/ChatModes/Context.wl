@@ -16,11 +16,16 @@ $notebookInstructionsPrompt = True;
 $currentSelectionIndicator  = { $leftSelectionIndicator, $rightSelectionIndicator };
 $notebookContextLimitScale  = 0.25;
 $downScaledSettings         = { "MaxCellStringLength", "MaxContextTokens", "MaxOutputCellStringLength" };
+(* The notebook context and NotebookReader pages are limited as if MaxContextTokens was at most this, so that they don't
+   grow with larger chat budgets (e.g. the Notebook Assistant's): *)
+$maxNotebookContextTokens   = 2^15;
 $maxContextImages           = 5;
 $contextPrompt              = None;
 $selectionPrompt            = None;
 $contextImages              = { };
 $sidebarSelectionContext    = None;
+$includeRelativeTimes       = True;
+$notebookReaderPageSize     = 50;
 
 $notebookContextTemplate = StringTemplate[ "\
 IMPORTANT: Below is some metadata and content from the user's currently selected notebook. \
@@ -183,6 +188,16 @@ resolveFocusedNotebook[ focused_ ] :=
 resolveFocusedNotebook // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*contextNotebook*)
+(* Gives { notebook, info } for the user's notebook that notebook context is taken from: the focused notebook in
+   workspace chats, otherwise the notebook that contains the chat (e.g. the notebook with the sidebar): *)
+contextNotebook // beginDefinition;
+contextNotebook[ settings_Association ] /; TrueQ @ $WorkspaceChat := resolveFocusedNotebook @ settings[ "FocusedNotebook" ];
+contextNotebook[ settings_Association ] := { $evaluationNotebook, Automatic };
+contextNotebook // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Context from other notebooks*)
 
@@ -228,12 +243,7 @@ getContextFromSelection // Options = {
 
 getContextFromSelection[ chatNB_NotebookObject, settings_Association, opts: OptionsPattern[ ] ] :=
     Module[ { userNotebook, info },
-        If[ TrueQ @ $WorkspaceChat,
-            { userNotebook, info } = resolveFocusedNotebook @ settings[ "FocusedNotebook" ];
-            ,
-            userNotebook = $evaluationNotebook;
-            info = Automatic;
-        ];
+        { userNotebook, info } = contextNotebook @ settings;
         getContextFromSelection[ chatNB, userNotebook, info, settings, opts ]
     ];
 
@@ -271,7 +281,11 @@ getContextFromSelection[
 
             If[ selectionData === None, Throw @ None ];
 
-            string = ConfirmBy[ getContextFromSelection0[ selectionData, settings ], StringQ, "Context" ];
+            string = ConfirmBy[
+                withNotebookContextBudget @ getContextFromSelection0[ selectionData, settings ],
+                StringQ,
+                "Context"
+            ];
 
             ConfirmBy[ mergeCodeBlocks @ string, StringQ, "Merged" ]
         ]
@@ -476,8 +490,16 @@ getNotebookMetadataString0[ info_Association ] := Enclose[
         modified = TrueQ @ info[ "ModifiedInMemory" ];
         date     = info[ "MemoryModificationTime" ];
 
+        (* Relative times are left out where they would go stale, e.g. in NotebookReader tool results: *)
         dateString = If[ modified && DateObjectQ @ date,
-                         ConfirmBy[ DateString @ date <> " (" <> relativeTimeString @ date <> ")", StringQ, "Date" ],
+                         ConfirmBy[
+                             If[ TrueQ @ $includeRelativeTimes,
+                                 DateString @ date <> " (" <> relativeTimeString @ date <> ")",
+                                 DateString @ date
+                             ],
+                             StringQ,
+                             "Date"
+                         ],
                          Missing[ ]
                      ];
 
@@ -511,10 +533,41 @@ downScaledSettings // beginDefinition;
 
 downScaledSettings[ settings_Association ] := <|
     settings,
-    Floor[ $notebookContextLimitScale * KeyTake[ settings, $downScaledSettings ] ]
+    Floor[ $notebookContextLimitScale * KeyTake[ notebookContextLimits @ settings, $downScaledSettings ] ]
 |>;
 
 downScaledSettings // endDefinition;
+
+
+notebookContextLimits // beginDefinition;
+
+notebookContextLimits[ settings: KeyValuePattern[ "MaxContextTokens" -> n_? NumberQ ] ] :=
+    <| settings, "MaxContextTokens" -> Min[ n, $maxNotebookContextTokens ] |>;
+
+notebookContextLimits[ settings_Association ] := settings;
+
+notebookContextLimits // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*withNotebookContextBudget*)
+(* In a chat, the notebook context is serialized with its own token budget of $maxNotebookContextTokens instead of
+   what's left of the chat's budget, so it doesn't grow with larger chat budgets, and it's serialized the same way in
+   every request (e.g. after tool calls) and after the history is trimmed: *)
+withNotebookContextBudget // beginDefinition;
+withNotebookContextBudget // Attributes = { HoldFirst };
+
+withNotebookContextBudget[ eval_ ] :=
+    Block[
+        {
+            $tokenBudget      = $maxNotebookContextTokens,
+            $tokenPressure    = 0.0,
+            $cellStringBudget = $initialCellStringBudget
+        },
+        eval
+    ];
+
+withNotebookContextBudget // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -541,7 +594,7 @@ processContextPromptString // beginDefinition;
 processContextPromptString[ prompt_String ] := Enclose[
     Module[ { noXML, noSelection },
         noXML = ConfirmBy[ stripCellXML @ prompt, StringQ, "NoXML" ];
-        noSelection = ConfirmBy[ (*stripSelectionIndicators @*) noXML, StringQ, "NoSelection" ];
+        noSelection = ConfirmBy[ noXML, StringQ, "NoSelection" ];
         ConfirmBy[ mergeCodeBlocks @ noSelection, StringQ, "Merged" ]
     ],
     throwInternalFailure
@@ -555,13 +608,6 @@ processContextPromptString // endDefinition;
 stripCellXML // beginDefinition;
 stripCellXML[ prompt_String ] := StringDelete[ prompt, { "<cell" ~~ Except[ "\n" ]... ~~ ">\n", "\n</cell>" } ];
 stripCellXML // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*stripSelectionIndicators*)
-stripSelectionIndicators // beginDefinition;
-stripSelectionIndicators[ s_String ] := StringDelete[ s, { $leftSelectionIndicator, $rightSelectionIndicator } ];
-stripSelectionIndicators // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -628,6 +674,10 @@ insertSelectionIndicator[ { { beforeCells___Cell }, { selectedCell_Cell }, { aft
 
 insertSelectionIndicator[ cells_ ] :=
     insertSelectionIndicator[ cells, $currentSelectionIndicator ];
+
+(* No selection markers, e.g. when the NotebookReader tool reads the notebook from the beginning: *)
+insertSelectionIndicator[ { before_List, selected_List, after_List }, None ] :=
+    Join[ before, selected, after ];
 
 insertSelectionIndicator[
     { { beforeCells___Cell }, { }, { afterCells___Cell } },
@@ -1012,6 +1062,479 @@ fullSelection[ BoxData[ a_, b___ ] ] := BoxData[ RowBox @ { $leftSelectionIndica
 fullSelection[ TextData[ text_ ] ] := TextData @ Flatten @ { $leftSelectionIndicator, text, $rightSelectionIndicator };
 fullSelection[ RawData[ s_String ] ] := RawData @ StringJoin[ $leftSelectionIndicator, s, $rightSelectionIndicator ];
 fullSelection // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Notebook Context with Prompt Cache Optimization*)
+(* With prompt cache optimization, the notebook context of sidebar and workspace chats is not added to the system prompt
+   of every request. Instead, it is sent once per conversation with the turn messages of the first input (see
+   addTurnMessages in PromptCache.wl). Later inputs only get a short notice when the user's selection moved or the
+   notebook changed since then, and the AI can read the current content with the NotebookReader tool if it needs to.
+   Without the tool, the full context is sent again instead.
+
+   The context message and the notices record the state of the notebook they describe ("NotebookContextState"), so the
+   state the AI last heard about is the one in the latest of these messages in the history. If the history has no
+   notebook context (e.g. because its turn records are gone after restarting the kernel), the full context is sent
+   again. *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Configuration*)
+$notebookContextImagesLabel = "\
+[Original images for the MarkdownImageBoxes in the notebook content above. Each image follows its markdown link.]";
+
+$notebookChangeHintTemplate = StringTemplate[ "\
+<system-hint>
+Since your last response, `1`, so the notebook content you saw earlier may be out of date. `2`
+</system-hint>" ];
+
+(* The content hash also changes with some notebook options (e.g. the window size), so "Content" is worded neutrally: *)
+$notebookChangeDescriptions = <|
+    "Notebook"  -> "the user switched to a different notebook (`1`)",
+    "Selection" -> "the user moved their selection in the notebook",
+    "Content"   -> "the notebook has changed"
+|>;
+
+(* Users often refer to their selection without saying so (e.g. "And this one?"), so that case is spelled out: *)
+$notebookReaderHint = StringTemplate[ "\
+If the user's message refers to the notebook or to something they selected (for example \"this\", \"this cell\" or \
+\"here\"), use the `1` tool to see its current state before you respond. Otherwise, ignore this notice and don't \
+read the notebook." ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*notebookContextTurnMessages*)
+notebookContextTurnMessages // beginDefinition;
+
+notebookContextTurnMessages[ settings_Association, messages_List ] /;
+    TrueQ[ ($WorkspaceChat || $SidebarChat) && settings[ "AllowSelectionContext" ] ] :=
+        LogChatTiming[ notebookContextTurnMessages0[ settings, messages ], "NotebookContextTurnMessages" ];
+
+notebookContextTurnMessages[ settings_, messages_ ] :=
+    { };
+
+notebookContextTurnMessages // endDefinition;
+
+
+notebookContextTurnMessages0 // beginDefinition;
+
+notebookContextTurnMessages0[ settings_Association, messages_List ] := Enclose[
+    Catch @ Module[ { data, previous, state, changes },
+        data = ConfirmMatch[ notebookSelectionData @ settings, _Association|None, "Data" ];
+        If[ data === None, Throw @ { } ];
+
+        If[ ! MemberQ[ messages, KeyValuePattern[ "NotebookContext" -> True ] ],
+            Throw @ fullNotebookContextMessages[ settings, data ]
+        ];
+
+        previous = Last[ Cases[ messages, KeyValuePattern[ "NotebookContextState" -> s_Association ] :> s ], None ];
+        If[ ! AssociationQ @ previous, Throw @ { } ];
+
+        changes = notebookContextChanges[ previous[ "Fingerprint" ], notebookFingerprint @ data ];
+
+        If[ changes === { },
+            (* Prompt generators use these for searches (see insertContextPrompt in VectorDatabases.wl): *)
+            $contextPrompt   = previous[ "ContextPrompt"   ];
+            $selectionPrompt = previous[ "SelectionPrompt" ];
+            Throw @ { }
+        ];
+
+        (* Without the NotebookReader tool, the AI can't see the changes otherwise: *)
+        If[ ! toolSelectedQ[ "NotebookReader" ], Throw @ fullNotebookContextMessages[ settings, data ] ];
+
+        (* Update the prompts for searches with a smaller context around the current selection. It is not sent, so the
+           base prompt components it needs are not kept: *)
+        withoutCollectingBasePrompts @ contextFromSelectionData[
+            data[ "Notebook" ],
+            data[ "Info" ],
+            selectionNeighborhood @ data,
+            <| settings, "Multimodal" -> False |>
+        ];
+
+        state = ConfirmBy[ notebookContextState @ data, AssociationQ, "State" ];
+        { notebookChangeHint[ changes, data, state ] }
+    ],
+    throwInternalFailure
+];
+
+notebookContextTurnMessages0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*contextFromSelectionData*)
+(* Like getContextFromSelection, but for selection data that has already been determined: *)
+contextFromSelectionData // beginDefinition;
+
+contextFromSelectionData[ nbo_NotebookObject, info_, selectionData_Association, settings0_Association ] := Enclose[
+    Block[
+        {
+            $includeCellXML         = TrueQ @ $notebookEditorEnabled,
+            (* The context is sent again unchanged in later requests, where relative times would be out of date: *)
+            $includeRelativeTimes   = False,
+            $notebookMetadataString
+        },
+        (* Set here, since Block initializers are evaluated before $includeRelativeTimes is changed: *)
+        $notebookMetadataString = getNotebookMetadataString[ nbo, info ];
+        Module[ { settings, string },
+            settings = ConfirmBy[ downScaledSettings @ settings0, AssociationQ, "Settings" ];
+            string = ConfirmBy[
+                withNotebookContextBudget @ getContextFromSelection0[ selectionData, settings ],
+                StringQ,
+                "Context"
+            ];
+            ConfirmBy[ mergeCodeBlocks @ string, StringQ, "Merged" ]
+        ]
+    ],
+    throwInternalFailure
+];
+
+contextFromSelectionData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*notebookSelectionData*)
+notebookSelectionData // beginDefinition;
+
+notebookSelectionData[ settings_Association ] := Enclose[
+    Module[ { nbo, info, selectionData },
+        { nbo, info } = contextNotebook @ settings;
+        selectionData = If[ MatchQ[ nbo, _NotebookObject ], LogChatTiming @ selectContextCells @ nbo, None ];
+        If[ AssociationQ @ selectionData,
+            <| "Notebook" -> nbo, "Info" -> info, "SelectionData" -> selectionData |>,
+            None
+        ]
+    ],
+    throwInternalFailure
+];
+
+notebookSelectionData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*fullNotebookContextMessages*)
+fullNotebookContextMessages // beginDefinition;
+
+fullNotebookContextMessages[ settings_, data_Association ] := Enclose[
+    Block[ { $contextImages = { } },
+        Module[ { context, images },
+            context = ConfirmBy[
+                contextFromSelectionData[ data[ "Notebook" ], data[ "Info" ], data[ "SelectionData" ], settings ],
+                StringQ,
+                "Context"
+            ];
+            images = ConfirmMatch[ $contextImages, { ___List }, "Images" ];
+            Flatten @ {
+                <|
+                    "Role"                 -> "System",
+                    "Content"              -> context,
+                    "Temporary"            -> True,
+                    "PromptCache"          -> True,
+                    "NotebookContext"      -> True,
+                    "NotebookContextState" -> ConfirmBy[ notebookContextState @ data, AssociationQ, "State" ]
+                |>,
+                If[ images === { }, Nothing, notebookContextImageMessage @ images ]
+            }
+        ]
+    ],
+    throwInternalFailure
+];
+
+fullNotebookContextMessages // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*notebookContextImageMessage*)
+(* Images can't be part of system messages, so they are sent in a separate user message: *)
+notebookContextImageMessage // beginDefinition;
+
+notebookContextImageMessage[ images_List ] := <|
+    "Role"            -> "User",
+    "Content"         -> Flatten @ {
+        <| "Type" -> "Text", "Data" -> $notebookContextImagesLabel |>,
+        Replace[
+            images,
+            {
+                { link_String, img_ } :> { <| "Type" -> "Text", "Data" -> "\n" <> link |>, img },
+                { _, img_ } :> img
+            },
+            { 1 }
+        ]
+    },
+    "Temporary"       -> True,
+    "PromptCache"     -> True,
+    "NotebookContext" -> True
+|>;
+
+notebookContextImageMessage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*notebookContextState*)
+(* What a context message or a notice tells the AI about the notebook, and the prompts used for searches with it: *)
+notebookContextState // beginDefinition;
+
+notebookContextState[ data_Association ] := <|
+    "Fingerprint"     -> notebookFingerprint @ data,
+    "ContextPrompt"   -> $contextPrompt,
+    "SelectionPrompt" -> $selectionPrompt
+|>;
+
+notebookContextState // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*notebookFingerprint*)
+(* Cheap values that tell whether the user switched notebooks, moved their selection, or changed the notebook: *)
+notebookFingerprint // beginDefinition;
+
+notebookFingerprint[ KeyValuePattern @ { "Notebook" -> nbo_NotebookObject, "SelectionData" -> selection_Association } ] := <|
+    "Notebook"  -> nbo,
+    "Content"   -> notebookContentHash @ nbo,
+    "Selection" -> {
+        selection[ "Selected" ],
+        Last[ selection[ "Before" ], None ],
+        First[ selection[ "After" ], None ],
+        Replace[ selection[ "Selected" ], { { cell_CellObject } :> cellInformation[ cell, { "CursorPosition" } ], _ -> None } ]
+    }
+|>;
+
+notebookFingerprint // endDefinition;
+
+
+notebookContentHash // beginDefinition;
+
+(* NOTE: this also changes with some notebook options, e.g. when the window is resized: *)
+notebookContentHash[ nbo_NotebookObject ] :=
+    Replace[ FrontEndExecute @ FrontEnd`CryptoHash @ nbo, { KeyValuePattern[ "DirtiableContentsHash" -> h_ ] :> h, _ -> None } ];
+
+notebookContentHash // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*notebookContextChanges*)
+notebookContextChanges // beginDefinition;
+
+notebookContextChanges[ old_Association, new_Association ] :=
+    If[ old[ "Notebook" ] =!= new[ "Notebook" ],
+        { "Notebook" },
+        Select[ { "Selection", "Content" }, old[ # ] =!= new[ # ] & ]
+    ];
+
+notebookContextChanges[ _, _ ] := { };
+
+notebookContextChanges // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*notebookChangeHint*)
+notebookChangeHint // beginDefinition;
+
+notebookChangeHint[ changes_List, data_Association, state_Association ] := <|
+    "Role"                 -> "System",
+    "Content"              -> TemplateApply[
+        $notebookChangeHintTemplate,
+        {
+            StringRiffle[
+                Replace[
+                    Lookup[ $notebookChangeDescriptions, changes ],
+                    s_String :> TemplateApply[ s, { notebookTitle @ data } ],
+                    { 1 }
+                ],
+                " and "
+            ],
+            TemplateApply[ $notebookReaderHint, { catalogToolName[ "NotebookReader" ] } ]
+        }
+    ],
+    "Temporary"            -> True,
+    "PromptCache"          -> True,
+    "NotebookContextState" -> state
+|>;
+
+notebookChangeHint // endDefinition;
+
+
+notebookTitle // beginDefinition;
+notebookTitle[ KeyValuePattern[ "Info" -> KeyValuePattern[ "WindowTitle" -> title_String ] ] ] := "\"" <> title <> "\"";
+notebookTitle[ KeyValuePattern[ "Notebook" -> nbo_NotebookObject ] ] := ToString[ nbo, InputForm ];
+notebookTitle // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*selectionNeighborhood*)
+(* A few cells around the selection, used to update the prompts for searches when the selection or content changed: *)
+selectionNeighborhood // beginDefinition;
+
+selectionNeighborhood[ KeyValuePattern[ "SelectionData" -> selection_Association ] ] := <|
+    "Before"   -> Take[ selection[ "Before" ], -Min[ 3, Length @ selection[ "Before" ] ] ],
+    "Selected" -> selection[ "Selected" ],
+    "After"    -> Take[ selection[ "After" ], UpTo[ 1 ] ]
+|>;
+
+selectionNeighborhood // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*NotebookReader Tool*)
+$noUserNotebookMessage = "There is no notebook to read: the user does not currently have a notebook open.";
+$emptyUserNotebookMessage = "The user's notebook is empty.";
+
+$notebookReaderPageTemplate = StringTemplate[ "\
+Below is the content of the user's notebook, cells %%First%% to %%Last%% of %%Total%%.
+
+<notebook>
+<metadata>
+%%NotebookMetadata%%
+</metadata>
+<content>
+%%NotebookContent%%
+</content>
+</notebook>
+
+%%Paging%%", Delimiters -> "%%" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*readUserNotebook*)
+(* Gives the current content of the user's notebook for the NotebookReader tool, from the same notebook and in the same
+   format as the automatic notebook context: *)
+readUserNotebook // beginDefinition;
+
+readUserNotebook[ settings_Association, scope: "selection"|"all", offset_Integer? Positive ] :=
+    readUserNotebook[ settings, scope, offset, contextNotebook @ settings ];
+
+readUserNotebook[ settings_, scope_, offset_, { nbo_NotebookObject, info_ } ] :=
+    Block[
+        {
+            (* Leave the chat's own notebook context state as it is: *)
+            $contextImages, $contextPrompt, $selectionPrompt, $lastContextPrompt, $lastSelectionPrompt,
+            (* Use the same format as getSidebarPrompt and getWorkspacePrompt: *)
+            $includeCellXML = TrueQ @ $notebookEditorEnabled,
+            $includeRelativeTimes = False
+        },
+        (* During a chat, serializing cells would otherwise use (and use up) what's left of the chat's token budget, so
+           the size of the result would depend on how long the chat is: *)
+        withTokenBudget[ downScaledSettings @ settings, readUserNotebook0[ nbo, info, settings, scope, offset ] ]
+    ];
+
+readUserNotebook[ _, _, _, _ ] :=
+    $noUserNotebookMessage;
+
+readUserNotebook // endDefinition;
+
+
+readUserNotebook0 // beginDefinition;
+
+(* The cells around the user's selection, as given by the automatic notebook context: *)
+readUserNotebook0[ nbo_, info_, settings_, "selection", _ ] :=
+    Replace[ getContextFromSelection[ None, nbo, info, settings ], None -> $emptyUserNotebookMessage ];
+
+(* A page of cells from the notebook, without selection markers: *)
+readUserNotebook0[ nbo_, info_, settings_, "all", offset_ ] := Enclose[
+    Catch @ Module[ { cells, total, last, content, metadata },
+
+        (* TODO: this reads cell information for every cell, which could be slow in very large notebooks *)
+        cells = ConfirmMatch[ includedCellObjects @ Cells @ nbo, { ___CellObject }, "Cells" ];
+        total = Length @ cells;
+
+        If[ total === 0, Throw @ $emptyUserNotebookMessage ];
+        If[ offset > total,
+            Throw @ StringJoin[
+                "The user's notebook has ", ToString @ total, " cells. Use an offset from 1 to ", ToString @ total, "."
+            ]
+        ];
+
+        { content, last } = ConfirmMatch[
+            readNotebookPage[
+                cells,
+                downScaledSettings @ settings,
+                offset,
+                Min[ total, offset + $notebookReaderPageSize - 1 ]
+            ],
+            { _String, _Integer },
+            "Page"
+        ];
+
+        metadata = ConfirmBy[ getNotebookMetadataString[ nbo, info ], StringQ, "Metadata" ];
+
+        TemplateApply[
+            $notebookReaderPageTemplate,
+            <|
+                "First"            -> offset,
+                "Last"             -> last,
+                "Total"            -> total,
+                "NotebookMetadata" -> metadata,
+                "NotebookContent"  -> ConfirmBy[ mergeCodeBlocks @ content, StringQ, "Merged" ],
+                "Paging"           -> If[ last < total,
+                                          "To read the next cells, use scope \"all\" with offset " <>
+                                              ToString[ last + 1 ] <> ".",
+                                          "This is the end of the notebook."
+                                      ]
+            |>
+        ]
+    ],
+    throwInternalFailure
+];
+
+readUserNotebook0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*readNotebookPage*)
+(* Gives { content, last } for the cells from first to at most last. The token budget is spent from the last cell
+   backwards, so cells that don't fit are excised from the start of the page, and nothing in the content says so.
+   When that happens, the page is read again without as many cells at its end, until nothing is excised. This way the
+   page always starts at first and the next offset comes right after the cells that were shown.
+   NOTE: each retry serializes the page again. If retries turn out to be slow in practice, the page size could be
+   lowered, or pages could be sized by serializing one cell at a time. *)
+readNotebookPage // beginDefinition;
+
+readNotebookPage[ cells: { __CellObject }, settings_Association, first_Integer, last_Integer ] := Enclose[
+    Module[ { content, excised },
+        Block[
+            {
+                (* Each try starts from the same budget: *)
+                $cellStringBudget = $cellStringBudget, $tokenBudget = $tokenBudget, $tokenPressure = $tokenPressure,
+                $notebookInstructionsPrompt = False, $currentSelectionIndicator = None, $lastMessageList = None
+            },
+            content = ConfirmBy[
+                getContextFromSelection0[
+                    <| "Before" -> cells[[ first ;; last ]], "Selected" -> { }, "After" -> { } |>,
+                    settings
+                ],
+                StringQ,
+                "Content"
+            ];
+            (* makeChatMessages0 sets $lastMessageList: *)
+            excised = ConfirmMatch[ excisedCellCount @ $lastMessageList, _Integer, "Excised" ]
+        ];
+        If[ excised > 0 && last > first,
+            readNotebookPage[ cells, settings, first, Max[ first, last - excised ] ],
+            { content, last }
+        ]
+    ],
+    throwInternalFailure
+];
+
+readNotebookPage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*excisedCellCount*)
+(* The number of cells excised from the start of a message list, which makeChatMessages0 combines into a leading
+   "[n Cells Excised]" system message: *)
+excisedCellCount // beginDefinition;
+
+excisedCellCount[ { KeyValuePattern @ { "Role" -> "System", "Content" -> content_String }, ___ } ] := First[
+    StringCases[
+        content,
+        StartOfString ~~ "[" ~~ n: DigitCharacter.. ~~ " Cells Excised]" ~~ EndOfString :> FromDigits @ n
+    ],
+    0
+];
+
+excisedCellCount[ _ ] := 0;
+
+excisedCellCount // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

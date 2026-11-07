@@ -696,4 +696,17 @@ VerificationTest[
     TestID   -> "VectorDBSearch-AllValues-Multiple-GH#1612@@Tests/VectorDatabases.wlt:688,1-697,2"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*SentenceBERT Tokenizer*)
+(* ResourceSystemClient does not cache the tokenizer that SentenceBERTEmbedding uses, so embeddings would download it
+   again in every session. Computing an embedding caches it (see cacheSentenceBERTTokenizer): *)
+VerificationTest[
+    Wolfram`Chatbook`Common`getEmbeddings[ { "Hello" } ];
+    NeuralNetworks`LocalNetModel[ "MiniLM V2 Reranker Trained on MS MARCO Data", "Tokenizer" ],
+    _NetEncoder,
+    SameTest -> MatchQ,
+    TestID   -> "SentenceBERTTokenizerCached@@Tests/VectorDatabases.wlt:704,1-710,2"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)

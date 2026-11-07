@@ -105,6 +105,7 @@ PacletInfo.wl defines three kernel extensions loaded in order:
 - **Storage.wl** — Persistent chat storage; **SearchChats.wl** / **Search.wl** — search
 - **Models.wl** — LLM model definitions and family classification
 - **Prompting.wl** — Base prompt component management and on-demand prompt system
+- **PromptCache.wl** — Prompt cache optimization (the `"PromptCacheOptimization"` setting): turn records that keep messages added to a chat turn (prompt generator results, base prompt hints, notebook context) the same in later requests
 - **Personas.wl** / **PersonaManager.wl** — LLM persona (system prompt) management
 - **Reasoning.wl** — Reasoning summaries and signatures from the Responses API (`"RequestMethod" -> "Responses"`): the `<think type='summary' id='...'>` string representation, stream conversion, and replacing summaries with signatures in outgoing messages
 - **Skills.wl** — Agent skills (`LLMSkill`): `SKILL.md` parsing, the `"Skills"` setting, the skills catalog prompt, and the `ActivateSkill` tool
@@ -207,3 +208,7 @@ Both of these will evaluate the code in an entirely separate process.
 Note: To print input form from wolframscript, use `Print[ToString[expr, InputForm]]`.
 
 You only need to use this wolframscript fallback if you're certain that your changes will affect the tools, or if the tools stop working as expected. The WolframLanguageEvaluator tool is designed to produce better output for AI than wolframscript.
+
+Setting `$AllowInternet` persists in future sessions. Be sure to set back to `True` if you change it, or only modify it via `Block`.
+
+The `BuildPaclet.wls` script temporarily disables the installed Chatbook paclet. Use `PacletEnable` to restore it if the script was interrupted. Be careful running this script while multiple agents are working on the repo.

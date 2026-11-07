@@ -15,13 +15,12 @@ $ContextAliases[ "sf`"  ] = "ServiceFramework`";
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$llmKit                := $llmKit = $VersionNumber >= 14.1;
+$llmKit                 = True;
 $llmKitService         := LogChatTiming @ getLLMKitService[ ];
 $fallbackLLMKitService := "LLMKit";
-$llmKitPrefix          := If[ TrueQ @ serviceFrameworkAvailable[ ], "LLMKit", "" ];
+$llmKitPrefix          := "LLMKit";
 $allowConnectionDialog  = True;
 $enableLLMServices      = Automatic;
-$modelListCache         = <| |>;
 $noModelListCache       = <| |>;
 $noModelListCacheTime   = 60;
 $modelSortOrder         = { "Preview", "Snapshot", "FineTuned", "Date", "DisplayName" };
@@ -143,27 +142,6 @@ getUpdatedLLMKitService[ ] := Enclose[
 getUpdatedLLMKitService // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*serviceFrameworkAvailable*)
-serviceFrameworkAvailable // beginDefinition;
-
-serviceFrameworkAvailable[ ] :=
-    With[ { res = serviceFrameworkAvailable @ PacletObject[ "ServiceFramework" ] },
-        If[ TrueQ @ $mxFlag,
-            res, (* Never cache result if building MX file *)
-            serviceFrameworkAvailable[ ] = res
-        ]
-    ];
-
-serviceFrameworkAvailable[ sf_PacletObject? PacletObjectQ ] :=
-    Not @ TrueQ @ PacletNewerQ[ "0.1.0", sf ];
-
-serviceFrameworkAvailable[ _ ] :=
-    False;
-
-serviceFrameworkAvailable // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Available Services*)
 
@@ -173,11 +151,6 @@ serviceFrameworkAvailable // endDefinition;
 modelListCachedQ // beginDefinition;
 modelListCachedQ[ service_String ] := ListQ @ $serviceCache[ service, "CachedModels" ];
 modelListCachedQ // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*$availableServiceNames*)
-$availableServiceNames := getAvailableServiceNames[ ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -195,14 +168,6 @@ getAvailableServiceNames[ services_Association, opts: OptionsPattern[ ] ] :=
     ];
 
 getAvailableServiceNames // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*getServiceInformation*)
-getServiceInformation // beginDefinition;
-getServiceInformation[ service_String ] := getServiceInformation[ service, $availableServices ];
-getServiceInformation[ service_String, services_Association ] := Lookup[ services, service, Missing[ "NotAvailable" ] ];
-getServiceInformation // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

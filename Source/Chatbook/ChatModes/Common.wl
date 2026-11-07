@@ -19,7 +19,6 @@ HoldComplete[
     `resolveFocusedNotebook,
     `saveWorkspaceChatInput,
     `sidebarCellObject,
-    `sidebarScrollingCell,
     `toggleOverlayMenu,
     `validInputStringQ,
     `workspaceChatInput

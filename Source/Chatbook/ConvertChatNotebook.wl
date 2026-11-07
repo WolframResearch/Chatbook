@@ -13,7 +13,8 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$popOutSettings = { "LLMEvaluator", "MaxContextTokens", "MaxToolResponses", "Model" };
+(* MaxContextTokens is left out, since the Notebook Assistant's is larger than regular chat notebooks use: *)
+$popOutSettings = { "LLMEvaluator", "MaxToolResponses", "Model" };
 
 $chatOutputOptionNames = { TaggingRules, GeneratedCell, CellAutoOverwrite };
 

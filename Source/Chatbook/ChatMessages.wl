@@ -131,7 +131,8 @@ augmentChatMessages[ messages0_, settings_, opts_Association? AssociationQ ] := 
             "ResolvedBasePrompt"
         ];
 
-        (* Messages from an earlier AugmentChatMessages get new generated prompts, not that request's: *)
+        (* Without prompt cache optimization, messages from an earlier AugmentChatMessages get new generated prompts, not
+           that request's: *)
         messages = ConfirmMatch[
             Flatten @ { makeCurrentRole @ resolved, KeyDrop[ messages0, "PromptGenerated" ] },
             $$chatMessages,
@@ -228,42 +229,103 @@ constructMessages[ settings_Association? AssociationQ, cells: { __Cell } ] :=
 
 constructMessages[ settings_Association? AssociationQ, messages0: { __Association } ] :=
     Enclose @ Module[
-        { prompted, base, messages, merged, genRole, genPos, generatedPrompts, generatedMessages, combined, processed,
-          outgoing },
+        { prompted, base, messages, merged, genRole, combined, processed, outgoing },
 
-        If[ settings[ "ToolMethod" ] === "Service", needsBasePrompt[ "ServiceToolCallRetry" ] ];
-        If[ settings[ "AutoFormat" ], needsBasePrompt[ "Formatting" ] ];
-        If[ discourageExtraToolCallsQ @ settings, needsBasePrompt[ "DiscourageExtraToolCalls" ] ];
-        needsBasePrompt @ settings;
+        needsSettingsBasePrompts @ settings;
 
         prompted = addPrompts[
             settings,
             Replace[
-                DeleteCases[ messages0, KeyValuePattern[ "Temporary" -> True ] ],
+                DeleteCases[ messages0, _? (droppedTemporaryMessageQ[ settings, # ] &) ],
                 as: KeyValuePattern[ "HoldTemporary" -> True ] :>
                     <| KeyDrop[ as, "HoldTemporary" ], "Temporary" -> True |>,
                 { 1 }
             ]
         ];
 
-        messages = prompted /.
-            s_String :> RuleCondition @ StringTrim @ StringReplace[
-                s,
-                "\nENDRESULT(" ~~ Repeated[ LetterCharacter|DigitCharacter, $tinyHashLength ] ~~ ")\n" :>
-                    "\nENDRESULT\n"
-            ];
+        (* Tool call IDs ("ENDRESULT(id)") are kept here: prepareMessagesForLLM removes them, or uses them as the
+           request IDs for the "Service" tool method. *)
+        messages = prompted /. s_String :> RuleCondition @ StringTrim @ s;
 
         merged = If[ TrueQ @ Lookup[ settings, "MergeMessages" ],
                      ConfirmMatch[ mergeMessageData @ messages, $$chatMessages, "Merged" ],
                      messages
                  ];
 
-        genRole = settings[ "PromptGeneratorMessageRole"     ];
-        genPos  = settings[ "PromptGeneratorMessagePosition" ];
+        genRole = settings[ "PromptGeneratorMessageRole" ];
 
         If[ ! MatchQ[ genRole, "System"|"Assistant"|"User" ],
             throwFailure[ "InvalidPromptGeneratorRole", genRole ]
         ];
+
+        combined = ConfirmMatch[
+            If[ promptCacheOptimizationQ @ settings,
+                addTurnMessages[ settings, merged ],
+                insertGeneratedPrompts[ settings, messages0, merged ]
+            ],
+            $$chatMessages,
+            "Combined"
+        ];
+
+        removeBasePrompt @ settings[ "ExcludedBasePrompts" ];
+
+        base = ConfirmBy[
+            "<base-prompt>" <> If[ promptCacheOptimizationQ @ settings, promptCacheBasePrompt[ ], $basePrompt ] <> "</base-prompt>",
+            StringQ,
+            "BasePrompt"
+        ];
+
+        combined = combined /.
+            s_String :> RuleCondition @ StringTrim @ StringReplace[
+                s,
+                Shortest[ "<base-prompt>"~~___~~"</base-prompt>" ] -> base
+            ];
+
+        processed = applyProcessingFunction[ settings, "ChatMessages", HoldComplete[ combined, $ChatHandlerData ] ];
+
+        If[ ! MatchQ[ processed, $$validMessageResults ],
+            messagePrint[ "InvalidMessages", getProcessingFunction[ settings, "ChatMessages" ], processed ];
+            processed = combined
+        ];
+
+        processed //= Select @ nonEmptyMessageQ;
+
+        (* The requests that follow tool calls are rebuilt from these messages (settings[ "Data", "Messages" ]), so they
+           keep their images. Code that writes them to the front end removes the images with revertMultimodalContent. *)
+        Sow[ <| "Messages" -> processed |>, $chatDataTag ];
+
+        $lastSettings = settings;
+        $lastMessages = processed;
+
+        outgoing = foldContextImageMessage @ processed;
+        If[ TrueQ @ Lookup[ settings, "MergeMessages" ], mergeOutgoingMessageData @ outgoing, outgoing ]
+    ];
+
+constructMessages // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*droppedTemporaryMessageQ*)
+(* Temporary messages are regenerated for each request, except for the turn messages kept for prompt caching: *)
+droppedTemporaryMessageQ // beginDefinition;
+(* Notebook content that was sent earlier in the conversation (see ChatModes/Context.wl) is not sent again after the user
+   turns off notebook content: *)
+droppedTemporaryMessageQ[ settings_, KeyValuePattern[ "NotebookContext" -> True ] ] /;
+    ! TrueQ @ settings[ "AllowSelectionContext" ] := True;
+droppedTemporaryMessageQ[ settings_, message_ ] /; promptCacheMessageQ @ message := ! promptCacheOptimizationQ @ settings;
+droppedTemporaryMessageQ[ settings_, KeyValuePattern[ "Temporary" -> True ] ] := True;
+droppedTemporaryMessageQ[ settings_, _ ] := False;
+droppedTemporaryMessageQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*insertGeneratedPrompts*)
+insertGeneratedPrompts // beginDefinition;
+
+insertGeneratedPrompts[ settings_Association, messages0_List, merged_List ] := Enclose[
+    Module[ { genRole, genPos, generatedPrompts, generatedMessages },
+        genRole = settings[ "PromptGeneratorMessageRole"     ];
+        genPos  = settings[ "PromptGeneratorMessagePosition" ];
 
         (* Prompt generators run once per chat request: the requests that follow tool calls get the messages of the
            first request back (settings[ "Data", "Messages" ]), so they reuse its generated prompts.
@@ -284,48 +346,15 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
             "GeneratedMessages"
         ];
 
-        combined = ConfirmMatch[
-            Check[
-                Insert[ merged, generatedMessages, genPos ],
-                throwFailure[ "InvalidPromptGeneratorPosition", genPos ]
-            ],
-            $$chatMessages,
-            "Combined"
-        ];
+        Check[
+            Insert[ merged, generatedMessages, genPos ],
+            throwFailure[ "InvalidPromptGeneratorPosition", genPos ]
+        ]
+    ],
+    throwInternalFailure
+];
 
-        removeBasePrompt @ settings[ "ExcludedBasePrompts" ];
-
-        base = ConfirmBy[
-            "<base-prompt>" <> $basePrompt <> "</base-prompt>",
-            StringQ,
-            "BasePrompt"
-        ];
-
-        combined = combined /.
-            s_String :> RuleCondition @ StringTrim @ StringReplace[
-                s,
-                Shortest[ "<base-prompt>"~~___~~"</base-prompt>" ] -> base
-            ];
-
-        processed = applyProcessingFunction[ settings, "ChatMessages", HoldComplete[ combined, $ChatHandlerData ] ];
-
-        If[ ! MatchQ[ processed, $$validMessageResults ],
-            messagePrint[ "InvalidMessages", getProcessingFunction[ settings, "ChatMessages" ], processed ];
-            processed = combined
-        ];
-
-        processed //= Select @ nonEmptyMessageQ;
-
-        Sow[ <| "Messages" -> revertMultimodalContent @ processed |>, $chatDataTag ];
-
-        $lastSettings = settings;
-        $lastMessages = processed;
-
-        outgoing = foldContextImageMessage @ processed;
-        If[ TrueQ @ Lookup[ settings, "MergeMessages" ], mergeOutgoingMessageData @ outgoing, outgoing ]
-    ];
-
-constructMessages // endDefinition;
+insertGeneratedPrompts // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -365,10 +394,13 @@ addPrompts // beginDefinition;
 
 addPrompts[ settings_Association, messages_List ] := Enclose[
     Block[ { $contextImages = { } },
-        Module[ { custom, workspace, sidebar, prompt, withImages },
+        Module[ { cache, custom, workspace, sidebar, prompt, withImages },
+            cache      = promptCacheOptimizationQ @ settings;
             custom     = ConfirmMatch[ assembleCustomPrompt @ settings, None|_String, "Custom"    ];
-            workspace  = ConfirmMatch[ getWorkspacePrompt @ settings  , None|_String, "Workspace" ];
-            sidebar    = ConfirmMatch[ getSidebarPrompt @ settings    , None|_String, "Sidebar"   ];
+            (* With prompt cache optimization, the notebook context of workspace and sidebar chats is sent once per
+               conversation instead (see notebookContextTurnMessages in ChatModes/Context.wl): *)
+            workspace  = ConfirmMatch[ If[ cache, None, getWorkspacePrompt @ settings ], None|_String, "Workspace" ];
+            sidebar    = ConfirmMatch[ If[ cache, None, getSidebarPrompt @ settings ], None|_String, "Sidebar" ];
             prompt     = StringRiffle[ Select[ { custom, workspace, sidebar }, StringQ ], "\n\n" ];
             withImages = ConfirmMatch[ addContextImages[ messages, $contextImages ], _List, "WithImages" ];
             addPrompts[ prompt, withImages ]
@@ -674,20 +706,13 @@ makeChatMessages[ settings_, cells_, includeSystem_ ] /; $chatState :=
     ];
 
 makeChatMessages[ settings_, cells_, includeSystem_ ] :=
-    Block[
-        {
-            $multimodalMessages      = TrueQ @ settings[ "Multimodal" ],
-            $tokenBudget             = makeTokenBudget @ settings,
-            $tokenPressure           = 0.0,
-            $initialCellStringBudget = makeCellStringBudget @ settings,
-            $chatInputIndicator      = mixedContentQ @ cells,
-            $cellStringBudget, $conversionRules
-        },
-        $conversionRules = settings[ "ConversionRules" ];
-        $cellStringBudget = $initialCellStringBudget;
-        If[ includeSystem && settings[ "BasePrompt" ] =!= None, tokenCheckedMessage[ settings, $fullBasePrompt ] ];
-        (* FIXME: need to account for persona/tool prompting as well *)
-        makeChatMessages0[ settings, cells, includeSystem ]
+    withTokenBudget[
+        settings,
+        Block[ { $chatInputIndicator = mixedContentQ @ cells },
+            If[ includeSystem && settings[ "BasePrompt" ] =!= None, tokenCheckedMessage[ settings, $fullBasePrompt ] ];
+            (* FIXME: need to account for persona/tool prompting as well *)
+            makeChatMessages0[ settings, cells, includeSystem ]
+        ]
     ];
 
 makeChatMessages // endDefinition;
@@ -702,14 +727,25 @@ makeChatMessages0[ settings_, { cells___, cell_ ? promptFunctionCellQ }, include
 
 makeChatMessages0[ settings0_, cells_List, includeSystem_ ] := Enclose[
     Module[ { settings, role, message, toMessage0, toMessage, cell, history, messages },
-        settings   = ConfirmBy[ <| settings0, "HistoryPosition" -> 0, "Cells" -> cells |>, AssociationQ, "Settings" ];
+        settings = ConfirmBy[
+            <|
+                settings0,
+                "HistoryPosition" -> 0,
+                "Cells"           -> cells,
+                (* Without a system message, cells are serialized for something other than chat history (e.g. the
+                   notebook context or NotebookReader pages), so the history limits for prompt caching don't apply: *)
+                If[ TrueQ @ includeSystem, Nothing, "PromptCacheOptimization" -> False ]
+            |>,
+            AssociationQ,
+            "Settings"
+        ];
         role       = If[ TrueQ @ includeSystem, makeCurrentRole @ settings, Missing[ ] ];
         cell       = ConfirmMatch[ Last[ cells, $Failed ], _Cell, "Cell" ];
         toMessage0 = Confirm[ getCellMessageFunction @ settings, "CellMessageFunction" ];
 
         toMessage = Function @ With[
             { msg = toMessage0[ #1, <| #2, "TokenBudget" -> $tokenBudget, "TokenPressure" -> $tokenPressure |> ] },
-            tokenCheckedMessage[ settings, msg ]
+            tokenCheckedMessage[ #2, msg ]
         ];
 
         message = ConfirmMatch[
@@ -719,10 +755,18 @@ makeChatMessages0[ settings0_, cells_List, includeSystem_ ] := Enclose[
             "Message"
         ];
 
+        (* Cells are converted newest first, so that older cells are the first to be shortened by the token budget: *)
         history = ConfirmMatch[
-            Reverse @ Flatten @ MapIndexed[
-                toMessage[ #1, <| settings, "HistoryPosition" -> First[ #2 ] |> ] &,
-                Reverse @ Most @ cells
+            Flatten @ Reverse @ blockTrimmedHistory[
+                settings,
+                MapIndexed[
+                    withTurnMessages[
+                        settings,
+                        #1,
+                        toMessage[ #1, <| settings, "HistoryPosition" -> First[ #2 ] |> ]
+                    ] &,
+                    Reverse @ Most @ cells
+                ]
             ],
             $$validMessageResults,
             "History"
@@ -736,6 +780,105 @@ makeChatMessages0[ settings0_, cells_List, includeSystem_ ] := Enclose[
 ];
 
 makeChatMessages0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*blockTrimmedHistory*)
+(* With prompt cache optimization, the cells that don't fit in the token budget are left out in blocks counted from the
+   start of the conversation. Otherwise, the oldest message that is sent (and the number of excised cells) would change
+   with every new message, and each request would miss the cache after the system prompt. This way, the history stays
+   the same for several requests. Blocks are larger for larger budgets (one cell for each 2^13 tokens, but at least
+   $historyTrimBlockSize cells). The history is given as one group of messages per cell, newest first: *)
+$historyTrimBlockSize = 8;
+
+blockTrimmedHistory // beginDefinition;
+
+blockTrimmedHistory[ settings_? promptCacheOptimizationQ, groups_List ] /; $cellStringBudget === 0 :=
+    Module[ { count, kept, size, dropped },
+        count   = Length @ groups;
+        (* The oldest cell that was kept may be missing turn messages that didn't fit, so it is left out too: *)
+        kept    = Max[ 0, LengthWhile[ groups, ! excisedCellGroupQ @ # & ] - 1 ];
+        size    = historyTrimBlockSize @ settings;
+        dropped = Min[ count, size * Ceiling[ (count - kept) / size ] ];
+        Join[ Take[ groups, count - dropped ], ConstantArray[ $excisedCellMessage, dropped ] ]
+    ];
+
+blockTrimmedHistory[ settings_, groups_List ] := groups;
+
+blockTrimmedHistory // endDefinition;
+
+
+historyTrimBlockSize // beginDefinition;
+
+historyTrimBlockSize[ KeyValuePattern[ "MaxContextTokens" -> n_? NumberQ ] ] :=
+    Max[ $historyTrimBlockSize, Ceiling[ n / 2^13 ] ];
+
+historyTrimBlockSize[ _ ] := $historyTrimBlockSize;
+
+historyTrimBlockSize // endDefinition;
+
+
+$excisedCellMessage = <| "Role" -> "System", "Content" -> "[Cell Excised]" |>;
+
+excisedCellGroupQ // beginDefinition;
+
+excisedCellGroupQ[ group_ ] :=
+    MatchQ[ Last[ Flatten @ { group }, None ], KeyValuePattern[ "Content" -> "[Cell Excised]" ] ];
+
+excisedCellGroupQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*withTurnMessages*)
+(* Inserts the messages that were added to the turn of a chat output cell (see PromptCache.wl) before the cell's message.
+   The cell's message has already been converted, so it is counted against the token budget before these messages: *)
+withTurnMessages // beginDefinition;
+
+withTurnMessages[ settings_, cell_Cell, message_ ] :=
+    With[ { turnMessages = promptCacheHistoryMessages[ settings, cell ] },
+        If[ turnMessages === { },
+            message,
+            Flatten @ {
+                dropOrphanContextImages @ Reverse[ fittedTurnMessage[ settings, # ] & /@ Reverse @ turnMessages ],
+                message
+            }
+        ]
+    ];
+
+withTurnMessages // endDefinition;
+
+(* The images of a notebook context are a separate message (see fullNotebookContextMessages in ChatModes/Context.wl).
+   They are smaller than the context message, so they can fit in the token budget when it doesn't. They are left out
+   then, so that the conversation doesn't seem to have a notebook context, which is then sent again. Their tokens have
+   already been counted against the budget, which only makes the budget a bit smaller in this rare case: *)
+dropOrphanContextImages // beginDefinition;
+
+dropOrphanContextImages[ messages_List ] :=
+    If[ MemberQ[ messages, KeyValuePattern @ { "Role" -> "System", "NotebookContext" -> True } ],
+        messages,
+        DeleteCases[ messages, KeyValuePattern[ "NotebookContext" -> True ] ]
+    ];
+
+dropOrphanContextImages // endDefinition;
+
+(* Turn messages are only included when they fit in the token budget as they are. Shortening them would give different
+   text in every request, and they are not needed without the messages they were made for. When one doesn't fit, the
+   history ends there, so that smaller older messages don't take its place: *)
+fittedTurnMessage // beginDefinition;
+
+fittedTurnMessage[ settings_, message_ ] :=
+    Which[
+        $cellStringBudget === 0, Nothing,
+        TrueQ[ tokenCount[ settings, message ] > $tokenBudget ], endHistory[ ]; Nothing,
+        True, tokenCheckedMessage[ settings, message ]
+    ];
+
+fittedTurnMessage // endDefinition;
+
+(* No more history messages are added (older cells are excised): *)
+endHistory // beginDefinition;
+endHistory[ ] := ( $tokenBudget = 0; $cellStringBudget = 0; );
+endHistory // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -763,6 +906,30 @@ makeCellStringBudget[ settings_Association ] := makeCellStringBudget @ settings[
 makeCellStringBudget[ max: $$size ] := max;
 makeCellStringBudget[ Except[ $$size ] ] := $defaultMaxCellStringLength;
 makeCellStringBudget // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*withTokenBudget*)
+withTokenBudget // beginDefinition;
+withTokenBudget // Attributes = { HoldRest };
+
+(* Evaluates eval with a new token budget made from settings. In a chat, the budget is otherwise shared by everything
+   that's serialized, since resolveAutoSettings only sets it once. *)
+withTokenBudget[ settings_Association, eval_ ] :=
+    Block[
+        {
+            $multimodalMessages      = TrueQ @ settings[ "Multimodal" ],
+            $tokenBudget             = makeTokenBudget @ settings,
+            $tokenPressure           = 0.0,
+            $initialCellStringBudget = makeCellStringBudget @ settings,
+            $cellStringBudget, $conversionRules
+        },
+        $conversionRules  = settings[ "ConversionRules" ];
+        $cellStringBudget = $initialCellStringBudget;
+        eval
+    ];
+
+withTokenBudget // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -833,6 +1000,12 @@ tokenCheckedMessage[ as_Association, message_ ] := Enclose[
         budget = ConfirmMatch[ $tokenBudget, $$size, "Budget" ];
 
         If[ count > budget,
+            (* With prompt cache optimization, a history message is not shortened to fit, since it would be shortened by
+               a different amount in every request. It is left out with all older messages instead: *)
+            If[ cachedHistoryMessageQ[ as, message ],
+                endHistory[ ];
+                Throw @ <| KeyTake[ message, "Role" ], "Content" -> "[Cell Excised]" |>
+            ];
             resized = cutMessageContent[ as, message, count, budget ];
             ConfirmAssert[ resized =!= message, "Resized" ];
             Throw @ tokenCheckedMessage[ as, resized ]
@@ -840,9 +1013,12 @@ tokenCheckedMessage[ as_Association, message_ ] := Enclose[
 
         $tokenBudget      = Max[ 0, budget - count ];
         $tokenPressure    = 1.0 - ($tokenBudget / as[ "MaxContextTokens" ]);
-        $cellStringBudget = If[ $tokenBudget < $reservedTokens,
-                                0,
-                                Ceiling[ (1 - $tokenPressure) * $initialCellStringBudget ]
+        $cellStringBudget = Which[
+                                $tokenBudget < $reservedTokens, 0,
+                                (* Older messages would be shortened by a different amount after every new message,
+                                   so they wouldn't be sent the same way in later requests: *)
+                                promptCacheOptimizationQ @ as, $initialCellStringBudget,
+                                True, Ceiling[ (1 - $tokenPressure) * $initialCellStringBudget ]
                             ];
 
         Internal`StuffBag[
@@ -865,6 +1041,16 @@ tokenCheckedMessage[ as_Association, message_ ] := Enclose[
 tokenCheckedMessage // endDefinition;
 
 $tokenBudgetLog = Internal`Bag[ ];
+
+
+cachedHistoryMessageQ // beginDefinition;
+
+cachedHistoryMessageQ[ as_? promptCacheOptimizationQ, _Association ] :=
+    TrueQ[ as[ "HistoryPosition" ] > 0 ];
+
+cachedHistoryMessageQ[ _, _ ] := False;
+
+cachedHistoryMessageQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1098,18 +1284,47 @@ makeCurrentRole[ as_, base_, name_String ] :=
         makeCurrentRole[ as, base, persona ] /; AssociationQ @ persona
     ];
 
-makeCurrentRole[ as_, base_, persona_Association ] := (
+makeCurrentRole[ as_, base_, persona_Association ] := withStaticBasePrompts[
+    as,
     needsBasePrompt @ base;
     needsBasePrompt @ persona;
     <| "Role" -> "System", "Content" -> buildSystemPrompt @ Association[ as, KeyDrop[ persona, { "Skills", "Tools" } ] ] |>
-);
+];
 
-makeCurrentRole[ as_, base_, _ ] := (
+makeCurrentRole[ as_, base_, _ ] := withStaticBasePrompts[
+    as,
     needsBasePrompt @ base;
     <| "Role" -> "System", "Content" -> buildSystemPrompt @ as |>
-);
+];
 
 makeCurrentRole // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*needsSettingsBasePrompts*)
+(* Base prompt components that are determined by the settings rather than by the content of the conversation: *)
+needsSettingsBasePrompts // beginDefinition;
+
+needsSettingsBasePrompts[ settings_Association ] := (
+    If[ settings[ "ToolMethod" ] === "Service", needsBasePrompt[ "ServiceToolCallRetry" ] ];
+    If[ settings[ "AutoFormat" ], needsBasePrompt[ "Formatting" ] ];
+    If[ discourageExtraToolCallsQ @ settings, needsBasePrompt[ "DiscourageExtraToolCalls" ] ];
+    If[ toolSelectedQ[ "WolframLanguageEvaluator" ], needsBasePrompt[ "WolframLanguageEvaluatorTool" ] ];
+    (* Replaces the temporary message that is added after tool responses without prompt cache optimization: *)
+    If[ toolCallRetryPromptQ @ settings, needsBasePrompt[ "ToolCallRetry" ] ];
+    needsBasePrompt @ settings
+);
+
+needsSettingsBasePrompts // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toolCallRetryPromptQ*)
+toolCallRetryPromptQ // beginDefinition;
+toolCallRetryPromptQ[ KeyValuePattern[ "ToolsEnabled" -> False ] ] := False;
+toolCallRetryPromptQ[ KeyValuePattern[ "Tools" -> { } ] ] := False;
+toolCallRetryPromptQ[ settings_Association ] := promptCacheOptimizationQ @ settings && TrueQ @ settings[ "ToolCallRetryMessage" ];
+toolCallRetryPromptQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1527,7 +1742,7 @@ mergeMessages[ messages: { first_Association, __Association } ] := Enclose[
 
         merged = ConfirmMatch[ mergeCodeBlocks @ content, { (_String|_Association)... }, "Merged" ];
 
-        <| first, "Role" -> role, "Content" -> merged |>
+        <| first, "Role" -> role, "Content" -> merged, mergePromptCacheKeys @ messages |>
     ],
     throwInternalFailure
 ];

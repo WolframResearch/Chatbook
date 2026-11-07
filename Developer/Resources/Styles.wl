@@ -24,8 +24,7 @@ tr[name_?StringQ] := Dynamic[FEPrivate`FrontEndResource["ChatbookStrings", name]
 
 Cell[
     StyleData[ "Notebook" ],
-    TaggingRules           -> <| "ChatNotebookSettings" -> <| |> |>,
-    CellInsertionPointCell -> $cellInsertionPointCell,
+    TaggingRules -> <| "ChatNotebookSettings" -> <| |> |>,
 
     CellTrayWidgets -> <|
         "GearMenu"     -> <| "Condition" -> False |>,

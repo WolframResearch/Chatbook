@@ -101,7 +101,8 @@ See additional details in [Chat Behavior Settings](setting-groups/chat-behavior.
 | `"Prompts"` | `{}` | A list of custom prompt strings to append to the system prompt. |
 | `"PromptGenerators"` | `Automatic` | List of prompt generators used to augment the conversation with additional context before sending messages to the LLM. |
 | `"PromptGeneratorsEnabled"` | `Automatic` | **Not yet implemented.** Intended to control which prompt generators are enabled. |
-| `"PromptGeneratorMessagePosition"` | `2` | Position in the message list where prompt generator messages are inserted. |
+| `"PromptCacheOptimization"` | `Automatic` | Whether to build requests so that earlier messages are sent unchanged and new information is only appended, which allows LLM providers to reuse cached prompt prefixes. `Automatic` resolves to `True`, except for some services and models. |
+| `"PromptGeneratorMessagePosition"` | `2` | Position in the message list where prompt generator messages are inserted. Ignored when `"PromptCacheOptimization"` is `True`. |
 | `"PromptGeneratorMessageRole"` | `"System"` | Message role assigned to prompt generator messages when they are inserted into the conversation. |
 | `"DiscourageExtraToolCalls"` | `Automatic` | Whether to include a base prompt component discouraging unnecessary tool calls. |
 
@@ -119,7 +120,7 @@ See additional details in [Prompting Settings](setting-groups/prompting.md).
 | `"ToolOptions"` | `$DefaultToolOptions` | Per-tool option overrides mapping tool names to option associations. |
 | `"ToolSelectionType"` | `<\|\|>` | Per-tool global override: `All` (always enabled), `None` (always disabled), or `Inherited` (per-persona). |
 | `"ToolCallFrequency"` | `Automatic` | How often the LLM should use tools (`Automatic` or a number between `0` and `1`). |
-| `"ToolCallRetryMessage"` | `Automatic` | Whether to append a retry-guidance system message after each tool response. |
+| `"ToolCallRetryMessage"` | `Automatic` | Whether to append a retry-guidance system message after each tool response (with `"PromptCacheOptimization"`, the guidance is in the system prompt instead). |
 | `"ToolExamplePrompt"` | `Automatic` | Tool example prompt included in the system prompt to demonstrate tool usage patterns. |
 | `"ToolCallExamplePromptStyle"` | `Automatic` | Template style for tool call examples in the system prompt. |
 | `"ToolResponseRole"` | `Automatic` | Message role assigned to tool response messages sent back to the LLM. |
@@ -221,6 +222,7 @@ These are the fallback values from `$modelAutoSettings[Automatic, Automatic]` wh
 | `"EndToken"` | `"/end"` |
 | `"ExcludedBasePrompts"` | `{ParentList}` |
 | `"PresencePenalty"` | `0.1` |
+| `"PromptCacheOptimization"` | `True` |
 | `"ReplaceUnicodeCharacters"` | `False` |
 | `"ShowProgressText"` | `True` |
 | `"SplitToolResponseMessages"` | `False` |
