@@ -1716,7 +1716,7 @@ makeServiceGrid // endDefinition;
 makeServiceGridRow // beginDefinition;
 
 makeServiceGridRow[ Dynamic[ dmPrefCache_ ], name_String, data_Association ] := {
-    makeServiceAuthenticationDisplay[ Dynamic @ dmPrefCache, name, resizeMenuIcon @ inlineChatbookExpressions @ serviceIcon @ data ]
+    makeServiceAuthenticationDisplay[ Dynamic @ dmPrefCache, name, resizeMenuIcon @ serviceIcon @ data ]
 };
 
 makeServiceGridRow // endDefinition;
@@ -2020,7 +2020,7 @@ popupValue[ value_String, label: Except[ $$unspecified ] ] :=
 popupValue[ value_String, label: Except[ $$unspecified ], icon: Except[ $$unspecified ] ] :=
     If[ TrueQ @ $noIcons,
         value -> label,
-        value -> Row[ { resizeMenuIcon @ inlineChatbookExpressions @ icon, label }, Spacer[ 1 ] ]
+        value -> Row[ { resizeMenuIcon @ icon, label }, Spacer[ 1 ] ]
     ];
 
 popupValue // endDefinition;
@@ -2167,12 +2167,7 @@ credentialKey // endDefinition;
 (*savedConnectionQ*)
 savedConnectionQ // beginDefinition;
 
-savedConnectionQ[ service_String ] /; ! serviceFrameworkAvailable[ ] := (
-    Needs[ "OAuth`" -> None ];
-    MatchQ[ ServiceConnections`SavedConnections @ service, { __ } ]
-);
-
-savedConnectionQ[ service_String ] /; serviceFrameworkAvailable[ ] :=
+savedConnectionQ[ service_String ] :=
     MatchQ[ serviceObjects @ service, { __ } ];
 
 savedConnectionQ // endDefinition;
@@ -2184,12 +2179,7 @@ serviceObjects := serviceObjects = Symbol[ "System`ServiceObjects" ];
 (*serviceConnectionQ*)
 serviceConnectionQ // beginDefinition;
 
-serviceConnectionQ[ service_String ] /; ! serviceFrameworkAvailable[ ] := (
-    Needs[ "OAuth`" -> None ];
-    MatchQ[ ServiceConnections`ServiceConnections @ service, { __ } ]
-);
-
-serviceConnectionQ[ service_String ] /; serviceFrameworkAvailable[ ] :=
+serviceConnectionQ[ service_String ] :=
     savedConnectionQ @ service;
 
 serviceConnectionQ // endDefinition;
@@ -2202,20 +2192,7 @@ clearConnectionCache // beginDefinition;
 clearConnectionCache[ service_String ] :=
     clearConnectionCache[ service, True ];
 
-clearConnectionCache[ service_String, delete: True|False ] /; ! serviceFrameworkAvailable[ ] := (
-    Needs[ "Wolfram`LLMFunctions`" -> None ];
-    If[ delete,
-        Needs[ "OAuth`" -> None ];
-        ServiceConnections`DeleteConnection /@ ServiceConnections`SavedConnections @ service;
-        ServiceConnections`DeleteConnection /@ ServiceConnections`ServiceConnections @ service;
-    ];
-    If[ AssociationQ @ Wolfram`LLMFunctions`APIs`Common`$ConnectionCache,
-        KeyDropFrom[ Wolfram`LLMFunctions`APIs`Common`$ConnectionCache, service ]
-    ];
-    InvalidateServiceCache[ ];
-);
-
-clearConnectionCache[ service_String, delete: True|False ] /; serviceFrameworkAvailable[ ] := (
+clearConnectionCache[ service_String, delete: True|False ] := (
     Needs[ "Wolfram`LLMFunctions`" -> None ];
     If[ delete,
         DeleteObject @ serviceObjects @ service;

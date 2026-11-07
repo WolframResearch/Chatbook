@@ -88,7 +88,6 @@ System`HoldCompleteForm;
 
 `templateBox;
 `chatbookExpression;
-`inlineChatbookExpressions;
 `chatbookIcon;
 `fancyTooltip;
 `inlineTemplateBox;
@@ -856,14 +855,9 @@ $priorityFailureKeys = { "Information", "ConfirmationType", "Expression", "Funct
 setServiceCallerAndID // beginDefinition;
 setServiceCallerAndID // Attributes = { HoldFirst };
 
-setServiceCallerAndID[ eval_, uuid_String ] /; serviceFrameworkAvailable[ ] := (
+setServiceCallerAndID[ eval_, uuid_String ] := (
     Quiet @ Needs[ "ServiceFramework`" -> None ];
     Block[ { ServiceFramework`$TransactionID = uuid }, setServiceCaller @ eval ]
-);
-
-setServiceCallerAndID[ eval_, uuid_String ] := (
-    Quiet @ Needs[ "ServiceConnectionUtilities`" -> None ];
-    Block[ { ServiceConnectionUtilities`$TransactionID = uuid }, setServiceCaller @ eval ]
 );
 
 setServiceCallerAndID // endDefinition;
@@ -876,23 +870,13 @@ setServiceCaller // beginDefinition;
 setServiceCaller[ eval_ ] :=
     setServiceCaller[ eval, chatbookServiceCaller[ ] ];
 
-setServiceCaller[ eval_, caller_ ]  /; serviceFrameworkAvailable[ ] := (
+setServiceCaller[ eval_, caller_ ] := (
     Quiet @ Needs[ "ServiceFramework`" -> None ];
     setServiceCaller[ eval, caller, ServiceFramework`$Caller ]
 );
 
-setServiceCaller[ eval_, caller: $$serviceCaller, { current___ } ]  /; serviceFrameworkAvailable[ ] :=
-    Block[ { ServiceFramework`$Caller = DeleteDuplicates @ Flatten @ { current, $chatbookCaller, caller } },
-        eval
-    ];
-
-setServiceCaller[ eval_, caller_ ] := (
-    Quiet @ Needs[ "ServiceConnectionUtilities`" -> None ];
-    setServiceCaller[ eval, caller, ServiceConnectionUtilities`$Caller ]
-);
-
 setServiceCaller[ eval_, caller: $$serviceCaller, { current___ } ] :=
-    Block[ { ServiceConnectionUtilities`$Caller = DeleteDuplicates @ Flatten @ { current, $chatbookCaller, caller } },
+    Block[ { ServiceFramework`$Caller = DeleteDuplicates @ Flatten @ { current, $chatbookCaller, caller } },
         eval
     ];
 
@@ -1289,17 +1273,14 @@ escapePipes[ string_String ] := StringReplace[ string, "|" -> "\\|" ];
 (* ::Subsection::Closed:: *)
 (*chatbookIcon*)
 (*
-    Gets an icon by name.
-    The second argument specifies whether it is returned as a `TemplateBox` or the full expression.
-    For efficiency, only use `False` when a template box cannot be used, i.e. when the stylesheet is not accessible.
+    Gets an icon by name from the "ChatbookExpressions" front end resource.
+    Any arguments after `False` are passed to function resources.
 *)
 chatbookIcon // beginDefinition;
-chatbookIcon[ name_String ] := chatbookIcon[ name, TrueQ @ $inlineChatbookExpressions ];
-chatbookIcon[ name_String, True  ] := chatbookIcon[ name, Lookup[ $chatbookIcons, name ] ];
+chatbookIcon[ name_String ] := chatbookIcon[ name, False ];
 chatbookIcon[ name_String, False ] := Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", name ];
 chatbookIcon[ name_String, False, args__ ] := Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", name ][ args ]; (* Function resources *)
 chatbookIcon[ name_String, False, args__ ] /; $CloudEvaluation := RawBoxes @ FrontEndResource[ "ChatbookExpressions", name ][ args ]; (* CLOUD-25597 *)
-chatbookIcon[ name_String, icon: Except[ _Missing ] ] := icon;
 chatbookIcon // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1347,18 +1328,6 @@ inlineTemplateBoxes // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*$chatbookIcons*)
-$chatbookIcons := Enclose[
-    Module[ { file, icons },
-        file = ConfirmBy[ $thisPaclet[ "AssetLocation", "Icons" ], FileExistsQ, "File" ];
-        icons = ConfirmBy[ Developer`ReadWXFFile @ file, AssociationQ, "Icons" ];
-        If[ TrueQ @ $mxFlag, icons, $chatbookIcons = icons ]
-    ],
-    throwInternalFailure[ $chatbookIcons, ## ] &
-];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
 (*$templateBoxDisplayFunctions*)
 $templateBoxDisplayFunctions := Enclose[
     Module[ { file, functions },
@@ -1372,17 +1341,7 @@ $templateBoxDisplayFunctions := Enclose[
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*templateBox*)
-$$inlineTemplateBoxName = Alternatives[
-    "ChatCodeBlockButtonPanel",
-    "ChatCodeBlockTemplate",
-    "NotebookAssistant`Sidebar`ChatCodeBlockTemplate"
-];
-
-
 templateBox // beginDefinition;
-
-templateBox[ args_List, name: $$inlineTemplateBoxName ] /; $inlineChatbookExpressions :=
-    inlineChatbookExpressions @ inlineTemplateBox @ TemplateBox[ args, name ];
 
 templateBox[ args_List, name_String ] :=
     TemplateBox[ args, name ];
@@ -1610,38 +1569,6 @@ cloudShrinkToFit[ GraphicsBox[ a___ ], size_ ] := RawBoxes @ GraphicsBox[ a, Ima
 cloudShrinkToFit[ other_, size_ ] := other
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*inlineChatbookExpressions*)
-inlineChatbookExpressions // beginDefinition;
-inlineChatbookExpressions[ expr_ ] /; $inlineChatbookExpressions := expr //. $inlineExpressionRules;
-inlineChatbookExpressions[ expr_ ] := expr;
-inlineChatbookExpressions // endDefinition;
-
-
-$inlineChatbookExpressions :=
-    With[ { inline = TrueQ[ $CloudEvaluation && $CloudVersionNumber === "1.70" ] },
-        If[ TrueQ @ $mxFlag, inline, $inlineChatbookExpressions = inline ]
-    ];
-
-
-$inlineExpressionRules := $inlineExpressionRules =
-    With[ { frontEndResource = FEPrivate`FrontEndResource|FrontEndResource },
-        Dispatch @ {
-            Dynamic[ RawBoxes @ frontEndResource[ "ChatbookExpressions", name_String ], ___ ] :>
-                RuleCondition @ RawBoxes @ cloudChatbookExpression @ name,
-
-            RawBoxes @ DynamicBox[ frontEndResource[ "ChatbookExpressions", name_String ], ___ ] :>
-                RuleCondition @ RawBoxes @ cloudChatbookExpression @ name,
-
-            DynamicBox[ frontEndResource[ "ChatbookExpressions", name_String ], ___ ] :>
-                RuleCondition @ cloudChatbookExpression @ name,
-
-            frontEndResource[ "ChatbookExpressions", name_String ] :>
-                RuleCondition @ cloudChatbookExpression @ name
-        }
-];
-
-(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Version Utilities*)
 
@@ -1711,10 +1638,8 @@ mxInitialize // endDefinition;
 (*Package Footer*)
 addToMXInitialization[
     $debug = False;
-    $chatbookIcons;
     $cloudChatbookExpressions;
     $cloudTextResources;
-    $inlineExpressionRules;
     $releaseID;
     importDependentResourceFunctions[ ];
 ];

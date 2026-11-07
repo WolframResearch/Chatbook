@@ -197,7 +197,7 @@ createCloudPreferencesContent[ ] /; ! $CloudEvaluation :=
     Block[ { $CloudEvaluation = True }, createCloudPreferencesContent[ ] ];
 
 createCloudPreferencesContent[ ] := createCloudPreferencesContent[ ] =
-    inlineChatbookExpressions @ createPreferencesContent[ ];
+    createPreferencesContent[ ];
 
 createCloudPreferencesContent // endDefinition;
 

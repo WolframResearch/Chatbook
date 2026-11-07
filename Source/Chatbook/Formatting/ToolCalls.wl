@@ -40,14 +40,14 @@ inlineToolCall // endDefinition;
 makeInlineToolCallCell // beginDefinition;
 
 makeInlineToolCallCell[ expr_, string_, as_Association ] := Cell[
-    BoxData @ inlineChatbookExpressions @ ToBoxes @ expr,
+    BoxData @ ToBoxes @ expr,
     "InlineToolCall",
     Background   -> None,
     TaggingRules -> KeyDrop[ as, { "Icon", "CallIcon", "Result" } ]
 ];
 
 makeInlineToolCallCell[ expr_, string_String, failed_Failure ] := Cell[
-    BoxData @ inlineChatbookExpressions @ ToBoxes @ expr,
+    BoxData @ ToBoxes @ expr,
     "FailedToolCall",
     Background   -> None,
     TaggingRules -> <| "ToolCall" -> string |>
