@@ -68,12 +68,6 @@ VerificationTest[
 ]
 
 VerificationTest[
-    familyOf @ "claude-mythos-5",
-    "ClaudeMythos5",
-    TestID -> "Family-ClaudeMythos5@@Tests/ModelFamilies.wlt:74,1-79,2"
-]
-
-VerificationTest[
     familyOf /@ { "claude-opus-4-7", "claude-opus-4-8", "claude-sonnet-4-7" },
     { "Claude47Plus", "Claude47Plus", "Claude47Plus" },
     TestID -> "Family-Claude47Plus@@Tests/ModelFamilies.wlt:82,1-87,2"
@@ -160,15 +154,6 @@ VerificationTest[
         { "Reasoning", "ToolExamplePrompt", "MaxTokens", "MaxContextTokens" },
     { "adaptive", None, 128000, 1000000 },
     TestID -> "Settings-Fable5@@Tests/ModelFamilies.wlt:171,1-177,2"
-]
-
-(* Mythos inherits Fable's settings but keeps the conservative context window, since it could
-   not be probed: *)
-VerificationTest[
-    settingOf[ "claude-mythos-5", # ] & /@
-        { "Reasoning", "ToolExamplePrompt", "MaxContextTokens" },
-    { "adaptive", None, 200000 },
-    TestID -> "Settings-Mythos5@@Tests/ModelFamilies.wlt:182,1-188,2"
 ]
 
 (* Live probing showed the reasoning_extraction refusal is Fable-specific: opus-5 and sonnet-5

@@ -608,7 +608,6 @@ All model families currently defined in `chooseModelFamily0` (`Models.wl`):
 | `"Claude47Plus"` | `{ "Claude", "Haiku"\|"Sonnet"\|"Opus", "4", "7"\|"8"\|"9", ___ }` | `Anthropic` (temperature unsupported; inherits from Claude46) |
 | `"Claude5"` | `{ "Claude", "Haiku"\|"Sonnet"\|"Opus", "5", ___ }` | `Anthropic`, `OpenRouter` (1M context; inherits from Claude47Plus). Covers Opus 5 and Sonnet 5. See `Tests/Claude5OpenRouter.wlt` for the OpenRouter route's overrides. |
 | `"ClaudeFable5"` | `{ "Claude", "Fable", "5", ___ }` | `Anthropic`, `OpenRouter` (thinking mandatory). Covers Fable 5.1 too: the trailing `___` absorbs the point release, so `claude-fable-5-1` and `anthropic/claude-fable-5.1` both land here. `BaseID` is `"ClaudeFable51"`, the handle for a 5.1-only override if one is ever needed. See `Tests/ClaudeFable51.wlt`. |
-| `"ClaudeMythos5"` | `{ "Claude", "Mythos", "5", ___ }` | `Anthropic` (inherits from ClaudeFable5) |
 | `"Gemini2"` | `{ "Gemini", "2", ___ }` | `GoogleGemini` |
 | `"Gemini3"` | `{ "Gemini", "3", ___ }` | `GoogleGemini` |
 | `"DeepSeekChat"` | `{ "DeepSeek", ___, "Chat"\|"V3", ... }` | `DeepSeek` |
@@ -626,3 +625,14 @@ All model families currently defined in `chooseModelFamily0` (`Models.wl`):
 | `"O3Mini"` | (via BaseID fallback) | `Automatic` |
 | `"O3"` | (via BaseID fallback) | `Automatic` |
 | `"O4Mini"` | (via BaseID fallback) | `Automatic` |
+
+### Claude Mythos (not yet supported)
+
+Anthropic documents Claude Mythos 5.1 (`claude-mythos-5-1`) as the same model as Claude Fable 5.1, available only to organizations verified through its verification programs, with the same specifications and pricing; Claude Mythos 5 (`claude-mythos-5`) is the counterpart of Fable 5. Claude Mythos Preview is a separate model for Project Glasswing partners that Anthropic does not plan to make generally available. Sources: [Mythos 5.1 overview](https://platform.claude.com/docs/en/models/mythos-5-1/overview), [Project Glasswing](https://anthropic.com/glasswing), and the [context-window table](https://platform.claude.com/docs/en/build-with-claude/context-windows).
+
+There is no Mythos family: without verified access nothing can be tested, and the Models API listed no Mythos model when checked on 2026-11-06. Until then, `claude-mythos-5` and `claude-mythos-5-1` fall back to a family named after their `BaseID` and get none of Fable's settings. To support them:
+
+1. Uncomment the `{ "Claude", "Mythos", "5", ___ }` rule in `chooseModelFamily0`, which maps both names onto `"ClaudeFable5"` while they keep their own `BaseID`s (`"ClaudeMythos5"`, `"ClaudeMythos51"`), and update the placeholder comment above it.
+2. Add tests for their family and settings, and a row to the table above.
+
+Claude Mythos Preview stays out of scope.

@@ -519,8 +519,16 @@ chooseModelFamily0[ wordsPattern[ { "GPT", "5", ___ } ] ] := "GPT5";
 
 chooseModelFamily0[ wordsPattern[ { "Claude", "2.0"|"2.1" } ] ] := "Claude2";
 chooseModelFamily0[ wordsPattern[ { "Claude", "3", ___ } ] ] := "Claude3";
-(* Fable and Mythos mandate thinking, so they get their own tiers ahead of the general 5 rule: *)
+(* Fable mandates thinking, so it gets its own tier ahead of the general 5 rule: *)
 chooseModelFamily0[ wordsPattern[ { "Claude", "Fable" , "5", ___ } ] ] := "ClaudeFable5";
+(* Claude Mythos is not supported yet. Anthropic documents claude-mythos-5-1 as the same model as Fable 5.1, available
+   only to organizations verified through its verification programs, and claude-mythos-5 as the counterpart of Fable 5
+   (https://platform.claude.com/docs/en/models/mythos-5-1/overview). Without verified access nothing can be tested, and
+   the Models API listed no Mythos model when checked on 2026-11-06. Until then both names fall back to a family named
+   after their BaseID and get none of Fable's settings. To support them: uncomment the rule below, which maps both onto
+   "ClaudeFable5" while they keep their own BaseIDs, add tests, and add a row to the family table in
+   docs/adding-model-support.md. Claude Mythos Preview, a separate partner-only model, is out of scope. *)
+(* chooseModelFamily0[ wordsPattern[ { "Claude", "Mythos", "5", ___ } ] ] := "ClaudeFable5"; *)
 chooseModelFamily0[ wordsPattern[ { "Claude", "Haiku"|"Sonnet"|"Opus", "5", ___ } ] ] := "Claude5";
 chooseModelFamily0[ wordsPattern[ { "Claude", "Haiku"|"Sonnet"|"Opus", "4", "7"|"8"|"9", ___ } ] ] := "Claude47Plus";
 chooseModelFamily0[ wordsPattern[ { "Claude", "Haiku"|"Sonnet"|"Opus", "4", "6", ___ } ] ] := "Claude46";
