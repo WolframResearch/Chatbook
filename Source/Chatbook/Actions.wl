@@ -83,9 +83,7 @@ chatbookAction[ "CopyExplodedCells"               , args___ ] := CopyExplodedCel
 chatbookAction[ "CopyImage"                       , args___ ] := copyImage @ args;
 chatbookAction[ "CopyPlainText"                   , args___ ] := copyPlainText @ args;
 chatbookAction[ "DisableAssistance"               , args___ ] := DisableAssistance @ args;
-chatbookAction[ "DisplayInlineChat"               , args___ ] := displayInlineChat @ args;
 chatbookAction[ "EvaluateChatInput"               , args___ ] := EvaluateChatInput @ args;
-chatbookAction[ "EvaluateInlineChat"              , args___ ] := evaluateInlineChat @ args;
 chatbookAction[ "EvaluateSidebarChat"             , args___ ] := evaluateSidebarChat @ args;
 chatbookAction[ "EvaluateWorkspaceChat"           , args___ ] := evaluateWorkspaceChat @ args;
 chatbookAction[ "ExclusionToggle"                 , args___ ] := ExclusionToggle @ args;
@@ -1227,15 +1225,13 @@ scrapeChatContextDialog // endDefinition;
 AttachCodeButtons // beginDefinition;
 
 AttachCodeButtons[ Dynamic[ attached_ ], cell_CellObject? chatCodeBlockQ, string_, lang_ ] :=
-    Block[ { $InlineChat = inlineChatQ @ cell },
-        attached = AttachCell[
-            cell,
-            floatingButtonGrid[ attached, cell, lang ],
-            { Left, Bottom },
-            Offset[ { 0, 0 }, Automatic ],
-            { Left, Bottom }, (* attaches to ChatCodeBlockTemplate's bottom ImageMargins, not the cell content *)
-            RemovalConditions -> { }
-        ]
+    attached = AttachCell[
+        cell,
+        floatingButtonGrid[ attached, cell, lang ],
+        { Left, Bottom },
+        Offset[ { 0, 0 }, Automatic ],
+        { Left, Bottom }, (* attaches to ChatCodeBlockTemplate's bottom ImageMargins, not the cell content *)
+        RemovalConditions -> { }
     ];
 
 AttachCodeButtons[ attached_, cell_CellObject, string_, lang_ ] := Enclose[
@@ -1260,13 +1256,6 @@ AttachCodeButtons[ attached_, cell_CellObject, string_, lang_ ] := Enclose[
 ];
 
 AttachCodeButtons // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*inlineChatQ*)
-inlineChatQ // beginDefinition;
-inlineChatQ[ cell_CellObject ] := inlineChatQ[ cell ] = currentChatSettings[ cell, "InlineChat" ];
-inlineChatQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1396,9 +1385,6 @@ resolveAppContainer[ c_CellObject, nbo_NotebookObject ] := Enclose[
         Which[
             TrueQ @ $WorkspaceChat || MatchQ[ CurrentValue[ nbo, StyleDefinitions ], FrontEnd`FileName[ { "Wolfram" }, "WorkspaceChat.nb", ___ ] ],
                 "Workspace",
-
-            TrueQ @ $InlineChat,
-                "Inline",
 
             tags = Flatten @ List @ Replace[ AbsoluteCurrentValue[ c, CellTags ], Except[ _List | _String ] :> { } ]; (* Cloud may not get CellTags *)
             TrueQ @ $SidebarChat || AnyTrue[ tags, StringStartsQ[ "Sidebar" | "NotebookAssistantSidebar" ] ],

@@ -49,7 +49,6 @@
   - Sources: `Source/Chatbook/ChatModes/UI.wl`, `Source/Chatbook/ChatModes/Evaluate.wl`
   - Resources: `Developer/Resources/DynamicContent/FooterChat/`
   - [ ] Footer and midline chat input cell UI
-  - [ ] Inline chat evaluation
 
 * [ ] Markdown conversion
   - [ ] Converting notebook content to Markdown

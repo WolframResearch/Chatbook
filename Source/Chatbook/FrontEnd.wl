@@ -412,17 +412,6 @@ parentCell[ obj: _CellObject|_BoxObject ] := ParentCell @ obj;
 parentCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*previousCell*)
-previousCell // beginDefinition;
-previousCell[ cell_CellObject ] /; $cloudNotebooks := previousCell[ cell, parentNotebook @ cell ];
-previousCell[ cell_CellObject ] := PreviousCell @ cell;
-previousCell[ cell_CellObject, nbo_NotebookObject ] := previousCell[ cell, Cells @ nbo ];
-previousCell[ cell_, { ___, previous_CellObject, cell_, ___ } ] := previous;
-previousCell[ _CellObject, ___ ] := None;
-previousCell // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*cloudParentCell*)
 cloudParentCell // beginDefinition;
@@ -696,18 +685,9 @@ evaluationNotebook // endDefinition;
 parentNotebook // beginDefinition;
 parentNotebook[ obj: _CellObject|_BoxObject ] := parentNotebook[ obj, Notebooks @ obj ];
 parentNotebook[ obj_, nbo_NotebookObject ] := nbo;
-parentNotebook[ obj_CellObject, _? FailureQ ] := tryInlineChatParent @ obj;
+parentNotebook[ _CellObject, _? FailureQ ] := $Failed;
 parentNotebook[ _, fail_ ] := fail;
 parentNotebook // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*tryInlineChatParent*)
-tryInlineChatParent // beginDefinition;
-tryInlineChatParent[ obj_CellObject ] := tryInlineChatParent[ obj, currentChatSettings[ obj, "InlineChatRootCell" ] ];
-tryInlineChatParent[ obj_, cell_CellObject ] := Notebooks @ cell;
-tryInlineChatParent[ _, _ ] := $Failed;
-tryInlineChatParent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

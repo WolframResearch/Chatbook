@@ -153,8 +153,7 @@ VerificationTest[
     Block[
         {
             Wolfram`Chatbook`Common`$alwaysOpen             = False,
-            Wolfram`Chatbook`SendChat`Private`$dynamicSplit = False,
-            Wolfram`Chatbook`$InlineChat                    = False
+            Wolfram`Chatbook`SendChat`Private`$dynamicSplit = False
         },
         Module[ { container, trigger, values },
             container = <| "DynamicContent" -> None, "FullContent" -> ProgressIndicator[ Appearance -> "Percolate" ] |>;
@@ -169,7 +168,7 @@ VerificationTest[
     ],
     { { 0, 0, t_Real, t_Real, t_Real }, "Hello world!", "Hello world!" },
     SameTest -> MatchQ,
-    TestID   -> "WriteChunk0-FirstVisibleText@@Tests/StreamingDisplay.wlt:152,1-173,2"
+    TestID   -> "WriteChunk0-FirstVisibleText@@Tests/StreamingDisplay.wlt:152,1-172,2"
 ]
 
 VerificationTest[
@@ -177,7 +176,6 @@ VerificationTest[
         {
             Wolfram`Chatbook`Common`$alwaysOpen                       = False,
             Wolfram`Chatbook`SendChat`Private`$dynamicSplit           = True,
-            Wolfram`Chatbook`$InlineChat                              = False,
             Wolfram`Chatbook`SendChat`Private`$dynamicTriggerInterval = Infinity,
             Wolfram`Chatbook`SendChat`Private`writeDynamicChunkAsStatic
         },
@@ -212,7 +210,7 @@ VerificationTest[
         { True, False }
     },
     SameTest -> MatchQ,
-    TestID   -> "WriteChunk0-StaticWrite@@Tests/StreamingDisplay.wlt:175,1-216,2"
+    TestID   -> "WriteChunk0-StaticWrite@@Tests/StreamingDisplay.wlt:174,1-214,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -235,7 +233,7 @@ VerificationTest[
     ],
     { DynamicModule, { TrackedSymbols :> { t_Symbol }, UpdateInterval -> 0.5 }, HoldComplete[ t_Symbol ] },
     SameTest -> MatchQ,
-    TestID   -> "ActiveDynamic-TracksTrigger@@Tests/StreamingDisplay.wlt:229,1-239,2"
+    TestID   -> "ActiveDynamic-TracksTrigger@@Tests/StreamingDisplay.wlt:227,1-237,2"
 ]
 
 (* The display state must be local to each output cell: *)
@@ -251,7 +249,7 @@ VerificationTest[
     ],
     _List? (SubsetQ[ #, { "cachedDynamicOutput", "displayedContentHash", "scrollPending" } ] &),
     SameTest -> MatchQ,
-    TestID   -> "ActiveDynamic-LocalVariables@@Tests/StreamingDisplay.wlt:242,1-255,2"
+    TestID   -> "ActiveDynamic-LocalVariables@@Tests/StreamingDisplay.wlt:240,1-253,2"
 ]
 
 VerificationTest[
@@ -306,7 +304,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "ActiveDynamic-UnchangedContent@@Tests/StreamingDisplay.wlt:257,1-310,2"
+    TestID   -> "ActiveDynamic-UnchangedContent@@Tests/StreamingDisplay.wlt:255,1-308,2"
 ]
 
 VerificationTest[
@@ -330,7 +328,7 @@ VerificationTest[
     ],
     3,
     SameTest -> MatchQ,
-    TestID   -> "ActiveDynamic-FailureNotCached@@Tests/StreamingDisplay.wlt:312,1-334,2"
+    TestID   -> "ActiveDynamic-FailureNotCached@@Tests/StreamingDisplay.wlt:310,1-332,2"
 ]
 
 (* A Dynamic only updates for a tracked symbol that it reads, so every update must read the trigger: *)
@@ -360,7 +358,7 @@ VerificationTest[
     ],
     3,
     SameTest -> MatchQ,
-    TestID   -> "ActiveDynamic-ReadsTrigger@@Tests/StreamingDisplay.wlt:337,1-364,2"
+    TestID   -> "ActiveDynamic-ReadsTrigger@@Tests/StreamingDisplay.wlt:335,1-362,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

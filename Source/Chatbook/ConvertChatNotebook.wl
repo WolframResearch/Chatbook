@@ -8,7 +8,6 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 
 (* TODO:
     * This should also handle conversion from a regular chat notebook to workspace chat.
-    * Move code for inline chat conversion to this file.
 *)
 
 (* ::**************************************************************************************************************:: *)

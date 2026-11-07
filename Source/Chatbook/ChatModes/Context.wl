@@ -203,52 +203,6 @@ contextNotebook // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*getInlineChatPrompt*)
-getInlineChatPrompt // beginDefinition;
-
-getInlineChatPrompt[ settings_ ] :=
-    If[ TrueQ @ $InlineChat && TrueQ @ settings[ "AllowSelectionContext" ],
-        getInlineChatPrompt0[ settings, $inlineChatState ] // LogChatTiming[ "GetInlineChatPrompt" ],
-        None
-    ];
-
-getInlineChatPrompt // endDefinition;
-
-
-getInlineChatPrompt0 // beginDefinition;
-
-getInlineChatPrompt0[ settings_, state_Association ] :=
-    getInlineChatPrompt0[
-        settings,
-        state[ "SelectionInfo"  ],
-        state[ "ParentCell"     ],
-        state[ "ParentNotebook" ]
-    ];
-
-getInlineChatPrompt0[ settings_, info_, cell_CellObject, nbo_NotebookObject ] :=
-    getInlineChatPrompt0[ settings, info, cell, Cells @ nbo ];
-
-getInlineChatPrompt0[
-    settings_,
-    info_,
-    cell_CellObject,
-    { before___CellObject, cell_, after___CellObject }
-] :=
-    Block[ { $selectionInfo = info, $includeCellXML = TrueQ @ $notebookEditorEnabled },
-        withNotebookContextBudget @ getContextFromSelection0[
-            <|
-                "Before"   -> { before },
-                "Selected" -> { cell   },
-                "After"    -> { after  }
-            |>,
-            notebookContextLimits @ settings
-        ]
-    ];
-
-getInlineChatPrompt0 // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
 (*getSidebarPrompt*)
 getSidebarPrompt // beginDefinition;
 
@@ -1000,28 +954,6 @@ getUserNotebooks[ ] := Enclose[
 ];
 
 getUserNotebooks // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*userNotebookQ*)
-userNotebookQ // beginDefinition;
-
-userNotebookQ[ nbo_NotebookObject ] := TrueQ @ And[
-    CurrentValue[ nbo, WindowFrame ] =!= "Palette",
-    CurrentValue[ nbo, Visible ] === True,
-    includedTagsQ @ AbsoluteCurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings" } ]
-];
-
-userNotebookQ // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*includedTagsQ*)
-includedTagsQ // beginDefinition;
-includedTagsQ[ KeyValuePattern[ "ExcludeFromChat" -> True ] ] := False;
-includedTagsQ[ KeyValuePattern[ "WorkspaceChat" -> True ] ] := False;
-includedTagsQ[ _ ] := True;
-includedTagsQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

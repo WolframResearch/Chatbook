@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions"
+    TestID   -> "GetDefinitions@@Tests/RelatedDocumentationList.wlt:4,1-9,2"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext"
+    TestID   -> "LoadContext@@Tests/RelatedDocumentationList.wlt:11,1-16,2"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -28,14 +28,14 @@ VerificationTest[
     catalog = RelatedDocumentation[ $fitQuery, "CatalogPrompt", MaxItems -> 30 ],
     _String? (StringStartsQ[ "Here are Wolfram documentation snippets that might be relevant" ]),
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-CatalogPrompt"
+    TestID   -> "RelatedDocumentation-CatalogPrompt@@Tests/RelatedDocumentationList.wlt:27,1-32,2"
 ]
 
 VerificationTest[
     catalogURIs = $ChatHandlerData[ "RelatedDocumentationCatalog", "Results" ],
     { __String },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-CatalogPrompt-HandlerData"
+    TestID   -> "RelatedDocumentation-CatalogPrompt-HandlerData@@Tests/RelatedDocumentationList.wlt:34,1-39,2"
 ]
 
 VerificationTest[
@@ -45,7 +45,7 @@ VerificationTest[
     ],
     { __String? (StringMatchQ[ $catalogLine ]) },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-CatalogPrompt-NoHeader"
+    TestID   -> "RelatedDocumentation-CatalogPrompt-NoHeader@@Tests/RelatedDocumentationList.wlt:41,1-49,2"
 ]
 
 (* The header is followed by the same lines: *)
@@ -53,7 +53,7 @@ VerificationTest[
     StringEndsQ[ catalog, "\n\n" <> StringRiffle[ lines, "\n" ] ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-CatalogPrompt-HeaderAndLines"
+    TestID   -> "RelatedDocumentation-CatalogPrompt-HeaderAndLines@@Tests/RelatedDocumentationList.wlt:52,1-57,2"
 ]
 
 (* Resource URIs are shortened, and the handler data has the full URIs of the lines: *)
@@ -67,7 +67,7 @@ VerificationTest[
     },
     { True, False, True, True },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-CatalogPrompt-ShortURIs"
+    TestID   -> "RelatedDocumentation-CatalogPrompt-ShortURIs@@Tests/RelatedDocumentationList.wlt:60,1-71,2"
 ]
 
 (* Outside of a chat no tools are selected, so the header doesn't mention the documentation searcher: *)
@@ -75,7 +75,7 @@ VerificationTest[
     { StringContainsQ[ catalog, "documentation_lookup tool" ], StringContainsQ[ catalog, "searcher" ] },
     { True, False },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-CatalogPrompt-ToolNames"
+    TestID   -> "RelatedDocumentation-CatalogPrompt-ToolNames@@Tests/RelatedDocumentationList.wlt:74,1-79,2"
 ]
 
 (* The header uses the tool names that the model sees with each tool method: *)
@@ -104,7 +104,7 @@ VerificationTest[
         )
     },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-CatalogPrompt-ToolMethods"
+    TestID   -> "RelatedDocumentation-CatalogPrompt-ToolMethods@@Tests/RelatedDocumentationList.wlt:82,1-108,2"
 ]
 
 (* The catalog lists the same candidates as the unfiltered "Prompt", whose output is unchanged: *)
@@ -114,7 +114,7 @@ VerificationTest[
     ],
     _String? (StringStartsQ[ "Here are some Wolfram documentation snippets that you may find useful.\n\n======\n\n" ]),
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-CatalogPrompt-Prompt"
+    TestID   -> "RelatedDocumentation-CatalogPrompt-Prompt@@Tests/RelatedDocumentationList.wlt:111,1-118,2"
 ]
 
 VerificationTest[
@@ -125,7 +125,7 @@ VerificationTest[
     },
     { True, False, True },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-CatalogPrompt-SameCandidates"
+    TestID   -> "RelatedDocumentation-CatalogPrompt-SameCandidates@@Tests/RelatedDocumentationList.wlt:120,1-129,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -137,7 +137,7 @@ VerificationTest[
     Wolfram`Chatbook`Common`$defaultPromptGenerators[ "RelatedDocumentationList" ],
     HoldPattern @ LLMPromptGenerator[ KeyValuePattern[ "Name" -> "RelatedDocumentationList" ], ___ ],
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentationList-Registered"
+    TestID   -> "RelatedDocumentationList-Registered@@Tests/RelatedDocumentationList.wlt:136,1-141,2"
 ]
 
 (* With the DocumentationLookup tool, the generator gives a catalog: *)
@@ -152,7 +152,7 @@ VerificationTest[
     ],
     _String? (StringStartsQ[ "Here are Wolfram documentation snippets that might be relevant" ]),
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentationList-Catalog"
+    TestID   -> "RelatedDocumentationList-Catalog@@Tests/RelatedDocumentationList.wlt:144,1-156,2"
 ]
 
 (* Without it (e.g. tools are disabled, or the persona doesn't have it), it does what "RelatedDocumentation" does: *)
@@ -167,7 +167,7 @@ VerificationTest[
     ],
     "Fallback",
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentationList-Fallback"
+    TestID   -> "RelatedDocumentationList-Fallback@@Tests/RelatedDocumentationList.wlt:159,1-171,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -191,7 +191,7 @@ VerificationTest[
     resolvedPersona /@ { "CodeAssistant", "NotebookAssistant", "WolframAIAssistant", "Wolfie", "Birdnardo" },
     ConstantArray[ { { "RelatedDocumentationList" }, True }, 5 ],
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentationList-Personas"
+    TestID   -> "RelatedDocumentationList-Personas@@Tests/RelatedDocumentationList.wlt:190,1-195,2"
 ]
 
 (* CodeWriter has no tools, so its generator falls back to full snippets: *)
@@ -199,7 +199,7 @@ VerificationTest[
     resolvedPersona[ "CodeWriter" ],
     { { "RelatedDocumentationList" }, False },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentationList-Personas-CodeWriter"
+    TestID   -> "RelatedDocumentationList-Personas-CodeWriter@@Tests/RelatedDocumentationList.wlt:198,1-203,2"
 ]
 
 (* The Notebook Assistant runs one documentation generator, and has the DocumentationLookup tool: *)
@@ -217,7 +217,7 @@ VerificationTest[
     ],
     { { "RelatedDocumentationList" }, True },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentationList-NotebookAssistance"
+    TestID   -> "RelatedDocumentationList-NotebookAssistance@@Tests/RelatedDocumentationList.wlt:206,1-221,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -273,7 +273,7 @@ VerificationTest[
     ],
     { 1, { { "Generated prompt 1" }, { "Generated prompt 1" } } },
     SameTest -> MatchQ,
-    TestID   -> "ConstructMessages-PromptGeneratorsRunOnce"
+    TestID   -> "ConstructMessages-PromptGeneratorsRunOnce@@Tests/RelatedDocumentationList.wlt:256,1-277,2"
 ]
 
 (* A new chat request runs them again: *)
@@ -281,7 +281,7 @@ VerificationTest[
     countGenerators @ Table[ Wolfram`Chatbook`Common`constructMessages[ $settings, $firstMessages ], 2 ],
     { 2, { { "Generated prompt 1" }, { "Generated prompt 2" } } },
     SameTest -> MatchQ,
-    TestID   -> "ConstructMessages-PromptGeneratorsNewRequest"
+    TestID   -> "ConstructMessages-PromptGeneratorsNewRequest@@Tests/RelatedDocumentationList.wlt:280,1-285,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

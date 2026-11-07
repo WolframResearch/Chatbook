@@ -248,8 +248,6 @@ Get[ "Wolfram`Chatbook`Formatting`MessageBoxes`"     ];
 (*Package Footer*)
 addToMXInitialization[
     $languageIcons;
-    $userMessageBoxTemplate;
-    $assistantMessageBoxTemplate;
 ];
 
 End[ ];

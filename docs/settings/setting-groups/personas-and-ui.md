@@ -255,7 +255,7 @@ Whether to allow the current notebook selection to be used as additional context
 
 ### Resolution
 
-When `Automatic` (default), resolves to `True` when using workspace chat, inline chat, or sidebar chat; `False` otherwise.
+When `Automatic` (default), resolves to `True` when using workspace chat; `False` otherwise (including sidebar chat).
 
 ### Integration Points
 

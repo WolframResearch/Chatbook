@@ -119,7 +119,7 @@ VerificationTest[
         TrackedSymbols :> { Wolfram`Chatbook`$ChatEvaluationCell }
     ] ],
     SameTest -> MatchQ,
-    TestID   -> "SendButton-ScopedDynamic-robustness-4@@Tests/SidebarChatInput.wlt:111,1-126,2"
+    TestID   -> "SendButton-ScopedDynamic-robustness-4@@Tests/SidebarChatInput.wlt:108,1-123,2"
 ]
 
 (* The front end evaluates a kernel Dynamic in a DynamicModule with the module's variables, even if it doesn't use them.
@@ -141,7 +141,7 @@ VerificationTest[
     },
     { True, True, 1 },
     SameTest -> MatchQ,
-    TestID   -> "SendButton-InitializationGate-chatbar-8@@Tests/SidebarChatInput.wlt:132,1-148,2"
+    TestID   -> "SendButton-InitializationGate-chatbar-8@@Tests/SidebarChatInput.wlt:129,1-145,2"
 ]
 
 VerificationTest[
@@ -152,7 +152,7 @@ VerificationTest[
     },
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "SendButton-InitializationSetsFlag-chatbar-8@@Tests/SidebarChatInput.wlt:150,1-159,2"
+    TestID   -> "SendButton-InitializationSetsFlag-chatbar-8@@Tests/SidebarChatInput.wlt:147,1-156,2"
 ]
 
 VerificationTest[
@@ -165,7 +165,7 @@ VerificationTest[
     ],
     HoldComplete[ CompoundExpression[ _, Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChatIn", ParentCell[ EvaluationCell[ ] ] ] ] ],
     SameTest -> MatchQ,
-    TestID   -> "SendButton-ScopedStop-robustness-4@@Tests/SidebarChatInput.wlt:161,1-172,2"
+    TestID   -> "SendButton-ScopedStop-robustness-4@@Tests/SidebarChatInput.wlt:158,1-169,2"
 ]
 
 (* The front end draws the prebuilt sidebar cell, so it must match the source: *)
@@ -184,7 +184,7 @@ VerificationTest[
     ],
     { { True, True, True, False }.. },
     SameTest -> MatchQ,
-    TestID   -> "SendButton-PrebuiltResource@@Tests/SidebarChatInput.wlt:175,1-191,2"
+    TestID   -> "SendButton-PrebuiltResource@@Tests/SidebarChatInput.wlt:172,1-188,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

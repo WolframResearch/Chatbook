@@ -1148,7 +1148,7 @@ VerificationTest[
     TestID   -> "PromptCache-NotebookContextSearchPromptHints@@Tests/Context.wlt:1137,1-1149,2"
 ]
 
-(* Other chats (e.g. inline chats) keep the notebook context in the system prompt: *)
+(* Other chats don't get the notebook context as turn messages: *)
 VerificationTest[
     Block[ { Wolfram`Chatbook`$WorkspaceChat = False, Wolfram`Chatbook`$SidebarChat = False },
         Wolfram`Chatbook`Common`notebookContextTurnMessages[ <| "AllowSelectionContext" -> True |>, { } ]
@@ -1216,42 +1216,6 @@ VerificationTest[
     { True, True },
     SameTest -> MatchQ,
     TestID   -> "NotebookContextLimits-ChatBudget@@Tests/Context.wlt:1194,1-1219,2"
-]
-
-(* The same goes for the notebook context of inline chats, where long cells are kept: *)
-VerificationTest[
-    Block[
-        {
-            Wolfram`Chatbook`Common`$contextPrompt   = None,
-            Wolfram`Chatbook`Common`$selectionPrompt = None,
-            Wolfram`Chatbook`$ChatHandlerData        = <| |>
-        },
-        UsingFrontEnd @ Module[ { nb, cell, length },
-            WithCleanup[
-                nb = NotebookPut @ Notebook @ {
-                    Cell[ "Some text", "Text" ],
-                    Cell[ StringRepeat[ "selected ", 900 ], "Text" ],
-                    Cell[ "More text", "Text" ]
-                };
-                cell = Cells[ nb ][[ 2 ]];
-                length[ max_ ] := chatContextLength[
-                    Wolfram`Chatbook`ChatModes`Context`Private`getInlineChatPrompt0[
-                        <| AbsoluteCurrentChatSettings @ nb, "MaxContextTokens" -> max, "Multimodal" -> False |>,
-                        None,
-                        cell,
-                        nb
-                    ],
-                    2^18,
-                    16384
-                ];
-                { length[ 2^18 ] === length[ 2^15 ], length[ 2^18 ] > 8100 },
-                NotebookClose @ nb
-            ]
-        ]
-    ],
-    { True, True },
-    SameTest -> MatchQ,
-    TestID   -> "NotebookContextLimits-InlineChat@@Tests/Context.wlt:1222,1-1255,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

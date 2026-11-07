@@ -215,9 +215,6 @@ constructMessages // beginDefinition;
 
 constructMessages[ _Association? AssociationQ, { } ] := { };
 
-constructMessages[ settings_Association? AssociationQ, cells: { __CellObject } ] /; $InlineChat :=
-    constructInlineMessages @ settings;
-
 constructMessages[ settings_Association? AssociationQ, cells: { __CellObject } ] :=
     constructMessages[ settings, notebookRead @ cells ];
 
@@ -392,39 +389,19 @@ dynamicOutputCellQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*constructInlineMessages*)
-constructInlineMessages // beginDefinition;
-
-constructInlineMessages[ settings_ ] :=
-    constructInlineMessages[ settings, $inlineChatState ];
-
-constructInlineMessages[ settings_, state_Association ] :=
-    constructInlineMessages[ settings, state, state[ "MessageCells" ] ];
-
-constructInlineMessages[ settings_, state_, Dynamic[ cells_ ] ] :=
-    constructInlineMessages[ settings, state, cells ];
-
-constructInlineMessages[ settings_, state_, cells: { __Cell } ] :=
-    constructMessages[ settings, cells ];
-
-constructInlineMessages // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*addPrompts*)
 addPrompts // beginDefinition;
 
 addPrompts[ settings_Association, messages_List ] := Enclose[
     Block[ { $contextImages = { } },
-        Module[ { cache, custom, workspace, inline, sidebar, prompt, withImages },
+        Module[ { cache, custom, workspace, sidebar, prompt, withImages },
             cache      = promptCacheOptimizationQ @ settings;
             custom     = ConfirmMatch[ assembleCustomPrompt @ settings, None|_String, "Custom"    ];
             (* With prompt cache optimization, the notebook context of workspace and sidebar chats is sent once per
                conversation instead (see notebookContextTurnMessages in ChatModes/Context.wl): *)
             workspace  = ConfirmMatch[ If[ cache, None, getWorkspacePrompt @ settings ], None|_String, "Workspace" ];
-            inline     = ConfirmMatch[ getInlineChatPrompt @ settings , None|_String, "Inline"    ];
             sidebar    = ConfirmMatch[ If[ cache, None, getSidebarPrompt @ settings ], None|_String, "Sidebar" ];
-            prompt     = StringRiffle[ Select[ { custom, workspace, inline, sidebar }, StringQ ], "\n\n" ];
+            prompt     = StringRiffle[ Select[ { custom, workspace, sidebar }, StringQ ], "\n\n" ];
             withImages = ConfirmMatch[ addContextImages[ messages, $contextImages ], _List, "WithImages" ];
             addPrompts[ prompt, withImages ]
         ]

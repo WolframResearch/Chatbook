@@ -12,7 +12,7 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 $chatOutputOptions = Sequence[ GeneratedCell -> True, CellAutoOverwrite -> True ];
 $selectableOptions = Sequence[ Background -> None, Selectable -> True, Editable -> True ];
 
-$$chatCellFormat = None | Automatic | "Default" | "Inline" | "Sidebar" | "Workspace";
+$$chatCellFormat = None | Automatic | "Default" | "Sidebar" | "Workspace";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

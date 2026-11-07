@@ -248,7 +248,6 @@
 "ChatbarOptionsGettingData" -> "Retrieving user profile\[Ellipsis]",
 
 "MenuItemShowNotebookAssistanceWindow" -> "AI Assistant Chat\[Ellipsis]",
-"MenuItemShowNotebookAssistanceInline" -> "AI Assistant for Selection",
 "MenuItemShowContentSuggestions" -> "AI Content Suggestion",
 
 "SidebarToolbarButtonTooltipHideSidebar" -> "Hide notebook assistant",
@@ -296,9 +295,6 @@
 "WorkspaceFocusIndicatorFocus" -> "Focus:",
 "WorkspaceFocusIndicatorMenuTooltip" -> "Choose a notebook to focus on for additional context",
 "WorkspaceFocusIndicatorMenuAutomatic" -> "Choose Automatically",
-
-"InlineChatButtonTooltipClose" -> "Close",
-"InlineChatButtonTooltipViewNotebookAssist" -> "View in Notebook Assistance Chat",
 
 "NotebookAssistanceInputGettingStarted" -> "Help me get started",
 "NotebookAssistanceInputErrorMessage" -> "What went wrong?",

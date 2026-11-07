@@ -248,7 +248,6 @@
 "ChatbarOptionsGettingData" -> "Retrieving user profile\[Ellipsis]",
 
 "MenuItemShowNotebookAssistanceWindow" -> "AI Assistant Chat\[Ellipsis]",
-"MenuItemShowNotebookAssistanceInline" -> "AI Assistant for Selection",
 "MenuItemShowContentSuggestions" -> "AI\:C5D0 \:C758\:D55C \:CF58\:D150\:CE20 \:C81C\:C548",
 
 "SidebarToolbarButtonTooltipHideSidebar" -> "AI Assistant \:C228\:AE30\:AE30",
@@ -296,9 +295,6 @@
 "WorkspaceFocusIndicatorFocus" -> "\:C9D1\:C911:",
 "WorkspaceFocusIndicatorMenuTooltip" -> "\:CD94\:AC00 \:CEE8\:D14D\:C2A4\:D2B8\:B97C \:C704\:D574 \:C9D1\:C911\:D560 \:B178\:D2B8\:BD81\:C744 \:C120\:D0DD",
 "WorkspaceFocusIndicatorMenuAutomatic" -> "\:C790\:B3D9 \:C120\:D0DD",
-
-"InlineChatButtonTooltipClose" -> "\:B2EB\:AE30",
-"InlineChatButtonTooltipViewNotebookAssist" -> "\:B178\:D2B8\:BD81 \:C5B4\:C2DC\:C2A4\:D134\:C2A4 \:CC44\:D305\:C5D0\:C11C \:BCF4\:AE30",
 
 "NotebookAssistanceInputGettingStarted" -> "\:C2DC\:C791\:C5D0 \:B3C4\:C6C0 \:BC1B\:AE30",
 "NotebookAssistanceInputErrorMessage" -> "\:BB34\:C5C7\:C774 \:C798\:BABB\:B418\:C5C8\:B098\:C694?",

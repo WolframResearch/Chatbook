@@ -9,7 +9,7 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-(* $notebookEditorEnabled := TrueQ @ $WorkspaceChat || TrueQ @ $InlineChat; *)
+(* $notebookEditorEnabled := TrueQ @ $WorkspaceChat; *)
 $notebookEditorEnabled = False;
 
 $cancelledNotebookEdit = Failure[
@@ -236,7 +236,6 @@ notebookEditPrepend0 // endDefinition;
 (*notebookEditTarget*)
 notebookEditTarget // beginDefinition;
 notebookEditTarget[ "selected" ] /; $WorkspaceChat := getUserNotebook[ ];
-notebookEditTarget[ "selected" ] /; $InlineChat := ensureValidWriteTarget @ $inlineChatState[ "ParentCell" ];
 notebookEditTarget[ "selected" ] /; True := $evaluationNotebook;
 notebookEditTarget[ _Missing | "" ] := notebookEditTarget[ "selected" ];
 notebookEditTarget[ target_String ] := notebookEditTarget @ StringSplit[ target, "," ];
@@ -246,32 +245,6 @@ notebookEditTarget[ targets: { __CellObject } ] := targets;
 notebookEditTarget[ s_String ] /; StringContainsQ[ s, "selected"|"selection" ] := notebookEditTarget[ "selected" ];
 notebookEditTarget[ _ ] := Missing[ "TargetNotFound" ];
 notebookEditTarget // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*ensureValidWriteTarget*)
-ensureValidWriteTarget // beginDefinition;
-
-ensureValidWriteTarget[ cell_CellObject ] :=
-    With[ { valid = ensureValidWriteTarget[ cell, CurrentValue[ cell, GeneratedCell ] ] },
-        If[ MatchQ[ valid, _CellObject ],
-            valid,
-            cell
-        ]
-    ];
-
-ensureValidWriteTarget[ cell_CellObject, False ] :=
-    cell;
-
-ensureValidWriteTarget[ cell_, True ] :=
-    With[ { prev = previousCell @ cell },
-        If[ MatchQ[ prev, Except[ cell, _CellObject ] ],
-            ensureValidWriteTarget @ prev,
-            $Failed
-        ]
-    ];
-
-ensureValidWriteTarget // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

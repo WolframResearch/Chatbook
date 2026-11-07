@@ -220,7 +220,7 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] /
             throwIfChatStopped[ ]
         ];
 
-        If[ ! Or[ TrueQ @ $WorkspaceChat, TrueQ @ $InlineChat, TrueQ @ $SidebarChat ],
+        If[ ! Or[ TrueQ @ $WorkspaceChat, TrueQ @ $SidebarChat ],
             SelectionMove[ cellObj, After, Cell ] (* mimic the selection behavior of standard cell evaluations *)
         ];
 
@@ -1771,7 +1771,7 @@ writeChunk0[ Dynamic[ container_ ], cell_, chunk_String, text_String ] := (
 
     (* FIXME: figure out what to do here when there's a custom formatter *)
     With[ { newContent = appendStringContent[ container[ "DynamicContent" ], text ] },
-        If[ Not @ Or[ $InlineChat, Not @ TrueQ @ $dynamicSplit, $cloudNotebooks ],
+        If[ Not @ Or[ Not @ TrueQ @ $dynamicSplit, $cloudNotebooks ],
             (* Convert as much of the dynamic content as possible to static boxes and write to cell: *)
             With[ { splitString = splitDynamicContent @ newContent },
                 If[ Length @ splitString > 1,
@@ -3128,9 +3128,6 @@ openChatCellOnce // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*WriteChatOutputCell*)
-WriteChatOutputCell[ cell_, new_Cell, info_ ] /; $InlineChat :=
-    writeInlineChatOutputCell[ cell, new, info ];
-
 (* $SidebarChat may be False by the time this function is called so we can't use it in a separate Conditioned definition *)
 WriteChatOutputCell[
     cell_CellObject,
@@ -3184,7 +3181,6 @@ WriteChatOutputCell[ args___ ] :=
 (* ::Subsubsection::Closed:: *)
 (*createNewChatOutput*)
 createNewChatOutput // beginDefinition;
-createNewChatOutput[ settings_, target_, cell_Cell ] /; $InlineChat := createNewInlineOutput[ settings, target, cell ];
 createNewChatOutput[ settings_, None, cell_Cell ] := cellPrint @ cell;
 createNewChatOutput[ settings_, target_, cell_Cell ] /; settings[ "TabbedOutput" ] === False := cellPrint @ cell;
 createNewChatOutput[ settings_, target_CellObject, cell_Cell ] := prepareChatOutputPage[ target, cell ];
@@ -3348,7 +3344,6 @@ activeAIAssistantCell[
             cellTags  = Replace[ cellTags0, Except[ _String | { ___String } ] :> Inherited ],
             outer     = Which[
                 TrueQ @ $WorkspaceChat, assistantMessageBoxActive[ #, "Workspace" ]&,
-                TrueQ @ $InlineChat,    assistantMessageBoxActive[ #, "Inline" ]&,
                 TrueQ @ $SidebarChat,   assistantMessageBoxActive[ #, "Sidebar" ]&,
                 True,                   # & ]
         },
@@ -4136,7 +4131,7 @@ restoreLastPage // endDefinition;
 (*attachChatOutputMenu*)
 attachChatOutputMenu // beginDefinition;
 
-attachChatOutputMenu[ cell_CellObject ] /; $cloudNotebooks || $WorkspaceChat || $InlineChat || $SidebarChat := Null;
+attachChatOutputMenu[ cell_CellObject ] /; $cloudNotebooks || $WorkspaceChat || $SidebarChat := Null;
 
 attachChatOutputMenu[ cell_CellObject ] := (
     $lastChatOutput = cell;

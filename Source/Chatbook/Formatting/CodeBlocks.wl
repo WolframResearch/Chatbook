@@ -40,7 +40,6 @@ cachedCodeBlockCell[ language_String, code_String ] :=
                 code,
                 $SidebarChat,
                 $WorkspaceChat,
-                $InlineChat,
                 $cloudNotebooks,
                 TrueQ @ $useFastNLInputFormatting
             }

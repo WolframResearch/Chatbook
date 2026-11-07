@@ -110,8 +110,8 @@ code with the front end writes stubbed out:
 4. At the end, the full content is formatted like `reformatCell` does it (Finished, with the static code block cache
    that step 2 filled in).
 
-Not simulated: cloud notebooks and inline chat, which format the whole content on every refresh without the static
-split. The `Streaming` check covers formatting of complete documents in streaming mode.
+Not simulated: cloud notebooks, which format the whole content on every refresh without the static split. The
+`Streaming` check covers formatting of complete documents in streaming mode.
 
 ### Normalization
 

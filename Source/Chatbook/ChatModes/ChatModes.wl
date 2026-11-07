@@ -11,7 +11,7 @@ Needs[ "Wolfram`Chatbook`Common`" ];
         * Get context from multiple notebooks
         * Set up an LLM subtask to choose relevant notebooks for inclusion
     * Create test writer tool
-    * Define a `$ChatEvaluationMode` that gives "Inline", "Workspace", or None based on the current chat mode
+    * Define a `$ChatEvaluationMode` that gives "Workspace", "Sidebar", or None based on the current chat mode
 *)
 
 (* ::**************************************************************************************************************:: *)
@@ -29,14 +29,6 @@ GeneralUtilities`SetUsage[ "\
 $SidebarChat gives True when chat is occurring in a notebook's side bar area and False otherwise." ];
 
 $SidebarChat = False;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
-(*$InlineChat*)
-GeneralUtilities`SetUsage[ "\
-$InlineChat gives True when chat is occurring in an attached chat cell and False otherwise." ];
-
-$InlineChat = False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
