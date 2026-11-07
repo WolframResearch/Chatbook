@@ -153,23 +153,6 @@ inlineInteractiveCodeCell[ display_, string_, lang_ ] := display;
 inlineInteractiveCodeCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*buttonOverlay*)
-buttonOverlay // beginDefinition;
-
-buttonOverlay[ a_, b_ ] := Overlay[
-    { a, b },
-    All,
-    2,
-    Alignment      -> { Left, Bottom },
-    ContentPadding -> False,
-    FrameMargins   -> 0,
-    ImageMargins   -> 0
-];
-
-buttonOverlay // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
 End[ ];

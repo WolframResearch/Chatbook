@@ -24,7 +24,6 @@ HoldComplete[
     `saveWorkspaceChatInput,
     `scrollInlineChat,
     `sidebarCellObject,
-    `sidebarScrollingCell,
     `toggleOverlayMenu,
     `userNotebookQ,
     `validInputStringQ,

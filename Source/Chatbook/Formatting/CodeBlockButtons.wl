@@ -239,21 +239,6 @@ $insertInputButtonLabel := $insertInputButtonLabel = fancyTooltip[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*$insertInputButtonLabelWorkspaceChat*)
-$insertInputButtonLabelWorkspaceChat := $insertInputButtonLabelWorkspaceChat = fancyTooltip[
-    MouseAppearance[
-        buttonMouseover[
-            buttonFrameDefault @ labeledIcon[ "AssistantCopyRight", "FormattingInsertContentLabel" ],
-            buttonFrameHover   @ labeledIcon[ "AssistantCopyRight", "FormattingInsertContentLabel" ],
-            buttonFramePressed @ labeledIcon[ "AssistantCopyRight", "FormattingInsertContentLabel" ]
-        ],
-        "LinkHand"
-    ],
-    tr[ "FormattingInsertContentTooltip" ]
-];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*$insertEvaluateButtonLabel*)
 $insertEvaluateButtonLabel := $insertEvaluateButtonLabel = fancyTooltip[
     MouseAppearance[
@@ -517,14 +502,6 @@ insertAfterChatGeneratedCells[ cellObj_CellObject, cell_Cell ] := Enclose[
 ];
 
 insertAfterChatGeneratedCells // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*copyCode*)
-copyCode // beginDefinition;
-copyCode[ cell_CellObject ] := copyCode @ getCodeBlockContent @ cell;
-copyCode[ code: _Cell|_String ] := CopyToClipboard @ stripMarkdownBoxes @ code;
-copyCode // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

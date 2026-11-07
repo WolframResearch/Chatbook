@@ -62,13 +62,6 @@ $notebookAssistanceSidebarSettings := <|
     "SidebarChat"           -> True
 |>;
 
-$sidebarChatTopLevelOptions := Sequence[
-    TaggingRules        -> <|
-        "ChatNotebookSettings" -> $notebookAssistanceSidebarSettings,
-        "ConversationTitle"    -> ""
-    |>
-];
-
 $workspaceChatNotebookOptions := Sequence[
     DefaultNewCellStyle -> "AutoMoveToChatInputField",
     StyleDefinitions    -> FrontEnd`FileName[ { "Wolfram" }, "WorkspaceChat.nb", CharacterEncoding -> "UTF-8" ],
@@ -896,14 +889,6 @@ findCurrentWorkspaceChat[ appName_String, notebooks: { __NotebookObject } ] := E
 
 
 findCurrentWorkspaceChat // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
-(*CreateWorkspaceChat*)
-CreateWorkspaceChat // beginDefinition;
-CreateWorkspaceChat[ ] := catchMine @ LogChatTiming @ createWorkspaceChat[ ];
-CreateWorkspaceChat[ nbo_NotebookObject ] := catchMine @ LogChatTiming @ createWorkspaceChat @ nbo;
-CreateWorkspaceChat // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

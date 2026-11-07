@@ -215,7 +215,6 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `ensureChatMessages;
 `errorMessageBox;
 `escapeMarkdownString;
-`evaluateChatbarChat;
 `evaluateInlineChat;
 `evaluateSidebarChat;
 `evaluateWithProgress;
