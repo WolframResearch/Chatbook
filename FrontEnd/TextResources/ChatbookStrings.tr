@@ -74,6 +74,8 @@
 "FormattingToolUsing" -> "Using ",
 "FormattingToolUsed" -> "Used ",
 "FormattingToolUsingLoading" -> "Using tool\[Ellipsis]",
+"FormattingToolCancelled" -> "Cancelled ",
+"FormattingToolCancelledUnnamed" -> "Cancelled tool call",
 "FormattingThinkingActive" -> "Thinking\[Ellipsis]",
 "FormattingThinkingComplete" -> "Thought for `time` seconds",
 "FormattingThinkingCompleteSingular" -> "Thought for a second",

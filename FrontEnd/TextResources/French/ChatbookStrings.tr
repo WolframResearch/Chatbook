@@ -74,6 +74,8 @@
 "FormattingToolUsing" -> "Utilisation de ",
 "FormattingToolUsed" -> "Utilisant ",
 "FormattingToolUsingLoading" -> "Utilisation de l\[CloseCurlyQuote]outil\[Ellipsis]",
+"FormattingToolCancelled" -> "Annul\[EAcute] ",
+"FormattingToolCancelledUnnamed" -> "Appel d\[CloseCurlyQuote]outil annul\[EAcute]",
 "FormattingThinkingActive" -> "En train de r\[EAcute]fl\[EAcute]chir\[Ellipsis]",
 "FormattingThinkingComplete" -> "A r\[EAcute]fl\[EAcute]chi pendant `time` secondes",
 "FormattingThinkingCompleteSingular" -> "A r\[EAcute]fl\[EAcute]chi pendant une seconde",

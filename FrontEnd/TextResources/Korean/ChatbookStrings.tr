@@ -74,6 +74,8 @@
 "FormattingToolUsing" -> "\:C0AC\:C6A9\:C911 ",
 "FormattingToolUsed" -> "\:C0AC\:C6A9 ",
 "FormattingToolUsingLoading" -> "\:B3C4\:AD6C \:C0AC\:C6A9\[Ellipsis]",
+"FormattingToolCancelled" -> "\:CDE8\:C18C\:B428 ",
+"FormattingToolCancelledUnnamed" -> "\:B3C4\:AD6C \:D638\:CD9C \:CDE8\:C18C\:B428",
 "FormattingThinkingActive" -> "\:C0DD\:AC01\:C911\[Ellipsis]",
 "FormattingThinkingComplete" -> "`time`\:CD08 \:B3D9\:C548 \:C0DD\:AC01",
 "FormattingThinkingCompleteSingular" -> "1 \:cd08 \:b3d9\:c548 \:c0dd\:ac01",
