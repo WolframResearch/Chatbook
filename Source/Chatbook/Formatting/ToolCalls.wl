@@ -256,7 +256,8 @@ makeToolCallBoxLabel[ as: KeyValuePattern[ "Name" -> name_String ] ] :=
         ]
     ];
 
-makeToolCallBoxLabel[ as_Association ] := tr[ "FormattingToolUsingLoading" ];
+makeToolCallBoxLabel[ as_Association ] :=
+    If[ toolCallCancelledQ @ as, tr[ "FormattingToolCancelledUnnamed" ], tr[ "FormattingToolUsingLoading" ] ];
 
 makeToolCallBoxLabel[ as_Association, name_String ] /; $dynamicText :=
     fakeOpenerView @ makeToolCallBoxLabel0[ as, name, toolCallIcon[ as, $fakeOpenerColor ] ];
@@ -287,7 +288,14 @@ makeToolCallBoxLabel // endDefinition;
 
 makeToolCallBoxLabel0 // beginDefinition;
 
-makeToolCallBoxLabel0[ KeyValuePattern[ "Result" -> "" ], string_String, icon_ ] :=
+makeToolCallBoxLabel0[ as: KeyValuePattern[ "Result" -> "" ], string_String, icon_ ] /; toolCallCancelledQ @ as :=
+    Flatten @ {
+        toolCallIconPane @ icon,
+        tr[ "FormattingToolCancelled" ],
+        Style[ string, FontWeight -> "Plain" ]
+    };
+
+makeToolCallBoxLabel0[ KeyValuePattern[ "Result" -> "" ], string_String, icon_ ] /; TrueQ @ $dynamicText :=
 With[ { col = $fakeOpenerColor },
     Flatten @ {
         toolCallIconPane @ icon,
@@ -304,6 +312,17 @@ makeToolCallBoxLabel0[ as_, string_String, icon_ ] := Flatten @ {
 };
 
 makeToolCallBoxLabel0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*toolCallCancelledQ*)
+
+(* A tool call is no longer in progress once the output is finished, so without "ENDRESULT" it was never completed (e.g.
+   the chat was stopped). A code block or image inside a tool call that's still being written can also put its start in
+   a static part of the response (see `$dynamicSplitRules`), which has this label until the response is finished. *)
+toolCallCancelledQ // beginDefinition;
+toolCallCancelledQ[ as_Association ] := ! TrueQ @ $dynamicText && StringFreeQ[ Lookup[ as, "ToolCall", "" ], "ENDRESULT" ];
+toolCallCancelledQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
