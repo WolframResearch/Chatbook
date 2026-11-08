@@ -322,10 +322,32 @@ disableAssistance // endDefinition;
 (*InsertInlineReference*)
 InsertInlineReference // beginDefinition;
 
+(* Inline cells inherit the chat input cell's key events, but in an inline cell these keys should just type: *)
+InsertInlineReference[ type_, cell_CellObject? inlineCellQ ] :=
+    NotebookWrite[ parentNotebook @ cell, $inlineReferenceKeys @ type ];
+
 InsertInlineReference[ type_, cell_ ] :=
     insertInlineReference[ type, loadDefinitionNotebook @ ensureChatInputCell @ cell ];
 
 InsertInlineReference // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$inlineReferenceKeys*)
+(* The key that triggers each type of inline reference (see the "ChatInput" style's CellEventActions): *)
+$inlineReferenceKeys = <|
+    "PersonaTemplate"  -> "@",
+    "FunctionTemplate" -> "!",
+    "ModifierTemplate" -> "#",
+    "WLTemplate"       -> "\\"
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*inlineCellQ*)
+(* Checking chatInputCellQ first (it's cached) avoids an extra front end call for the usual case: *)
+inlineCellQ[ cell_CellObject ] :=
+    ! chatInputCellQ @ cell && MatchQ[ Developer`CellInformation @ cell, KeyValuePattern[ "InlineCellPosition" -> _ ] ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
