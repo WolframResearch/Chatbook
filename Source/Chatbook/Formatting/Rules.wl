@@ -59,8 +59,11 @@ $$delimiter           = StartOfLine ~~ ($$hyphenDelimiter|$$asteriskDelimiter|$$
    pattern are replaced by their values when a rule is defined, but a condition's test and a right-hand side are held,
    so names there (like $$ws in the simple tool call rule) stay symbols in the rule. *)
 
-(* Tool calls end with ENDRESULT or ENDRESULT(id), and can be written inside a code fence: *)
-$$toolCallEnd       = Longest[ "ENDRESULT" ~~ (("(" ~~ (LetterCharacter|DigitCharacter).. ~~ ")") | "") ];
+(* Tool calls end with ENDRESULT or ENDRESULT(id), and can be written inside a code fence. The marker is case-sensitive
+   even though the rules are used with IgnoreCase -> True, so that words like "sendResult" don't end a tool call: *)
+$$toolCallEnd       = Longest[
+    RegularExpression[ "(?-i:ENDRESULT)" ] ~~ (("(" ~~ (LetterCharacter|DigitCharacter).. ~~ ")") | "")
+];
 $$toolCall          = "TOOLCALL:" ~~ Shortest[ ___ ] ~~ ($$toolCallEnd|EndOfString);
 $$eol               = " "... ~~ "\n";
 $$cmd               = Repeated[ Except[ WhitespaceCharacter ], { 1, 80 } ];

@@ -1075,7 +1075,7 @@ Each item was reproduced against main (375156fb). **[not encoded]** means no tes
 ### Lowercase "toolcall:" is a tool call (IgnoreCase) but can't be parsed [not encoded]
 
 - **Repro:** `FormatChatOutput["toolcall: web_fetcher\n{\"x\":\"1\"}\nRESULT\nok\nENDRESULT(efgh5678)\n\nDone."]`
-- **Observed:** StringSplit uses IgnoreCase -> True, so this is split out as a tool call. parseToolCallID and parsePartialToolCallString are case-sensitive, so the finished cell shows only the 'Using tool...' loading label (TaggingRules <|ToolCall -> ...|>). A lowercase 'endresult(id)' also ends a TOOLCALL, but then the ID and result aren't parsed, so it shows 'Using' with a spinner. (Re-verified.)
+- **Observed:** StringSplit uses IgnoreCase -> True, so this is split out as a tool call. parseToolCallID and parsePartialToolCallString are case-sensitive, so the finished cell shows only the 'Using tool...' loading label (TaggingRules <|ToolCall -> ...|>). (Re-verified.)
 - **Expected:** Either case-sensitive recognition (plain text) or case-insensitive parsing
 
 ### TOOLCALL syntax with ToolMethod "Simple" causes an internal failure [not encoded]
