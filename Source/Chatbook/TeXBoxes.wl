@@ -332,20 +332,35 @@ escapeTextMathSymbols // endDefinition;
 (*makeTeXBoxes*)
 makeTeXBoxes // beginDefinition;
 
+(* All conversions share one TeX.exe link, and each one is a multi-packet exchange on it. If a preemptive evaluation
+   (such as the streaming display) starts a conversion while another one is waiting on the link, the exchange is
+   corrupted, which can block the kernel forever or crash it (#1796). The preemptive evaluation can't wait for the one
+   it interrupted, so it skips the conversion and the caller shows the source text. A skipped input isn't memoized
+   here, and memoized inputs still match their own definitions before this one. The streaming display can keep the
+   source text for the rest of the response (see $resultCellCache), and the final reformat replaces it. The exception
+   is a stop that interrupts a conversion, since its preemptive reformat is the final one, but that's rare and cosmetic.
+   Don't use PreemptProtect around the conversion instead: with a Dynamic updating during conversions, it froze the
+   front end ("The kernel is not responding to a Dynamic evaluation"). *)
+makeTeXBoxes[ _String ] /; $texConversionRunning := $Failed;
+
 makeTeXBoxes[ input0_String ] := Enclose[
     makeTeXBoxes[ input0 ] =
-        Catch @ Module[ { input, tex, retry, new },
-            input = ConfirmBy[ preprocessTeXString @ input0, StringQ, "Input" ];
-            tex = ConfirmMatch[ Quiet @ InputAssistant`TeXAssistant @ input, _RawBoxes, "TeX" ];
-            If[ validTeXQ @ tex, Throw @ tex ];
-            retry = ConfirmBy[ applyExtraTeXRules @ input, StringQ, "Retry" ];
-            new = Quiet @ InputAssistant`TeXAssistant @ retry;
-            If[ TrueQ @ validTeXQ @ new, new, tex ]
+        Block[ { $texConversionRunning = True },
+            Catch @ Module[ { input, tex, retry, new },
+                input = ConfirmBy[ preprocessTeXString @ input0, StringQ, "Input" ];
+                tex = ConfirmMatch[ Quiet @ InputAssistant`TeXAssistant @ input, _RawBoxes, "TeX" ];
+                If[ validTeXQ @ tex, Throw @ tex ];
+                retry = ConfirmBy[ applyExtraTeXRules @ input, StringQ, "Retry" ];
+                new = Quiet @ InputAssistant`TeXAssistant @ retry;
+                If[ TrueQ @ validTeXQ @ new, new, tex ]
+            ]
         ],
     throwInternalFailure
 ];
 
 makeTeXBoxes // endDefinition;
+
+$texConversionRunning = False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
