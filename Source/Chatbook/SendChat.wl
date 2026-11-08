@@ -2771,19 +2771,29 @@ appendToolResult // Attributes = { HoldFirst };
 
 appendToolResult[ container_Symbol, KeyValuePattern[ "ToolMethod" -> "Simple" ], output_String, id_String ] :=
     Module[ { append },
-        append = "\n/exec\nRESULT\n"<>output<>"\nENDRESULT(" <> id <> ")\n\n";
+        append = "\n/exec\nRESULT\n"<>escapeToolCallEnd[ output ]<>"\nENDRESULT(" <> id <> ")\n\n";
         container[ "FullContent"    ] = container[ "FullContent"    ] <> append;
         container[ "DynamicContent" ] = container[ "DynamicContent" ] <> append;
     ];
 
 appendToolResult[ container_Symbol, settings_, output_String, id_String ] :=
     Module[ { append },
-        append = "\nENDTOOLCALL\nRESULT\n"<>output<>"\nENDRESULT(" <> id <> ")\n\n";
+        append = "\nENDTOOLCALL\nRESULT\n"<>escapeToolCallEnd[ output ]<>"\nENDRESULT(" <> id <> ")\n\n";
         container[ "FullContent"    ] = container[ "FullContent"    ] <> append;
         container[ "DynamicContent" ] = container[ "DynamicContent" ] <> append;
     ];
 
 appendToolResult // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*escapeToolCallEnd*)
+(* A tool's output can contain the end marker (e.g. when reading a chat notebook), which would end the tool call there.
+   This only changes the response text. The request right after the tool call and the Interpreted view of the tool call
+   (while the result is available) use the original output. The Raw view and later requests show the backslash. *)
+escapeToolCallEnd // beginDefinition;
+escapeToolCallEnd[ output_String ] := StringReplace[ output, "ENDRESULT" -> "END\\RESULT" ];
+escapeToolCallEnd // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

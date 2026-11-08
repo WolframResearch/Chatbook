@@ -1723,4 +1723,100 @@ VerificationTest[
     TestID   -> "ToolCalls-Retry-Escaped@@Tests/FormattingToolCalls.wlt:1706,1-1724,2"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*End Markers in Tool Output*)
+
+(* Text in a tool's output that looks like the end marker must not end the tool call (GH#314). appendToolResult puts a
+   backslash in the literal marker "ENDRESULT". The formatter's end marker is case-sensitive, so other text such as
+   "sendResult" is left alone. *)
+VerificationTest[
+    tcAppendResult[ method_String, output_String ] := Module[ { container, start },
+        start = If[ method === "Simple",
+                    "/wl\n1+1",
+                    "TOOLCALL: web_fetcher\n{\"url\":\"https://example.com\"}\nENDARGUMENTS"
+                ];
+        container = <| "FullContent" -> start, "DynamicContent" -> start |>;
+        Wolfram`Chatbook`SendChat`Private`appendToolResult[ container, <| "ToolMethod" -> method |>, output, "abc123xyz" ];
+        container
+    ];
+
+    $tcMarkerOutputs = {
+        "the marker ENDRESULT appears here",
+        "before\nENDRESULT\nafter",
+        "before\nENDRESULT(deadbeef)\nafter",
+        "x = sendResult[ 1 ];",
+        "before\nEndResult\nafter"
+    };,
+    Null,
+    SameTest -> MatchQ,
+    TestID   -> "ToolCalls-EndMarker-Definitions-GH#314@@Tests/FormattingToolCalls.wlt:1733,1-1754,2"
+]
+
+(* The whole result stays in the tool call box: *)
+VerificationTest[
+    tcStyles[ tcAppendResult[ "Textual", # ][ "FullContent" ] <> "Done." ] & /@ $tcMarkerOutputs,
+    ConstantArray[ { "InlineToolCall", "\nDone." }, Length @ $tcMarkerOutputs ],
+    SameTest -> MatchQ,
+    TestID   -> "ToolCalls-EndMarker-Textual-GH#314@@Tests/FormattingToolCalls.wlt:1757,1-1762,2"
+]
+
+VerificationTest[
+    Block[ { Wolfram`Chatbook`$ChatHandlerData = $tcSimpleMethod },
+        tcStyles[ tcAppendResult[ "Simple", # ][ "FullContent" ] <> "Done." ] & /@ $tcMarkerOutputs
+    ],
+    ConstantArray[ { "InlineToolCall", "\nDone." }, Length @ $tcMarkerOutputs ],
+    SameTest -> MatchQ,
+    TestID   -> "ToolCalls-EndMarker-Simple-GH#314@@Tests/FormattingToolCalls.wlt:1764,1-1771,2"
+]
+
+(* The stored tool call text, and what parsePartialToolCallString shows for it when the tool result is no longer
+   available (e.g. after restarting the kernel): *)
+VerificationTest[
+    With[
+        {
+            tool = tcTags[
+                tcAppendResult[ "Textual", "before\nENDRESULT(deadbeef)\nsendResult[ 1 ]" ][ "FullContent" ] <> "Done."
+            ][ "ToolCall" ]
+        },
+        { tool, Wolfram`Chatbook`Formatting`Private`parsePartialToolCallString[ tool ][ "Result" ] }
+    ],
+    {
+        "TOOLCALL: web_fetcher\n{\"url\":\"https://example.com\"}\nENDARGUMENTS\nENDTOOLCALL\nRESULT\nbefore\nEND\\RESULT(deadbeef)\nsendResult[ 1 ]\nENDRESULT(abc123xyz)",
+        "before\nEND\\RESULT(deadbeef)\nsendResult[ 1 ]"
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ToolCalls-EndMarker-ToolCallText-GH#314@@Tests/FormattingToolCalls.wlt:1775,1-1790,2"
+]
+
+(* The marker is case-sensitive, so words that contain it in another case don't end a tool call, including in the
+   arguments: *)
+VerificationTest[
+    {
+        tcStyles[ "TOOLCALL: wolfram_language_evaluator\n{\"code\":\"appendResult[ x ]\"}\nENDARGUMENTS\nENDTOOLCALL\nRESULT\nok\nENDRESULT(tc0701)\n\nDone." ],
+        tcStyles[ "TOOLCALL: web_fetcher\n{\"url\":\"x\"}\nRESULT\nsee endresult here\nENDRESULT(tc0702)\n\nDone." ]
+    },
+    { { "InlineToolCall", "\nDone." }, { "InlineToolCall", "\nDone." } },
+    SameTest -> MatchQ,
+    TestID   -> "ToolCalls-EndMarker-Case-Sensitive-GH#314@@Tests/FormattingToolCalls.wlt:1794,1-1802,2"
+]
+
+(* Both content strings are updated, and while streaming the split point is the real end marker: *)
+VerificationTest[
+    With[ { container = tcAppendResult[ "Textual", "before\nENDRESULT(deadbeef)\nafter" ] },
+        {
+            container[ "DynamicContent" ] === container[ "FullContent" ],
+            Block[ { Wolfram`Chatbook`SendChat`Private`$dynamicSplitChecked = None },
+                StringEndsQ[
+                    First @ Wolfram`Chatbook`SendChat`Private`splitDynamicContent[ container[ "DynamicContent" ] <> "Done." ],
+                    "ENDRESULT(abc123xyz)\n"
+                ]
+            ]
+        }
+    ],
+    { True, True },
+    SameTest -> MatchQ,
+    TestID   -> "ToolCalls-EndMarker-DynamicContent-GH#314@@Tests/FormattingToolCalls.wlt:1805,1-1820,2"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)
