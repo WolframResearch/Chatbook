@@ -81,7 +81,7 @@
 "FormattingThinkingCompleteSingular" -> "\:601d\:8003\:4e00\:4e0b",
 "FormattingThinkingCompleteFallback" -> "\:601D\:8003",
 "FormattingHide" -> "\:96B1\:85CF",
-"FormattingDiscardedMaterial" -> "Discarded material",
+"FormattingDiscardedMaterial" -> "\:6368\:68c4\:7684\:8cc7\:6599",
 
 "InlineReferencesFieldHint" -> "\:63D0\:793A\:540D\:7A31",
 "InlineReferencesInsertLabel" -> "\:63D2\:5165\:FF1A",
@@ -171,7 +171,7 @@
 "ToolManagerTooltipNonDeletable1" -> "`name` \:662F\:5167\:5EFA\:5DE5\:5177\:4E14\:7121\:6CD5\:88AB\:522A\:9664\:3002",
 "ToolManagerTooltipNonDeletable2" -> "`name` \:662F\:4F9D\:4EBA\:7269\:8A8C `persona` \:6240\:63D0\:4F9B\:4E14\:7121\:6CD5\:88AB\:500B\:5225\:522A\:9664\:3002",
 "ToolManagerDeleteTool" -> "\:522A\:9664\:5DE5\:5177",
-"ToolManagerToolsDisabled" -> "Tools are disabled in the current chat settings.",
+"ToolManagerToolsDisabled" -> "\:5728\:76ee\:524d\:7684\:804a\:5929\:8a2d\:5b9a\:4e2d\:ff0c\:5df2\:505c\:7528\:6240\:6709\:5de5\:5177\:3002",
 
 "UIInitializeChatbook" -> "\:521D\:59CB\:5316\:4E2D\[Ellipsis]",
 "UIEnableChatFeatures" -> "\:8CE6\:80FD AI \:7DB2\:8DEF\:804A\:5929\:7CFB\:7D71\:529F\:80FD",
@@ -269,7 +269,7 @@
 "WorkspaceToolbarButtonTooltipOpenAsChatbook" -> "\:958B\:555F\:6210\:7DB2\:8DEF\:804A\:5929\:7B46\:8A18\:672C",
 "WorkspaceSourcesOpenNotebooks" -> "\:958B\:555F\:7B46\:8A18\:672C",
 "WorkspaceSourcesNoOpenNotebooks" -> "\:7576\:524D\:4E26\:7121\:958B\:555F\:5176\:4ED6\:7B46\:8A18\:672C\:3002",
-"WorkspaceHistoryNone" -> "No chat history",
+"WorkspaceHistoryNone" -> "\:6c92\:6709\:804a\:5929\:7d00\:9304",
 "WorkspaceHistoryPageTemplate" -> "`2` \:7684\:7B2C `1` \:9801",
 "WorkspaceHistoryFirstPage" -> "\:9996\:9801",
 "WorkspaceHistoryPreviousPage" -> "\:524D\:4E00\:9801",
@@ -277,7 +277,7 @@
 "WorkspaceHistoryLastPage" -> "\:6700\:5F8C\:4E00\:9801",
 "WorkspaceHistoryTitle" -> "\:6B77\:53F2\:8A18\:9304",
 "WorkspaceHistoryFieldHint" -> "\:641C\:5C0B",
-"WorkspaceHistoryLoadFailed" -> "That chat could not be loaded.",
+"WorkspaceHistoryLoadFailed" -> "\:7121\:6cd5\:8f09\:5165\:8a72\:804a\:5929\:8a18\:9304\:3002",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "\:8907\:88FD\:56DE\:61C9\:81F3\:526A\:8CBC\:7C3F\[Ellipsis]",
 "WorkspaceOutputRaftCopyAs" -> "\:8907\:88FD\:56DE\:61C9\:6210\:70BA\[Ellipsis]",
@@ -309,11 +309,11 @@
 "ProgressTextWaitingForResponse" -> "\:7b49\:5f85\:4e2d||\:63a5\:6536\:4e2d||\:6536\:807d\:4e2d||\:5f85\:547d\:4e2d||\:8655\:7406\:4e2d||\:6aa2\:67e5\:4e2d",
 "ProgressTextGeneratingSuggestions" -> "\:751F\:6210\:5EFA\:8B70\:4E2D",
 "ProgressTextDownloadingSnippet" -> "\:4E0B\:8F09 `1` \:7684\:6587\:4EF6\:7247\:6BB5\:4E2D",
-"ProgressTextDownloadingSnippets" -> "\:4E0B\:8F09 `1` \:7684\:8AF8\:591A\:6587\:4EF6\:7247\:6BB5\:4E2D",
-"DownloadRedownloadPrompt" -> "Some locally installed files appear to be incomplete or corrupt:\n\n`1`\n\nWould you like to download them again?",
-"DownloadRetryPrompt" -> "The download of some semantic search resources did not complete. Would you like to try again?",
-"ProgressTextDownloadingSearchIndices" -> "Downloading semantic search indices\[Ellipsis]",
-"ProgressTextUnpackingFiles" -> "Unpacking files\[Ellipsis]"
+"ProgressTextDownloadingSnippets" -> "\:90e8\:5206\:8a9e\:7fa9\:641c\:5c0b\:8cc7\:6e90\:7684\:4e0b\:8f09\:672a\:5b8c\:6210\:3002\:60a8\:8981\:91cd\:65b0\:5617\:8a66\:55ce\:ff1f",
+"DownloadRedownloadPrompt" -> "\:90e8\:5206\:672c\:6a5f\:5b89\:88dd\:7684\:6a94\:6848\:4f3c\:4e4e\:4e0d\:5b8c\:6574\:6216\:5df2\:640d\:6bc0\:ff1a\n\n`1`\n\n\:60a8\:8981\:91cd\:65b0\:4e0b\:8f09\:55ce\:ff1f",
+"DownloadRetryPrompt" -> "\:90e8\:5206\:8a9e\:7fa9\:641c\:5c0b\:8cc7\:6e90\:7684\:4e0b\:8f09\:672a\:5b8c\:6210\:3002\:60a8\:8981\:91cd\:65b0\:5617\:8a66\:55ce\:ff1f",
+"ProgressTextDownloadingSearchIndices" -> "\:4e0b\:8f09\:8a9e\:7fa9\:641c\:5c0b\:7d22\:5f15\[Ellipsis]",
+"ProgressTextUnpackingFiles" -> "\:6587\:4ef6\:89e3\:58d3\:7e2e\:4e2d\[Ellipsis]"
 }
 @|
 @|
