@@ -42,11 +42,13 @@ $displayedPreferencesPages := $preferencesPages;
 createPreferencesContent // beginDefinition;
 
 createPreferencesContent[ ] := Enclose[
-    Module[ { tabs, tabView, reset },
+    Module[ { tabs, tabView, reset, allowAICheckbox },
         (* Retrieve the dynamic content for each preferences tab, confirming that it matches the expected types: *)
         (* buildID makes each rebuild's boxes unique, so the front end replaces the DynamicModule and runs its
            Initialization again instead of keeping the old instance with stale service and model values: *)
         DynamicModule[ { buildID = CreateUUID[ ], tab, dmPrefCache, default, service, model, state, serviceSelector = $loadingPopupMenu, modelNameSelector = $loadingPopupMenu },
+
+            allowAICheckbox = Pane[ allowAISettings[ ], FrameMargins -> { { 10, 10 }, { 0, 0 } } ];
 
             tabs = createTabViewTabs[ $displayedPreferencesPages, dmPrefCache, default, service, model, state, serviceSelector, modelNameSelector ];
 
@@ -68,6 +70,9 @@ createPreferencesContent[ ] := Enclose[
             makeScrollableInCloud @ Grid[
                 {
                     $verticalSpacer,
+                    (* Unclear whether Cloud should display the checkbox. Leave off for now. *)
+                    If[ TrueQ @ $cloudNotebooks, Nothing, { allowAICheckbox, SpanFromLeft }],
+                    (* If[ TrueQ @ $cloudNotebooks, Nothing, $verticalSpacer], *)
                     { tabView, "" },
                     $verticalSpacer,
                     { reset, SpanFromLeft },
@@ -77,7 +82,7 @@ createPreferencesContent[ ] := Enclose[
                 BaseStyle  -> "defaultGrid",  (* Defined in the SystemDialog stylesheet *)
                 AutoDelete -> False,
                 FrameStyle -> { AbsoluteThickness[ 1 ], color @ "Gray90_33" },
-                Dividers   -> { False, { 4 -> True } },
+                Dividers   -> { False, { If[ TrueQ @ $cloudNotebooks, 4, 5 ] -> True } },
                 Spacings   -> { 0, 0.7 }
             ],
 
@@ -137,6 +142,25 @@ makeScrollableInCloud // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*allowAISettings*)
+
+allowAISettings // beginDefinition;
+
+allowAISettings[ ] :=
+    highlightControl[
+        prefsCheckbox[
+            Function[ CurrentValue[ $FrontEnd, "AllowExternalLLMConnectivity" ] = # ],
+            tr[ "PreferencesContentAllowAILabel" ],
+            Hold @ TrueQ @ CurrentValue[ $FrontEnd, "AllowExternalLLMConnectivity" ]
+        ],
+        None,
+        "AllowAI"
+    ];
+
+allowAISettings // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*createTabViewTabs*)
 createTabViewTabs // beginDefinition;
 
@@ -191,7 +215,7 @@ preferencesContent // endDefinition;
 
 disabledAIOverlayBanner // beginDefinition;
 
-disabledAIOverlayBanner[ ] :=
+disabledAIOverlayBanner[ "Admin" ] :=
 Framed[
     Grid[
         { {
@@ -234,7 +258,61 @@ Framed[
     RoundingRadius -> 8
 ];
 
+disabledAIOverlayBanner[ "User" ] :=
+Framed[
+    Grid[
+        { {
+            chatbookExpression[ "DisabledByAdmin" ], (* same icon as admin *)
+            Style[ tr @ "PreferencesContentAIDisabledByUser", FontSize -> 14 ]
+        } },
+        Alignment -> { Left, Center },
+        Spacings  -> { 1.0, 0 }
+    ],
+    Alignment      -> { Left, Top },
+    Background     -> LightDarkSwitched @ GrayLevel[ 1 ],
+    FrameMargins   -> 14,
+    FrameStyle     -> LightDarkSwitched @ RGBColor["#EBEBEB"],
+    ImageMargins   -> { { 0, 0 }, { 10, 0 } },
+    ImageSize      -> Scaled[ 1 ],
+    RoundingRadius -> 8
+];
+
 disabledAIOverlayBanner // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*localAIOnly*)
+
+localAIOnly // beginDefinition;
+
+localAIOnly[ ] := Which[
+    (* if disabled via license *)
+    Lookup[
+        First[ Select[ CurrentValue[ "ActivationInformation" ], #Status === "Active"& ], <| |> ],
+        "Features",
+        True, (* i.e. there's no active license, in which case I don't know how you got here *)
+        !MemberQ[ #, "LLMSupport" ]&
+    ],
+        { True, "Admin" },
+
+    (* if disabled via ERP *)
+    Lookup[
+        Lookup[ CurrentValue[ "WolframAccountInformation" ], "ServerMetadata", <| |>, Replace[ #, Except[ _Association?AssociationQ ] -> <| |> ]& ],
+        "LLMFeaturesPermitted",
+        False,
+        # === False&
+    ],
+        { True, "Admin" },
+
+    (* if disabled via Preferences checkbox; the FrontEnd can't control this value until 16.0 *)
+    Not @ TrueQ @ Replace[ CurrentValue[ $FrontEnd, "AllowExternalLLMConnectivity" ], $Failed :> True ],
+        { True, "User" },
+
+    True,
+        { False, "Unused" }
+];
+
+localAIOnly // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -278,35 +356,11 @@ If[ $preferencesContentEnabledQ,
     Pros: easier to implement; does not push down reset button
     Cons: Enabled -> False does not disable all mouse-hover elements (e.g. tooltips, also can delete installed personas) *)
 
-localAIOnly[ ] := Which[
-    (* if disabled via license *)
-    Lookup[
-        First[ Select[ CurrentValue[ "ActivationInformation" ], #Status === "Active"& ], <| |> ],
-        "Features",
-        True, (* i.e. there's no active license, in which case I don't know how you got here *)
-        !MemberQ[ #, "LLMSupport" ]&
-    ],
-        True,
-
-    (* if disabled via ERP *)
-    Lookup[
-        Lookup[ CurrentValue[ "WolframAccountInformation" ], "ServerMetadata", <| |>, Replace[ #, Except[ _Association?AssociationQ ] -> <| |> ]& ],
-        "LLMFeaturesPermitted",
-        False,
-        # === False&
-    ],
-        True,
-
-    True,
-        False
-];
-
-
-disabledAIOverlay[ content_, localAIOnlyQ_ ] :=
+disabledAIOverlay[ content_, { localAIOnlyQ_, type_String } ] :=
 If[ TrueQ @ localAIOnlyQ, (* Cloud may not be aware of new licence bit *)
     Grid[
         {
-            { disabledAIOverlayBanner[ ] },
+            { disabledAIOverlayBanner @ type },
             {
                  (* "controlText" isn't a 1-to-1 match with the enabled state, but it's close *)
                 RawBoxes @ Cell[ BoxData @ ToBoxes @
