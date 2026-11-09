@@ -10,7 +10,7 @@ When `Automatic`, resolved via `$modelAutoSettings` lookup (no custom `resolveAu
 
 ### Model-Specific Overrides
 
-- **`Missing["NotSupported"]`**: GPT-5 (family-level via `$modelAutoSettings[Automatic, "GPT5"]`, inherited by GPT-5.1/GPT-5.2), O4-Mini
+- **`Missing["NotSupported"]`**: GPT-5 (family-level via `$modelAutoSettings[Automatic, "GPT5"]`, inherited by GPT-5.1/GPT-5.2), O4-Mini, Claude Opus 4.7+, Claude 5
 - All other models inherit the global default of `0.7`.
 
 ### Accepted Values
@@ -112,7 +112,7 @@ Controls the maximum number of tokens the LLM may generate in its response (outp
 
 ### Resolution
 
-When `Automatic`, resolved by `autoMaxTokens` (`Settings.wl`), which looks up the model name in `$maxTokensTable`. Only two legacy models have explicit entries: `"gpt-4-vision-preview"` and `"gpt-4-1106-preview"` (both `4096`). All other models resolve to `Automatic`, deferring to the LLM service's own default output limit.
+When `Automatic`, resolved by `autoMaxTokens` (`Settings.wl`), which looks up the model name in `$maxTokensTable`. Only two legacy models have explicit entries: `"gpt-4-vision-preview"` and `"gpt-4-1106-preview"` (both `4096`). Claude Opus 4.7+ and Claude 5 resolve to `64000` via `$modelAutoSettings`, since thinking counts toward this limit. All other models resolve to `Automatic`, deferring to the LLM service's own default output limit.
 
 ### Implementation
 
@@ -123,7 +123,7 @@ When `Automatic`, resolved by `autoMaxTokens` (`Settings.wl`), which looks up th
 ### Integration Points
 
 - **Dependencies**: Depends on `"Model"` (declared in `$autoSettingKeyDependencies`).
-- **Model-specific overrides**: None in `$modelAutoSettings`.
+- **Model-specific overrides**: `64000` for the `"ClaudeOpus47Plus"` and `"Claude5"` families in `$modelAutoSettings`.
 - **Persona inheritance**: Not listed in `$nonInheritedPersonaValues`, so it is inherited from persona configurations. No persona-level overrides exist.
 
 ### Preferences UI
@@ -148,6 +148,7 @@ When `Automatic`, resolved by `autoMaxContextTokens` (`Settings.wl`), which disp
 | Model | Value |
 | ----- | ----- |
 | Claude 3/4 | `200000` |
+| Claude Opus 4.7+, Claude 5 | `1000000` |
 | GPT-4o | `128000` |
 | Gemini 2+, GPT-4.1 | `1047576` |
 | GPT-5 | `400000` |
@@ -214,6 +215,24 @@ Included in `$llmConfigPassedKeys` (`SendChat.wl`), so it is passed through `LLM
 ### Preferences UI
 
 Not exposed in the preferences UI.
+
+## `"RefusalFallbackModel"`
+
+Name of the model (on the same service) that a request is retried on when it is refused for cybersecurity reasons.
+
+Anthropic's safety classifiers can decline a request with a normal response whose stop reason is `"refusal"`. When the refusal category is `"cyber"`, the same messages are resubmitted to this model, and the rest of that chat request (including any tool calls that follow) stays on it. Partial output from the refused response is discarded. The fallback model does not fall back again if it also refuses, and the next chat input starts on the selected model again.
+
+Refusals in other categories are not retried. They write a notice to the output instead.
+
+Set this to `None` to disable the retry.
+
+### Resolution
+
+When `Automatic`, resolved via `$modelAutoSettings` lookup. Models without an override don't fall back.
+
+### Model-Specific Overrides
+
+- **Claude Fable 5, Claude Fable 5.1, Claude Opus 5, Claude Opus 5.5**: `"claude-opus-4-8"`.
 
 ## `"StopTokens"`
 

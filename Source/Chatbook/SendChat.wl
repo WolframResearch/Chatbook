@@ -1130,7 +1130,7 @@ chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] :
                     standardizeMessageKeys @ messages,
                     makeLLMConfiguration @ requestReasoningSummaries @ settings,
                     Authentication       -> settings[ "Authentication" ],
-                    HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
+                    HandlerFunctions     -> chatHandlers[ container, cellObject, settings, messages ],
                     HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings,
                     "TestConnection"     -> False
                 ],
@@ -1322,8 +1322,14 @@ chatHandlers // beginDefinition;
 chatHandlers // Attributes = { HoldFirst };
 
 chatHandlers[ container_, cellObject_, settings_ ] :=
+    chatHandlers[ container, cellObject, settings, None ];
+
+chatHandlers[ container_, cellObject_, settings_, messages_ ] :=
     $lastHandlers = With[
         {
+            (* The output so far and where this response starts in the log, for handling a refused response: *)
+            snapshot      = KeyTake[ container, { "FullContent", "DynamicContent" } ],
+            logStart      = Internal`BagLength @ $debugLog,
             autoOpen      = TrueQ @ $autoOpen,
             alwaysOpen    = TrueQ @ $alwaysOpen,
             autoAssist    = $AutomaticAssistance,
@@ -1410,7 +1416,12 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                         checkFinishReason[ #1 ];
                         logUsage @ container;
                         trimStopTokens[ container, stop ];
-                        checkResponse[ $settings, Unevaluated @ container, cellObject, #1 ]
+                        With[ { refusal = refusalDetails @ logStart },
+                            If[ AssociationQ @ refusal,
+                                handleRefusal[ $settings, Unevaluated @ container, cellObject, messages, snapshot, refusal, #1 ],
+                                checkResponse[ $settings, Unevaluated @ container, cellObject, #1 ]
+                            ]
+                        ]
                     ]
                 ]
             ]
@@ -1679,6 +1690,146 @@ checkFinishReason[ chunk_String ] :=
     ];
 
 checkFinishReason // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*refusalDetails*)
+
+(* Gives the "stop_details" of a refused response (with "category" and "explanation" keys), <| |> if a refused response
+   has none, or None if the response wasn't refused. `start` is the position of the response in the debug log.
+   LLMConnections only gives the finish reason in processed chunks, so the details come from the raw chunks. These are
+   joined before parsing, since a raw chunk can have more than one event or only part of one. *)
+refusalDetails // beginDefinition;
+
+refusalDetails[ start_Integer ] :=
+    refusalDetails @ Internal`BagPart[ $debugLog, start + 1 ;; ];
+
+refusalDetails[ log_List ] :=
+    If[ MemberQ[ Flatten @ Lookup[ log, "BodyChunkProcessed", { } ], KeyValuePattern[ "FinishReason" -> "refusal" ] ],
+        FirstCase[
+            Quiet[
+                Developer`ReadRawJSONString /@ StringCases[
+                    StringJoin @ Cases[ log, KeyValuePattern[ "BodyChunk" -> s_String ] :> s ],
+                    StartOfLine ~~ "data:" ~~ json: Except[ "\n" ].. :> json
+                ]
+            ],
+            KeyValuePattern[ "delta" -> KeyValuePattern[ "stop_details" -> details_Association ] ] :> details,
+            <| |>
+        ],
+        None
+    ];
+
+refusalDetails // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*handleRefusal*)
+
+(* Claude's safety classifiers can decline a request with a normal response whose stop reason is "refusal", having
+   empty or partial content. Any partial output is discarded, since it's incomplete. Cybersecurity refusals are retried
+   on the model given by the "RefusalFallbackModel" setting, like Claude Code does. This has to be done here because
+   LLMConnections doesn't support the server-side `fallbacks` parameter, and it fails on the content blocks it returns.
+   Other refusals aren't retried, so a notice is written in order to avoid leaving the output empty.
+
+   Note: If DynamicSplit has already written some partial output as static cells, it stays until the final rewrite. *)
+handleRefusal // beginDefinition;
+
+handleRefusal[ settings_, container_Symbol, cell_, messages_List, snapshot_, refusal_Association, as_Association ] /;
+    refusalFallbackQ[ settings, refusal ] :=
+        If[ TrueQ @ $AutomaticAssistance,
+            submitRefusalFallback[ settings, Unevaluated @ container, cell, messages, snapshot ],
+            $nextTaskEvaluation = Hold @ submitRefusalFallback[ settings, Unevaluated @ container, cell, messages, snapshot ]
+        ];
+
+handleRefusal[ settings_, container_Symbol, cell_, messages_, snapshot_, refusal_Association, as_Association ] := (
+    container = <| container, snapshot |>;
+    With[ { text = refusalNotice @ refusal }, writeChunk0[ Dynamic @ container, cell, text, text ] ];
+    checkResponse[ settings, Unevaluated @ container, cell, as ]
+);
+
+handleRefusal // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*refusalFallbackQ*)
+refusalFallbackQ // beginDefinition;
+refusalFallbackQ[ settings_Association, refusal_Association ] := refusalFallbackQ[ settings[ "RefusalFallbackModel" ], refusal ];
+refusalFallbackQ[ _String, KeyValuePattern[ "category" -> "cyber" ] ] := True;
+refusalFallbackQ[ _, _ ] := False;
+refusalFallbackQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*refusalNotice*)
+refusalNotice // beginDefinition;
+
+refusalNotice[ KeyValuePattern[ "explanation" -> explanation_String ] ] :=
+    "The model declined to respond to this request: " <> explanation;
+
+refusalNotice[ _ ] :=
+    "The model declined to respond to this request.";
+
+refusalNotice // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*submitRefusalFallback*)
+submitRefusalFallback // beginDefinition;
+
+submitRefusalFallback[ settings_, container_Symbol, cell_, messages_List, snapshot_ ] := Enclose[
+    catchChatStopped @ Module[ { fallback, task },
+
+        fallback = ConfirmBy[ refusalFallbackSettings @ settings, AssociationQ, "Settings" ];
+
+        container = <| container, snapshot |>;
+        updateDynamicDisplay @ container;
+
+        (* Stopped before retrying: *)
+        throwIfChatStopped[ ];
+
+        task = $lastTask = chatSubmit[ container, messages, cell, fallback ];
+
+        throwIfChatStopped @ task;
+
+        addHandlerArguments[ "Task" -> task ];
+
+        If[ MatchQ[ cell, _CellObject ],
+            setCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "Task" }, task ]
+        ];
+
+        If[ FailureQ @ task, throwFailureToChatOutput @ task ];
+
+        If[ task === $Canceled, throwTop @ StopChat @ cell ];
+
+        task
+    ],
+    throwInternalFailure
+];
+
+submitRefusalFallback // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*refusalFallbackSettings*)
+
+(* The settings stay on the fallback model for the rest of this chat request (including any tool calls that follow),
+   and the fallback model does not fall back again if it also refuses. *)
+refusalFallbackSettings // beginDefinition;
+
+refusalFallbackSettings[ settings_Association ] := Enclose[
+    <|
+        settings,
+        "Model" -> ConfirmBy[
+            resolveFullModelSpec @ { settings[ "Model", "Service" ], settings[ "RefusalFallbackModel" ] },
+            AssociationQ,
+            "Model"
+        ],
+        "RefusalFallbackModel" -> None
+    |>,
+    throwInternalFailure
+];
+
+refusalFallbackSettings // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

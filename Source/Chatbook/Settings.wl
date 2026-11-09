@@ -73,6 +73,7 @@ $defaultChatSettings = <|
     "Prompts"                        -> { },
     "ProviderPreferences"            -> Automatic,
     "Reasoning"                      -> Automatic,
+    "RefusalFallbackModel"           -> Automatic,
     "ReplaceUnicodeCharacters"       -> Automatic,
     "RequestMethod"                  -> Automatic,
     "SendToolResponse"               -> Automatic,
@@ -186,8 +187,19 @@ $modelAutoSettings[ "Anthropic", "Claude4" ] = <|
 
 $modelAutoSettings[ "Anthropic", "ClaudeOpus47Plus" ] = <|
     $modelAutoSettings[ "Anthropic", "Claude4" ],
-    "Temperature" -> Missing[ "NotSupported" ]
+    "MaxContextTokens" -> 1000000,
+    "MaxTokens"        -> 64000,
+    "Temperature"      -> Missing[ "NotSupported" ]
 |>;
+
+$modelAutoSettings[ "Anthropic", "Claude5" ] =
+    $modelAutoSettings[ "Anthropic", "ClaudeOpus47Plus" ];
+
+(* Cybersecurity refusals from these models are retried on Claude Opus 4.8: *)
+Scan[
+    ($modelAutoSettings[ "Anthropic", # ] = <| "RefusalFallbackModel" -> "claude-opus-4-8" |>) &,
+    { "ClaudeFable5", "ClaudeFable51", "ClaudeOpus5", "ClaudeOpus55" }
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
