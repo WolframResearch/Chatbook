@@ -2099,7 +2099,7 @@ boxToString[ SqrtBox[ a_, OptionsPattern[ ] ] ] :=
 
 (* Fraction *)
 boxToString[ FractionBox[ a_, b_, OptionsPattern[ ] ] ] :=
-    (needsBasePrompt[ "Math" ]; "(" <> boxToString @ a <> "/" <> boxToString @ b <> ")");
+    (needsBasePrompt[ "Math" ]; "(" <> fractionTermString @ a <> "/" <> fractionTermString @ b <> ")");
 
 (* RadicalBox *)
 boxToString[ RadicalBox[ a_, b_, ___, SurdForm -> True, ___ ] ] :=
@@ -2184,6 +2184,21 @@ boxToString[ (box: $boxOperators)[ a_, b_, OptionsPattern[ ] ] ] :=
             { a$, b$ }
         ]
     ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*fractionTermString*)
+fractionTermString // beginDefinition;
+
+(* Boxes that serialize as a single term can be used as a numerator or denominator as-is. Scripts with compound parts
+   are an exception, since their own definitions don't group those parts yet (e.g. x^a + b): *)
+fractionTermString[ box: _String | _FractionBox | _SqrtBox | _SubscriptBox | _SuperscriptBox ] := boxToString @ box;
+fractionTermString[ box: RowBox @ { "(", _, ")" } | RowBox @ { _, "[", _, "]" } ] := boxToString @ box;
+
+(* Anything else might serialize with a lower precedence operator than division: *)
+fractionTermString[ box_ ] := "(" <> boxToString @ box <> ")";
+
+fractionTermString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
