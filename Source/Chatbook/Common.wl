@@ -254,7 +254,6 @@ KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
     "InvalidWriteMethod"              -> "Invalid setting for NotebookWriteMethod: `1`; using default instead.",
     "ModelToolSupport"                -> "The model `1` does not support tools.",
     "NoAPIKey"                        -> "No API key defined.",
-    "NoSandboxKernel"                 -> "Unable to start a sandbox kernel. This may mean that the number of currently running kernels exceeds the limit defined by $LicenseProcesses.",
     "NotImplemented"                  -> "Action \"`1`\" is not implemented.",
     "NotInstallableResourceType"      -> "Resource type `1` is not an installable resource type for chat notebooks. Valid types are `2`.",
     "PersonaDirectoryNotFound"        -> "The directory `2` for persona `1` was not found.",

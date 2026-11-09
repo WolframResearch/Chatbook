@@ -197,4 +197,69 @@ VerificationTest[
     TestID   -> "Repairs-Unfixable@@Tests/Sandbox.wlt:193,1-198,2"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Kernel Startup Failures*)
+
+(* A process that never connects to the link blocks LinkWrite indefinitely: *)
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`Common`$sandboxKernelCommandLine = "/nonexistent/WolframKernel -wstp",
+            Wolfram`Chatbook`Sandbox`Private`$sandboxPingTimeout = 1
+        },
+        Quiet @ Wolfram`Chatbook`Sandbox`Private`startSandboxKernel[ ]
+    ],
+    Failure[ "NoSandboxKernel", _ ],
+    SameTest       -> MatchQ,
+    TimeConstraint -> 30,
+    TestID         -> "StartSandboxKernel-NeverConnects-GH#855@@Tests/Sandbox.wlt:205,1-217,2"
+]
+
+(* A kernel that exits after connecting closes the link, so there's no need to wait for the time limit: *)
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`Common`$sandboxKernelCommandLine = StringReplace[
+                Wolfram`Chatbook`Common`$sandboxKernelCommandLine,
+                "ChatbookSandbox" ~~ DigitCharacter.. -> "\"Quit[]\""
+            ],
+            Wolfram`Chatbook`Sandbox`Private`$sandboxPingTimeout = 120
+        },
+        Quiet @ AbsoluteTiming @ Wolfram`Chatbook`Sandbox`Private`startSandboxKernel[ ]
+    ],
+    { _? (LessThan[ 60 ]), Failure[ "NoSandboxKernel", _ ] },
+    SameTest -> MatchQ,
+    TestID   -> "StartSandboxKernel-KernelExits-GH#855@@Tests/Sandbox.wlt:220,1-234,2"
+]
+
+(* A kernel that does not respond in time: *)
+VerificationTest[
+    Block[
+        { Wolfram`Chatbook`Sandbox`Private`$sandboxPingTimeout = 0.01 },
+        Quiet @ Wolfram`Chatbook`Sandbox`Private`startSandboxKernel[ ]
+    ],
+    Failure[ "NoSandboxKernel", _ ],
+    SameTest -> MatchQ,
+    TestID   -> "StartSandboxKernel-TimedOut-GH#855@@Tests/Sandbox.wlt:237,1-245,2"
+]
+
+(* The evaluator reports the failure to the model as its result, instead of throwing an internal failure: *)
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`Common`$sandboxKernelCommandLine = "/nonexistent/WolframKernel -wstp",
+            Wolfram`Chatbook`Sandbox`Private`$sandboxPingTimeout = 1
+        },
+        Quiet @ Wolfram`Chatbook`WolframLanguageToolEvaluate[ "1 + 1", All, "Method" -> "Local" ]
+    ],
+    KeyValuePattern @ {
+        "String" -> _String? (StringStartsQ[ "Unable to start a sandbox kernel" ]),
+        "Result" -> HoldCompleteForm @ Failure[ "NoSandboxKernel", _ ]
+    },
+    SameTest       -> MatchQ,
+    TimeConstraint -> 30,
+    TestID         -> "ToolResult-NoSandboxKernel-GH#855@@Tests/Sandbox.wlt:248,1-263,2"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)
