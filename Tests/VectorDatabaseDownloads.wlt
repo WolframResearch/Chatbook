@@ -2857,10 +2857,10 @@ VerificationTest[
 ]
 
 VerificationTest[
-    CountDistinct[ Lookup[ #, $downloadTextKeys ] & /@ Values @ $textResources ],
-    1,
+    Union[ StringCount[ #[ "DownloadRedownloadPrompt" ], "`1`" ] & /@ Values @ $textResources ],
+    { 1 },
     SameTest -> MatchQ,
-    TestID   -> "TextResources-EnglishPlaceholders@@Tests/VectorDatabaseDownloads.wlt:2859,1-2864,2"
+    TestID   -> "TextResources-TemplateSlots@@Tests/VectorDatabaseDownloads.wlt:2859,1-2864,2"
 ]
 
 VerificationTest[
