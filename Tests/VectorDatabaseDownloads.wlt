@@ -579,7 +579,7 @@ VerificationTest[
             validQ[ ]
         }
     ],
-    { KeyValuePattern @ { "Values" -> { __String }, "VectorDatabaseObject" -> _VectorDatabaseObject }, 1, True },
+    { KeyValuePattern @ { "Values" -> { __String }, "Metadata" -> _Association }, 1, True },
     SameTest -> MatchQ,
     TestID   -> "LoadVectorDB-SelfRepair@@Tests/VectorDatabaseDownloads.wlt:567,1-585,2"
 ]
@@ -606,7 +606,7 @@ VerificationTest[
                 validQ[ ],
                 MatchQ[
                     withPrompt[ True, Quiet @ Wolfram`Chatbook`Common`catchAlways @ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`loadVectorDB @ $name ],
-                    KeyValuePattern[ "VectorDatabaseObject" -> _VectorDatabaseObject ]
+                    KeyValuePattern[ "Metadata" -> _Association ]
                 ],
                 Length @ $prompts,
                 MatchQ[ Quiet @ Developer`ReadWXFFile @ values, { __String } ],
@@ -1191,7 +1191,7 @@ VerificationTest[
         $prompts = { };
         {
             MapAt[
-                MatchQ[ #, KeyValuePattern[ "VectorDatabaseObject" -> _VectorDatabaseObject ] ] &,
+                MatchQ[ #, KeyValuePattern[ "Metadata" -> _Association ] ] &,
                 countIndexHashes @ withPrompt[ True, Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getVectorDB @ $name ],
                 1
             ],
@@ -1231,7 +1231,7 @@ VerificationTest[
                     Block[ { $inLoad = True }, loads++; Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`loadVectorDB0 @ n ];
                 second = Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getVectorDB @ $name
             ];
-            { MatchQ[ first, KeyValuePattern[ "VectorDatabaseObject" -> _VectorDatabaseObject ] ], second === first, loads }
+            { MatchQ[ first, KeyValuePattern[ "Metadata" -> _Association ] ], second === first, loads }
         ]
     ],
     { True, True, 0 },
@@ -1253,7 +1253,7 @@ VerificationTest[
             flipIndexBytes[ ];
             $prompts = { };
             result = withPrompt[ True, Quiet @ Wolfram`Chatbook`Common`catchAlways @ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getVectorDB @ $name ];
-            { MatchQ[ result, KeyValuePattern[ "VectorDatabaseObject" -> _VectorDatabaseObject ] ], Length @ $prompts, validQ[ ] }
+            { MatchQ[ result, KeyValuePattern[ "Metadata" -> _Association ] ], Length @ $prompts, validQ[ ] }
         ]
     ],
     { True, 1, True },
@@ -1594,7 +1594,7 @@ VerificationTest[
                         requested,
                         Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDBDownloadDeclined,
                         Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDBDownloadFailure,
-                        MatchQ[ later, KeyValuePattern[ "VectorDatabaseObject" -> _VectorDatabaseObject ] ],
+                        MatchQ[ later, KeyValuePattern[ "Metadata" -> _Association ] ],
                         $requestedURLs,
                         $prompts
                     }

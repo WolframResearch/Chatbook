@@ -294,6 +294,9 @@ $vectorDBSearchCache = <| |>;
 $embeddingCache      = <| |>;
 $loadedVectorDBs     = <| |>;
 
+(* The VectorDatabaseObjects of the built-in databases, which are only created when needed (see vectorDatabaseObject): *)
+$vectorDatabaseObjects = <| |>;
+
 (* Set to True to verify index hashes even when the index file appears unchanged: *)
 $verifyIndexHashes = False;
 
@@ -307,6 +310,10 @@ $modificationDateTolerance = 2;
 (* Persistent USearch index handles used by vectorDatabaseSearch: *)
 $usearchIndexCache       = <| |>;
 $usearchIndexVerified    = <| |>;
+
+(* Index files that were verified in an earlier session are not verified again (see savedUSearchVerificationQ): *)
+$saveUSearchVerifications     = True;
+$maxSavedUSearchVerifications = 50;
 $usearchIndexFailures    = <| |>;
 $usearchIndexLastUsed    = 0;
 $usearchIndexReleaseTask = None;
@@ -1748,12 +1755,11 @@ initializeVectorDatabases // endDefinition;
 initializeVectorDatabase // beginDefinition;
 
 initializeVectorDatabase[ name_String, vector_NumericArray ] := Enclose[
-    Catch @ Module[ { info, vectorDB },
+    Catch @ Module[ { info },
         info = ConfirmMatch[ getVectorDB @ name, $$skippedVectorDB | _Association, "VectorDB" ];
         If[ MatchQ[ info, $$skippedVectorDB ], Throw @ info ];
-        vectorDB = ConfirmMatch[ info[ "VectorDatabaseObject" ], $$vectorDatabase, "VectorDatabase" ];
         ConfirmMatch[
-            vectorDatabaseSearch[ name, vectorDB, vector, $maxNeighbors ],
+            vectorDatabaseSearch[ name, info, vector, $maxNeighbors ],
             { ___Association },
             "Search"
         ];
@@ -1792,7 +1798,11 @@ getVectorDB[ name_String ] := Enclose[
 
 getVectorDB // endDefinition;
 
-$$loadedVectorDB = KeyValuePattern @ { "Values" -> { ___String }, "VectorDatabaseObject" -> $$vectorDatabase };
+(* A built-in database has "Metadata" (see loadVectorDB0), and a registered one has a "VectorDatabaseObject": *)
+$$loadedVectorDB = Alternatives[
+    KeyValuePattern @ { "Values" -> { ___String }, "Metadata" -> _Association },
+    KeyValuePattern @ { "Values" -> { ___String }, "VectorDatabaseObject" -> $$vectorDatabase }
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1835,18 +1845,18 @@ loadVectorDB // endDefinition;
 loadVectorDB0 // beginDefinition;
 
 loadVectorDB0[ name_String ] := Enclose[
-    Module[ { values, vectorDB, dims },
+    Module[ { values, metadata, dims },
 
         (* Guard against files that were damaged after installation (a truncated index can crash the kernel): *)
         ConfirmAssert[ vectorDBDirectoryQ0 @ FileNameJoin @ { $vectorDBDirectory, name }, "Integrity" ];
 
         values   = ConfirmMatch[ loadVectorDBValues @ name, { ___String }, "Values" ];
-        vectorDB = ConfirmMatch[ loadVectorDatabase @ name, $$vectorDatabase, "VectorDatabaseObject" ];
-        dims     = ConfirmMatch[ inVectorDBDirectory @ vectorDB[ "Dimensions" ], { _Integer, _Integer }, "Dimensions" ];
+        metadata = ConfirmBy[ loadVectorDBMetadata @ name, AssociationQ, "Metadata" ];
+        dims     = ConfirmMatch[ metadata[ "Dimensions" ], { _Integer, _Integer }, "Dimensions" ];
 
         ConfirmAssert[ Length @ values === First @ dims, "LengthCheck" ];
 
-        <| "Values" -> values, "VectorDatabaseObject" -> vectorDB |>
+        <| "Values" -> values, "Metadata" -> metadata |>
     ],
     throwInternalFailure
 ];
@@ -1940,6 +1950,7 @@ clearVectorDBCaches[ name_String ] := (
     Quiet[ loadVectorDBValues[ name ] =. ];
     Quiet[ getVectorDB[ name ] =. ];
     $loadedVectorDBs      = KeyDrop[ $loadedVectorDBs, name ];
+    $vectorDatabaseObjects = KeyDrop[ $vectorDatabaseObjects, name ];
     $vectorDBSearchCache  = KeySelect[ $vectorDBSearchCache, ! MatchQ[ #, { name, _ } ] & ];
     $usearchIndexCache    = KeyDrop[ $usearchIndexCache, name ];
     $usearchIndexFailures = KeyDrop[ $usearchIndexFailures, name ];
@@ -1962,6 +1973,45 @@ loadVectorDatabase[ name_String ] := Enclose[
 ];
 
 loadVectorDatabase // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*loadVectorDBMetadata*)
+(* The data of the VectorDatabaseObject, read from its file without creating the object. The first VectorDatabaseObject
+   of a session loads several unrelated paclets (about 0.8 s), and searches normally don't need it, since they use an
+   index handle that is created from this data (see vectorDatabaseSearch).
+   NOTE: A file that can be read here but gives no valid VectorDatabaseObject is not repaired by loadVectorDB. *)
+loadVectorDBMetadata // beginDefinition;
+
+loadVectorDBMetadata[ name_String ] := Enclose[
+    Module[ { file },
+        file = ConfirmBy[ FileNameJoin @ { $vectorDBDirectory, name, name<>".wxf" }, FileExistsQ, "File" ];
+        ConfirmBy[ Developer`ReadWXFFile @ file, AssociationQ, "Metadata" ]
+    ],
+    throwInternalFailure
+];
+
+loadVectorDBMetadata // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*vectorDatabaseObject*)
+(* The VectorDatabaseObject of a loaded database (see getVectorDB). For a built-in database, it's created the first
+   time that it's needed, which is when a search can't use an index handle that has already been verified. *)
+vectorDatabaseObject // beginDefinition;
+
+vectorDatabaseObject[ name_String, KeyValuePattern[ "VectorDatabaseObject" -> db_ ] ] :=
+    db;
+
+vectorDatabaseObject[ name_String, _Association ] :=
+    With[ { db = $vectorDatabaseObjects[ name ] },
+        db /; MatchQ[ db, $$vectorDatabase ]
+    ];
+
+vectorDatabaseObject[ name_String, _Association ] :=
+    $vectorDatabaseObjects[ name ] = loadVectorDatabase @ name;
+
+vectorDatabaseObject // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2019,7 +2069,7 @@ vectorDBSearch[ dbName: $$dbName, prompt_String, All ] :=
 vectorDBSearch[ dbName: $$dbName, prompt_String, All ] := Enclose[
     Catch @ Module[
         {
-            vectorDBInfo, vectorDB, allValues, embeddingVector, close,
+            vectorDBInfo, allValues, embeddingVector, close,
             indices, distances, values, data, result, snippetFunction, instructionsFunction, instructionsPosition
         },
 
@@ -2029,14 +2079,13 @@ vectorDBSearch[ dbName: $$dbName, prompt_String, All ] := Enclose[
         If[ MatchQ[ vectorDBInfo, $$skippedVectorDB ], Throw @ skippedSearchResult @ vectorDBInfo ];
 
         vectorDBInfo    = ConfirmBy[ vectorDBInfo, AssociationQ, "VectorDBInfo" ];
-        vectorDB        = ConfirmMatch[ vectorDBInfo[ "VectorDatabaseObject" ], $$vectorDatabase, "VectorDatabase" ];
         allValues       = ConfirmBy[ vectorDBInfo[ "Values" ], ListQ, "Values" ];
         embeddingVector = ConfirmMatch[ getEmbedding @ prompt, _NumericArray, "EmbeddingVector" ];
 
         close = ConfirmMatch[
             vectorDatabaseSearch[
                 dbName,
-                vectorDB,
+                vectorDBInfo,
                 embeddingVector,
                 $maxNeighbors
             ] // LogChatTiming[ "VectorDatabaseSearch" ],
@@ -2384,38 +2433,40 @@ cacheVectorDBResult // endDefinition;
 (* ::Subsection::Closed:: *)
 (*vectorDatabaseSearch*)
 (*
-    Gives the same result as `VectorDatabaseSearch[ db, vector, { "Index", "Distance" }, MaxItems -> n ]`.
+    Gives the same result as `VectorDatabaseSearch[ db, vector, { "Index", "Distance" }, MaxItems -> n ]` for the
+    VectorDatabaseObject `db` of the loaded database `info` (see getVectorDB).
 
     For file-backed USearch databases, VectorDatabaseSearch creates a new index and memory-maps (IndexView) the entire
     index file on every search, which takes 0.1-0.3 seconds for the larger databases. Instead, we keep one index handle
     per database and search it the same way that SemanticSearch's FindNearest does.
 
     The first search with each database file is checked against VectorDatabaseSearch, and the fast path is permanently
-    disabled for a database on any mismatch or error.
+    disabled for a database on any mismatch or error. A database file that passed this check in an earlier session is
+    not checked again (see savedUSearchVerificationQ), so searching it doesn't need the VectorDatabaseObject at all.
 *)
 vectorDatabaseSearch // beginDefinition;
 
-vectorDatabaseSearch[ name_String, db: $$vectorDatabase, vector_NumericArray, n_Integer ] :=
-    vectorDatabaseSearch[ name, db, vector, n, touchUSearchIndex @ getUSearchIndex[ name, db ] ];
+vectorDatabaseSearch[ name_String, info_Association, vector_NumericArray, n_Integer ] :=
+    vectorDatabaseSearch[ name, info, vector, n, touchUSearchIndex @ getUSearchIndex[ name, info ] ];
 
 (* No usable index handle: *)
-vectorDatabaseSearch[ name_, db_, vector_, n_, _Missing ] :=
-    standardVectorDatabaseSearch[ db, vector, n ];
+vectorDatabaseSearch[ name_, info_, vector_, n_, _Missing ] :=
+    standardVectorDatabaseSearch[ vectorDatabaseObject[ name, info ], vector, n ];
 
 (* The index handle has already been checked against VectorDatabaseSearch: *)
-vectorDatabaseSearch[ name_, db_, vector_, n_, index_Association ] /; usearchIndexVerifiedQ @ index :=
+vectorDatabaseSearch[ name_, info_, vector_, n_, index_Association ] /; usearchIndexVerifiedQ @ index :=
     With[ { result = usearchIndexSearch[ index, vector, n ] },
         If[ MatchQ[ result, { ___Association } ],
             result,
             disableUSearchIndex[ name, result ];
-            standardVectorDatabaseSearch[ db, vector, n ]
+            standardVectorDatabaseSearch[ vectorDatabaseObject[ name, info ], vector, n ]
         ]
     ];
 
 (* First search with this database file, so make sure that the results are identical to VectorDatabaseSearch: *)
-vectorDatabaseSearch[ name_, db_, vector_, n_, index_Association ] :=
+vectorDatabaseSearch[ name_, info_, vector_, n_, index_Association ] :=
     Module[ { expected, result },
-        expected = standardVectorDatabaseSearch[ db, vector, n ];
+        expected = standardVectorDatabaseSearch[ vectorDatabaseObject[ name, info ], vector, n ];
         result   = usearchIndexSearch[ index, vector, n ];
         Which[
             result =!= expected,
@@ -2424,7 +2475,7 @@ vectorDatabaseSearch[ name_, db_, vector_, n_, index_Association ] :=
                     Failure[ "USearchIndexMismatch", <| "Expected" -> expected, "Actual" -> result |> ]
                 ],
             MatchQ[ expected, { __Association } ],
-                $usearchIndexVerified[ usearchIndexKey @ index ] = True
+                setUSearchIndexVerified @ index
         ];
         expected
     ];
@@ -2447,22 +2498,22 @@ standardVectorDatabaseSearch // endDefinition;
 getUSearchIndex // beginDefinition;
 
 (* Never keep index handles while building the MX file or when disabled by $cacheUSearchIndexes: *)
-getUSearchIndex[ name_String, db_ ] /; TrueQ @ $mxFlag || ! TrueQ @ $cacheUSearchIndexes :=
+getUSearchIndex[ name_String, info_ ] /; TrueQ @ $mxFlag || ! TrueQ @ $cacheUSearchIndexes :=
     Missing[ "NotAvailable" ];
 
-getUSearchIndex[ name_String, db_ ] /; KeyExistsQ[ $usearchIndexFailures, name ] :=
+getUSearchIndex[ name_String, info_ ] /; KeyExistsQ[ $usearchIndexFailures, name ] :=
     Missing[ "Disabled" ];
 
-getUSearchIndex[ name_String, db_ ] :=
+getUSearchIndex[ name_String, info_ ] :=
     With[ { index = $usearchIndexCache[ name ] },
-        index /; usearchIndexValidQ[ index, db ]
+        index /; usearchIndexValidQ[ index, info ]
     ];
 
-getUSearchIndex[ name_String, db_ ] :=
+getUSearchIndex[ name_String, info_ ] :=
     Module[ { index },
         (* Release the previous handle (if any) before creating a new one: *)
         $usearchIndexCache = KeyDrop[ $usearchIndexCache, name ];
-        index = createUSearchIndex @ db;
+        index = createUSearchIndex @ info;
         If[ AssociationQ @ index,
             $usearchIndexCache[ name ] = index,
             disableUSearchIndex[ name, index ]
@@ -2477,8 +2528,8 @@ getUSearchIndex // endDefinition;
 (* An index handle is invalidated when the database is replaced or its index file changes (e.g. after a download): *)
 usearchIndexValidQ // beginDefinition;
 
-usearchIndexValidQ[ index_Association, db_ ] := TrueQ @ And[
-    index[ "VectorDatabaseObject" ] === db,
+usearchIndexValidQ[ index_Association, info_ ] := TrueQ @ And[
+    index[ "Source" ] === usearchIndexSource @ info,
     index[ "Directory" ] === $vectorDBDirectory,
     Quiet @ FileDate @ index[ "File" ] === index[ "FileDate" ]
 ];
@@ -2491,37 +2542,138 @@ usearchIndexValidQ // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*usearchIndexVerifiedQ*)
 usearchIndexVerifiedQ // beginDefinition;
-usearchIndexVerifiedQ[ index_Association ] := TrueQ @ $usearchIndexVerified @ usearchIndexKey @ index;
+
+usearchIndexVerifiedQ[ index_Association ] :=
+    With[ { key = usearchIndexKey @ index },
+        TrueQ @ Lookup[
+            $usearchIndexVerified,
+            Key @ key,
+            $usearchIndexVerified[ key ] = savedUSearchVerificationQ @ index
+        ]
+    ];
+
 usearchIndexVerifiedQ // endDefinition;
 
 
+setUSearchIndexVerified // beginDefinition;
+
+setUSearchIndexVerified[ index_Association ] := (
+    saveUSearchVerification @ index;
+    $usearchIndexVerified[ usearchIndexKey @ index ] = True
+);
+
+setUSearchIndexVerified // endDefinition;
+
+
 usearchIndexKey // beginDefinition;
-usearchIndexKey[ index_Association ] := Lookup[ index, { "VectorDatabaseObject", "File", "FileDate" } ];
+usearchIndexKey[ index_Association ] := Lookup[ index, { "Source", "File", "FileDate" } ];
 usearchIndexKey // endDefinition;
+
+
+(* What an index handle was created from: the metadata of a built-in database, or the VectorDatabaseObject of a
+   registered one. *)
+usearchIndexSource // beginDefinition;
+usearchIndexSource[ KeyValuePattern[ "Metadata" -> metadata_Association ] ] := metadata;
+usearchIndexSource[ KeyValuePattern[ "VectorDatabaseObject" -> db_ ] ] := db;
+usearchIndexSource[ _ ] := Missing[ "NotAvailable" ];
+usearchIndexSource // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*Saved Verifications*)
+(*
+    The check against VectorDatabaseSearch needs the VectorDatabaseObject, and creating the first one of a session
+    loads several unrelated paclets (about 0.8 s). The check itself is another search of each database (0.1-0.9 s the
+    first time). So the index files that passed it are saved, and later sessions skip it for the same index file
+    (path, size and modification date) with the same versions of Wolfram and SemanticSearch.
+*)
+savedUSearchVerificationQ // beginDefinition;
+
+savedUSearchVerificationQ[ index_Association ] :=
+    TrueQ @ $saveUSearchVerifications && MemberQ[ savedUSearchVerifications[ ], usearchVerificationHash @ index ];
+
+savedUSearchVerificationQ // endDefinition;
+
+
+saveUSearchVerification // beginDefinition;
+
+(* Failing to save only means that the next session verifies again: *)
+saveUSearchVerification[ index_Association ] /; TrueQ @ $saveUSearchVerifications := Quiet @ catchAlways[
+    $savedUSearchVerifications = Take[
+        Reverse @ DeleteDuplicates @ Prepend[ savedUSearchVerifications[ ], usearchVerificationHash @ index ],
+        UpTo[ $maxSavedUSearchVerifications ]
+    ];
+    Developer`WriteWXFFile[ $usearchVerificationsFile, $savedUSearchVerifications ]
+];
+
+saveUSearchVerification[ _Association ] := Null;
+
+saveUSearchVerification // endDefinition;
+
+
+savedUSearchVerifications // beginDefinition;
+
+savedUSearchVerifications[ ] :=
+    With[ { saved = $savedUSearchVerifications },
+        saved /; ListQ @ saved
+    ];
+
+savedUSearchVerifications[ ] :=
+    $savedUSearchVerifications = Replace[
+        Quiet @ catchAlways @ If[ FileExistsQ @ $usearchVerificationsFile,
+            Developer`ReadWXFFile @ $usearchVerificationsFile
+        ],
+        Except[ { ___Integer } ] :> { }
+    ];
+
+savedUSearchVerifications // endDefinition;
+
+$savedUSearchVerifications = None;
+$usearchVerificationsFile := FileNameJoin @ { ChatbookFilesDirectory[ "VectorDatabases" ], "VerifiedIndexes.wxf" };
+
+
+usearchVerificationHash // beginDefinition;
+
+usearchVerificationHash[ index_Association ] := Hash @ {
+    $Version,
+    $semanticSearchVersion,
+    index[ "File" ],
+    FileByteCount @ index[ "File" ],
+    First @ index[ "FileDate" ]
+};
+
+usearchVerificationHash // endDefinition;
+
+$semanticSearchVersion := $semanticSearchVersion = PacletObject[ "SemanticSearch" ][ "Version" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*createUSearchIndex*)
 createUSearchIndex // beginDefinition;
 
-createUSearchIndex[ db_ ] := catchUSearch @ Enclose[
+createUSearchIndex[ info_Association ] := catchUSearch @ Enclose[
     Module[ { functions, data, dimensions, location, file, date, handle },
 
         functions = ConfirmBy[ $usearchFunctions, AssociationQ, "Functions" ];
 
-        (* This is the same data that VectorDatabaseSearch retrieves for FindNearest: *)
+        (* This is the same data that VectorDatabaseSearch retrieves for FindNearest. For a built-in database, it's
+           the metadata that was read from the file of the VectorDatabaseObject (see loadVectorDBMetadata): *)
         data = ConfirmBy[
-            inVectorDBDirectory @ functions[ "RetrieveFromDatabase" ][
-                db,
-                {
-                    "DatabaseType",
-                    "Dimensions",
-                    "DistanceFunction",
-                    "FeatureExtractor",
-                    "VectorDatabase",
-                    "VectorDatabaseInfo",
-                    "WorkingPrecision"
-                }
+            Lookup[
+                info,
+                "Metadata",
+                inVectorDBDirectory @ functions[ "RetrieveFromDatabase" ][
+                    info[ "VectorDatabaseObject" ],
+                    {
+                        "DatabaseType",
+                        "Dimensions",
+                        "DistanceFunction",
+                        "FeatureExtractor",
+                        "VectorDatabase",
+                        "VectorDatabaseInfo",
+                        "WorkingPrecision"
+                    }
+                ]
             ],
             AssociationQ,
             "Data"
@@ -2546,14 +2698,14 @@ createUSearchIndex[ db_ ] := catchUSearch @ Enclose[
         ];
 
         <|
-            "VectorDatabaseObject" -> db,
-            "Directory"            -> $vectorDBDirectory,
-            "File"                 -> file,
-            "FileDate"             -> date,
-            "Dimensions"           -> dimensions,
-            "WorkingPrecision"     -> data[ "WorkingPrecision" ],
-            "Functions"            -> functions,
-            "Handle"               -> handle
+            "Source"           -> usearchIndexSource @ info,
+            "Directory"        -> $vectorDBDirectory,
+            "File"             -> file,
+            "FileDate"         -> date,
+            "Dimensions"       -> dimensions,
+            "WorkingPrecision" -> data[ "WorkingPrecision" ],
+            "Functions"        -> functions,
+            "Handle"           -> handle
         |>
     ],
     # &
