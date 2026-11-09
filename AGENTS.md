@@ -15,7 +15,7 @@ Chatbook (`Wolfram/Chatbook`) is a Wolfram Language paclet that adds LLM-powered
 
 Always use the WolframLanguageContext tool when working with Wolfram Language code to ensure that you are aware of the latest documentation and other Wolfram resources.
 
-When you make changes to paclet source code, you should also write and run tests for the changes you made using the TestReport tool and check your work with the CodeInspector tool.
+When you make nontrivial changes to paclet source code, you should also write and run tests for the changes you made using the TestReport tool and check the updated files (including test files) with the CodeInspector tool. Avoid writing tautological or low-signal tests.
 
 If you need to test changes in the WolframLanguageEvaluator tool, you'll first need to evaluate:
 ```wl
