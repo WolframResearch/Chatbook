@@ -2947,6 +2947,8 @@ initializeWorkspaceChat // beginDefinition;
 
 initializeWorkspaceChat[ ] := LogChatTiming[
     Module[ { settings },
+        (* Requested first, so that the response arrives while the next steps are running: *)
+        initializationStep[ startLLMKitInfoRequest[ ], "StartLLMKitInfoRequest" ];
         initializationStep[ getEmbeddings[ { "Hello" } ], "InitializeEmbeddings" ];
         initializationStep[ cachedTokenizer[ "gpt-4o-text" ], "InitializeTokenizer" ];
         initializationStep[ $llmKitService, "InitializeLLMKitService" ];

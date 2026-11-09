@@ -84,11 +84,85 @@ getLLMKitInfo0 // beginDefinition;
 
 getLLMKitInfo0[ ] := (
     LLMSynthesize;
-    Wolfram`LLMFunctions`Common`UpdateLLMKitInfo[ ];
+    (* The response of a request that was sent ahead of time is used instead of sending another one: *)
+    If[ ! TrueQ @ finishLLMKitInfoRequest[ ], Wolfram`LLMFunctions`Common`UpdateLLMKitInfo[ ] ];
     Wolfram`LLMFunctions`Common`$LLMKitInfo
 );
 
 getLLMKitInfo0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*startLLMKitInfoRequest*)
+(* Requests the LLM Kit info without waiting for the response (0.3-0.4 s), so that it can arrive while other things are
+   being loaded. The next getLLMKitInfo0 uses this response instead of sending its own request. Nothing is sent
+   unless the user is signed in, so this never opens a sign-in dialog. *)
+startLLMKitInfoRequest // beginDefinition;
+
+(* $CloudUserID is None until the cloud connection has been checked, which $CloudConnected does: *)
+startLLMKitInfoRequest[ ] :=
+    If[ TrueQ @ $CloudConnected, startLLMKitInfoRequest[ $CloudUserID, $CloudBase ] ];
+
+startLLMKitInfoRequest[ user_String, cloud_String ] /; ! AssociationQ @ $llmKitInfoRequest := (
+    LLMSynthesize;
+    $llmKitInfoRequest = <| "User" -> user, "Cloud" -> cloud, "Body" -> None |>;
+    $llmKitInfoRequest[ "Task" ] = ServiceSubmit[
+        "LLMKit",
+        "RawAccess",
+        HandlerFunctions     -> <| "BodyReceived" -> llmKitInfoReceived |>,
+        HandlerFunctionsKeys -> { "Body" }
+    ];
+);
+
+startLLMKitInfoRequest[ _, _ ] := Null;
+
+startLLMKitInfoRequest // endDefinition;
+
+$llmKitInfoRequest = None;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*llmKitInfoReceived*)
+llmKitInfoReceived // beginDefinition;
+
+llmKitInfoReceived[ KeyValuePattern[ "Body" -> body_ ] ] :=
+    If[ AssociationQ @ $llmKitInfoRequest, $llmKitInfoRequest[ "Body" ] = body ];
+
+llmKitInfoReceived // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*finishLLMKitInfoRequest*)
+(* Waits for the request of startLLMKitInfoRequest (if there is one), and gives True if its response was used to update
+   the LLM Kit info. Otherwise the caller sends its own request, so a failed request behaves as it did before. *)
+finishLLMKitInfoRequest // beginDefinition;
+
+finishLLMKitInfoRequest[ ] :=
+    With[ { request = $llmKitInfoRequest },
+        finishLLMKitInfoRequest @ request /; AssociationQ @ request
+    ];
+
+finishLLMKitInfoRequest[ ] := False;
+
+finishLLMKitInfoRequest[ request_Association ] :=
+    Module[ { body },
+        LogChatTiming[
+            Quiet @ TimeConstrained[ TaskWait @ request[ "Task" ], $llmKitInfoRequestTimeout ],
+            "WaitForLLMKitInfoRequest"
+        ];
+        body = $llmKitInfoRequest[ "Body" ];
+        $llmKitInfoRequest = None;
+        TrueQ @ And[
+            { request[ "User" ], request[ "Cloud" ] } === { $CloudUserID, $CloudBase },
+            StringQ @ body,
+            Wolfram`LLMFunctions`Common`UpdateLLMKitInfo @ body;
+            AssociationQ @ Wolfram`LLMFunctions`Common`$LLMKitInfo
+        ]
+    ];
+
+finishLLMKitInfoRequest // endDefinition;
+
+$llmKitInfoRequestTimeout = 10;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
