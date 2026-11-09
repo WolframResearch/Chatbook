@@ -2951,6 +2951,7 @@ initializeWorkspaceChat[ ] := LogChatTiming[
         initializationStep[ cachedTokenizer[ "gpt-4o-text" ], "InitializeTokenizer" ];
         initializationStep[ $llmKitService, "InitializeLLMKitService" ];
         settings = initializationStep[ initializeWorkspaceChatSettings[ ], "InitializeSettings" ];
+        initializationStep[ initializeChatSubmit @ settings, "InitializeChatSubmit" ];
         initializationStep[ initializeRelatedDocumentation @ settings, "InitializeRelatedDocumentation" ];
         $workspaceChatInitialized = True
     ],

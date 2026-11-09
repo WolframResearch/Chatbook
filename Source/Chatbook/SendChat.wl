@@ -1191,6 +1191,22 @@ chatSubmitFunction // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*initializeChatSubmit*)
+(* Loads what the first request of a session needs from LLMServices (about 0.08 s) ahead of time. Nothing is sent. *)
+initializeChatSubmit // beginDefinition;
+
+initializeChatSubmit[ settings: KeyValuePattern[ "Model" -> KeyValuePattern[ "Service" -> service_String ] ] ] := (
+    Needs[ "LLMServices`" -> None ];
+    LLMServices`LLMServiceInformation[ chatSubmitFunction @ settings, service ];
+    Null
+);
+
+initializeChatSubmit[ _ ] := Null;
+
+initializeChatSubmit // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*makeLLMConfiguration*)
 makeLLMConfiguration // beginDefinition;
 makeLLMConfiguration[ as_Association ] := (patchServices @ as; makeLLMConfiguration0 @ as);
