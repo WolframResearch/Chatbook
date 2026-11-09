@@ -140,7 +140,7 @@ The `multimodalModelQ` function (`Models.wl`) determines model capability by:
 
 Model-specific overrides in `$modelAutoSettings`:
 
-- **`True`**: Claude 4, Gemini 2, Gemini 3, GPT-4.1, GPT-5, O1, O3, O4-Mini
+- **`True`**: Claude 4, Claude 5, Gemini 2, Gemini 3, GPT-4.1, GPT-5, O1, O3, O4-Mini
 - **`False`**: O1-Mini, O3-Mini
 
 ### Dependencies

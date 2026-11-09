@@ -67,6 +67,7 @@ See additional details in [Model and Service Settings](setting-groups/model-and-
 | `"MaxTokens"` | `Automatic` | Maximum number of tokens the LLM may generate in its response (output token limit). |
 | `"MaxContextTokens"` | `Automatic` | Maximum token capacity of the context window, used internally for token budgeting and context management. |
 | `"Reasoning"` | `Automatic` | Controls the reasoning/thinking effort level for models that support extended thinking. |
+| `"RefusalFallbackModel"` | `Automatic` | Name of the model that cybersecurity-related requests are retried on when they are refused by a model's safety classifiers, or `None` to disable the retry. |
 | `"StopTokens"` | `Automatic` | Stop sequences that signal the LLM to stop generating. |
 | `"TokenBudgetMultiplier"` | `Automatic` | Multiplier applied to `MaxContextTokens` to produce the working token budget for chat message construction. |
 

@@ -604,6 +604,8 @@ All model families currently defined in `chooseModelFamily0` (`Models.wl`):
 | `"Claude2"` | `{ "Claude", "2.0"\|"2.1" }` | `Anthropic` |
 | `"Claude3"` | `{ "Claude", "3", ___ }` | `Anthropic` |
 | `"Claude4"` | `{ "Claude", "Haiku"\|"Sonnet"\|"Opus", "4", ___ }` | `Anthropic` |
+| `"ClaudeOpus47Plus"` | `{ "Claude", "Opus", "4", "7"\|"8", ___ }` | `Anthropic` (inherits from Claude4) |
+| `"Claude5"` | `{ "Claude", "Haiku"\|"Sonnet"\|"Opus"\|"Fable", "5", ___ }` | `Anthropic` (inherits from ClaudeOpus47Plus) |
 | `"Gemini2"` | `{ "Gemini", "2", ___ }` | `GoogleGemini` |
 | `"Gemini3"` | `{ "Gemini", "3", ___ }` | `GoogleGemini` |
 | `"DeepSeekChat"` | `{ "DeepSeek", ___, "Chat"\|"V3", ... }` | `DeepSeek` |
