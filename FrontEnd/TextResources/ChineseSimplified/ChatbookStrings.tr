@@ -81,7 +81,7 @@
 "FormattingThinkingCompleteSingular" -> "\:601D\:8003\:4E86\:4E00\:4E0B",
 "FormattingThinkingCompleteFallback" -> "\:601D\:8003\:5B8C\:6210",
 "FormattingHide" -> "\:9690\:85CF",
-"FormattingDiscardedMaterial" -> "Discarded material",
+"FormattingDiscardedMaterial" -> "\:4E22\:5F03\:7684\:8D44\:6599",
 
 "InlineReferencesFieldHint" -> "PromptName",
 "InlineReferencesInsertLabel" -> "\:63D2\:5165\:ff1a",
@@ -171,7 +171,7 @@
 "ToolManagerTooltipNonDeletable1" -> "`name` \:662F\:5185\:7F6E\:5DE5\:5177\:ff0c\:65E0\:6CD5\:5220\:9664\:3002",
 "ToolManagerTooltipNonDeletable2" -> "`name` \:662F\:7531\:89D2\:8272 `persona` \:63D0\:4F9B\:7684\:ff0c\:4E0D\:80FD\:5355\:72EC\:5220\:9664\:3002",
 "ToolManagerDeleteTool" -> "\:5220\:9664\:5DE5\:5177",
-"ToolManagerToolsDisabled" -> "Tools are disabled in the current chat settings.",
+"ToolManagerToolsDisabled" -> "\:5728\:5F53\:524D\:804A\:5929\:8BBE\:7F6E\:4E2D\:5DE5\:5177\:88AB\:7981\:7528\:3002",
 
 "UIInitializeChatbook" -> "\:6B63\:5728\:521D\:59CB\:5316\[Ellipsis]",
 "UIEnableChatFeatures" -> "\:542F\:7528 AI \:804A\:5929\:529F\:80FD",
@@ -277,7 +277,7 @@
 "WorkspaceHistoryLastPage" -> "\:6700\:540E\:4E00\:9875",
 "WorkspaceHistoryTitle" -> "\:5386\:53F2\:8BB0\:5F55",
 "WorkspaceHistoryFieldHint" -> "\:641C\:7D22",
-"WorkspaceHistoryLoadFailed" -> "That chat could not be loaded.",
+"WorkspaceHistoryLoadFailed" -> "\:65E0\:6CD5\:52A0\:8F7D\:8BE5\:804A\:5929\:8BB0\:5F55\:3002",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "\:5C06\:54CD\:5E94\:590D\:5236\:5230\:526A\:8D34\:677F\[Ellipsis]",
 "WorkspaceOutputRaftCopyAs" -> "\:5C06\:54CD\:5E94\:590D\:5236\:4E3A\[Ellipsis]",
@@ -310,10 +310,10 @@
 "ProgressTextGeneratingSuggestions" -> "\:6B63\:5728\:751F\:6210\:5EFA\:8BAE",
 "ProgressTextDownloadingSnippet" -> "\:6B63\:5728\:4E0B\:8F7D `1` \:6587\:6863\:7247\:6BB5",
 "ProgressTextDownloadingSnippets" -> "\:6B63\:5728\:4E0B\:8F7D `1` \:6587\:6863\:7247\:6BB5",
-"DownloadRedownloadPrompt" -> "Some locally installed files appear to be incomplete or corrupt:\n\n`1`\n\nWould you like to download them again?",
-"DownloadRetryPrompt" -> "The download of some semantic search resources did not complete. Would you like to try again?",
-"ProgressTextDownloadingSearchIndices" -> "Downloading semantic search indices\[Ellipsis]",
-"ProgressTextUnpackingFiles" -> "Unpacking files\[Ellipsis]"
+"DownloadRedownloadPrompt" -> "\:67D0\:4E9B\:672C\:673A\:5B89\:88C5\:7684\:6587\:4EF6\:4F3C\:4E4E\:4E0D\:5B8C\:6574\:6216\:5DF2\:635F\:574F\:ff1a\n\n`1`\n\n\:60A8\:60F3\:91CD\:65B0\:4E0B\:8F7D\:8FD9\:4E9B\:6587\:4EF6\:5417\:ff1f",
+"DownloadRetryPrompt" -> "\:90E8\:5206\:8BED\:4E49\:641C\:7D22\:8D44\:6E90\:7684\:4E0B\:8F7D\:672A\:5B8C\:6210\:3002\:9700\:8981\:91CD\:65B0\:4E0B\:8F7D\:5417\:ff1f",
+"ProgressTextDownloadingSearchIndices" -> "\:6B63\:5728\:4E0B\:8F7D\:8BED\:4E49\:641C\:7D22\:7D22\:5F15\[Ellipsis]",
+"ProgressTextUnpackingFiles" -> "\:6B63\:5728\:89E3\:538B\:7F29\:6587\:4EF6\[Ellipsis]"
 }
 @|
 @|

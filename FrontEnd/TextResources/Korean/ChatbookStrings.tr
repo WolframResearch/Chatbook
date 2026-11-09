@@ -81,7 +81,7 @@
 "FormattingThinkingCompleteSingular" -> "1 \:cd08 \:b3d9\:c548 \:c0dd\:ac01",
 "FormattingThinkingCompleteFallback" -> "\:C0DD\:AC01",
 "FormattingHide" -> "\:C228\:AE30\:AE30",
-"FormattingDiscardedMaterial" -> "Discarded material",
+"FormattingDiscardedMaterial" -> "\:C0AD\:C81C\:B41C \:B0B4\:C6A9",
 
 "InlineReferencesFieldHint" -> "\:D504\:B86C\:D504\:D2B8 \:C774\:B984",
 "InlineReferencesInsertLabel" -> "\:C0BD\:C785:",
@@ -171,7 +171,7 @@
 "ToolManagerTooltipNonDeletable1" -> "`name`\:C740 \:B0B4\:C7A5 \:B3C4\:AD6C\:C774\:BBC0\:B85C \:C0AD\:C81C\:D560 \:C218 \:C5C6\:C2B5\:B2C8\:B2E4.",
 "ToolManagerTooltipNonDeletable2" -> "`name`\:C740 \:D398\:B974\:C18C\:B098 `persona`\:C5D0 \:C758\:D574 \:C81C\:ACF5\:B418\:C5C8\:C73C\:BA70 \:BCC4\:B3C4\:B85C \:C0AD\:C81C\:D560 \:C218 \:C5C6\:C2B5\:B2C8\:B2E4.",
 "ToolManagerDeleteTool" -> "\:B3C4\:AD6C \:C0AD\:C81C",
-"ToolManagerToolsDisabled" -> "Tools are disabled in the current chat settings.",
+"ToolManagerToolsDisabled" -> "\:D604\:C7AC \:CC44\:D305 \:C124\:C815\:C5D0\:C11C \:B3C4\:AD6C\:AC00 \:BE44\:D65C\:C131\:D654\:B418\:C5B4 \:C788\:C2B5\:B2C8\:B2E4.",
 
 "UIInitializeChatbook" -> "\:CD08\:AE30\:D654 \:C911\[Ellipsis]",
 "UIEnableChatFeatures" -> "AI \:CC44\:D305 \:AE30\:B2A5 \:D65C\:C131\:D654",
@@ -247,9 +247,9 @@
 "ChatbarOptionsMinimized" -> "\:CD5C\:C18C\:D654",
 "ChatbarOptionsOff" -> "\:B044\:AE30",
 "ChatbarOptionsSignOut" -> "\:B85C\:ADF8\:C544\:C6C3",
-"ChatbarOptionsGettingData" -> "Retrieving user profile\[Ellipsis]",
+"ChatbarOptionsGettingData" -> "\:C0AC\:C6A9\:C790 \:D504\:B85C\:D544\:C744 \:BD88\:B7EC\:C624\:B294 \:C911\[Ellipsis]",
 
-"MenuItemShowNotebookAssistanceWindow" -> "AI Assistant Chat\[Ellipsis]",
+"MenuItemShowNotebookAssistanceWindow" -> "AI Assistant \:CC44\:D305\[Ellipsis]",
 "MenuItemShowContentSuggestions" -> "AI\:C5D0 \:C758\:D55C \:CF58\:D150\:CE20 \:C81C\:C548",
 
 "SidebarToolbarButtonTooltipHideSidebar" -> "AI Assistant \:C228\:AE30\:AE30",
@@ -269,7 +269,7 @@
 "WorkspaceToolbarButtonTooltipOpenAsChatbook" -> "\:CC44\:D305 \:B178\:D2B8\:BD81\:C73C\:B85C \:C5F4\:AE30",
 "WorkspaceSourcesOpenNotebooks" -> "\:B178\:D2B8\:BD81 \:C5F4\:AE30",
 "WorkspaceSourcesNoOpenNotebooks" -> "\:D604\:C7AC \:C5F4\:B824 \:C788\:B294 \:B2E4\:B978 \:B178\:D2B8\:BD81\:C774 \:C5C6\:C2B5\:B2C8\:B2E4.",
-"WorkspaceHistoryNone" -> "No chat history",
+"WorkspaceHistoryNone" -> "\:CC44\:D305 \:AE30\:B85D \:C5C6\:C74C",
 "WorkspaceHistoryPageTemplate" -> "\:D398\:C774\:C9C0 `1`/`2`",
 "WorkspaceHistoryFirstPage" -> "\:CCAB \:D398\:C774\:C9C0",
 "WorkspaceHistoryPreviousPage" -> "\:C774\:C804 \:D398\:C774\:C9C0",
@@ -277,7 +277,7 @@
 "WorkspaceHistoryLastPage" -> "\:B9C8\:C9C0\:B9C9 \:D398\:C774\:C9C0",
 "WorkspaceHistoryTitle" -> "\:D788\:C2A4\:D1A0\:B9AC",
 "WorkspaceHistoryFieldHint" -> "\:AC80\:C0C9",
-"WorkspaceHistoryLoadFailed" -> "That chat could not be loaded.",
+"WorkspaceHistoryLoadFailed" -> "\:CC44\:D305\:C744 \:BD88\:B7EC\:C62C \:C218 \:C5C6\:C2B5\:B2C8\:B2E4.",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "\:B2F5\:BCC0\:C744 \:D074\:B9BD\:BCF4\:B4DC\:C5D0 \:BCF5\:C0AC\[Ellipsis]",
 "WorkspaceOutputRaftCopyAs" -> "\:B2F5\:BCC0\:C744 \:BCF5\:C0AC\[Ellipsis]",
@@ -310,10 +310,10 @@
 "ProgressTextGeneratingSuggestions" -> "\:C81C\:C548 \:C0DD\:C131",
 "ProgressTextDownloadingSnippet" -> "`1` \:BB38\:C11C \:C77C\:BD80 \:B2E4\:C6B4\:B85C\:B4DC",
 "ProgressTextDownloadingSnippets" -> "`1` \:BB38\:C11C \:C77C\:BD80 \:B2E4\:C6B4\:B85C\:B4DC",
-"DownloadRedownloadPrompt" -> "Some locally installed files appear to be incomplete or corrupt:\n\n`1`\n\nWould you like to download them again?",
-"DownloadRetryPrompt" -> "The download of some semantic search resources did not complete. Would you like to try again?",
-"ProgressTextDownloadingSearchIndices" -> "Downloading semantic search indices\[Ellipsis]",
-"ProgressTextUnpackingFiles" -> "Unpacking files\[Ellipsis]"
+"DownloadRedownloadPrompt" -> "\:B85C\:CEEC\:C5D0 \:C124\:CE58\:B41C \:C77C\:BD80 \:D30C\:C77C\:C774 \:BD88\:C644\:C804\:D558\:AC70\:B098 \:C190\:C0C1\:B41C \:AC83 \:AC19\:C2B5\:B2C8\:B2E4:\n\n`1`\n\n\:B2E4\:C2DC \:B2E4\:C6B4\:B85C\:B4DC\:D558\:C2DC\:ACA0\:C2B5\:B2C8\:AE4C?",
+"DownloadRetryPrompt" -> "\:C77C\:BD80 \:C2DC\:B9E8\:D2F1 \:AC80\:C0C9 \:B9AC\:C18C\:C2A4\:B97C \:B2E4\:C6B4\:B85C\:B4DC\:D558\:C9C0 \:BABB\:D588\:C2B5\:B2C8\:B2E4. \:B2E4\:C2DC \:C2DC\:B3C4\:D558\:C2DC\:ACA0\:C2B5\:B2C8\:AE4C?",
+"ProgressTextDownloadingSearchIndices" -> "\:C2DC\:B9E8\:D2F1 \:AC80\:C0C9 \:C778\:B371\:C2A4 \:B2E4\:C6B4\:B85C\:B4DC \:C911\[Ellipsis]",
+"ProgressTextUnpackingFiles" -> "\:D30C\:C77C \:C555\:CD95 \:D574\:C81C \:C911\[Ellipsis]"
 }
 @|
 @|
