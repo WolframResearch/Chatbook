@@ -81,7 +81,7 @@
 "FormattingThinkingCompleteSingular" -> "A r\[EAcute]fl\[EAcute]chi pendant une seconde",
 "FormattingThinkingCompleteFallback" -> "R\[EAcute]flexion",
 "FormattingHide" -> "Cacher",
-"FormattingDiscardedMaterial" -> "Discarded material",
+"FormattingDiscardedMaterial" -> "Mat\[EAcute]riel rejet\[EAcute]",
 
 "InlineReferencesFieldHint" -> "Nom de l\[CloseCurlyQuote]invite",
 "InlineReferencesInsertLabel" -> "Ins\[EAcute]rer\[NonBreakingSpace]:",
@@ -171,7 +171,7 @@
 "ToolManagerTooltipNonDeletable1" -> "`name` est un outil int\[EAcute]gr\[EAcute] et ne peut pas \[EHat]tre supprim\[EAcute].",
 "ToolManagerTooltipNonDeletable2" -> "`name` est fourni par le personnage `persona` et ne peut pas \[EHat]tre supprim\[EAcute] s\[EAcute]par\[EAcute]ment.",
 "ToolManagerDeleteTool" -> "Supprimer l\[CloseCurlyQuote]outil",
-"ToolManagerToolsDisabled" -> "Tools are disabled in the current chat settings.",
+"ToolManagerToolsDisabled" -> "Les outils sont d\[EAcute]sactiv\[EAcute]s dans les param\[EGrave]tres de Chat actuels.",
 
 "UIInitializeChatbook" -> "Initialisation\[Ellipsis]",
 "UIEnableChatFeatures" -> "Activer les fonctions de chat de l\[CloseCurlyQuote]IA",
@@ -277,7 +277,7 @@
 "WorkspaceHistoryLastPage" -> "Derni\[EGrave]re page",
 "WorkspaceHistoryTitle" -> "Historique",
 "WorkspaceHistoryFieldHint" -> "Recherche",
-"WorkspaceHistoryLoadFailed" -> "That chat could not be loaded.",
+"WorkspaceHistoryLoadFailed" -> "Ce Chat n\[CloseCurlyQuote]a pas pu \[EHat]tre charg\[EAcute].",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "Copier la r\[EAcute]ponse dans le presse\[Hyphen]papiers\[Ellipsis]",
 "WorkspaceOutputRaftCopyAs" -> "Copier la r\[EAcute]ponse en tant que\[Ellipsis]",
@@ -310,10 +310,10 @@
 "ProgressTextGeneratingSuggestions" -> "G\[EAcute]n\[EAcute]ration de suggestions",
 "ProgressTextDownloadingSnippet" -> "T\[EAcute]l\[EAcute]chargement de l\[CloseCurlyQuote]extrait de documentation `1`",
 "ProgressTextDownloadingSnippets" -> "T\[EAcute]l\[EAcute]chargement des extraits de la documentation `1`",
-"DownloadRedownloadPrompt" -> "Some locally installed files appear to be incomplete or corrupt:\n\n`1`\n\nWould you like to download them again?",
-"DownloadRetryPrompt" -> "The download of some semantic search resources did not complete. Would you like to try again?",
-"ProgressTextDownloadingSearchIndices" -> "Downloading semantic search indices\[Ellipsis]",
-"ProgressTextUnpackingFiles" -> "Unpacking files\[Ellipsis]"
+"DownloadRedownloadPrompt" -> "Certains fichiers install\[EAcute]s localement semblent \[EHat]tre incomplets ou corrompus :\n\n`1`\n\nSouhaitez\[Hyphen]vous les t\[EAcute]l\[EAcute]charger \[AGrave] nouveau ?",
+"DownloadRetryPrompt" -> "Le t\[EAcute]l\[EAcute]chargement de certaines ressources de recherche s\[EAcute]mantique ne s\[CloseCurlyQuote]est pas termin\[EAcute]. Souhaitez\[Hyphen]vous r\[EAcute]essayer ?",
+"ProgressTextDownloadingSearchIndices" -> "T\[EAcute]l\[EAcute]chargement des indices de recherche s\[EAcute]mantique\[Ellipsis]",
+"ProgressTextUnpackingFiles" -> "D\[EAcute]compression des fichiers\[Ellipsis]"
 }
 @|
 @|
