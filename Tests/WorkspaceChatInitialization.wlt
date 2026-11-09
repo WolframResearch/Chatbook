@@ -91,6 +91,18 @@ VerificationTest[
     TestID   -> "InitializeWorkspaceChat-VectorDatabaseValues@@Tests/WorkspaceChatInitialization.wlt:84,1-92,2"
 ]
 
+(* The first search of a chat needs the index handle of each database it searches, already checked against
+   VectorDatabaseSearch: *)
+VerificationTest[
+    AllTrue[
+        $expectedVectorDBNames,
+        Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`usearchIndexVerifiedQ @ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexCache[ # ] &
+    ],
+    True,
+    SameTest -> MatchQ,
+    TestID   -> "InitializeWorkspaceChat-VectorDatabaseIndexHandles@@Tests/WorkspaceChatInitialization.wlt:96,1-104,2"
+]
+
 VerificationTest[
     AllTrue[
         { "Documentation", "ResourceSystem" },
@@ -101,7 +113,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "InitializeWorkspaceChat-SnippetIndexes@@Tests/WorkspaceChatInitialization.wlt:94,1-105,2"
+    TestID   -> "InitializeWorkspaceChat-SnippetIndexes@@Tests/WorkspaceChatInitialization.wlt:106,1-117,2"
 ]
 
 (* A failure in one step should not stop the others or produce messages: *)
@@ -113,7 +125,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "InitializeWorkspaceChat-FailureIsolation@@Tests/WorkspaceChatInitialization.wlt:108,1-117,2"
+    TestID   -> "InitializeWorkspaceChat-FailureIsolation@@Tests/WorkspaceChatInitialization.wlt:120,1-129,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -126,7 +138,7 @@ VerificationTest[
     ],
     _Failure,
     SameTest -> MatchQ,
-    TestID   -> "InitializationStep-Failure@@Tests/WorkspaceChatInitialization.wlt:122,1-130,2"
+    TestID   -> "InitializationStep-Failure@@Tests/WorkspaceChatInitialization.wlt:134,1-142,2"
 ]
 
 (* Steps do not change the chat state, since asynchronous handlers of a chat that is streaming at the same time run
@@ -149,7 +161,7 @@ VerificationTest[
     ],
     { { "Cell", <| "Key" -> "Value" |> }, "NewTask" },
     SameTest -> MatchQ,
-    TestID   -> "InitializationStep-ChatState@@Tests/WorkspaceChatInitialization.wlt:134,1-153,2"
+    TestID   -> "InitializationStep-ChatState@@Tests/WorkspaceChatInitialization.wlt:146,1-165,2"
 ]
 
 VerificationTest[
@@ -165,7 +177,7 @@ VerificationTest[
     ],
     "Task",
     SameTest -> MatchQ,
-    TestID   -> "InitializationStep-AsynchronousChatState@@Tests/WorkspaceChatInitialization.wlt:155,1-169,2"
+    TestID   -> "InitializationStep-AsynchronousChatState@@Tests/WorkspaceChatInitialization.wlt:167,1-181,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -190,7 +202,7 @@ VerificationTest[
     ],
     { { None, None }, "Task", "Cell", <| "Key" -> "Value" |> },
     SameTest -> MatchQ,
-    TestID   -> "WithIsolatedChatState-RestoresChatState@@Tests/WorkspaceChatInitialization.wlt:174,1-194,2"
+    TestID   -> "WithIsolatedChatState-RestoresChatState@@Tests/WorkspaceChatInitialization.wlt:186,1-206,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -207,7 +219,7 @@ VerificationTest[
         }
     ],
     SameTest -> MatchQ,
-    TestID   -> "InitializeWorkspaceChatSettings@@Tests/WorkspaceChatInitialization.wlt:199,1-211,2"
+    TestID   -> "InitializeWorkspaceChatSettings@@Tests/WorkspaceChatInitialization.wlt:211,1-223,2"
 ]
 
 VerificationTest[
@@ -216,7 +228,7 @@ VerificationTest[
     ],
     Missing[ "NotAuthenticated" ],
     SameTest -> MatchQ,
-    TestID   -> "InitializeWorkspaceChatSettings-NotAuthenticated@@Tests/WorkspaceChatInitialization.wlt:213,1-220,2"
+    TestID   -> "InitializeWorkspaceChatSettings-NotAuthenticated@@Tests/WorkspaceChatInitialization.wlt:225,1-232,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -233,14 +245,14 @@ VerificationTest[
         |>
     |>,
     SameTest -> MatchQ,
-    TestID   -> "InitializeRelatedDocumentation@@Tests/WorkspaceChatInitialization.wlt:225,1-233,2"
+    TestID   -> "InitializeRelatedDocumentation@@Tests/WorkspaceChatInitialization.wlt:237,1-249,2"
 ]
 
 VerificationTest[
     Wolfram`Chatbook`PromptGenerators`RelatedDocumentation`Private`initializationVectorDBNames[ None ],
     $expectedVectorDBNames,
     SameTest -> MatchQ,
-    TestID   -> "InitializationVectorDBNames@@Tests/WorkspaceChatInitialization.wlt:235,1-240,2"
+    TestID   -> "InitializationVectorDBNames@@Tests/WorkspaceChatInitialization.wlt:251,1-256,2"
 ]
 
 VerificationTest[
@@ -251,7 +263,7 @@ VerificationTest[
         |>,
     Append[ $expectedVectorDBNames, "WolframAlphaQueries" ],
     SameTest -> MatchQ,
-    TestID   -> "InitializationVectorDBNames-WolframAlpha@@Tests/WorkspaceChatInitialization.wlt:242,1-251,2"
+    TestID   -> "InitializationVectorDBNames-WolframAlpha@@Tests/WorkspaceChatInitialization.wlt:258,1-267,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -305,7 +317,7 @@ VerificationTest[
     ],
     { Missing[ "DownloadDisabled" ], { }, Null },
     SameTest -> MatchQ,
-    TestID   -> "InitializeVectorDatabases-NoDownload@@Tests/WorkspaceChatInitialization.wlt:270,1-305,2"
+    TestID   -> "InitializeVectorDatabases-NoDownload@@Tests/WorkspaceChatInitialization.wlt:286,1-321,2"
 ]
 
 VerificationTest[
@@ -325,7 +337,7 @@ VerificationTest[
     ],
     { Missing[ "DownloadDisabled" ], { }, Null },
     SameTest -> MatchQ,
-    TestID   -> "InitializeStreamableSnippets-NoDownload@@Tests/WorkspaceChatInitialization.wlt:307,1-325,2"
+    TestID   -> "InitializeStreamableSnippets-NoDownload@@Tests/WorkspaceChatInitialization.wlt:323,1-341,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
