@@ -849,6 +849,82 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Value Stores*)
+VerificationTest[
+    Module[ { values, store },
+        values = { "paclet:ref/Plot#1", "", "\[Alpha]\[Beta] \[LongRightArrow] x", "a", "", "https://example.com/#2" };
+        store  = Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`makeValueStore @ values;
+        {
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDBValuesList @ store === values,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDBValueCount @ store,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDBValuesPart[ store, { 3, 1, 6, 2, 3 } ] === values[[ { 3, 1, 6, 2, 3 } ]],
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDBValuesPart[ store, { } ],
+            (* Lists of values (e.g. of registered databases) work the same way: *)
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDBValuesPart[ values, { 4, 1 } ],
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDBValueCount @ values
+        }
+    ],
+    { True, 6, True, { }, { "a", "paclet:ref/Plot#1" }, 6 },
+    TestID -> "ValueStore-SameValues@@Tests/VectorDatabases.wlt:782,1-798,2"
+]
+
+(* The value store of an installed database gives the values of its Values.wxf: *)
+VerificationTest[
+    Module[ { name, file, store, indices },
+        name    = "NeuralNetRepositoryURIs";
+        file    = FileNameJoin @ { Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDBDirectory, name, "Values.wxf" };
+        store   = vectorDBInfo[ name ][ "Values" ];
+        indices = { 1, 10, Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDBValueCount @ store };
+        {
+            ! Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`localVectorDBDirectoryQ @ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDBDirectory || MatchQ[ store, KeyValuePattern[ "String" -> _String ] ],
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDBValuesPart[ store, indices ] === Developer`ReadWXFFile[ file ][[ indices ]],
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDBValuesList @ store === Developer`ReadWXFFile @ file
+        }
+    ],
+    { True, True, True },
+    TestID -> "ValueStore-InstalledDatabase@@Tests/VectorDatabases.wlt:801,1-815,2"
+]
+
+(* The saved value store is used while Values.wxf is unchanged, and ignored otherwise: *)
+VerificationTest[
+    Module[ { dir, file, cache, write, load, first, saved, cached, changed, damaged },
+        dir   = CreateDirectory[ ];
+        file  = FileNameJoin @ { dir, "Values.wxf" };
+        cache = FileNameJoin @ { dir, "ValueStore.wxf" };
+        write = Function[ Developer`WriteWXFFile[ file, # ] ];
+        load  = Function[ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDBValuesList @ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`loadValueStore @ file ];
+
+        write @ { "a", "bb", "ccc" };
+        first = load[ ];
+        saved = FileExistsQ @ cache;
+
+        (* Values that could only come from the saved value store: *)
+        Developer`WriteWXFFile[ cache, <| Developer`ReadWXFFile @ cache, "String" -> "xyyzzz" |> ];
+        cached = load[ ];
+
+        (* Values.wxf was replaced: *)
+        write @ { "dddd", "e" };
+        changed = { load[ ], Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDBValuesList @ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`readValueStore @ file };
+
+        (* The saved value store can't be read: *)
+        BinaryWrite[ cache, { 1, 2, 3 } ]; Close @ cache;
+        damaged = load[ ];
+
+        DeleteDirectory[ dir, DeleteContents -> True ];
+        { first, saved, cached, changed, damaged }
+    ],
+    {
+        { "a", "bb", "ccc" },
+        True,
+        { "x", "yy", "zzz" },
+        { { "dddd", "e" }, { "dddd", "e" } },
+        { "dddd", "e" }
+    },
+    TestID -> "ValueStore-SavedFile@@Tests/VectorDatabases.wlt:818,1-853,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*All Values*)
 (* The full list of values of a database (e.g. for RelatedWolframAlphaQueries[ All ]): *)
 VerificationTest[

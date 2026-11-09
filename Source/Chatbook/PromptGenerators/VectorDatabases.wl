@@ -1798,9 +1798,13 @@ getVectorDB[ name_String ] := Enclose[
 
 getVectorDB // endDefinition;
 
+(* The values of a database are a list of strings or a value store (see loadVectorDBValues): *)
+$$valueStore     = KeyValuePattern @ { "String" -> _String, "Offsets" -> { __Integer } };
+$$vectorDBValues = { ___String } | $$valueStore;
+
 (* A built-in database has "Metadata" (see loadVectorDB0), and a registered one has a "VectorDatabaseObject": *)
 $$loadedVectorDB = Alternatives[
-    KeyValuePattern @ { "Values" -> { ___String }, "Metadata" -> _Association },
+    KeyValuePattern @ { "Values" -> $$vectorDBValues, "Metadata" -> _Association },
     KeyValuePattern @ { "Values" -> { ___String }, "VectorDatabaseObject" -> $$vectorDatabase }
 ];
 
@@ -1850,11 +1854,11 @@ loadVectorDB0[ name_String ] := Enclose[
         (* Guard against files that were damaged after installation (a truncated index can crash the kernel): *)
         ConfirmAssert[ vectorDBDirectoryQ0 @ FileNameJoin @ { $vectorDBDirectory, name }, "Integrity" ];
 
-        values   = ConfirmMatch[ loadVectorDBValues @ name, { ___String }, "Values" ];
+        values   = ConfirmMatch[ loadVectorDBValues @ name, $$vectorDBValues, "Values" ];
         metadata = ConfirmBy[ loadVectorDBMetadata @ name, AssociationQ, "Metadata" ];
         dims     = ConfirmMatch[ metadata[ "Dimensions" ], { _Integer, _Integer }, "Dimensions" ];
 
-        ConfirmAssert[ Length @ values === First @ dims, "LengthCheck" ];
+        ConfirmAssert[ vectorDBValueCount @ values === First @ dims, "LengthCheck" ];
 
         <| "Values" -> values, "Metadata" -> metadata |>
     ],
@@ -2028,17 +2032,143 @@ vectorDatabaseObject // endDefinition;
 (*loadVectorDBValues*)
 loadVectorDBValues // beginDefinition;
 
+(* Gives the values as a value store if possible (see loadValueStore), and otherwise as a list of strings. Use
+   vectorDBValuesPart, vectorDBValueCount and vectorDBValuesList to get values from either one. *)
 loadVectorDBValues[ name_String ] := Enclose[
     Module[ { root, dir, file },
         root = ConfirmBy[ $vectorDBDirectory, DirectoryQ, "RootDirectory" ];
         dir = ConfirmBy[ FileNameJoin @ { root, name }, DirectoryQ, "Directory" ];
         file = ConfirmBy[ FileNameJoin @ { dir, "Values.wxf" }, FileExistsQ, "File" ];
-        loadVectorDBValues[ name ] = ConfirmMatch[ Developer`ReadWXFFile @ file, { __String }, "Read" ]
+        loadVectorDBValues[ name ] = ConfirmMatch[
+            If[ TrueQ @ $cacheValueStores && localVectorDBDirectoryQ @ root,
+                loadValueStore @ file,
+                Developer`ReadWXFFile @ file
+            ],
+            { __String } | $$valueStore,
+            "Read"
+        ]
     ],
     throwInternalFailure
 ];
 
 loadVectorDBValues // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*Value Stores*)
+(*
+    The values of a database are a long list of strings (over a million for the documentation), and reading that list
+    takes up to 0.35 s per database (0.7 s for all of them). A search only needs the values of its results, so the
+    values are kept as a value store instead: one string of all the values and the offsets of the values in it, which
+    is read about 7 times faster and needs less memory.
+
+    The value store is saved next to Values.wxf the first time that the values are loaded, and created again if
+    Values.wxf changes. This is only done for databases in the local directory (the ones that were downloaded), which
+    is writable, and is replaced as a whole when a database is updated.
+*)
+loadValueStore // beginDefinition;
+
+loadValueStore[ file_String ] :=
+    With[ { store = readValueStore @ file },
+        store /; MatchQ[ store, $$valueStore ]
+    ];
+
+loadValueStore[ file_String ] := Enclose[
+    Module[ { values, store },
+        values = ConfirmMatch[ Developer`ReadWXFFile @ file, { __String }, "Read" ];
+        store  = ConfirmMatch[ makeValueStore @ values, $$valueStore, "Store" ];
+        writeValueStore[ file, store ];
+        store
+    ],
+    throwInternalFailure
+];
+
+loadValueStore // endDefinition;
+
+$cacheValueStores = True;
+
+
+makeValueStore // beginDefinition;
+
+makeValueStore[ values: { __String } ] := <|
+    "String"  -> StringJoin @ values,
+    "Offsets" -> Accumulate @ Prepend[ StringLength @ values, 0 ]
+|>;
+
+makeValueStore // endDefinition;
+
+
+readValueStore // beginDefinition;
+
+(* Anything other than a value store for the current Values.wxf is ignored: *)
+readValueStore[ file_String ] := Quiet @ catchAlways @ Module[ { cacheFile, data },
+    cacheFile = valueStoreFile @ file;
+    data = If[ FileExistsQ @ cacheFile, Developer`ReadWXFFile @ cacheFile ];
+    If[ MatchQ[ data, KeyValuePattern[ "Source" -> valueStoreSource @ file ] ],
+        <| "String" -> data[ "String" ], "Offsets" -> Normal @ data[ "Offsets" ] |>,
+        Missing[ "NotAvailable" ]
+    ]
+];
+
+readValueStore // endDefinition;
+
+
+writeValueStore // beginDefinition;
+
+(* Failing to save only means that the next session creates the value store again: *)
+writeValueStore[ file_String, store_Association ] := Quiet @ catchAlways @ Developer`WriteWXFFile[
+    valueStoreFile @ file,
+    <|
+        "Source"  -> valueStoreSource @ file,
+        "String"  -> store[ "String" ],
+        "Offsets" -> NumericArray[ store[ "Offsets" ], "UnsignedInteger32" ]
+    |>
+];
+
+writeValueStore // endDefinition;
+
+
+valueStoreFile // beginDefinition;
+valueStoreFile[ file_String ] := FileNameJoin @ { DirectoryName @ file, "ValueStore.wxf" };
+valueStoreFile // endDefinition;
+
+
+(* Identifies the Values.wxf that a value store was created from: *)
+valueStoreSource // beginDefinition;
+valueStoreSource[ file_String ] := { FileByteCount @ file, First @ FileDate[ file, "Modification" ] };
+valueStoreSource // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*vectorDBValuesPart*)
+vectorDBValuesPart // beginDefinition;
+
+vectorDBValuesPart[ values_List, indices: { ___Integer } ] :=
+    values[[ indices ]];
+
+vectorDBValuesPart[ KeyValuePattern[ "Offsets" -> _ ], { } ] :=
+    { };
+
+vectorDBValuesPart[ KeyValuePattern @ { "String" -> string_, "Offsets" -> offsets_ }, indices: { __Integer } ] :=
+    StringTake[ string, Transpose @ { offsets[[ indices ]] + 1, offsets[[ indices + 1 ]] } ];
+
+vectorDBValuesPart // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*vectorDBValueCount*)
+vectorDBValueCount // beginDefinition;
+vectorDBValueCount[ values_List ] := Length @ values;
+vectorDBValueCount[ KeyValuePattern[ "Offsets" -> offsets_List ] ] := Length @ offsets - 1;
+vectorDBValueCount // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*vectorDBValuesList*)
+vectorDBValuesList // beginDefinition;
+vectorDBValuesList[ values_List ] := values;
+vectorDBValuesList[ store_Association ] := vectorDBValuesPart[ store, Range @ vectorDBValueCount @ store ];
+vectorDBValuesList // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -2089,7 +2219,7 @@ vectorDBSearch[ dbName: $$dbName, prompt_String, All ] := Enclose[
         If[ MatchQ[ vectorDBInfo, $$skippedVectorDB ], Throw @ skippedSearchResult @ vectorDBInfo ];
 
         vectorDBInfo    = ConfirmBy[ vectorDBInfo, AssociationQ, "VectorDBInfo" ];
-        allValues       = ConfirmBy[ vectorDBInfo[ "Values" ], ListQ, "Values" ];
+        allValues       = ConfirmMatch[ vectorDBInfo[ "Values" ], _List | _Association, "Values" ];
         embeddingVector = ConfirmMatch[ getEmbedding @ prompt, _NumericArray, "EmbeddingVector" ];
 
         close = ConfirmMatch[
@@ -2105,7 +2235,7 @@ vectorDBSearch[ dbName: $$dbName, prompt_String, All ] := Enclose[
 
         indices   = ConfirmMatch[ close[[ All, "Index"    ]], { ___Integer }, "Indices"   ];
         distances = ConfirmMatch[ close[[ All, "Distance" ]], { ___Real    }, "Distances" ];
-        values    = ConfirmBy[ allValues[[ indices ]], ListQ, "Values" ];
+        values    = ConfirmBy[ vectorDBValuesPart[ allValues, indices ], ListQ, "Values" ];
 
         ConfirmAssert[ Length @ indices === Length @ distances === Length @ values, "LengthCheck" ];
 
@@ -2275,7 +2405,7 @@ vectorDBSearch[ dbName: $$dbName, All, "Values" ] := Enclose[
         vectorDBInfo = getVectorDB @ dbName;
         If[ MatchQ[ vectorDBInfo, $$skippedVectorDB ], Throw @ { } ];
         vectorDBInfo = ConfirmBy[ vectorDBInfo, AssociationQ, "VectorDB" ];
-        ConfirmBy[ vectorDBInfo[ "Values" ], ListQ, "Values" ]
+        ConfirmBy[ vectorDBValuesList @ vectorDBInfo[ "Values" ], ListQ, "Values" ]
     ],
     throwInternalFailure
 ];
