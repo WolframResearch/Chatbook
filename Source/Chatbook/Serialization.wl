@@ -2099,14 +2099,14 @@ boxToString[ SqrtBox[ a_, OptionsPattern[ ] ] ] :=
 
 (* Fraction *)
 boxToString[ FractionBox[ a_, b_, OptionsPattern[ ] ] ] :=
-    (needsBasePrompt[ "Math" ]; "(" <> fractionTermString @ a <> "/" <> fractionTermString @ b <> ")");
+    (needsBasePrompt[ "Math" ]; "(" <> operandString @ a <> "/" <> operandString @ b <> ")");
 
 (* RadicalBox *)
 boxToString[ RadicalBox[ a_, b_, ___, SurdForm -> True, ___ ] ] :=
     (needsBasePrompt[ "Math" ]; "Surd[" <> boxToString @ a <> ", " <> boxToString @ b <> "]");
 
 boxToString[ RadicalBox[ a_, b_, OptionsPattern[ ] ] ] :=
-    (needsBasePrompt[ "Math" ]; boxToString @ a <> "^(1/(" <> boxToString @ b <> "))");
+    (needsBasePrompt[ "Math" ]; powerBaseString @ a <> "^(1/(" <> boxToString @ b <> "))");
 
 (* Piecewise *)
 boxToString[ box: TagBox[ _, "Piecewise", ___ ] ] :=
@@ -2136,13 +2136,13 @@ boxToString[ TemplateBox[ { n_ }, "C", ___ ] ] := "C[" <> boxToString @ n <> "]"
 
 (* Typesetting *)
 boxToString[ SubscriptBox[ a_, b_, OptionsPattern[ ] ] ] :=
-    If[ TrueQ @ $inlineCode,
+    If[ concatenateScriptsQ[ a, b ],
         StringJoin[ boxToString @ a, boxToString @ b ],
         "Subscript[" <> boxToString @ a <> ", " <> boxToString @ b <> "]"
     ];
 
 boxToString[ SubsuperscriptBox[ a_, b_, c_, OptionsPattern[ ] ] ] :=
-    If[ TrueQ @ $inlineCode,
+    If[ concatenateScriptsQ[ a, b, c ],
         boxToString @ a <> boxToString @ b <> boxToString @ c,
         StringJoin[
             "Subsuperscript[",
@@ -2177,8 +2177,8 @@ boxToString[ box_RadicalBox ] :=
 (* Other *)
 boxToString[ (box: $boxOperators)[ a_, b_, OptionsPattern[ ] ] ] :=
     Module[ { a$, b$ },
-        a$ = boxToString @ a;
-        b$ = boxToString @ b;
+        a$ = powerBaseString @ a;
+        b$ = operandString @ b;
         If[ StringQ @ a$ && StringQ @ b$,
             a$ <> $boxOp @ box <> b$,
             { a$, b$ }
@@ -2187,18 +2187,74 @@ boxToString[ (box: $boxOperators)[ a_, b_, OptionsPattern[ ] ] ] :=
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsubsection::Closed:: *)
-(*fractionTermString*)
-fractionTermString // beginDefinition;
+(*operandString*)
 
-(* Boxes that serialize as a single term can be used as a numerator or denominator as-is. Scripts with compound parts
-   are an exception, since their own definitions don't group those parts yet (e.g. x^a + b): *)
-fractionTermString[ box: _String | _FractionBox | _SqrtBox | _SubscriptBox | _SuperscriptBox ] := boxToString @ box;
-fractionTermString[ box: RowBox @ { "(", _, ")" } | RowBox @ { _, "[", _, "]" } ] := boxToString @ box;
+(* Strings are assumed to be a single token, since typesetting splits anything else into a RowBox: *)
+$$singleTermBox = Alternatives[
+    _String,
+    _FractionBox,
+    _SqrtBox,
+    _SubscriptBox,
+    _SuperscriptBox,
+    RowBox @ { "(", _, ")" },
+    RowBox @ { _, "[", _, "]" }
+];
 
-(* Anything else might serialize with a lower precedence operator than division: *)
-fractionTermString[ box_ ] := "(" <> boxToString @ box <> ")";
+operandString // beginDefinition;
 
-fractionTermString // endDefinition;
+(* Anything other than a single term might serialize with a lower precedence operator than the one it's used with: *)
+operandString[ box_ ] := operandString[ box, $$singleTermBox ];
+
+operandString[ box_, singleTerm_ ] :=
+    If[ MatchQ[ stripBoxWrappers @ box, singleTerm ],
+        boxToString @ box,
+        "(" <> boxToString @ box <> ")"
+    ];
+
+operandString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*powerBaseString*)
+powerBaseString // beginDefinition;
+
+(* Powers are right associative, so a power is the one single term that can't be the base of another power as-is: *)
+powerBaseString[ box_ ] := operandString[ box, Except[ _SuperscriptBox, $$singleTermBox ] ];
+
+powerBaseString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*concatenateScriptsQ*)
+concatenateScriptsQ // beginDefinition;
+
+(* Inline code writes scripts as plain text (e.g. x1 or f1n), which is only unambiguous if no part has an operator: *)
+concatenateScriptsQ[ boxes__ ] := TrueQ @ $inlineCode && AllTrue[ { boxes }, plainScriptPartQ ];
+
+concatenateScriptsQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*plainScriptPartQ*)
+plainScriptPartQ // beginDefinition;
+
+plainScriptPartQ[ box_ ] := MatchQ[
+    Replace[ stripBoxWrappers @ box, RowBox[ parts_List ] :> RowBox[ stripBoxWrappers /@ parts ] ],
+    _String | RowBox @ { _String? (StringMatchQ[ WordCharacter.. ]).. }
+];
+
+plainScriptPartQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*stripBoxWrappers*)
+stripBoxWrappers // beginDefinition;
+
+(* These only change how their contents are displayed, and are common in documentation: *)
+stripBoxWrappers[ (StyleBox|TagBox)[ box_, ___ ] ] := stripBoxWrappers @ box;
+stripBoxWrappers[ box_ ] := box;
+
+stripBoxWrappers // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
