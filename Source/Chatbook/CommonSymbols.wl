@@ -402,6 +402,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `snippetRootURI;
 `standardizeMessageKeys;
 `standardizeModelData;
+`startLLMKitInfoRequest;
 `stopTokensSupportedQ;
 `stringToBoxes;
 `stringTrimMiddle;
