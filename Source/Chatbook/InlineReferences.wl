@@ -28,7 +28,7 @@ Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
 
 $argumentDivider = "|";
 
-$frameStyle     = Directive[ AbsoluteThickness[ 1 ], RGBColor[ "#a3c9f2" ] ];
+$frameStyle     = Directive[ AbsoluteThickness[ 1 ], LightDarkSwitched[ RGBColor[ "#a3c9f2" ], RGBColor[ "#5F88B8" ] ] ];
 $frameBaseStyle = { "NotebookAssistant`InlineReferenceText", FontSize -> 0.95*Inherited };
 
 $frameOptions = Sequence[
@@ -435,8 +435,8 @@ staticModifierBox // beginDefinition;
 staticModifierBox[ args_List ] := Button[
     MouseAppearance[
         Mouseover[
-            staticModifierBoxLabel[ args, RGBColor[ "#f1f8ff" ] ],
-            staticModifierBoxLabel[ args, RGBColor[ "#ffffff" ] ]
+            staticModifierBoxLabel[ args, color @ "Blue_F1F8FF_474747" ],
+            staticModifierBoxLabel[ args, color @ "Gray100_31" ]
         ],
         "LinkHand"
     ],
@@ -462,7 +462,7 @@ staticModifierBoxLabel[ { name_, args___ }, background_ ] :=
                     }
                 },
                 Dividers   -> { { False, { True }, False }, False },
-                FrameStyle -> RGBColor[ "#a3c9f2" ],
+                FrameStyle -> LightDarkSwitched[ RGBColor[ "#a3c9f2" ], RGBColor[ "#5F88B8" ] ],
                 Spacings   -> 0.5,
                 Alignment  -> { Automatic, Baseline }
             ],
@@ -736,8 +736,8 @@ staticFunctionBox[ { name_String } ] := staticFunctionBox[ { name, ">" } ];
 staticFunctionBox[ args_List ] := Button[
     MouseAppearance[
         Mouseover[
-            staticFunctionBoxLabel[ args, RGBColor[ "#f1f8ff" ] ],
-            staticFunctionBoxLabel[ args, RGBColor[ "#ffffff" ] ]
+            staticFunctionBoxLabel[ args, color @ "Blue_F1F8FF_474747" ],
+            staticFunctionBoxLabel[ args, color @ "Gray100_31" ]
         ],
         "LinkHand"
     ],
@@ -780,7 +780,7 @@ staticFunctionBoxLabel[ { name_, args___ }, background_ ] :=
                     }
                 },
                 Dividers   -> { { False, { True }, False }, False },
-                FrameStyle -> RGBColor[ "#a3c9f2" ],
+                FrameStyle -> LightDarkSwitched[ RGBColor[ "#a3c9f2" ], RGBColor[ "#5F88B8" ] ],
                 Spacings   -> 0.5,
                 Alignment  -> { Automatic, Baseline }
             ],
@@ -801,7 +801,7 @@ styleFunctionArgument[ "^" ] := RawBoxes @ TemplateBox[ { }, "InlineReferenceIco
 styleFunctionArgument[ "^^" ] := RawBoxes @ TemplateBox[ { }, "InlineReferenceIconHistory" ];
 
 styleFunctionArgument[ $argumentDivider ] :=
-    Style[ " " <> $argumentDivider <> " ", FontColor -> GrayLevel[ 0.6 ], FontWeight -> "DemiBold" ];
+    Style[ " " <> $argumentDivider <> " ", FontColor -> color @ "Gray60_68", FontWeight -> "DemiBold" ];
 
 styleFunctionArgument[ argument_ ] := Style[ argument, FontSize -> 0.9*Inherited ];
 
@@ -957,8 +957,8 @@ staticTrailingFunctionBox // beginDefinition;
 staticTrailingFunctionBox[ args_List ] := Button[
     MouseAppearance[
         Mouseover[
-            staticTrailingFunctionBoxLabel[ args, RGBColor[ "#f1f8ff" ] ],
-            staticTrailingFunctionBoxLabel[ args, RGBColor[ "#ffffff" ] ]
+            staticTrailingFunctionBoxLabel[ args, color @ "Blue_F1F8FF_474747" ],
+            staticTrailingFunctionBoxLabel[ args, color @ "Gray100_31" ]
         ],
         "LinkHand"
     ],
@@ -975,13 +975,13 @@ staticTrailingFunctionBoxLabel // beginDefinition;
 staticTrailingFunctionBoxLabel[ { name_, args___ }, background_ ] := Style[
     Framed[
         Row @ Flatten @ {
-            Style[ "> ", FontColor -> GrayLevel[ 0.6 ], FontWeight -> Bold ],
+            Style[ "> ", FontColor -> color @ "Gray60_68", FontWeight -> Bold ],
             Riffle[
                 Flatten @ {
                     Style[ name, "StandardForm", "Input" ],
                     Style[ #, FontSize -> 0.9 * Inherited ] & /@ { args }
                 },
-                Style[ "\[ThinSpace]:\[ThinSpace]", FontColor -> GrayLevel[ 0.6 ], FontWeight -> "DemiBold" ]
+                Style[ "\[ThinSpace]:\[ThinSpace]", FontColor -> color @ "Gray60_68", FontWeight -> "DemiBold" ]
             ]
         },
         Background -> background,
@@ -1222,8 +1222,8 @@ staticPersonaBox // beginDefinition;
 staticPersonaBox[ name_String ] := Button[
     MouseAppearance[
         Mouseover[
-            staticPersonaBoxLabel[ name, RGBColor[ "#f1f8ff" ] ],
-            staticPersonaBoxLabel[ name, RGBColor[ "#ffffff" ] ]
+            staticPersonaBoxLabel[ name, color @ "Blue_F1F8FF_474747" ],
+            staticPersonaBoxLabel[ name, color @ "Gray100_31" ]
         ],
         "LinkHand"
     ],
@@ -1392,7 +1392,7 @@ personaTemplateBoxes[version: 1, input_, state_, uuid_, opts: OptionsPattern[]] 
 					BaselinePosition -> {1,2}
 				],
 				BaselinePosition -> Baseline,
-				FrameStyle -> RGBColor[0.227, 0.553, 0.694],
+				FrameStyle -> LightDarkSwitched[ RGBColor[0.227, 0.553, 0.694], RGBColor[ "#5FBDE3" ] ],
 				ImageMargins -> {{1,1},{0,0}},
 				$frameOptions
 			],
@@ -1417,8 +1417,8 @@ personaTemplateBoxes[version: 1, input_, state_, uuid_, opts: OptionsPattern[]] 
 				FrameMargins -> 2,
 				ImageMargins -> {{1,1},{0,0}}]&,
 			{
-				{RGBColor[0.824, 0.918, 0.961], RGBColor[0.925, 0.976, 1.000], RGBColor[0.765, 0.878, 0.925]},
-				{RGBColor[0.227, 0.553, 0.694], RGBColor[0.455, 0.737, 0.863], RGBColor[0.196, 0.510, 0.647]}
+				{LightDarkSwitched[ RGBColor[0.824, 0.918, 0.961], RGBColor[ "#496372" ] ], LightDarkSwitched[ RGBColor[0.925, 0.976, 1.000], RGBColor[ "#577181" ] ], LightDarkSwitched[ RGBColor[0.765, 0.878, 0.925], RGBColor[ "#405A68" ] ]},
+				{LightDarkSwitched[ RGBColor[0.227, 0.553, 0.694], RGBColor[ "#5FBDE3" ] ], LightDarkSwitched[ RGBColor[0.455, 0.737, 0.863], RGBColor[ "#93EFFF" ] ], LightDarkSwitched[ RGBColor[0.196, 0.510, 0.647], RGBColor[ "#52B2D7" ] ]}
 			}
 		],
 		setPersonaState[state, "Input", input]
@@ -1579,7 +1579,7 @@ modifierTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsP
 					BaselinePosition -> {1,2}
 				],
 				BaselinePosition -> Baseline,
-				FrameStyle -> RGBColor[0.529, 0.776, 0.424],
+				FrameStyle -> LightDarkSwitched[ RGBColor[0.529, 0.776, 0.424], RGBColor[ "#6EA357" ] ],
 				ImageMargins -> {{1,1},{0,0}},
 				$frameOptions
 			],
@@ -1616,8 +1616,8 @@ modifierTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsP
 				FrameMargins -> 2,
 				ImageMargins -> {{1,1},{0,0}}]&,
 			{
-				{RGBColor[0.894, 0.965, 0.847], RGBColor[0.961, 1.000, 0.937], RGBColor[0.796, 0.925, 0.733]},
-				{RGBColor[0.529, 0.776, 0.424], RGBColor[0.647, 0.886, 0.545], RGBColor[0.408, 0.671, 0.294]}
+				{LightDarkSwitched[ RGBColor[0.894, 0.965, 0.847], RGBColor[ "#485C3C" ] ], LightDarkSwitched[ RGBColor[0.961, 1.000, 0.937], RGBColor[ "#516645" ] ], LightDarkSwitched[ RGBColor[0.796, 0.925, 0.733], RGBColor[ "#3D5031" ] ]},
+				{LightDarkSwitched[ RGBColor[0.529, 0.776, 0.424], RGBColor[ "#6EA357" ] ], LightDarkSwitched[ RGBColor[0.647, 0.886, 0.545], RGBColor[ "#89BF71" ] ], LightDarkSwitched[ RGBColor[0.408, 0.671, 0.294], RGBColor[ "#54883E" ] ]}
 			}
 		],
 		setModifierState[state, "Input", input, params]
@@ -1794,7 +1794,7 @@ functionTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsP
 					BaselinePosition -> {1,2}
 				],
 				BaselinePosition -> Baseline,
-				FrameStyle -> RGBColor[1.000, 0.608, 0.255],
+				FrameStyle -> LightDarkSwitched[ RGBColor[1.000, 0.608, 0.255], RGBColor[ "#CB8135" ] ],
 				ImageMargins -> {{1,1},{0,0}},
 				$frameOptions
 			],
@@ -1837,8 +1837,8 @@ functionTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsP
 				FrameMargins -> 2,
 				ImageMargins -> {{1,1},{0,0}}]&,
 			{
-				{RGBColor[0.988, 0.910, 0.839], RGBColor[1., 0.957, 0.914], RGBColor[0.969, 0.831, 0.718]},
-				{RGBColor[1.000, 0.608, 0.255], RGBColor[1., 0.765, 0.553], RGBColor[0.914, 0.522, 0.169]}
+				{LightDarkSwitched[ RGBColor[0.988, 0.910, 0.839], RGBColor[ "#66542F" ] ], LightDarkSwitched[ RGBColor[1., 0.957, 0.914], RGBColor[ "#6F5D37" ] ], LightDarkSwitched[ RGBColor[0.969, 0.831, 0.718], RGBColor[ "#574622" ] ]},
+				{LightDarkSwitched[ RGBColor[1.000, 0.608, 0.255], RGBColor[ "#CB8135" ] ], LightDarkSwitched[ RGBColor[1., 0.765, 0.553], RGBColor[ "#E99B4E" ] ], LightDarkSwitched[ RGBColor[0.914, 0.522, 0.169], RGBColor[ "#B46D21" ] ]}
 			}
 		],
 		setFunctionState[state, "Input", input, params]
@@ -1987,7 +1987,7 @@ wlTemplateBoxes[version: 1, input_, state_, uuid_, opts: OptionsPattern[]] /; st
 					BaselinePosition -> { 1, 2 }
 				],
 				BaselinePosition -> Baseline,
-				FrameStyle       -> GrayLevel[0.9],
+				FrameStyle       -> color @ "Gray90_36",
 				ImageMargins     -> {{1,1},{0,0}},
 				$frameOptions
 			],
@@ -2031,8 +2031,8 @@ wlTemplateBoxes[ version: 1, input_, state_, uuid_, opts: OptionsPattern[ ] ] /;
                 ImageMargins     -> { { 1, 1 }, { 0, 0 } }
             ] &,
             {
-                { GrayLevel[ 0.95 ], GrayLevel[ 0.975 ], GrayLevel[ 1.0 ] },
-                { GrayLevel[ 0.90 ], GrayLevel[ 0.800 ], GrayLevel[ 0.9 ] }
+                { LightDarkSwitched[ GrayLevel[ 0.95 ], RGBColor[ "#4E4E4E" ] ], LightDarkSwitched[ GrayLevel[ 0.975 ], RGBColor[ "#535353" ] ], LightDarkSwitched[ GrayLevel[ 1.0 ], RGBColor[ "#585858" ] ] },
+                { color @ "Gray90_36", color @ "Gray80_47", color @ "Gray90_36" }
             }
         ],
         setWLState[ state, "Input", input ]
