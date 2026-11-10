@@ -375,13 +375,13 @@ VerificationTest[
     withMockTitles @ Module[ { uuid, title },
         uuid = CreateUUID[ ];
         (* Too long for the first attempt (MaxLength 50), but not for the retry (MaxLength 60): *)
-        title = "Comparing Interpolation Methods for Irregularly Scattered Measurement Data";
+        title = "Comparing Interpolation Methods for Scattered Measurements";
         SaveChat[ titleTestMessages[ 1 ], titleTestSettings @ uuid, "AutoSaveOnly" -> True ];
         respondTitle[ 1, title ];
         respondTitle[ 2, title ];
         { Length @ $mockTitleCallbacks, savedTitleState @ uuid }
     ],
-    { 2, expectedTitleState[ "Comparing Interpolation Methods for Irregularly Scattered Measurement Data", 2 ] },
+    { 2, expectedTitleState[ "Comparing Interpolation Methods for Scattered Measurements", 2 ] },
     SameTest -> MatchQ,
     TestID   -> "AutoSave-RetryMaxLength@@Tests/SaveChat.wlt:374,1-387,2"
 ]
