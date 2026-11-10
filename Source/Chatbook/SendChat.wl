@@ -1192,7 +1192,10 @@ chatSubmitFunction // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*initializeChatSubmit*)
-(* Loads what the first request of a session needs from LLMServices (about 0.08 s) ahead of time. Nothing is sent. *)
+(* LLMServiceInformation[ f, service ] evaluates f::llmunkser on every call (LLMServices uses Rule, not RuleDelayed, for
+   the message template), and the kernel's first lookup of that undefined message name takes about 0.04 s. Calling it
+   here moves that one-time cost out of the first request. Only the submit function matters, not the service. Nothing
+   is sent. This can be removed once LLMServices no longer evaluates the message name eagerly. *)
 initializeChatSubmit // beginDefinition;
 
 initializeChatSubmit[ settings: KeyValuePattern[ "Model" -> KeyValuePattern[ "Service" -> service_String ] ] ] := (
