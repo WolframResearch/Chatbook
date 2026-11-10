@@ -2950,7 +2950,6 @@ initializeWorkspaceChat[ ] := LogChatTiming[
         (* Requested first, so that the response arrives while the next steps are running: *)
         initializationStep[ startLLMKitInfoRequest[ ], "StartLLMKitInfoRequest" ];
         initializationStep[ getEmbeddings[ { "Hello" } ], "InitializeEmbeddings" ];
-        initializationStep[ cachedTokenizer[ "gpt-4o-text" ], "InitializeTokenizer" ];
         initializationStep[ $llmKitService, "InitializeLLMKitService" ];
         settings = initializationStep[ initializeWorkspaceChatSettings[ ], "InitializeSettings" ];
         initializationStep[ initializeChatSubmit @ settings, "InitializeChatSubmit" ];
