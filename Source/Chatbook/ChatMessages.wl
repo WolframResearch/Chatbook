@@ -2201,7 +2201,7 @@ $estimateTokenCounts = True;
     documentation snippets, notebook expressions, JSON, numbers, base64, and prose in several languages. Compared to
     the gpt-4o count, it is about 1.1-1.3 times as high for English text and code, 1.4-1.8 times for German, French,
     Spanish, Chinese, Japanese and Korean, and 4.5-6 times for Greek, Cyrillic and Arabic text (for which the claude
-    tokenizer gives about four times as many tokens as gpt-4o). Short strings are also overcounted more. A single
+    tokenizer gives three to five times as many tokens as gpt-4o). Short strings are also overcounted more. A single
     English text or piece of code of a few thousand characters is rarely below the gpt-4o count, and then by at most
     about 12%. Long runs of lowercase letters that aren't words (e.g. DNA sequences) are an exception: they can be
     counted two to three times too low. It takes about 0.4 microseconds per character.
