@@ -1724,8 +1724,9 @@ initializeVectorDatabases[ ] :=
     initializeVectorDatabases @ $vectorDBNames;
 
 (* Loads the given vector databases and searches each one once, so that the first real search does not have to wait
-   for them. This never starts a download: if the databases are not installed yet, the first real search downloads them
-   as usual. *)
+   for them. The search is the one that real searches use (vectorDatabaseSearch), so it also creates the index handle of
+   each database and checks it against VectorDatabaseSearch. This never starts a download: if the databases are not
+   installed yet, the first real search downloads them as usual. *)
 initializeVectorDatabases[ names: $$dbNames ] := Enclose[
     Block[ { $allowDownload = False },
         Catch[
@@ -1752,12 +1753,7 @@ initializeVectorDatabase[ name_String, vector_NumericArray ] := Enclose[
         If[ MatchQ[ info, $$skippedVectorDB ], Throw @ info ];
         vectorDB = ConfirmMatch[ info[ "VectorDatabaseObject" ], $$vectorDatabase, "VectorDatabase" ];
         ConfirmMatch[
-            inVectorDBDirectory @ VectorDatabaseSearch[
-                vectorDB,
-                vector,
-                { "Index", "Distance" },
-                MaxItems -> $maxNeighbors
-            ],
+            vectorDatabaseSearch[ name, vectorDB, vector, $maxNeighbors ],
             { ___Association },
             "Search"
         ];
