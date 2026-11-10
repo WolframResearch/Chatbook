@@ -2947,9 +2947,12 @@ initializeWorkspaceChat // beginDefinition;
 
 initializeWorkspaceChat[ ] := LogChatTiming[
     Module[ { settings },
+        (* Requested first, so that the response arrives while the next steps are running: *)
+        initializationStep[ startLLMKitInfoRequest[ ], "StartLLMKitInfoRequest" ];
         initializationStep[ getEmbeddings[ { "Hello" } ], "InitializeEmbeddings" ];
         initializationStep[ $llmKitService, "InitializeLLMKitService" ];
         settings = initializationStep[ initializeWorkspaceChatSettings[ ], "InitializeSettings" ];
+        initializationStep[ initializeChatSubmit @ settings, "InitializeChatSubmit" ];
         initializationStep[ initializeRelatedDocumentation @ settings, "InitializeRelatedDocumentation" ];
         $workspaceChatInitialized = True
     ],
