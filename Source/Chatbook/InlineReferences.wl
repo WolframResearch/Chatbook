@@ -457,7 +457,7 @@ staticModifierBoxLabel[ { name_, args___ }, background_ ] :=
             Grid[
                 {
                     Flatten @ {
-                        Row @ { RawBoxes @ TemplateBox[ { }, "InlineReferenceIconHash" ], name },
+                        Row @ { chatbookIcon @ "InlineReferenceIconHash", name },
                         styleFunctionArgument /@ { args }
                     }
                 },
@@ -796,9 +796,9 @@ staticFunctionBoxLabel // endDefinition;
 
 styleFunctionArgument // beginDefinition;
 
-styleFunctionArgument[ ">" ] := RawBoxes @ TemplateBox[ { }, "InlineReferenceIconRight" ];
-styleFunctionArgument[ "^" ] := RawBoxes @ TemplateBox[ { }, "InlineReferenceIconPrevious" ];
-styleFunctionArgument[ "^^" ] := RawBoxes @ TemplateBox[ { }, "InlineReferenceIconHistory" ];
+styleFunctionArgument[ ">" ] := chatbookIcon @ "InlineReferenceIconRight";
+styleFunctionArgument[ "^" ] := chatbookIcon @ "InlineReferenceIconPrevious";
+styleFunctionArgument[ "^^" ] := chatbookIcon @ "InlineReferenceIconHistory";
 
 styleFunctionArgument[ $argumentDivider ] :=
     Style[ " " <> $argumentDivider <> " ", FontColor -> color @ "Gray60_68", FontWeight -> "DemiBold" ];
@@ -1240,7 +1240,7 @@ staticPersonaBoxLabel // beginDefinition;
 
 staticPersonaBoxLabel[ name_String, background_ ] := Style[
     Framed[
-        Row @ { RawBoxes @ TemplateBox[ { }, "InlineReferenceIconAt" ], name },
+        Row @ { chatbookIcon @ "InlineReferenceIconAt", name },
         Background -> background,
         $frameOptions
     ],
@@ -1368,7 +1368,7 @@ personaTemplateBoxes[version: 1, input_, state_, uuid_, opts: OptionsPattern[]] 
 				Grid[
 					{
 						{
-							RawBoxes[TemplateBox[{}, "InlineReferenceIconAt"]],
+							chatbookIcon @ "InlineReferenceIconAt",
 							InputField[
 								Dynamic @ input,
 								String,
@@ -1409,7 +1409,7 @@ personaTemplateBoxes[version: 1, input_, state_, uuid_, opts: OptionsPattern[]] 
 	Button[
 		NotebookTools`Mousedown @@ MapThread[
 			Framed[
-				Row[{RawBoxes[TemplateBox[{}, "InlineReferenceIconAt"]], input}],
+				Row[{chatbookIcon @ "InlineReferenceIconAt", input}],
 				BaselinePosition -> Baseline,
 				RoundingRadius -> 2,
 				Background -> #1,
@@ -1552,7 +1552,7 @@ modifierTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsP
 				Grid[
 					{
 						{
-							RawBoxes[TemplateBox[{}, "InlineReferenceIconHash"]],
+							chatbookIcon @ "InlineReferenceIconHash",
 							InputField[
 								Dynamic[
 									toModifierString[input, params],
@@ -1599,7 +1599,7 @@ modifierTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsP
 		NotebookTools`Mousedown @@ MapThread[
 			Framed[
 				Grid[{{
-					Row[{RawBoxes[TemplateBox[{}, "InlineReferenceIconHash"]], input}],
+					Row[{chatbookIcon @ "InlineReferenceIconHash", input}],
 					Map[
 						Style[#, FontSize -> Inherited * 0.9]&,
 						Replace[params, Except[_List] :> {}]
@@ -1767,7 +1767,7 @@ functionTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsP
 				Grid[
 					{
 						{
-							RawBoxes[TemplateBox[{}, "InlineReferenceIconBang"]],
+							chatbookIcon @ "InlineReferenceIconBang",
 							InputField[
 								Dynamic[
 									toFunctionString[input, params],
@@ -1814,7 +1814,7 @@ functionTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsP
 		NotebookTools`Mousedown @@ MapThread[
 			Framed[
 				Grid[{{
-					Row[{RawBoxes[TemplateBox[{}, "InlineReferenceIconBang"]], input}],
+					Row[{chatbookIcon @ "InlineReferenceIconBang", input}],
 					Replace[
 						Replace[params, Except[_List] :> {}],
 						{
@@ -1959,7 +1959,7 @@ wlTemplateBoxes[version: 1, input_, state_, uuid_, opts: OptionsPattern[]] /; st
 				Grid[
 					{
 						{
-							RawBoxes[TemplateBox[{}, "AssistantEvaluate"]],
+							chatbookIcon @ "AssistantEvaluate",
 							InputField[
 								Dynamic[ input ],
 								Boxes,
@@ -2008,7 +2008,7 @@ wlTemplateBoxes[ version: 1, input_, state_, uuid_, opts: OptionsPattern[ ] ] /;
                 Grid[
                     {
                         {
-                            RawBoxes @ TemplateBox[ { }, "AssistantEvaluate" ],
+                            chatbookIcon @ "AssistantEvaluate",
                             Style[
                                 RawBoxes @ input,
                                 "Input",
