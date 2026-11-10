@@ -336,3 +336,43 @@ When `$useLLMServices` is `True` (the primary/modern code path), this setting is
 ### Preferences UI
 
 Conditionally exposed in the preferences UI (`PreferencesContent.wl`): the `makeOpenAICompletionURLInput` function returns `Nothing` when `$useLLMServices` is `True` (hiding the control entirely) and renders a string input field in the "Notebooks" tab when `$useLLMServices` is `False`.
+
+## `"PreloadNotebookAssistant"`
+
+**Experimental.** Whether to initialize the notebook assistant in the background after the kernel starts, instead of when the assistant is opened.
+
+### Usage
+
+Off unless set to `True` at `$FrontEnd` scope, which persists across sessions:
+
+```wl
+CurrentChatSettings[ $FrontEnd, "PreloadNotebookAssistant" ] = True   (* turn on *)
+CurrentChatSettings[ $FrontEnd, "PreloadNotebookAssistant" ] =.       (* turn off *)
+```
+
+The setting is read once per kernel session, a few seconds after Chatbook is loaded, so a change takes effect in the next session. It is not read from notebooks, cells or personas, and it is not in `$defaultChatSettings`.
+
+### Behavior
+
+Chat initialization (`initializeWorkspaceChat` in `ChatModes/UI.wl`) loads the embedding model, the vector databases, the LLM Kit connection and the other things that the first chat needs. It normally starts when the notebook assistant window or sidebar is opened, and a chat that is sent before it has finished waits for it, which takes several seconds in a new kernel.
+
+With this setting, `scheduleChatPreload` (called when Chatbook is loaded) runs the same work ahead of time, as the steps of `$chatPreloadSteps`:
+
+- Each step is evaluated by a scheduled task, with a short pause between steps.
+- A step only runs while the kernel is idle (`kernelIdleQ`). A scheduled task can fire inside another evaluation, so a step is postponed when it does.
+- While a step runs (up to about 3 seconds for the longest one), evaluations and dynamic updates wait for it.
+- If the notebook assistant is opened before the steps are done, it runs the rest of the initialization itself, and the remaining steps are skipped.
+- Nothing is done in the cloud, in kernels without a front end, or in the kernels that Chatbook starts for evaluating code.
+
+It is opt-in because every session then spends several seconds of kernel time and a few hundred MB of memory on it, also sessions that never use the notebook assistant.
+
+### Integration Points
+
+- **Dependencies**: None in `$autoSettingKeyDependencies`.
+- **Model-specific overrides**: None in `$modelAutoSettings`.
+- **LLM passthrough**: Not in `$llmConfigPassedKeys`.
+- Timing entries for the steps are logged with the tags `"ChatPreload:<step>"` (see `$ChatTimingData`).
+
+### Preferences UI
+
+Not exposed.

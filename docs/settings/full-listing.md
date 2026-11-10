@@ -190,6 +190,7 @@ See additional details in [Storage & Conversations Settings](setting-groups/stor
 | `"ProcessingFunctions"` | `$DefaultChatProcessingFunctions` | Callback functions that control the chat processing pipeline (cell conversion, message post-processing, chat submission, output formatting, and cell writing). |
 | `"ConversionRules"` | `None` | Custom transformation rules applied to notebook cells before serialization to chat message strings. |
 | `"ExperimentalFeatures"` | `Automatic` | List of enabled experimental feature names, resolved dynamically from other settings. |
+| `"PreloadNotebookAssistant"` | `False` | **Experimental.** Whether to initialize the notebook assistant in the background after the kernel starts, instead of when it is opened. Only read at `$FrontEnd` scope. |
 | `"OpenAIKey"` | `Automatic` | **Deprecated.** OpenAI API key for the legacy (non-LLMServices) HTTP request path. |
 | `"OpenAIAPICompletionURL"` | `"https://api.openai.com/v1/chat/completions"` | **Deprecated.** OpenAI API completion endpoint URL for the legacy (non-LLMServices) HTTP request path. |
 

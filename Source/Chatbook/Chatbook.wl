@@ -48,3 +48,6 @@ Wolfram`Chatbook`Common`updateDynamics[ All ];
 
 (* Set the paclet object for this paclet, ensuring that it corresponds to the one that's actually loaded: *)
 Wolfram`Chatbook`Common`$thisPaclet = PacletObject @ File @ DirectoryName[ $InputFileName, 3 ];
+
+(* Experimental and off by default: initialize the notebook assistant ahead of time, while the kernel is idle: *)
+Wolfram`Chatbook`Common`scheduleChatPreload[ ];

@@ -381,6 +381,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `sandboxEvaluate;
 `sandboxFormatter;
 `savedChatQ;
+`scheduleChatPreload;
 `scrollOutputQ;
 `selectByCurrentValue;
 `selectionEvaluateCreateCell;

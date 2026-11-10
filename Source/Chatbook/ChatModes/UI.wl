@@ -3026,6 +3026,120 @@ initializeWorkspaceChatSettings // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*Preloading (experimental)*)
+(*
+    Chat initialization normally starts when the notebook assistant is opened, and a chat that is sent before it has
+    finished waits for it (several seconds in a new kernel). With `"PreloadNotebookAssistant" -> True` at $FrontEnd
+    scope (off by default), it is done ahead of time instead: a few seconds after Chatbook is loaded, the steps of
+    $chatPreloadSteps are evaluated one at a time by scheduled tasks.
+
+    A step only runs while the kernel is idle. A scheduled task can fire inside another evaluation, where loading
+    packages could interfere with it, so the step is postponed then. While a step runs (up to about 3 s for the
+    longest one), evaluations and dynamic updates wait for it, like for any other evaluation.
+
+    NOTE: this costs memory (a few hundred MB) and several seconds of kernel time in every session, also in the ones
+    that never use the notebook assistant, which is why it's opt-in.
+*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*scheduleChatPreload*)
+scheduleChatPreload // beginDefinition;
+
+(* Called when Chatbook is loaded. This only schedules a task: the first step checks whether there is a front end and
+   reads the setting, since the kernel may not be connected to the front end yet while it starts. *)
+scheduleChatPreload[ ] :=
+    If[ chatPreloadPossibleQ[ ],
+        $chatPreloadEnabled = None;
+        $chatPreloadStep    = 1;
+        scheduleChatPreloadStep @ $chatPreloadInitialDelay;
+    ];
+
+scheduleChatPreload // endDefinition;
+
+$chatPreloadInitialDelay = 3;
+$chatPreloadStepDelay    = 0.25;
+$chatPreloadRetryDelay   = 2;
+$chatPreloadEnabled      = None;
+$chatPreloadStep         = 1;
+$chatPreloadTask         = None;
+
+(* Not in the cloud, or in the kernels that Chatbook starts for evaluating code: *)
+chatPreloadPossibleQ // beginDefinition;
+
+chatPreloadPossibleQ[ ] := TrueQ @ And[
+    ! $CloudEvaluation,
+    ! TrueQ @ $mxFlag,
+    ! TrueQ @ $workspaceChatInitialized,
+    ! StringContainsQ[ ToString @ $CommandLine, "ChatbookSandbox" ]
+];
+
+chatPreloadPossibleQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*scheduleChatPreloadStep*)
+scheduleChatPreloadStep // beginDefinition;
+
+scheduleChatPreloadStep[ seconds_ ] :=
+    $chatPreloadTask = Quiet @ SessionSubmit @ ScheduledTask[ Quiet @ catchAlways @ chatPreloadStep[ ], { seconds } ];
+
+scheduleChatPreloadStep // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatPreloadStep*)
+chatPreloadStep // beginDefinition;
+
+chatPreloadStep[ ] := Which[
+    (* The notebook assistant was opened in the meantime, which runs the whole initialization: *)
+    TrueQ @ $workspaceChatInitialized,
+        Null,
+    (* A kernel without a front end (e.g. a script): *)
+    ! TrueQ @ $Notebooks,
+        Null,
+    (* This task fired inside another evaluation: *)
+    ! kernelIdleQ[ ],
+        scheduleChatPreloadStep @ $chatPreloadRetryDelay,
+    $chatPreloadEnabled === None,
+        $chatPreloadEnabled = TrueQ @ CurrentChatSettings[ $FrontEnd, "PreloadNotebookAssistant" ];
+        If[ $chatPreloadEnabled, scheduleChatPreloadStep @ $chatPreloadStepDelay ],
+    TrueQ @ $chatPreloadEnabled && $chatPreloadStep <= Length @ $chatPreloadSteps,
+        With[ { step = $chatPreloadSteps[[ $chatPreloadStep++ ]] },
+            LogChatTiming[ Quiet @ catchAlways @ ReleaseHold @ Last @ step, "ChatPreload:" <> First @ step ]
+        ];
+        If[ $chatPreloadStep <= Length @ $chatPreloadSteps, scheduleChatPreloadStep @ $chatPreloadStepDelay ]
+];
+
+chatPreloadStep // endDefinition;
+
+(* The parts of initializeWorkspaceChat that take the longest, so that the kernel is not busy for all of them at once.
+   The last step is initializeWorkspaceChat itself, which then only has to do what is left and marks chat as
+   initialized. Steps that fail are tried again by the first chat, like in initializeWorkspaceChat. *)
+$chatPreloadSteps = {
+    "SemanticSearch"       -> Hold @ Needs[ "SemanticSearch`" -> None ],
+    "Embeddings"           -> Hold @ getEmbeddings @ { "Hello" },
+    "LLMKitService"        -> Hold @ $llmKitService,
+    "RelatedDocumentation" -> Hold @ initializeRelatedDocumentation @ None,
+    "InitializeChat"       -> Hold @ initializeWorkspaceChat[ ]
+};
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*kernelIdleQ*)
+(* Whether the scheduled task that evaluates this is the outermost evaluation, i.e. it did not fire at a preemption
+   point of a main loop evaluation or a Dynamic: *)
+kernelIdleQ // beginDefinition;
+
+kernelIdleQ[ ] := MatchQ[
+    First[ Stack[ _ ], None ],
+    HoldPattern[ (HoldForm | HoldCompleteForm)[ Block[ { $CurrentTask = _ }, ___ ] ] ]
+];
+
+kernelIdleQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*Moving input field between bottom/top of window*)
 
 (* ::**************************************************************************************************************:: *)
