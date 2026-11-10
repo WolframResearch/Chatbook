@@ -849,13 +849,94 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Value Stores*)
+VerificationTest[
+    Module[ { values, ascii, store },
+        values = { "", "paclet:ref/Plot#1", "", "\[Alpha]\[Beta] \[LongRightArrow] x", "a", "\[FormalA]" <> FromCharacterCode[ 128512 ], "https://example.com/#2", "" };
+        ascii  = { "", "paclet:ref/Plot#1", "a", "", "https://example.com/#2" };
+        store  = Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`makeValueStore @ values;
+        {
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDBValuesList @ store === values,
+            (* Only ASCII values (the byte offsets are the character offsets): *)
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDBValuesList @ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`makeValueStore @ ascii === ascii,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDBValueCount @ store,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDBValuesPart[ store, { 4, 2, 7, 3, 4, 6, 8 } ] === values[[ { 4, 2, 7, 3, 4, 6, 8 } ]],
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDBValuesPart[ store, { } ],
+            (* Lists of values (e.g. of registered databases) work the same way: *)
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDBValuesPart[ values, { 5, 2 } ],
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDBValueCount @ values,
+            (* The offsets of a new store are packed (like the ones read from a saved store): *)
+            Developer`PackedArrayQ @ store[ "Offsets" ]
+        }
+    ],
+    { True, True, 8, True, { }, { "a", "paclet:ref/Plot#1" }, 8, True },
+    TestID -> "ValueStore-SameValues@@Tests/VectorDatabases.wlt:853,1-874,2"
+]
+
+(* The value store of an installed database gives the values of its Values.wxf: *)
+VerificationTest[
+    Module[ { name, file, store, indices },
+        name    = "NeuralNetRepositoryURIs";
+        file    = FileNameJoin @ { Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDBDirectory, name, "Values.wxf" };
+        store   = vectorDBInfo[ name ][ "Values" ];
+        indices = { 1, 10, Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDBValueCount @ store };
+        {
+            ! Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`localVectorDBDirectoryQ @ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDBDirectory || MatchQ[ store, KeyValuePattern[ "Bytes" -> _ByteArray ] ],
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDBValuesPart[ store, indices ] === Developer`ReadWXFFile[ file ][[ indices ]],
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDBValuesList @ store === Developer`ReadWXFFile @ file
+        }
+    ],
+    { True, True, True },
+    TestID -> "ValueStore-InstalledDatabase@@Tests/VectorDatabases.wlt:877,1-891,2"
+]
+
+(* The saved value store is used while Values.wxf is unchanged, and ignored otherwise: *)
+VerificationTest[
+    Module[ { dir, file, cache, write, load, first, saved, cached, changed, damaged },
+        dir   = CreateDirectory[ ];
+        file  = FileNameJoin @ { dir, "Values.wxf" };
+        cache = FileNameJoin @ { dir, "ValueStore.wxf" };
+        write = Function[ Developer`WriteWXFFile[ file, # ] ];
+        load  = Function[ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDBValuesList @ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`loadValueStore @ file ];
+
+        write @ { "a", "bb", "ccc" };
+        first = load[ ];
+        saved = FileExistsQ @ cache;
+
+        (* Values that could only come from the saved value store: *)
+        Developer`WriteWXFFile[ cache, <| Developer`ReadWXFFile @ cache, "Bytes" -> StringToByteArray[ "xyyzzz", "UTF-8" ] |> ];
+        cached = load[ ];
+
+        (* Values.wxf was replaced: *)
+        write @ { "dddd", "e" };
+        changed = { load[ ], Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDBValuesList @ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`readValueStore @ file };
+
+        (* The saved value store can't be read: *)
+        BinaryWrite[ cache, { 1, 2, 3 } ]; Close @ cache;
+        damaged = load[ ];
+
+        DeleteDirectory[ dir, DeleteContents -> True ];
+        { first, saved, cached, changed, damaged }
+    ],
+    {
+        { "a", "bb", "ccc" },
+        True,
+        { "x", "yy", "zzz" },
+        { { "dddd", "e" }, { "dddd", "e" } },
+        { "dddd", "e" }
+    },
+    TestID -> "ValueStore-SavedFile@@Tests/VectorDatabases.wlt:894,1-929,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*All Values*)
 (* The full list of values of a database (e.g. for RelatedWolframAlphaQueries[ All ]): *)
 VerificationTest[
     Wolfram`Chatbook`PromptGenerators`Common`vectorDBSearch[ "NeuralNetRepositoryURIs", All, "Values" ],
     { __String },
     SameTest -> MatchQ,
-    TestID   -> "VectorDBSearch-AllValues-GH#1612@@Tests/VectorDatabases.wlt:854,1-859,2"
+    TestID   -> "VectorDBSearch-AllValues-GH#1612@@Tests/VectorDatabases.wlt:935,1-940,2"
 ]
 
 VerificationTest[
@@ -866,7 +947,7 @@ VerificationTest[
     ],
     { __String },
     SameTest -> MatchQ,
-    TestID   -> "VectorDBSearch-AllValues-Multiple-GH#1612@@Tests/VectorDatabases.wlt:861,1-870,2"
+    TestID   -> "VectorDBSearch-AllValues-Multiple-GH#1612@@Tests/VectorDatabases.wlt:942,1-951,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -879,7 +960,7 @@ VerificationTest[
     NeuralNetworks`LocalNetModel[ "MiniLM V2 Reranker Trained on MS MARCO Data", "Tokenizer" ],
     _NetEncoder,
     SameTest -> MatchQ,
-    TestID   -> "SentenceBERTTokenizerCached@@Tests/VectorDatabases.wlt:877,1-883,2"
+    TestID   -> "SentenceBERTTokenizerCached@@Tests/VectorDatabases.wlt:958,1-964,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
