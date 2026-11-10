@@ -2074,10 +2074,12 @@ loadValueStore[ file_String ] :=
     ];
 
 loadValueStore[ file_String ] := Enclose[
-    Module[ { values, store },
+    Module[ { source, values, store },
+        (* Taken before reading, so that a Values.wxf that is replaced meanwhile doesn't get these values: *)
+        source = valueStoreSource @ file;
         values = ConfirmMatch[ Developer`ReadWXFFile @ file, { __String }, "Read" ];
         store  = ConfirmMatch[ makeValueStore @ values, $$valueStore, "Store" ];
-        writeValueStore[ file, store ];
+        writeValueStore[ file, store, source ];
         store
     ],
     throwInternalFailure
@@ -2092,7 +2094,7 @@ makeValueStore // beginDefinition;
 
 makeValueStore[ values: { __String } ] := <|
     "String"  -> StringJoin @ values,
-    "Offsets" -> Accumulate @ Prepend[ StringLength @ values, 0 ]
+    "Offsets" -> Developer`ToPackedArray @ Accumulate @ Prepend[ StringLength @ values, 0 ]
 |>;
 
 makeValueStore // endDefinition;
@@ -2101,7 +2103,7 @@ makeValueStore // endDefinition;
 readValueStore // beginDefinition;
 
 (* Anything other than a value store for the current Values.wxf is ignored: *)
-readValueStore[ file_String ] := Quiet @ catchAlways @ Module[ { cacheFile, data },
+readValueStore[ file_String ] := catchQuiet @ Module[ { cacheFile, data },
     cacheFile = valueStoreFile @ file;
     data = If[ FileExistsQ @ cacheFile, Developer`ReadWXFFile @ cacheFile ];
     If[ MatchQ[ data, KeyValuePattern[ "Source" -> valueStoreSource @ file ] ],
@@ -2116,10 +2118,10 @@ readValueStore // endDefinition;
 writeValueStore // beginDefinition;
 
 (* Failing to save only means that the next session creates the value store again: *)
-writeValueStore[ file_String, store_Association ] := Quiet @ catchAlways @ Developer`WriteWXFFile[
+writeValueStore[ file_String, store_Association, source_ ] := catchQuiet @ Developer`WriteWXFFile[
     valueStoreFile @ file,
     <|
-        "Source"  -> valueStoreSource @ file,
+        "Source"  -> source,
         "String"  -> store[ "String" ],
         "Offsets" -> NumericArray[ store[ "Offsets" ], "UnsignedInteger32" ]
     |>
@@ -2133,9 +2135,9 @@ valueStoreFile[ file_String ] := FileNameJoin @ { DirectoryName @ file, "ValueSt
 valueStoreFile // endDefinition;
 
 
-(* Identifies the Values.wxf that a value store was created from: *)
+(* Identifies the Values.wxf that a value store was created from (see fileFingerprint for why it's a Unix time): *)
 valueStoreSource // beginDefinition;
-valueStoreSource[ file_String ] := { FileByteCount @ file, First @ FileDate[ file, "Modification" ] };
+valueStoreSource[ file_String ] := fileFingerprint @ file;
 valueStoreSource // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

@@ -861,11 +861,13 @@ VerificationTest[
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDBValuesPart[ store, { } ],
             (* Lists of values (e.g. of registered databases) work the same way: *)
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDBValuesPart[ values, { 4, 1 } ],
-            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDBValueCount @ values
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDBValueCount @ values,
+            (* The offsets of a new store are packed (like the ones read from a saved store): *)
+            Developer`PackedArrayQ @ store[ "Offsets" ]
         }
     ],
-    { True, 6, True, { }, { "a", "paclet:ref/Plot#1" }, 6 },
-    TestID -> "ValueStore-SameValues@@Tests/VectorDatabases.wlt:782,1-798,2"
+    { True, 6, True, { }, { "a", "paclet:ref/Plot#1" }, 6, True },
+    TestID -> "ValueStore-SameValues@@Tests/VectorDatabases.wlt:853,1-871,2"
 ]
 
 (* The value store of an installed database gives the values of its Values.wxf: *)
@@ -882,7 +884,7 @@ VerificationTest[
         }
     ],
     { True, True, True },
-    TestID -> "ValueStore-InstalledDatabase@@Tests/VectorDatabases.wlt:801,1-815,2"
+    TestID -> "ValueStore-InstalledDatabase@@Tests/VectorDatabases.wlt:874,1-888,2"
 ]
 
 (* The saved value store is used while Values.wxf is unchanged, and ignored otherwise: *)
@@ -920,7 +922,7 @@ VerificationTest[
         { { "dddd", "e" }, { "dddd", "e" } },
         { "dddd", "e" }
     },
-    TestID -> "ValueStore-SavedFile@@Tests/VectorDatabases.wlt:818,1-853,2"
+    TestID -> "ValueStore-SavedFile@@Tests/VectorDatabases.wlt:891,1-926,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -931,7 +933,7 @@ VerificationTest[
     Wolfram`Chatbook`PromptGenerators`Common`vectorDBSearch[ "NeuralNetRepositoryURIs", All, "Values" ],
     { __String },
     SameTest -> MatchQ,
-    TestID   -> "VectorDBSearch-AllValues-GH#1612@@Tests/VectorDatabases.wlt:854,1-859,2"
+    TestID   -> "VectorDBSearch-AllValues-GH#1612@@Tests/VectorDatabases.wlt:932,1-937,2"
 ]
 
 VerificationTest[
@@ -942,7 +944,7 @@ VerificationTest[
     ],
     { __String },
     SameTest -> MatchQ,
-    TestID   -> "VectorDBSearch-AllValues-Multiple-GH#1612@@Tests/VectorDatabases.wlt:861,1-870,2"
+    TestID   -> "VectorDBSearch-AllValues-Multiple-GH#1612@@Tests/VectorDatabases.wlt:939,1-948,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -955,7 +957,7 @@ VerificationTest[
     NeuralNetworks`LocalNetModel[ "MiniLM V2 Reranker Trained on MS MARCO Data", "Tokenizer" ],
     _NetEncoder,
     SameTest -> MatchQ,
-    TestID   -> "SentenceBERTTokenizerCached@@Tests/VectorDatabases.wlt:877,1-883,2"
+    TestID   -> "SentenceBERTTokenizerCached@@Tests/VectorDatabases.wlt:955,1-961,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
