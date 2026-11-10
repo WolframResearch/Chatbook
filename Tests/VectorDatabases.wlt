@@ -32,6 +32,14 @@ $vectorDatabaseNames = {
     "WolframAlphaQueries"
 };
 
+(* The loaded database that searches are given, and its VectorDatabaseObject (which searches only create when they
+   need VectorDatabaseSearch): *)
+vectorDBInfo[ name_String ] :=
+    Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getVectorDB @ name;
+
+vectorDBObject[ name_String ] :=
+    Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDatabaseObject[ name, vectorDBInfo @ name ];
+
 $vectorSearchQueries = {
     "How do I make a 3D plot of a surface?",
     "What is the population of France?",
@@ -59,7 +67,7 @@ VerificationTest[
         "ToNumericArray"       -> _Symbol
     },
     SameTest -> MatchQ,
-    TestID   -> "FastVectorSearch-Functions@@Tests/VectorDatabases.wlt:52,1-63,2"
+    TestID   -> "FastVectorSearch-Functions@@Tests/VectorDatabases.wlt:60,1-71,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -70,6 +78,7 @@ VerificationTest[
         {
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexCache    = <| |>,
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexVerified = <| |>,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$saveUSearchVerifications = False,
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexFailures = <| |>
         },
         Module[ { vectors, results },
@@ -78,14 +87,12 @@ VerificationTest[
                 Function[ name,
                     With[
                         {
-                            db = Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getVectorDB[ name ][
-                                "VectorDatabaseObject"
-                            ]
+                            db = vectorDBObject @ name
                         },
                         (* The first search with each database verifies the index handle: *)
                         Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDatabaseSearch[
                             name,
-                            db,
+                            vectorDBInfo @ name,
                             First @ vectors,
                             250
                         ];
@@ -93,7 +100,7 @@ VerificationTest[
                             SameQ[
                                 Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDatabaseSearch[
                                     name,
-                                    db,
+                                    vectorDBInfo @ name,
                                     vector,
                                     n
                                 ],
@@ -128,7 +135,7 @@ VerificationTest[
         "Failures" -> <| |>
     |>,
     SameTest -> MatchQ,
-    TestID   -> "FastVectorSearch-MatchesVectorDatabaseSearch@@Tests/VectorDatabases.wlt:68,1-132,2"
+    TestID   -> "FastVectorSearch-MatchesVectorDatabaseSearch@@Tests/VectorDatabases.wlt:76,1-139,2"
 ]
 
 VerificationTest[
@@ -136,6 +143,7 @@ VerificationTest[
         {
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexCache    = <| |>,
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexVerified = <| |>,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$saveUSearchVerifications = False,
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexFailures = <| |>
         },
         Module[ { prompts, results, fast1, fast2, standard },
@@ -204,7 +212,7 @@ VerificationTest[
         "Failures"  -> <| |>
     |>,
     SameTest -> MatchQ,
-    TestID   -> "FastVectorSearch-RelatedDocumentation-Results@@Tests/VectorDatabases.wlt:134,1-208,2"
+    TestID   -> "FastVectorSearch-RelatedDocumentation-Results@@Tests/VectorDatabases.wlt:141,1-216,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -215,6 +223,7 @@ VerificationTest[
         {
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexCache    = <| |>,
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexVerified = <| |>,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$saveUSearchVerifications = False,
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexFailures = <| |>,
             (* Simulate a fast search that disagrees with VectorDatabaseSearch: *)
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`usearchIndexSearch =
@@ -222,16 +231,14 @@ VerificationTest[
         },
         With[
             {
-                db     = Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getVectorDB[ "NeuralNetRepositoryURIs" ][
-                    "VectorDatabaseObject"
-                ],
+                db     = vectorDBObject @ "NeuralNetRepositoryURIs",
                 vector = Wolfram`Chatbook`Common`getEmbedding[ "Is there a neural net that can classify images?" ]
             },
             {
                 SameQ[
                     Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDatabaseSearch[
                         "NeuralNetRepositoryURIs",
-                        db,
+                        vectorDBInfo @ "NeuralNetRepositoryURIs",
                         vector,
                         250
                     ],
@@ -246,7 +253,7 @@ VerificationTest[
                 SameQ[
                     Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDatabaseSearch[
                         "NeuralNetRepositoryURIs",
-                        db,
+                        vectorDBInfo @ "NeuralNetRepositoryURIs",
                         vector,
                         100
                     ],
@@ -268,7 +275,7 @@ VerificationTest[
         <| |>
     },
     SameTest -> MatchQ,
-    TestID   -> "FastVectorSearch-MismatchFallback@@Tests/VectorDatabases.wlt:213,1-272,2"
+    TestID   -> "FastVectorSearch-MismatchFallback@@Tests/VectorDatabases.wlt:221,1-279,2"
 ]
 
 VerificationTest[
@@ -276,18 +283,17 @@ VerificationTest[
         {
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexCache    = <| |>,
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexVerified = <| |>,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$saveUSearchVerifications = False,
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexFailures = <| |>
         },
         With[
             {
-                db     = Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getVectorDB[ "NeuralNetRepositoryURIs" ][
-                    "VectorDatabaseObject"
-                ],
+                db     = vectorDBObject @ "NeuralNetRepositoryURIs",
                 vector = Wolfram`Chatbook`Common`getEmbedding[ "Is there a neural net that can classify images?" ]
             },
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDatabaseSearch[
                 "NeuralNetRepositoryURIs",
-                db,
+                vectorDBInfo @ "NeuralNetRepositoryURIs",
                 vector,
                 250
             ];
@@ -306,7 +312,7 @@ VerificationTest[
                     SameQ[
                         Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDatabaseSearch[
                             "NeuralNetRepositoryURIs",
-                            db,
+                            vectorDBInfo @ "NeuralNetRepositoryURIs",
                             vector,
                             100
                         ],
@@ -324,7 +330,7 @@ VerificationTest[
     ],
     { True, True, <| "NeuralNetRepositoryURIs" -> Failure[ "Test", _ ] |>, <| |> },
     SameTest -> MatchQ,
-    TestID   -> "FastVectorSearch-ErrorFallback@@Tests/VectorDatabases.wlt:274,1-328,2"
+    TestID   -> "FastVectorSearch-ErrorFallback@@Tests/VectorDatabases.wlt:281,1-334,2"
 ]
 
 VerificationTest[
@@ -332,22 +338,21 @@ VerificationTest[
         {
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexCache    = <| |>,
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexVerified = <| |>,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$saveUSearchVerifications = False,
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexFailures = <| |>,
             (* Simulate a SemanticSearch version without the internal functions that the fast path relies on: *)
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchFunctions = Missing[ "NotAvailable" ]
         },
         With[
             {
-                db     = Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getVectorDB[ "NeuralNetRepositoryURIs" ][
-                    "VectorDatabaseObject"
-                ],
+                db     = vectorDBObject @ "NeuralNetRepositoryURIs",
                 vector = Wolfram`Chatbook`Common`getEmbedding[ "Is there a neural net that can classify images?" ]
             },
             {
                 SameQ[
                     Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDatabaseSearch[
                         "NeuralNetRepositoryURIs",
-                        db,
+                        vectorDBInfo @ "NeuralNetRepositoryURIs",
                         vector,
                         250
                     ],
@@ -364,7 +369,7 @@ VerificationTest[
     ],
     { True, { "NeuralNetRepositoryURIs" }, <| |> },
     SameTest -> MatchQ,
-    TestID   -> "FastVectorSearch-FeatureDetectionFallback@@Tests/VectorDatabases.wlt:330,1-368,2"
+    TestID   -> "FastVectorSearch-FeatureDetectionFallback@@Tests/VectorDatabases.wlt:336,1-373,2"
 ]
 
 VerificationTest[
@@ -372,13 +377,12 @@ VerificationTest[
         {
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexCache    = <| |>,
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexVerified = <| |>,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$saveUSearchVerifications = False,
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexFailures = <| |>
         },
         With[
             {
-                db     = Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getVectorDB[ "NeuralNetRepositoryURIs" ][
-                    "VectorDatabaseObject"
-                ],
+                db     = vectorDBObject @ "NeuralNetRepositoryURIs",
                 vector = Wolfram`Chatbook`Common`getEmbedding[ "Is there a neural net that can classify images?" ]
             },
             {
@@ -386,7 +390,7 @@ VerificationTest[
                     SameQ[
                         Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDatabaseSearch[
                             "NeuralNetRepositoryURIs",
-                            db,
+                            vectorDBInfo @ "NeuralNetRepositoryURIs",
                             vector,
                             250
                         ],
@@ -401,7 +405,7 @@ VerificationTest[
                     SameQ[
                         Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDatabaseSearch[
                             "NeuralNetRepositoryURIs",
-                            db,
+                            vectorDBInfo @ "NeuralNetRepositoryURIs",
                             vector,
                             250
                         ],
@@ -419,7 +423,7 @@ VerificationTest[
     ],
     { True, True, <| |>, <| |> },
     SameTest -> MatchQ,
-    TestID   -> "FastVectorSearch-Disabled@@Tests/VectorDatabases.wlt:370,1-423,2"
+    TestID   -> "FastVectorSearch-Disabled@@Tests/VectorDatabases.wlt:375,1-427,2"
 ]
 
 VerificationTest[
@@ -427,14 +431,13 @@ VerificationTest[
         {
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexCache    = <| |>,
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexVerified = <| |>,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$saveUSearchVerifications = False,
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexFailures = <| |>
         },
         Module[ { evaluated = False, handle },
             handle = Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getUSearchIndex[
                 "NeuralNetRepositoryURIs",
-                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getVectorDB[ "NeuralNetRepositoryURIs" ][
-                    "VectorDatabaseObject"
-                ]
+                vectorDBInfo @ "NeuralNetRepositoryURIs"
             ][ "Handle" ];
             (* Failure reasons must not keep index handles, and held code in them must not be evaluated: *)
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`disableUSearchIndex[
@@ -461,7 +464,7 @@ VerificationTest[
         False
     },
     SameTest -> MatchQ,
-    TestID   -> "FastVectorSearch-DisableReason@@Tests/VectorDatabases.wlt:425,1-465,2"
+    TestID   -> "FastVectorSearch-DisableReason@@Tests/VectorDatabases.wlt:429,1-468,2"
 ]
 
 VerificationTest[
@@ -481,7 +484,7 @@ VerificationTest[
         Failure[ "USearchException", KeyValuePattern @ { "Value" -> "test", "Tag" -> "SemanticSearchException" } ]
     },
     SameTest -> MatchQ,
-    TestID   -> "FastVectorSearch-CatchUSearch@@Tests/VectorDatabases.wlt:467,1-485,2"
+    TestID   -> "FastVectorSearch-CatchUSearch@@Tests/VectorDatabases.wlt:470,1-488,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -492,26 +495,25 @@ VerificationTest[
         {
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexCache    = <| |>,
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexVerified = <| |>,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$saveUSearchVerifications = False,
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexFailures = <| |>
         },
         Module[ { db, index, stale, new },
-            db = Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getVectorDB[ "NeuralNetRepositoryURIs" ][
-                "VectorDatabaseObject"
-            ];
+            db = vectorDBObject @ "NeuralNetRepositoryURIs";
             index = Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getUSearchIndex[
                 "NeuralNetRepositoryURIs",
-                db
+                vectorDBInfo @ "NeuralNetRepositoryURIs"
             ];
             (* Simulate a database file that was replaced after the handle was created: *)
             stale = <| index, "FileDate" -> DateObject[ { 2000, 1, 1, 0, 0, 0 } ] |>;
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexCache[ "NeuralNetRepositoryURIs" ] = stale;
             new = Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getUSearchIndex[
                 "NeuralNetRepositoryURIs",
-                db
+                vectorDBInfo @ "NeuralNetRepositoryURIs"
             ];
             {
-                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`usearchIndexValidQ[ index, db ],
-                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`usearchIndexValidQ[ stale, db ],
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`usearchIndexValidQ[ index, vectorDBInfo @ "NeuralNetRepositoryURIs" ],
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`usearchIndexValidQ[ stale, vectorDBInfo @ "NeuralNetRepositoryURIs" ],
                 Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`usearchIndexValidQ[ index, None ],
                 new[ "FileDate" ] === FileDate @ index[ "File" ],
                 new[ "Handle" ] =!= index[ "Handle" ]
@@ -520,17 +522,16 @@ VerificationTest[
     ],
     { True, False, False, True, True },
     SameTest -> MatchQ,
-    TestID   -> "FastVectorSearch-Invalidation@@Tests/VectorDatabases.wlt:490,1-524,2"
+    TestID   -> "FastVectorSearch-Invalidation@@Tests/VectorDatabases.wlt:493,1-526,2"
 ]
 
 (* Handles must be released before unpacking, since memory-mapped files cannot be replaced on Windows: *)
 VerificationTest[
-    Module[ { name, db, functions, root, dir, file, zip, result },
-        name      = "NeuralNetRepositoryURIs";
-        db        = Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getVectorDB[ name ][ "VectorDatabaseObject" ];
-        functions = Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchFunctions;
-        root      = CreateDirectory[ ];
-        dir       = CreateDirectory @ FileNameJoin @ { root, name };
+    Module[ { name, info, root, dir, file, zip, result },
+        name = "NeuralNetRepositoryURIs";
+        info = vectorDBInfo @ name;
+        root = CreateDirectory[ ];
+        dir  = CreateDirectory @ FileNameJoin @ { root, name };
 
         Scan[
             CopyFile[ #, FileNameJoin @ { dir, FileNameTake @ # } ] &,
@@ -547,17 +548,18 @@ VerificationTest[
             {
                 Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexCache    = <| |>,
                 Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexVerified = <| |>,
-                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexFailures = <| |>,
-                (* Open the index from the temporary copy instead of the installed database: *)
-                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchFunctions = <|
-                    functions,
-                    "RetrieveFromDatabase" -> Function[
-                        <| functions[ "RetrieveFromDatabase" ][ ##1 ], "VectorDatabase" -> File @ file |>
-                    ]
-                |>
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$saveUSearchVerifications = False,
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexFailures = <| |>
             },
             {
-                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getUSearchIndex[ name, db ][ "File" ] === file,
+                (* Open the index from the temporary copy instead of the installed database: *)
+                SameQ[
+                    Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getUSearchIndex[
+                        name,
+                        <| info, "Metadata" -> <| info[ "Metadata" ], "VectorDatabase" -> File @ file |> |>
+                    ][ "File" ],
+                    file
+                ],
                 Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`unpackVectorDatabase @ zip,
                 Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexCache,
                 Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexFailures,
@@ -570,7 +572,7 @@ VerificationTest[
     (* unpackVectorDatabase gives the installed directory since it swaps in a validated staging directory: *)
     { { True, _String, <| |>, <| |>, False }, Null },
     SameTest -> MatchQ,
-    TestID   -> "FastVectorSearch-ReleaseBeforeUnpack@@Tests/VectorDatabases.wlt:527,1-574,2"
+    TestID   -> "FastVectorSearch-ReleaseBeforeUnpack@@Tests/VectorDatabases.wlt:529,1-576,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -611,7 +613,7 @@ VerificationTest[
     ],
     { _TaskObject, { <| "Test" -> <| |> |>, _TaskObject }, { <| |>, None } },
     SameTest -> MatchQ,
-    TestID   -> "FastVectorSearch-IdleRelease@@Tests/VectorDatabases.wlt:579,1-615,2"
+    TestID   -> "FastVectorSearch-IdleRelease@@Tests/VectorDatabases.wlt:581,1-617,2"
 ]
 
 VerificationTest[
@@ -619,6 +621,7 @@ VerificationTest[
         {
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexCache       = <| |>,
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexVerified    = <| |>,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$saveUSearchVerifications = False,
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexFailures    = <| |>,
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexLastUsed    = 0,
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexReleaseTask = None,
@@ -626,16 +629,14 @@ VerificationTest[
         },
         With[
             {
-                db     = Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getVectorDB[ "NeuralNetRepositoryURIs" ][
-                    "VectorDatabaseObject"
-                ],
+                db     = vectorDBObject @ "NeuralNetRepositoryURIs",
                 vector = Wolfram`Chatbook`Common`getEmbedding[ "Is there a neural net that can classify images?" ]
             },
             Module[ { search, before, after, again },
                 search = Function[
                     Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDatabaseSearch[
                         "NeuralNetRepositoryURIs",
-                        db,
+                        vectorDBInfo @ "NeuralNetRepositoryURIs",
                         vector,
                         250
                     ]
@@ -671,7 +672,179 @@ VerificationTest[
     ],
     { { "NeuralNetRepositoryURIs" }, { }, { True, True }, 1, <| |> },
     SameTest -> MatchQ,
-    TestID   -> "FastVectorSearch-IdleRelease-Task@@Tests/VectorDatabases.wlt:617,1-675,2"
+    TestID   -> "FastVectorSearch-IdleRelease-Task@@Tests/VectorDatabases.wlt:619,1-676,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Saved Verifications*)
+
+(* An index file that was verified in an earlier session is searched without VectorDatabaseSearch, and without creating
+   the VectorDatabaseObject. Each `session` starts without index handles, verified indexes and database objects. *)
+VerificationTest[
+    Module[ { name, dir, vector, standardSearches, session, first, later, otherVersion },
+        name   = "NeuralNetRepositoryURIs";
+        dir    = CreateDirectory[ ];
+        vector = Wolfram`Chatbook`Common`getEmbedding[ "Is there a neural net that can classify images?" ];
+
+        standardSearches = 0;
+
+        session = Function[
+            Block[
+                {
+                    Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexCache         = <| |>,
+                    Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexVerified      = <| |>,
+                    Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexFailures      = <| |>,
+                    Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDatabaseObjects     = <| |>,
+                    Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$savedUSearchVerifications = None
+                },
+                <|
+                    "Result"   -> Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDatabaseSearch[ name, vectorDBInfo @ name, vector, 250 ],
+                    "Searches" -> standardSearches,
+                    "Objects"  -> Keys @ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDatabaseObjects,
+                    "Saved"    -> Length @ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`savedUSearchVerifications[ ],
+                    "Failures" -> Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexFailures
+                |>
+            ]
+        ];
+
+        Block[
+            {
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$saveUSearchVerifications = True,
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchVerificationsFile = FileNameJoin @ { dir, "VerifiedIndexes.wxf" }
+            },
+            Internal`InheritedBlock[ { Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`standardVectorDatabaseSearch },
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`standardVectorDatabaseSearch[ db_, v_, n_ ] /; ! TrueQ @ $inStandardSearch :=
+                    Block[ { $inStandardSearch = True },
+                        standardSearches++;
+                        Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`standardVectorDatabaseSearch[ db, v, n ]
+                    ];
+
+                first = session[ ];
+                later = session[ ];
+
+                (* Saved verifications are only valid for the same version of SemanticSearch: *)
+                otherVersion = Block[ { Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$semanticSearchVersion = "0.0.0" }, session[ ] ];
+            ]
+        ];
+
+        DeleteDirectory[ dir, DeleteContents -> True ];
+
+        {
+            KeyDrop[ first, "Result" ],
+            KeyDrop[ later, "Result" ],
+            KeyDrop[ otherVersion, "Result" ],
+            MatchQ[ first[ "Result" ], { __Association } ],
+            first[ "Result" ] === later[ "Result" ] === otherVersion[ "Result" ]
+        }
+    ],
+    {
+        <| "Searches" -> 1, "Objects" -> { "NeuralNetRepositoryURIs" }, "Saved" -> 1, "Failures" -> <| |> |>,
+        <| "Searches" -> 1, "Objects" -> { }, "Saved" -> 1, "Failures" -> <| |> |>,
+        <| "Searches" -> 2, "Objects" -> { "NeuralNetRepositoryURIs" }, "Saved" -> 2, "Failures" -> <| |> |>,
+        True,
+        True
+    },
+    TestID -> "FastVectorSearch-SavedVerification@@Tests/VectorDatabases.wlt:684,1-749,2"
+]
+
+(* A search that disagrees with VectorDatabaseSearch is not saved as verified: *)
+VerificationTest[
+    Module[ { name, dir, vector, result },
+        name   = "NeuralNetRepositoryURIs";
+        dir    = CreateDirectory[ ];
+        vector = Wolfram`Chatbook`Common`getEmbedding[ "Is there a neural net that can classify images?" ];
+
+        result = Block[
+            {
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexCache         = <| |>,
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexVerified      = <| |>,
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexFailures      = <| |>,
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$savedUSearchVerifications = None,
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$saveUSearchVerifications  = True,
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchVerificationsFile  = FileNameJoin @ { dir, "VerifiedIndexes.wxf" },
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`usearchIndexSearch         = Function[ { <| "Index" -> 1, "Distance" -> 0.0 |> } ]
+            },
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDatabaseSearch[ name, vectorDBInfo @ name, vector, 250 ];
+            { Keys @ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexFailures, Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`savedUSearchVerifications[ ], FileNames[ All, dir ] }
+        ];
+
+        DeleteDirectory[ dir, DeleteContents -> True ];
+        result
+    ],
+    { { "NeuralNetRepositoryURIs" }, { }, { } },
+    TestID -> "FastVectorSearch-SavedVerification-Mismatch@@Tests/VectorDatabases.wlt:752,1-777,2"
+]
+
+(* Only the newest saved verifications are kept: *)
+VerificationTest[
+    Module[ { dir, saved },
+        dir = CreateDirectory[ ];
+        saved = Block[
+            {
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$saveUSearchVerifications     = True,
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$maxSavedUSearchVerifications = 3,
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$savedUSearchVerifications    = None,
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchVerificationsFile     = FileNameJoin @ { dir, "VerifiedIndexes.wxf" },
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`usearchVerificationHash       = Function[ #[ "Hash" ] ]
+            },
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`saveUSearchVerification[ <| "Hash" -> # |> ] & /@ Range[ 5 ];
+            { Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`savedUSearchVerifications[ ], Developer`ReadWXFFile @ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchVerificationsFile }
+        ];
+        DeleteDirectory[ dir, DeleteContents -> True ];
+        saved
+    ],
+    { { 5, 4, 3 }, { 5, 4, 3 } },
+    SameTest -> MatchQ,
+    TestID   -> "FastVectorSearch-SavedVerification-NewestKept@@Tests/VectorDatabases.wlt:780,1-800,2"
+]
+
+(* Saved verifications don't depend on the time zone of the session (which changes with daylight saving time): *)
+VerificationTest[
+    Module[ { file, date, hash, result },
+        file   = Export[ FileNameJoin @ { $TemporaryDirectory, CreateUUID[ ] <> ".txt" }, "test", "String" ];
+        date   = FileDate @ file;
+        hash   = Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`usearchVerificationHash @ <| "File" -> file, "FileDate" -> TimeZoneConvert[ date, # ] |> &;
+        result = hash[ -5 ] === hash[ -4 ];
+        DeleteFile @ file;
+        result
+    ],
+    True,
+    SameTest -> MatchQ,
+    TestID   -> "FastVectorSearch-SavedVerification-TimeZone@@Tests/VectorDatabases.wlt:803,1-815,2"
+]
+
+(* A database whose VectorDatabaseObject can't be created when a search needs it is skipped like one that can't be loaded,
+   instead of failing the chat. The warm-up leaves this to the next search, which shows the message: *)
+VerificationTest[
+    Module[ { name, vector },
+        name   = "NeuralNetRepositoryURIs";
+        vector = Wolfram`Chatbook`Common`getEmbedding[ "Is there a neural net that can classify images?" ];
+        Block[
+            {
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexCache        = <| |>,
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexVerified     = <| |>,
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexFailures     = <| |>,
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDatabaseObjects    = <| |>,
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDBLoadFailures     = { },
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$saveUSearchVerifications = False,
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`loadVectorDatabase        = Function[
+                    Enclose[ ConfirmMatch[ $Failed, _VectorDatabaseObject, "Database" ], Wolfram`Chatbook`Common`throwInternalFailure ]
+                ]
+            },
+            {
+                Block[ { Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$allowDownload = False }, Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDatabaseSearch[ name, vectorDBInfo @ name, vector, 250 ] ],
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDBLoadFailures,
+                Wolfram`Chatbook`Common`catchTop @ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDatabaseSearch[ name, vectorDBInfo @ name, vector, 250 ],
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDBLoadFailures,
+                vectorDBInfo @ name
+            }
+        ]
+    ],
+    { { }, { }, { }, { "NeuralNetRepositoryURIs" }, Missing[ "LoadFailed", "NeuralNetRepositoryURIs" ] },
+    { Chatbook::VectorDatabaseLoadFailed },
+    SameTest -> MatchQ,
+    TestID   -> "FastVectorSearch-DatabaseObjectFailed@@Tests/VectorDatabases.wlt:819,1-848,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -682,7 +855,7 @@ VerificationTest[
     Wolfram`Chatbook`PromptGenerators`Common`vectorDBSearch[ "NeuralNetRepositoryURIs", All, "Values" ],
     { __String },
     SameTest -> MatchQ,
-    TestID   -> "VectorDBSearch-AllValues-GH#1612@@Tests/VectorDatabases.wlt:681,1-686,2"
+    TestID   -> "VectorDBSearch-AllValues-GH#1612@@Tests/VectorDatabases.wlt:854,1-859,2"
 ]
 
 VerificationTest[
@@ -693,7 +866,7 @@ VerificationTest[
     ],
     { __String },
     SameTest -> MatchQ,
-    TestID   -> "VectorDBSearch-AllValues-Multiple-GH#1612@@Tests/VectorDatabases.wlt:688,1-697,2"
+    TestID   -> "VectorDBSearch-AllValues-Multiple-GH#1612@@Tests/VectorDatabases.wlt:861,1-870,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -706,7 +879,7 @@ VerificationTest[
     NeuralNetworks`LocalNetModel[ "MiniLM V2 Reranker Trained on MS MARCO Data", "Tokenizer" ],
     _NetEncoder,
     SameTest -> MatchQ,
-    TestID   -> "SentenceBERTTokenizerCached@@Tests/VectorDatabases.wlt:704,1-710,2"
+    TestID   -> "SentenceBERTTokenizerCached@@Tests/VectorDatabases.wlt:877,1-883,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
