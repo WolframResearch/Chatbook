@@ -2192,16 +2192,19 @@ $estimateTokenCounts = True;
 (* ::Subsection::Closed:: *)
 (*Token Count Estimates*)
 (*
-    Counting tokens exactly needs a NetEncoder, which takes about a second to load and set up in each session (and
-    loads NeuralNetworks), and the tokenizers that we have are not the ones of the current models anyway. Token counts
-    are only used to keep requests within the context window, so an estimate that doesn't undercount is enough.
+    Counting tokens exactly needs a NetEncoder whose first use takes about a second in each session, and the
+    tokenizers that we have are not the ones of the current models anyway. Token counts are only used to keep requests
+    within the context window, so an estimate that doesn't undercount is enough.
 
     The estimate is a weighted sum of character statistics. The weights were fitted so that the estimate is rarely
     below the larger of the gpt-4o and claude tokenizer counts, on source code (WL and other languages), markdown,
-    documentation snippets, notebook expressions, JSON, numbers, base64, and prose in several languages. On average it
-    is 15-30% above the gpt-4o count for English text and code (more for other languages and for short strings). A
-    single text of a few thousand characters is rarely below the gpt-4o count, and then by at most about 12%. It
-    takes about 0.4 microseconds per character.
+    documentation snippets, notebook expressions, JSON, numbers, base64, and prose in several languages. Compared to
+    the gpt-4o count, it is about 1.1-1.3 times as high for English text and code, 1.4-1.8 times for German, French,
+    Spanish, Chinese, Japanese and Korean, and 4.5-6 times for Greek, Cyrillic and Arabic text (for which the claude
+    tokenizer gives about four times as many tokens as gpt-4o). Short strings are also overcounted more. A single
+    English text or piece of code of a few thousand characters is rarely below the gpt-4o count, and then by at most
+    about 12%. Long runs of lowercase letters that aren't words (e.g. DNA sequences) are an exception: they can be
+    counted two to three times too low. It takes about 0.4 microseconds per character.
 *)
 
 (* ::**************************************************************************************************************:: *)
@@ -2233,7 +2236,8 @@ $tokenEstimateWeights = {
     0.02, (* spaces *)
     0.85, (* newlines and tabs *)
     0.2,  (* ASCII punctuation *)
-    5.0,  (* control characters and characters from U+0080 to U+07FF *)
+    5.0,  (* control characters and characters from U+0080 to U+036F (accented Latin letters, symbols) *)
+    2.0,  (* characters from U+0370 to U+07FF (Greek, Cyrillic, Armenian, Hebrew, Arabic) *)
     1.85  (* characters above U+07FF *)
 };
 
@@ -2256,7 +2260,7 @@ tokenEstimateFeatures[ text_String ] :=
 
         (* The class of each character (see $characterClasses), and of the character before it: *)
         class    = $characterClasses[[ Clip[ codes, { 0, 127 } ] + 1 ]];
-        class    = class + UnitStep[ codes - 128 ] * (7 - class) + UnitStep[ codes - 2048 ];
+        class    = class + UnitStep[ codes - 880 ] + UnitStep[ codes - 2048 ];
         previous = Prepend[ Most @ class, 0 ];
 
         lower  = characterClassQ[ class, 1 ];
@@ -2288,7 +2292,8 @@ tokenEstimateFeatures[ text_String ] :=
             Total @ characterClassQ[ class, 5 ],
             Total @ characterClassQ[ class, 6 ],
             Total @ characterClassQ[ class, 7 ],
-            Total @ characterClassQ[ class, 8 ]
+            Total @ characterClassQ[ class, 8 ],
+            Total @ characterClassQ[ class, 9 ]
         }
     ];
 
@@ -2300,7 +2305,8 @@ characterClassQ[ class_List, k_Integer ] := 1 - Unitize[ class - k ];
 characterClassQ // endDefinition;
 
 (* The classes of the ASCII characters: 1 lowercase letter, 2 uppercase letter, 3 digit, 4 space, 5 newline or tab,
-   6 punctuation, 7 control character. Characters from U+0080 to U+07FF also get class 7, and higher ones class 8. *)
+   6 punctuation, 7 control character. Characters from U+0080 to U+036F also get class 7 (as DEL does, which Clip
+   maps them to), characters from U+0370 to U+07FF class 8, and higher ones class 9. *)
 $characterClasses = Developer`ToPackedArray @ Table[
     Which[
         97 <= c <= 122, 1,
