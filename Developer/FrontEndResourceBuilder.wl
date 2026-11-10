@@ -166,7 +166,7 @@ extracted from tr files.
 
 changeKeyValueInString[str_String, key_String -> value_] :=
 	Module[{keypos, valueLength, pre, post},
-		keypos = StringPosition[str, "\"" <> key <> "\"" ~~ (WhitespaceCharacter...) ~~ "->"];
+		keypos = StringPosition[str, StartOfLine ~~ "\"" <> key <> "\"" ~~ (WhitespaceCharacter...) ~~ "->"];
 		If[MatchQ[keypos, {{_,_}}],
 			keypos = First[keypos],
 			Message[WriteTextResource::badkey, key];
@@ -239,7 +239,7 @@ replaceInMiddle[str_String, key_ -> value_, {start_, stop_}] :=
 (* create a new entry *)
 addKeyValueInString[str_String, key_String -> value_, newEntry_, newEntryPrefix_] :=
 	Module[{keypos, nextKey, nextKeyPos},
-		keypos = StringPosition[str, "\"" <> key <> "\"" ~~ (WhitespaceCharacter...) ~~ "->"];
+		keypos = StringPosition[str, StartOfLine ~~ "\"" <> key <> "\"" ~~ (WhitespaceCharacter...) ~~ "->"];
 		keypos = If[MatchQ[keypos, {{_, _}}], First[First[keypos]], None];
 		If[keypos === None,
 			Which[
