@@ -579,7 +579,7 @@ VerificationTest[
             validQ[ ]
         }
     ],
-    { KeyValuePattern @ { "Values" -> KeyValuePattern[ "String" -> _String ], "Metadata" -> _Association }, 1, True },
+    { KeyValuePattern @ { "Values" -> KeyValuePattern[ "Bytes" -> _ByteArray ], "Metadata" -> _Association }, 1, True },
     SameTest -> MatchQ,
     TestID   -> "LoadVectorDB-SelfRepair@@Tests/VectorDatabaseDownloads.wlt:567,1-585,2"
 ]

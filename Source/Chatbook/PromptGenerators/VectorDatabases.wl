@@ -1799,7 +1799,7 @@ getVectorDB[ name_String ] := Enclose[
 getVectorDB // endDefinition;
 
 (* The values of a database are a list of strings or a value store (see loadVectorDBValues): *)
-$$valueStore     = KeyValuePattern @ { "String" -> _String, "Offsets" -> { __Integer } };
+$$valueStore     = KeyValuePattern @ { "Bytes" -> _ByteArray, "Offsets" -> { __Integer } };
 $$vectorDBValues = { ___String } | $$valueStore;
 
 (* A built-in database has "Metadata" (see loadVectorDB0), and a registered one has a "VectorDatabaseObject": *)
@@ -2059,8 +2059,9 @@ loadVectorDBValues // endDefinition;
 (*
     The values of a database are a long list of strings (over a million for the documentation), and reading that list
     takes up to 0.35 s per database (0.7 s for all of them). A search only needs the values of its results, so the
-    values are kept as a value store instead: one string of all the values and the offsets of the values in it, which
-    is read about 7 times faster and needs less memory.
+    values are kept as a value store instead: all the values as UTF-8 in one byte array and the offsets of the values
+    in it, which is read about 7 times faster and needs less memory. Bytes are used instead of one string, since
+    StringTake takes time proportional to the position in a string that has non-ASCII characters.
 
     The value store is saved next to Values.wxf the first time that the values are loaded, and created again if
     Values.wxf changes. This is only done for databases in the local directory (the ones that were downloaded), which
@@ -2092,10 +2093,15 @@ $cacheValueStores = True;
 
 makeValueStore // beginDefinition;
 
-makeValueStore[ values: { __String } ] := <|
-    "String"  -> StringJoin @ values,
-    "Offsets" -> Developer`ToPackedArray @ Accumulate @ Prepend[ StringLength @ values, 0 ]
-|>;
+makeValueStore[ values: { __String } ] := Module[ { bytes, lengths },
+    bytes   = StringToByteArray[ StringJoin @ values, "UTF-8" ];
+    lengths = StringLength @ values;
+    (* The lengths in bytes are only needed if there are non-ASCII characters, and they take much longer to get.
+       NOTE: For a database as large as the documentation (which is ASCII), they would take about 1.3 s and 0.5 GB of
+       memory, once. *)
+    If[ Length @ bytes =!= Total @ lengths, lengths = Length /@ ToCharacterCode[ values, "UTF-8" ] ];
+    <| "Bytes" -> bytes, "Offsets" -> Developer`ToPackedArray @ Accumulate @ Prepend[ lengths, 0 ] |>
+];
 
 makeValueStore // endDefinition;
 
@@ -2107,7 +2113,7 @@ readValueStore[ file_String ] := catchQuiet @ Module[ { cacheFile, data },
     cacheFile = valueStoreFile @ file;
     data = If[ FileExistsQ @ cacheFile, Developer`ReadWXFFile @ cacheFile ];
     If[ MatchQ[ data, KeyValuePattern[ "Source" -> valueStoreSource @ file ] ],
-        <| "String" -> data[ "String" ], "Offsets" -> Normal @ data[ "Offsets" ] |>,
+        <| "Bytes" -> data[ "Bytes" ], "Offsets" -> Normal @ data[ "Offsets" ] |>,
         Missing[ "NotAvailable" ]
     ]
 ];
@@ -2122,7 +2128,7 @@ writeValueStore[ file_String, store_Association, source_ ] := catchQuiet @ Devel
     valueStoreFile @ file,
     <|
         "Source"  -> source,
-        "String"  -> store[ "String" ],
+        "Bytes"   -> store[ "Bytes" ],
         "Offsets" -> NumericArray[ store[ "Offsets" ], "UnsignedInteger32" ]
     |>
 ];
@@ -2151,8 +2157,11 @@ vectorDBValuesPart[ values_List, indices: { ___Integer } ] :=
 vectorDBValuesPart[ KeyValuePattern[ "Offsets" -> _ ], { } ] :=
     { };
 
-vectorDBValuesPart[ KeyValuePattern @ { "String" -> string_, "Offsets" -> offsets_ }, indices: { __Integer } ] :=
-    StringTake[ string, Transpose @ { offsets[[ indices ]] + 1, offsets[[ indices + 1 ]] } ];
+vectorDBValuesPart[ KeyValuePattern @ { "Bytes" -> bytes_, "Offsets" -> offsets_ }, indices: { __Integer } ] :=
+    MapThread[
+        ByteArrayToString[ Take[ bytes, { #1, #2 } ], "UTF-8" ] &,
+        { offsets[[ indices ]] + 1, offsets[[ indices + 1 ]] }
+    ];
 
 vectorDBValuesPart // endDefinition;
 
