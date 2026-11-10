@@ -271,6 +271,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `grayDialogButtonLabel;
 `image2DQ;
 `importDataURI;
+`initializeChatSubmit;
 `initializeProgressContainer;
 `initializeRelatedDocumentation;
 `initTools;
