@@ -84,7 +84,7 @@ Settings that model configurations commonly override, organized by category. See
 | `"ToolResponseRole"` | `"System"` / `"User"` | Message role for tool response messages |
 | `"ToolCallExamplePromptStyle"` | `"Basic"` / `Automatic` | Style of tool usage examples in system prompt |
 | `"ToolExamplePrompt"` | `Automatic` / `None` | Whether to include tool usage examples |
-| `"ToolCallRetryMessage"` | Boolean | Append retry guidance after tool responses |
+| `"ToolCallRetryMessage"` | Boolean | Append retry guidance after tool responses (in the system prompt with `"PromptCacheOptimization"`) |
 | `"SplitToolResponseMessages"` | Boolean | Split mixed content+tool-request messages |
 | `"MaxToolResponses"` | Integer | Maximum tool calls per turn |
 | `"DiscourageExtraToolCalls"` | Boolean | Add prompt text discouraging excessive tool calls |
@@ -338,7 +338,7 @@ $modelAutoSettings[ Automatic, "GPT5" ] = <|
 (* GPT-5.1 inherits from GPT-5, overrides one setting *)
 $modelAutoSettings[ Automatic, "GPT51" ] = <|
     $modelAutoSettings[ Automatic, "GPT5" ],
-    "Reasoning" :> If[ TrueQ @ $gpt5Reasoning, "None", Missing[ "NotSupported" ] ]
+    "Reasoning" -> "None"
 |>;
 
 (* GPT-5.2 inherits from GPT-5.1, adds more overrides *)
@@ -604,6 +604,8 @@ All model families currently defined in `chooseModelFamily0` (`Models.wl`):
 | `"Claude2"` | `{ "Claude", "2.0"\|"2.1" }` | `Anthropic` |
 | `"Claude3"` | `{ "Claude", "3", ___ }` | `Anthropic` |
 | `"Claude4"` | `{ "Claude", "Haiku"\|"Sonnet"\|"Opus", "4", ___ }` | `Anthropic` |
+| `"ClaudeOpus47Plus"` | `{ "Claude", "Opus", "4", "7"\|"8", ___ }` | `Anthropic` (inherits from Claude4) |
+| `"Claude5"` | `{ "Claude", "Haiku"\|"Sonnet"\|"Opus"\|"Fable", "5", ___ }` | `Anthropic` (inherits from ClaudeOpus47Plus) |
 | `"Gemini2"` | `{ "Gemini", "2", ___ }` | `GoogleGemini` |
 | `"Gemini3"` | `{ "Gemini", "3", ___ }` | `GoogleGemini` |
 | `"DeepSeekChat"` | `{ "DeepSeek", ___, "Chat"\|"V3", ... }` | `DeepSeek` |

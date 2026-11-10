@@ -10,7 +10,7 @@ When `Automatic`, resolved via `$modelAutoSettings` lookup (no custom `resolveAu
 
 ### Model-Specific Overrides
 
-- **`Missing["NotSupported"]`**: GPT-5 (family-level via `$modelAutoSettings[Automatic, "GPT5"]`, inherited by GPT-5.1/GPT-5.2), O4-Mini
+- **`Missing["NotSupported"]`**: GPT-5 (family-level via `$modelAutoSettings[Automatic, "GPT5"]`, inherited by GPT-5.1/GPT-5.2), O4-Mini, Claude Opus 4.7+, Claude 5
 - All other models inherit the global default of `0.7`.
 
 ### Accepted Values
@@ -112,7 +112,7 @@ Controls the maximum number of tokens the LLM may generate in its response (outp
 
 ### Resolution
 
-When `Automatic`, resolved by `autoMaxTokens` (`Settings.wl`), which looks up the model name in `$maxTokensTable`. Only two legacy models have explicit entries: `"gpt-4-vision-preview"` and `"gpt-4-1106-preview"` (both `4096`). All other models resolve to `Automatic`, deferring to the LLM service's own default output limit.
+When `Automatic`, resolved by `autoMaxTokens` (`Settings.wl`), which looks up the model name in `$maxTokensTable`. Only two legacy models have explicit entries: `"gpt-4-vision-preview"` and `"gpt-4-1106-preview"` (both `4096`). Claude Opus 4.7+ and Claude 5 resolve to `64000` via `$modelAutoSettings`, since thinking counts toward this limit. All other models resolve to `Automatic`, deferring to the LLM service's own default output limit.
 
 ### Implementation
 
@@ -123,7 +123,7 @@ When `Automatic`, resolved by `autoMaxTokens` (`Settings.wl`), which looks up th
 ### Integration Points
 
 - **Dependencies**: Depends on `"Model"` (declared in `$autoSettingKeyDependencies`).
-- **Model-specific overrides**: None in `$modelAutoSettings`.
+- **Model-specific overrides**: `64000` for the `"ClaudeOpus47Plus"` and `"Claude5"` families in `$modelAutoSettings`.
 - **Persona inheritance**: Not listed in `$nonInheritedPersonaValues`, so it is inherited from persona configurations. No persona-level overrides exist.
 
 ### Preferences UI
@@ -148,6 +148,7 @@ When `Automatic`, resolved by `autoMaxContextTokens` (`Settings.wl`), which disp
 | Model | Value |
 | ----- | ----- |
 | Claude 3/4 | `200000` |
+| Claude Opus 4.7+, Claude 5 | `1000000` |
 | GPT-4o | `128000` |
 | Gemini 2+, GPT-4.1 | `1047576` |
 | GPT-5 | `400000` |
@@ -159,7 +160,7 @@ When `Automatic`, resolved by `autoMaxContextTokens` (`Settings.wl`), which disp
 The resolved value is used to initialize the token budget in `makeTokenBudget` (`ChatMessages.wl`), which multiplies it by `TokenBudgetMultiplier` to produce the working budget. During message construction:
 
 - Token pressure is tracked as `1.0 - ($tokenBudget / MaxContextTokens)`.
-- The cell string budget (`$cellStringBudget`) is dynamically reduced as pressure increases, dropping to `0` when fewer than `$reservedTokens` (500) remain.
+- The cell string budget (`$cellStringBudget`) is dynamically reduced as pressure increases, dropping to `0` when fewer than `$reservedTokens` (500) remain. When `"PromptCacheOptimization"` is `True`, it stays at its initial value for chat history instead (see [`"PromptCacheOptimization"`](prompting.md#promptcacheoptimization)).
 
 ### Dependent Settings
 
@@ -169,7 +170,7 @@ The resolved value is used to initialize the token budget in `makeTokenBudget` (
 ### Chat Mode Overrides
 
 - **Context mode**: Scales to 25% via `$notebookContextLimitScale` (`ChatModes/Context.wl`).
-- **NotebookAssistance mode**: Fixed at `2^15` (32,768).
+- **NotebookAssistance mode**: Fixed at `2^18` (262,144). The notebook context doesn't grow with it: in a chat, it is serialized with its own token budget of `2^15` (`$maxNotebookContextTokens` in `ChatModes/Context.wl`), and `NotebookReader` pages are limited as if `MaxContextTokens` was `2^15`. Chat notebooks opened from the Notebook Assistant ("Open as chatbook") don't keep this value.
 - **ContentSuggestions mode**: Per content type (`2^12` for WL/Text, `2^15` for Notebook).
 
 Also used by `modelContextStringLimit` (`LLMUtilities.wl`), which converts to a character limit via `tokens * 2` (with fallback to 8,000).
@@ -195,8 +196,8 @@ When `Automatic`, resolved via `$modelAutoSettings` lookup. With `"RequestMethod
 
 ### Model-Specific Overrides
 
-- **GPT-5**: Resolves to `"Minimal"` if `$gpt5Reasoning` is `True` (i.e., `Wolfram/LLMFunctions` paclet is newer than version `2.2.4`), otherwise `Missing["NotSupported"]`.
-- **GPT-5.1**: Resolves to `"None"` under the same paclet version condition, otherwise `Missing["NotSupported"]`.
+- **GPT-5**: Resolves to `"Minimal"`.
+- **GPT-5.1**: Resolves to `"None"`.
 - **GPT-5.4+** (inherited by GPT-5.6+): Resolves to `"None"` on chat completions, and to `"Medium"` on the Responses endpoint through `"ResponsesReasoning"`.
 
 When the `"Responses"` request method is used, plain effort levels are expanded to request reasoning summaries. See [`"RequestMethod"`](model-and-service.md#requestmethod).
@@ -214,6 +215,24 @@ Included in `$llmConfigPassedKeys` (`SendChat.wl`), so it is passed through `LLM
 ### Preferences UI
 
 Not exposed in the preferences UI.
+
+## `"RefusalFallbackModel"`
+
+Name of the model (on the same service) that a request is retried on when it is refused for cybersecurity reasons.
+
+Anthropic's safety classifiers can decline a request with a normal response whose stop reason is `"refusal"`. When the refusal category is `"cyber"`, the same messages are resubmitted to this model, and the rest of that chat request (including any tool calls that follow) stays on it. Partial output from the refused response is discarded. The fallback model does not fall back again if it also refuses, and the next chat input starts on the selected model again.
+
+Refusals in other categories are not retried. They write a notice to the output instead.
+
+Set this to `None` to disable the retry.
+
+### Resolution
+
+When `Automatic`, resolved via `$modelAutoSettings` lookup. Models without an override don't fall back.
+
+### Model-Specific Overrides
+
+- **Claude Fable 5, Claude Fable 5.1, Claude Opus 5, Claude Opus 5.5**: `"claude-opus-4-8"`.
 
 ## `"StopTokens"`
 
@@ -318,7 +337,7 @@ Any non-negative numeric value (`$$size` pattern: non-negative `_Integer` or `_R
 
 The token budget is computed by `makeTokenBudget` (`ChatMessages.wl`): `Ceiling[MaxContextTokens * TokenBudgetMultiplier]`. When set to an unspecified value (`Missing`, `Automatic`, or `Inherited`), the token budget equals `MaxContextTokens` unchanged.
 
-This budget is assigned to `$tokenBudget` in `makeChatMessages` (`ChatMessages.wl`) and is decremented as each message is added to the context. When a message's token count exceeds the remaining budget, it is truncated via `cutMessageContent`. Token pressure is tracked as `1.0 - ($tokenBudget / MaxContextTokens)`, and the cell string budget (`$cellStringBudget`) dynamically decreases as pressure rises, dropping to `0` when fewer than `$reservedTokens` (500) tokens remain.
+This budget is assigned to `$tokenBudget` in `makeChatMessages` (`ChatMessages.wl`) and is decremented as each message is added to the context. When a message's token count exceeds the remaining budget, it is truncated via `cutMessageContent`. Token pressure is tracked as `1.0 - ($tokenBudget / MaxContextTokens)`, and the cell string budget (`$cellStringBudget`) dynamically decreases as pressure rises, dropping to `0` when fewer than `$reservedTokens` (500) tokens remain (see `"PromptCacheOptimization"` for how this differs with prompt cache optimization).
 
 ### Integration Points
 

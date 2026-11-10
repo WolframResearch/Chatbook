@@ -12,7 +12,7 @@ $ContentSuggestions = False;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$suggestionsAuthentication      := If[ $VersionNumber >= 15.0, Automatic, "LLMKit" ];
+$suggestionsAuthentication       = Automatic;
 $suggestionsChatMethod          := If[ $suggestionsService === $fallbackLLMKitService, "ChatService", "Chat" ];
 $suggestionsService             := $llmKitService;
 $stripWhitespace                 = True;
@@ -22,7 +22,8 @@ $contentSuggestionsProgressWidth = 250;
 
 $contentSuggestionsOverrides = <|
     "MaxCellStringLength"       -> 1000,
-    "MaxOutputCellStringLength" -> 200
+    "MaxOutputCellStringLength" -> 200,
+    "Multimodal"                -> False
 |>;
 
 $maxContextTokens = <|
@@ -302,7 +303,10 @@ showContentSuggestions0[ nbo_NotebookObject, root: $$feObj, selectionInfo_Associ
 
             context = withApproximateProgress[
                 ConfirmBy[
-                    Replace[ LogChatTiming @ getSuggestionsContext[ type, nbo, settings ], None -> "" ],
+                    Replace[
+                        Block[ { $contextImages = { } }, LogChatTiming @ getSuggestionsContext[ type, nbo, settings ] ],
+                        None -> ""
+                    ],
                     StringQ,
                     "Context"
                 ],
@@ -1288,8 +1292,7 @@ formatSuggestion[ root: $$feObj, nbo_NotebookObject, styles_ ] :=
     formatSuggestion[ root, nbo, styles, # ] &;
 
 (* This is an EventHandler wrapped around a Button rather than a naked Button to work around a crash *)
-(* bug in 14.1, 453621.  Note the first step might be unnecessary, but I can't prove it, and it's cheap. *)
-(* - FEPrivate`SetWindowCursorVisible[True] dirties the mouse cursor for the window *)
+(* bug in 14.1, 453621. *)
 (* - The EventHandler updates the cursor after it finishes handling the MouseClicked event *)
 (* - While updating the cursor, an internal variable pointing to the current moused-over cell is cleared *)
 (* - Therefore, a bug that leaves that internal variable pointing to a now-deleted inline cell is avoided *)
@@ -1310,21 +1313,18 @@ formatSuggestion[ root: $$feObj, nbo_NotebookObject, { styles___String }, sugges
         ]
     ], {}, BoxID -> "REPLACEME", Alignment -> Left, Appearance -> "Suppressed", Evaluator -> None, ImageSize -> Automatic ],
     "MouseClicked" :> (NotebookDelete @ EvaluationCell[ ];
-    If[$VersionNumber === 14.1, FE`Evaluate[FEPrivate`SetWindowCursorVisible[True]]];
     NotebookWrite[ nbo, suggestion, After ])
 ];
 
 formatSuggestion[ root: $$feObj, nbo_NotebookObject, { styles___String }, suggestion_TextData ] := EventHandler[Button[
     RawBoxes @ Cell[ suggestion, styles, Deployed -> True, Selectable -> False ], {}, BoxID -> "REPLACEME", Alignment -> Left, Appearance -> "Suppressed", Evaluator -> None, ImageSize -> Automatic ],
     "MouseClicked" :> (NotebookDelete @ EvaluationCell[ ];
-    If[$VersionNumber === 14.1, FE`Evaluate[FEPrivate`SetWindowCursorVisible[True]]];
     NotebookWrite[ nbo, suggestion, After ])
 ];
 
 formatSuggestion[ root: $$feObj, nbo_NotebookObject, None, suggestion: Cell[ _CellGroupData ] ] := EventHandler[Button[
     Column[ formatSuggestionCells /@ cellFlatten @ suggestion, Spacings -> 2 ], {}, BoxID -> "REPLACEME", Alignment -> Left, Appearance -> "Suppressed", Evaluator -> None, ImageSize -> Automatic ],
     "MouseClicked" :> (NotebookDelete @ EvaluationCell[ ];
-    If[$VersionNumber === 14.1, FE`Evaluate[FEPrivate`SetWindowCursorVisible[True]]];
     NotebookWrite[ nbo, suggestion, All ])
 ];
 

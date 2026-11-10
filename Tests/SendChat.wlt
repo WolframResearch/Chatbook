@@ -177,6 +177,46 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*Multimodal Messages*)
+
+(* The chat data keeps the images for the requests that follow tool calls, but they're removed from what's written to
+   the output cell: *)
+VerificationTest[
+    Module[ { written, image, data, pageData },
+        written = Internal`Bag[ ];
+        image   = <| "Type" -> "Image", "Data" -> ConstantImage[ Red, { 8, 8 } ] |>;
+        data    = <| "Messages" -> { <| "Role" -> "User", "Content" -> { "What color is this image?", image } |> } |>;
+        Block[
+            {
+                Wolfram`Chatbook`Common`$cloudNotebooks = False,
+                Wolfram`Chatbook`Settings`Private`setCurrentChatSettings = Function[
+                    Internal`StuffBag[ written, { ## } ]
+                ]
+            },
+            Wolfram`Chatbook`SendChat`Private`writeChatOutputData[ CellObject[ "TestOutputCell" ], data ];
+            pageData = Wolfram`Chatbook`SendChat`Private`makeMinimalPageData[ TextData[ "Red" ], <| "Data" -> data |> ]
+        ];
+        {
+            Internal`BagPart[ written, All ],
+            BinaryDeserialize[ BaseDecode @ pageData ][ "Messages" ]
+        }
+    ],
+    {
+        {
+            {
+                CellObject[ "TestOutputCell" ],
+                "Data",
+                <| "Messages" -> { <| "Role" -> "User", "Content" -> "What color is this image?" |> } |>
+            }
+        },
+        { <| "Role" -> "User", "Content" -> "What color is this image?" |> }
+    },
+    SameTest -> SameQ,
+    TestID   -> "WriteChatOutputData-RemovesImages@@Tests/SendChat.wlt:184,1-216,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*StopChat*)
 
 (* Runs StopChat on an output cell with the front end stubbed out, where `settings` are the output cell's chat
@@ -211,8 +251,8 @@ VerificationTest[
                 ] &,
                 Wolfram`Chatbook`Common`currentChatSettings = <|
                     settings,
-                    "AutoFormat" -> False,
-                    "Container"  -> <| "FullContent" -> "Partial response" |>,
+                    "AutoFormat" -> $stopChatAutoFormat,
+                    "Container"  -> <| "FullContent" -> $stopChatContent |>,
                     "Task"       -> None
                 |> &,
                 Wolfram`Chatbook`Common`applyProcessingFunction = Function[
@@ -220,16 +260,19 @@ VerificationTest[
                 ]
             },
             result = Wolfram`Chatbook`ChatbookAction[ "StopChat", CellObject[ "TestOutputCell" ] ];
+            $stopChatWrittenCells = Internal`BagPart[ written, All ];
             If[ FailureQ @ result,
                 result,
                 Replace[
-                    Internal`BagPart[ written, All ],
+                    $stopChatWrittenCells,
                     HoldComplete[ _, Cell[ __, TaggingRules -> rules_, ___ ], _ ] :> rules,
                     { 1 }
                 ]
             ]
         ]
     ];
+    $stopChatAutoFormat = False;
+    $stopChatContent = "Partial response";
     (* The sorted TaggingRules keys of each final cell: *)
     stopChatTaggingRuleKeys[ args__ ] :=
         Replace[ stopChatTaggingRules @ args, rules: { ___Association } :> Map[ Sort @* Keys, rules ] ];
@@ -241,14 +284,14 @@ VerificationTest[
     |>,
     _Association,
     SameTest -> MatchQ,
-    TestID   -> "StopChat-ChatOutputData-Definitions@@Tests/SendChat.wlt:185,1-245,2"
+    TestID   -> "StopChat-ChatOutputData-Definitions@@Tests/SendChat.wlt:225,1-288,2"
 ]
 
 VerificationTest[
     stopChatTaggingRuleKeys @ <| Wolfram`Chatbook`Common`$defaultChatSettings, "Data" -> $stopChatData |>,
     { { "CellToStringData", "ChatData", "HasChatData" } },
     SameTest -> SameQ,
-    TestID   -> "StopChat-ChatOutputData@@Tests/SendChat.wlt:247,1-252,2"
+    TestID   -> "StopChat-ChatOutputData@@Tests/SendChat.wlt:290,1-295,2"
 ]
 
 (* The chat data ends with the response so far: *)
@@ -264,7 +307,7 @@ VerificationTest[
         }
     },
     SameTest -> SameQ,
-    TestID   -> "StopChat-ChatOutputData-Messages@@Tests/SendChat.wlt:255,1-268,2"
+    TestID   -> "StopChat-ChatOutputData-Messages@@Tests/SendChat.wlt:298,1-311,2"
 ]
 
 (* For asynchronous requests, a chat can be stopped after a response chunk arrives but before sendChat writes "Data" to
@@ -273,7 +316,7 @@ VerificationTest[
     stopChatTaggingRuleKeys @ Wolfram`Chatbook`Common`$defaultChatSettings,
     { { "CellToStringData" } },
     SameTest -> SameQ,
-    TestID   -> "StopChat-ChatOutputData-Not-Written-GH#1709@@Tests/SendChat.wlt:272,1-277,2"
+    TestID   -> "StopChat-ChatOutputData-Not-Written-GH#1709@@Tests/SendChat.wlt:315,1-320,2"
 ]
 
 (* The same goes for a regenerated chat, which still gets its new page: *)
@@ -281,7 +324,26 @@ VerificationTest[
     stopChatTaggingRuleKeys[ Wolfram`Chatbook`Common`$defaultChatSettings, $stopChatPageData ],
     { { "CellToStringData", "PageData" } },
     SameTest -> SameQ,
-    TestID   -> "StopChat-ChatOutputData-Not-Written-Paged-GH#1709@@Tests/SendChat.wlt:280,1-285,2"
+    TestID   -> "StopChat-ChatOutputData-Not-Written-Paged-GH#1709@@Tests/SendChat.wlt:323,1-328,2"
+]
+
+(* A tool call that was stopped before it has a result doesn't show that it's still in progress: *)
+VerificationTest[
+    Block[
+        {
+            $stopChatAutoFormat = True,
+            $stopChatContent = "Before\n\nTOOLCALL: web_fetcher\n{\"url\":\"https://example.com\"}\nENDARGUMENTS\nENDTOOLCALL"
+        },
+        stopChatTaggingRules @ Wolfram`Chatbook`Common`$defaultChatSettings;
+        {
+            FreeQ[ $stopChatWrittenCells, FEPrivate`FrontEndResource[ "ChatbookStrings", "FormattingToolCancelled" ] ],
+            FreeQ[ $stopChatWrittenCells, FEPrivate`FrontEndResource[ "ChatbookStrings", "FormattingToolUsing" ] ],
+            FreeQ[ $stopChatWrittenCells, "ChatbookActiveToolProgress" ]
+        }
+    ],
+    { False, True, True },
+    SameTest -> SameQ,
+    TestID   -> "StopChat-Tool-Call-Cancelled-GH#575@@Tests/SendChat.wlt:331,1-347,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

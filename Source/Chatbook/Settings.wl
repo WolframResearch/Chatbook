@@ -62,8 +62,10 @@ $defaultChatSettings = <|
     "OpenAIAPICompletionURL"         -> "https://api.openai.com/v1/chat/completions",
     "OpenAIKey"                      -> Automatic,
     "OpenToolCallBoxes"              -> Automatic,
+    "PersonaFavorites"               -> $corePersonaNames,
     "PresencePenalty"                -> Automatic,
     "ProcessingFunctions"            :> $DefaultChatProcessingFunctions,
+    "PromptCacheOptimization"        -> Automatic,
     "PromptGeneratorMessagePosition" -> 2,
     "PromptGeneratorMessageRole"     -> "System",
     "PromptGenerators"               -> Automatic,
@@ -71,6 +73,7 @@ $defaultChatSettings = <|
     "Prompts"                        -> { },
     "ProviderPreferences"            -> Automatic,
     "Reasoning"                      -> Automatic,
+    "RefusalFallbackModel"           -> Automatic,
     "ReplaceUnicodeCharacters"       -> Automatic,
     "RequestMethod"                  -> Automatic,
     "SendToolResponse"               -> Automatic,
@@ -155,6 +158,8 @@ $modelAutoSettings[ "Anthropic" ] = <| |>;
 
 $modelAutoSettings[ "Anthropic", Automatic ] = <|
     "PresencePenalty"           -> Missing[ "NotSupported" ],
+    (* LLMConnections moves all system messages into the system prompt, so turn messages would collect there: *)
+    "PromptCacheOptimization"   -> False,
     "ReplaceUnicodeCharacters"  -> True,
     "SplitToolResponseMessages" -> True, (* Temporary workaround for bug 458548 *)
     "ToolMethod"                -> "Service"
@@ -182,8 +187,19 @@ $modelAutoSettings[ "Anthropic", "Claude4" ] = <|
 
 $modelAutoSettings[ "Anthropic", "ClaudeOpus47Plus" ] = <|
     $modelAutoSettings[ "Anthropic", "Claude4" ],
-    "Temperature" -> Missing[ "NotSupported" ]
+    "MaxContextTokens" -> 1000000,
+    "MaxTokens"        -> 64000,
+    "Temperature"      -> Missing[ "NotSupported" ]
 |>;
+
+$modelAutoSettings[ "Anthropic", "Claude5" ] =
+    $modelAutoSettings[ "Anthropic", "ClaudeOpus47Plus" ];
+
+(* Cybersecurity refusals from these models are retried on Claude Opus 4.8: *)
+Scan[
+    ($modelAutoSettings[ "Anthropic", # ] = <| "RefusalFallbackModel" -> "claude-opus-4-8" |>) &,
+    { "ClaudeFable5", "ClaudeFable51", "ClaudeOpus5", "ClaudeOpus55" }
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -201,8 +217,10 @@ $modelAutoSettings[ "AzureOpenAI", Automatic ] = <|
 $modelAutoSettings[ "DeepSeek" ] = <| |>;
 
 $modelAutoSettings[ "DeepSeek", "DeepSeekReasoner" ] = <|
-    "HybridToolMethod" -> False,
-    "ToolResponseRole" -> "User"
+    "HybridToolMethod"        -> False,
+    (* Models that need user role tool responses might not accept the system role turn messages either: *)
+    "PromptCacheOptimization" -> False,
+    "ToolResponseRole"        -> "User"
 |>;
 
 $modelAutoSettings[ "DeepSeek", "DeepSeekChat" ] = <|
@@ -246,9 +264,20 @@ $modelAutoSettings[ "GoogleGemini", Automatic ] = <|
 $modelAutoSettings[ "MistralAI" ] = <| |>;
 
 $modelAutoSettings[ "MistralAI", Automatic ] = <|
-    "EndToken"          -> None,
-    "ToolMethod"        -> "Service",
-    "PresencePenalty"   -> Missing[ "NotSupported" ]
+    "EndToken"                -> None,
+    (* The Mistral API rejects requests that end with a system message, which turn messages would give: *)
+    "PromptCacheOptimization" -> False,
+    "ToolMethod"              -> "Service",
+    "PresencePenalty"         -> Missing[ "NotSupported" ]
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*Ollama*)
+$modelAutoSettings[ "Ollama" ] = <| |>;
+
+$modelAutoSettings[ "Ollama", Automatic ] = <|
+    "PresencePenalty" -> Missing[ "NotSupported" ]
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -271,7 +300,8 @@ $modelAutoSettings[ "OpenAI", Automatic ] = <|
 $modelAutoSettings[ "TogetherAI" ] = <| |>;
 
 $modelAutoSettings[ "TogetherAI", "DeepSeekReasoner" ] = <|
-    "ToolResponseRole" -> "User"
+    "PromptCacheOptimization" -> False,
+    "ToolResponseRole"        -> "User"
 |>;
 
 $modelAutoSettings[ "TogetherAI", "KimiK25" ] = <|
@@ -401,7 +431,7 @@ $modelAutoSettings[ Automatic, "GPT5" ] = <|
     "MaxContextTokens"           -> 400000,
     "Multimodal"                 -> True,
     "PresencePenalty"            -> Missing[ "NotSupported" ],
-    "Reasoning"                  :> If[ TrueQ @ $gpt5Reasoning, "Minimal", Missing[ "NotSupported" ] ],
+    "Reasoning"                  -> "Minimal",
     "StopTokens"                 -> Missing[ "NotSupported" ],
     "Temperature"                -> Missing[ "NotSupported" ],
     "TokenizerName"              -> "gpt-4o",
@@ -412,7 +442,7 @@ $modelAutoSettings[ Automatic, "GPT5" ] = <|
 
 $modelAutoSettings[ Automatic, "GPT51" ] = <|
     $modelAutoSettings[ Automatic, "GPT5" ],
-    "Reasoning" :> If[ TrueQ @ $gpt5Reasoning, "None", Missing[ "NotSupported" ] ]
+    "Reasoning" -> "None"
 |>;
 
 $modelAutoSettings[ Automatic, "GPT52" ] = <|
@@ -428,7 +458,7 @@ $modelAutoSettings[ Automatic, "GPT53" ] =
 $modelAutoSettings[ Automatic, "GPT53Chat" ] = <|
     $modelAutoSettings[ Automatic, "GPT53" ],
     "MaxContextTokens" -> 128000,
-    "Reasoning" :> If[ TrueQ @ $gpt5Reasoning, "Medium", Missing[ "NotSupported" ] ] (* TODO: Doesn't support parameter value of 'none'. *)
+    "Reasoning" -> "Medium" (* TODO: Doesn't support parameter value of 'none'. *)
 |>;
 
 $modelAutoSettings[ Automatic, "GPT54Plus" ] = <|
@@ -456,8 +486,6 @@ $modelAutoSettings[ Automatic, "GPT56Plus" ] = <|
     $modelAutoSettings[ Automatic, "GPT54Plus" ],
     "ReasoningEfforts" -> { "None", "Low", "Medium", "High", "XHigh", "Max" }
 |>;
-
-$gpt5Reasoning := $gpt5Reasoning = pacletVersionAtLeastQ[ "Wolfram/LLMFunctions", "2.2.5" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -518,13 +546,14 @@ $modelAutoSettings[ Automatic, "O4Mini" ] = <|
 (* ::Subsubsubsection::Closed:: *)
 (* DeepSeek *)
 $modelAutoSettings[ Automatic, "DeepSeekFlash" ] = <|
-    "EndToken"               -> None,
-    "HybridToolMethod"       -> False,
-    "MaxContextTokens"       -> 1048576,
-    "Multimodal"             -> False,
-    "ToolCallRetryMessage"   -> False,
-    "ToolMethod"             -> "Simple",
-    "ToolResponseRole"       -> "User"
+    "EndToken"                -> None,
+    "HybridToolMethod"        -> False,
+    "MaxContextTokens"        -> 1048576,
+    "Multimodal"              -> False,
+    "PromptCacheOptimization" -> False,
+    "ToolCallRetryMessage"    -> False,
+    "ToolMethod"              -> "Simple",
+    "ToolResponseRole"        -> "User"
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -544,15 +573,18 @@ $modelAutoSettings[ Automatic, "KimiK25" ] = <|
 (* ::Subsubsubsection::Closed:: *)
 (*Local models*)
 $modelAutoSettings[ Automatic, "Qwen" ] = <|
-    "ToolResponseRole" -> "User"
+    "PromptCacheOptimization" -> False,
+    "ToolResponseRole"        -> "User"
 |>;
 
 $modelAutoSettings[ Automatic, "Nemotron" ] = <|
-    "ToolResponseRole" -> "User"
+    "PromptCacheOptimization" -> False,
+    "ToolResponseRole"        -> "User"
 |>;
 
 $modelAutoSettings[ Automatic, "Mistral" ] = <|
-    "ToolResponseRole" -> "User"
+    "PromptCacheOptimization" -> False,
+    "ToolResponseRole"        -> "User"
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -565,6 +597,7 @@ $modelAutoSettings[ Automatic, Automatic ] = <|
     "EndToken"                  -> "/end",
     "ExcludedBasePrompts"       -> { ParentList },
     "PresencePenalty"           -> 0.1,
+    "PromptCacheOptimization"   -> True,
     "ProviderPreferences"       -> <| |>,
     "ReplaceUnicodeCharacters"  -> False,
     "ShowProgressText"          -> True,
@@ -1108,7 +1141,7 @@ resolveAutoSetting0[ as_, name_String ] :=
     ];
 
 (* Otherwise resolve defaults normally: *)
-resolveAutoSetting0[ as_, "AllowSelectionContext"          ] := TrueQ[ $WorkspaceChat || $InlineChat (*|| $SidebarChat*) ];
+resolveAutoSetting0[ as_, "AllowSelectionContext"          ] := TrueQ[ $WorkspaceChat (*|| $SidebarChat*) ];
 resolveAutoSetting0[ as_, "AppName"                        ] := $defaultAppName;
 resolveAutoSetting0[ as_, "Assistance"                     ] := False;
 resolveAutoSetting0[ as_, "Authentication"                 ] := autoAuthentication @ as;
@@ -1527,12 +1560,18 @@ serviceMaxContextTokens[ settings_Association ] :=
 
 serviceMaxContextTokens[ service_String, name_String ] :=
     Module[ { max },
-        max = Quiet @ ServiceExecute[ service, "ModelContextLength", { "Name" -> name } ];
+        (* Like LLMServices requests, start a local Ollama server if needed instead of asking the user in a dialog: *)
+        max = Quiet @ Block[ { Ollama`IssueDialogsQ = False },
+            ServiceExecute[ service, "ModelContextLength", { "Model" -> name } ]
+        ];
         If[ TrueQ @ Positive @ max,
             serviceMaxContextTokens[ service, name ] = Floor @ max,
             autoMaxContextTokens0 @ name
         ]
     ];
+
+(* The service chooses the model, so there's no specific model to query (same default as autoMaxContextTokens): *)
+serviceMaxContextTokens[ _String, Automatic ] := 2^16;
 
 serviceMaxContextTokens // endDefinition;
 
@@ -2011,6 +2050,55 @@ unsetCurrentChatSettings0[ obj: $$feObj, key_? StringQ ] := setCurrentChatSettin
 unsetCurrentChatSettings0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*unsetChatSettingsKeys*)
+(* Removes several explicitly stored global settings at once with a single read and a single write,
+   without writing any default values back as explicit settings. In the Cloud, this avoids a settings
+   file round trip for each key. *)
+unsetChatSettingsKeys // beginDefinition;
+unsetChatSettingsKeys[ obj: $$frontEndObject, keys: { ___String } ] /; $CloudEvaluation := unsetChatSettingsKeys0[ obj, keys ];
+unsetChatSettingsKeys[ obj: $$frontEndObject, keys: { ___String } ] := UsingFrontEnd @ unsetChatSettingsKeys0[ obj, keys ];
+unsetChatSettingsKeys // endDefinition;
+
+
+unsetChatSettingsKeys0 // beginDefinition;
+
+unsetChatSettingsKeys0[ obj_, keys_ ] := Enclose[
+    Module[ { stored, remaining },
+        stored    = ConfirmBy[ storedChatSettings @ obj, AssociationQ, "StoredSettings" ];
+        remaining = KeyDrop[ stored, keys ];
+        If[ remaining =!= stored,
+            setCurrentChatSettings1[ obj, If[ remaining === <| |>, Inherited, remaining ] ]
+        ];
+        remaining
+    ],
+    throwInternalFailure
+];
+
+unsetChatSettingsKeys0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*storedChatSettings*)
+(* The global settings that are explicitly stored, without inherited or default values. *)
+storedChatSettings // beginDefinition;
+
+storedChatSettings[ $$frontEndObject ] /; $CloudEvaluation :=
+    getGlobalSettingsFile[ ];
+
+storedChatSettings[ obj: $$frontEndObject ] :=
+    toStoredSettingsAssociation @ CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings" } ];
+
+storedChatSettings // endDefinition;
+
+
+toStoredSettingsAssociation // beginDefinition;
+toStoredSettingsAssociation[ as_Association? AssociationQ ] := as;
+toStoredSettingsAssociation[ rules: { (_Rule|_RuleDelayed)... } ] := Association @ rules;
+toStoredSettingsAssociation[ _ ] := <| |>;
+toStoredSettingsAssociation // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*currentChatSettings*)
 currentChatSettings // beginDefinition;
@@ -2049,10 +2137,10 @@ currentChatSettings // endDefinition;
 
 currentChatSettings0 // beginDefinition;
 
-currentChatSettings0[ fe: $$frontEndObject ] /; $CloudEvaluation :=
+currentChatSettings0[ $$frontEndObject ] /; $CloudEvaluation :=
     getGlobalChatSettings[ ];
 
-currentChatSettings0[ fe: $$frontEndObject, key_String ] /; $CloudEvaluation :=
+currentChatSettings0[ $$frontEndObject, key_String ] /; $CloudEvaluation :=
     getGlobalChatSettings[ key ];
 
 currentChatSettings0[ obj: _NotebookObject|_FrontEndObject|$FrontEndSession ] := (

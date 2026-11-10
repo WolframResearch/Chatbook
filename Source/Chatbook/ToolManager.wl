@@ -204,7 +204,7 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List, opts : OptionsPattern[ ] 
                                         (* Checkbox grid: *)
                                         linkedPane[
                                             Grid[
-                                                (*fitLastColumn @*) Table[
+                                                Table[
                                                     If[ And[
                                                             StringQ @ personaToolLookup @ tools[[ i, "CanonicalName" ]],
                                                             UnsameQ[
@@ -410,20 +410,6 @@ CreateLLMToolManagerPanel // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*fitLastColumn*)
-fitLastColumn // beginDefinition;
-
-fitLastColumn[ grid_? MatrixQ ] :=
-    MapAt[
-        Item[ #, ItemSize -> { Fit, Automatic }, Alignment -> { Left, Automatic } ] &,
-        grid,
-        { All, -1 }
-    ];
-
-fitLastColumn // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
 (*addPersonaSource*)
 addPersonaSource // beginDefinition;
 
@@ -576,7 +562,7 @@ toolModelWarning[ None | { } | HoldPattern @ SelectedCells @ None ] := "";
 toolModelWarning[ { cell_CellObject, ___ } ] := toolModelWarning @ cell;
 toolModelWarning[ scope_ ] := toolModelWarning[ scope, currentChatSettings[ scope, "ToolsEnabled" ] ];
 toolModelWarning[ scope_, True ] := "";
-toolModelWarning[ scope_, False ] := $toolsDisabledWarning;
+toolModelWarning[ scope_, False ] := toolWarningRow @ tr[ "ToolManagerToolsDisabled" ];
 toolModelWarning[ scope_, enabled_ ] := toolModelWarning[ scope, enabled, currentChatSettings[ scope, "Model" ] ];
 toolModelWarning[ scope_, enabled_, KeyValuePattern[ "Name" -> Automatic ] ] := "";
 toolModelWarning[ scope_, enabled_, model_? toolsEnabledQ ] := "";
@@ -591,14 +577,7 @@ toolModelWarning0[ scope_, model_String ] := Enclose[
         name     = ConfirmBy[ modelDisplayName @ model, StringQ, "ModelName" ];
         template = ConfirmBy[ Chatbook::ModelToolSupport, StringQ, "Template" ];
         message  = ConfirmBy[ TemplateApply[ template, { name } ], StringQ, "Message" ];
-        Grid[
-            { {
-                Spacer[ 5 ],
-                Style[ "\[WarningSign]", FontWeight -> Bold, FontColor -> Gray, FontSize -> 18 ],
-                Style[ message, FontColor -> Gray, FontSlant -> Italic ]
-            } },
-            Alignment -> { Left, Top }
-        ]
+        toolWarningRow @ message
     ],
     throwInternalFailure[ toolModelWarning0[ scope, model ], ## ] &
 ];
@@ -609,6 +588,22 @@ toolModelWarning0[ scope_, model: Except[ _String ] ] :=
     ];
 
 toolModelWarning0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*toolWarningRow*)
+toolWarningRow // beginDefinition;
+
+toolWarningRow[ message_ ] := Grid[
+    { {
+        Spacer[ 5 ],
+        Style[ "\[WarningSign]", FontWeight -> Bold, FontColor -> Gray, FontSize -> 18 ],
+        Style[ message, FontColor -> Gray, FontSlant -> Italic ]
+    } },
+    Alignment -> { Left, Top }
+];
+
+toolWarningRow // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -874,12 +869,30 @@ deleteTool[ KeyValuePattern @ { "CanonicalName" -> cName_, "ResourceName" -> rNa
     deleteTool[ cName, rName ];
 
 deleteTool[ cName_, rName_String ] := (
-    unsetCV[ $FrontEnd, "ToolSelections"   , cName ];
-    unsetCV[ $FrontEnd, "ToolSelectionType", cName ];
+    unsetToolKey[ $FrontEnd, "ToolSelections"   , cName ];
+    unsetToolKey[ $FrontEnd, "ToolSelectionType", cName ];
     ResourceUninstall[ "LLMTool", rName ]
 );
 
 deleteTool // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*unsetToolKey*)
+(* Unsetting a single key leaves the parent behind as an empty association, so remove it as well: *)
+unsetToolKey // beginDefinition;
+
+unsetToolKey[ cells_List, parent_String, key_ ] :=
+    Scan[ unsetToolKey[ #, parent, key ] &, cells ];
+
+unsetToolKey[ scope_, parent_String, key_ ] := (
+    If[ MatchQ[ cv[ scope, parent ], KeyValuePattern[ key -> _ ] ],
+        unsetCV[ scope, parent, key ]
+    ];
+    If[ MatchQ[ cv[ scope, parent ], <| |> | { } ], unsetCV[ scope, parent ] ];
+);
+
+unsetToolKey // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -940,7 +953,7 @@ enabledControl[
                         ];
 
                         (* Unset the "All" or "None" setting if it exists, since a checkbox was toggled manually: *)
-                        unsetCV[ scope, "ToolSelectionType", nameOfTool ];
+                        unsetToolKey[ scope, "ToolSelectionType", nameOfTool ];
 
                         (* Cleanup empty tagging rules *)
                         If[ MatchQ[ cv[ scope, "ToolSelections", nameOfTool ], <| |> | { } ],
@@ -1015,7 +1028,10 @@ rightColControl[
                     PopupMenu[
                         Dynamic[
                             acv[ scope, "ToolSelectionType", toolName ],
-                            setCV[ scope, "ToolSelectionType", toolName, # ] &
+                            If[ # === Inherited,
+                                unsetToolKey[ scope, "ToolSelectionType", toolName ],
+                                setCV[ scope, "ToolSelectionType", toolName, # ]
+                            ] &
                         ],
                         {
                             Inherited -> tr[ "ToolManagerEnabledByPersona" ],
@@ -1119,8 +1135,8 @@ rightColControl[
                                 { val, col },
                                 val -> Button[
                                     iconData[ "Clear", col ],
-                                    unsetCV[ scope, "ToolSelections"   , toolName ];
-                                    unsetCV[ scope, "ToolSelectionType", toolName ];
+                                    unsetToolKey[ scope, "ToolSelections"   , toolName ];
+                                    unsetToolKey[ scope, "ToolSelectionType", toolName ];
                                     ,
                                     Appearance -> "Suppressed",
                                     ImageSize  -> { 20, $rowHeight }

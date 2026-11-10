@@ -1014,3 +1014,120 @@ VerificationTest[
     SameTest -> MatchQ,
     TestID   -> "Markdown-ToolCall-Before-Escaped-CodeBlock@@Tests/Formatting.wlt:1005,1-1016,2"
 ]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Line Endings*)
+
+(* "\r\n" and a lone "\r" are line breaks, so a response written with either one formats exactly like the same response
+   written with "\n", when finished, while streaming, and serialized. These are the responses that don't: *)
+VerificationTest[
+    Select[
+        Tuples @ {
+            {
+                "Line one\nLine two\n\nPara two",
+                "## Heading\n\nText\n- item\n- item2\n  - nested\n\n1. one\n2. two",
+                "> a\n> b\n\n---\n\nAfter",
+                "| a | b |\n|---|---|\n| 1 | 2 |\n\nAfter",
+                "Text\n\n```python\na = 1\nb = 2\n```\n\n```wl\na = 1;\nb = 2\n```\n\nAfter",
+                StringJoin[
+                    "A\n\nTOOLCALL: web_fetcher\n{\"url\":\"https://example.com\"}\nENDARGUMENTS\nENDTOOLCALL\n",
+                    "RESULT\nok\nENDRESULT(crlf0001)\n\nB"
+                ],
+                "Before\n<think>\nSome thoughts\n- a\n- b\n</think>\nAfter",
+                "Text\n$$x^2$$\nMore with *it*\nand \\$5"
+            },
+            { "\r\n", "\r" }
+        },
+        Function[
+            With[ { md = #[[ 1 ]], other = StringReplace[ #[[ 1 ]], "\n" -> #[[ 2 ]] ] },
+                Or[
+                    FormatMarkdown @ other =!= FormatMarkdown @ md,
+                    FormatMarkdown[ other, "Streaming" ] =!= FormatMarkdown[ md, "Streaming" ],
+                    MarkdownRoundTrip @ other =!= MarkdownRoundTrip @ md
+                ]
+            ]
+        ]
+    ],
+    { },
+    SameTest -> MatchQ,
+    TestID   -> "Markdown-Line-Endings-Same-As-LF@@Tests/Formatting.wlt:1024,1-1055,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*TeX Conversion Re-entrancy*)
+
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::PrivateContextSymbol:: *)
+
+(* Calling makeTeXBoxes from inside the conversion stands in for a preemptive evaluation that interrupts it: *)
+VerificationTest[
+    Module[ { calls = 0, nested, id, reentered },
+        (* The inputs include $ModuleNumber so that they haven't been converted before in the session: *)
+        id = ToString @ $ModuleNumber;
+        reentered = "reentered-" <> id;
+        Block[ { InputAssistant`TeXAssistant },
+            InputAssistant`TeXAssistant[ input_String ] := (
+                calls++;
+                If[ calls === 1, nested = Wolfram`Chatbook`Common`makeTeXBoxes @ reentered ];
+                RawBoxes @ TemplateBox[
+                    <| "boxes" -> "x", "errors" -> { }, "input" -> input, "state" -> "Boxes" |>,
+                    "TeXAssistantTemplate"
+                ]
+            );
+            {
+                Wolfram`Chatbook`Common`makeTeXBoxes[ "outer-" <> id ],
+                calls,
+                nested,
+                Wolfram`Chatbook`Common`makeTeXBoxes @ reentered,
+                calls
+            }
+        ]
+    ],
+    { _RawBoxes, 1, $Failed, _RawBoxes, 2 },
+    SameTest -> MatchQ,
+    TestID   -> "TeX-Reentrant-Conversion-Skipped-Not-Cached-GH#1796@@Tests/Formatting.wlt:1065,1-1091,2"
+]
+
+VerificationTest[
+    Module[ { id, math, cached, nested },
+        id = ToString @ $ModuleNumber;
+        math = "x^{" <> id <> "}";
+        cached = Wolfram`Chatbook`Common`makeTeXBoxes @ math;
+        Block[ { InputAssistant`TeXAssistant },
+            InputAssistant`TeXAssistant[ input_String ] := (
+                nested = Wolfram`Chatbook`Common`makeTeXBoxes @ math;
+                RawBoxes @ TemplateBox[
+                    <| "boxes" -> "x", "errors" -> { }, "input" -> input, "state" -> "Boxes" |>,
+                    "TeXAssistantTemplate"
+                ]
+            );
+            Wolfram`Chatbook`Common`makeTeXBoxes[ "cached-outer-" <> id ];
+            { MatchQ[ cached, _RawBoxes ], nested === cached }
+        ]
+    ],
+    { True, True },
+    SameTest -> MatchQ,
+    TestID   -> "TeX-Reentrant-Conversion-Uses-Cache-GH#1796@@Tests/Formatting.wlt:1093,1-1113,2"
+]
+
+(* The guard is released when a conversion fails or is interrupted: *)
+VerificationTest[
+    With[ { id = ToString @ $ModuleNumber },
+        Block[ { InputAssistant`TeXAssistant },
+            InputAssistant`TeXAssistant[ _String ] := Throw[ "interrupted", "gh1796" ];
+            Catch[ Wolfram`Chatbook`Common`makeTeXBoxes[ "throws-" <> id ], "gh1796" ];
+            InputAssistant`TeXAssistant[ input_String ] := RawBoxes @ TemplateBox[
+                <| "boxes" -> "x", "errors" -> { }, "input" -> input, "state" -> "Boxes" |>,
+                "TeXAssistantTemplate"
+            ];
+            Wolfram`Chatbook`Common`makeTeXBoxes[ "after-throw-" <> id ]
+        ]
+    ],
+    _RawBoxes,
+    SameTest -> MatchQ,
+    TestID   -> "TeX-Conversion-Guard-Released-After-Throw-GH#1796@@Tests/Formatting.wlt:1116,1-1131,2"
+]
+
+(* :!CodeAnalysis::EndBlock:: *)

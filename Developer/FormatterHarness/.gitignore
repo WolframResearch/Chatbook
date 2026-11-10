@@ -1,0 +1,5 @@
+# Local results: make them from main on your machine (see README.md)
+golden-*.wxf
+bench-*.wxf
+bench-*.md
+profile-*.md

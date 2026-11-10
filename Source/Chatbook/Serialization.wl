@@ -1497,28 +1497,6 @@ cacheBoxRaster[ boxes_, expr_ ] :=
 cacheBoxRaster // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsubsection::Closed:: *)
-(*rasterizeGraphics*)
-rasterizeGraphics // beginDefinition;
-
-rasterizeGraphics[ gfx: $$graphicsBox ] :=
-    If[ TrueQ @ $ChatNotebookEvaluation,
-        rasterizeGraphics[ Verbatim[ gfx ] ] = checkedRasterize @ RawBoxes @ gfx,
-        checkedRasterize @ RawBoxes @ gfx
-    ];
-
-rasterizeGraphics[ cell_Cell ] :=
-    rasterizeGraphics[ cell, 6.25*$cellPageWidth ];
-
-rasterizeGraphics[ cell_Cell, width_Real ] :=
-    If[ TrueQ @ $ChatNotebookEvaluation,
-        rasterizeGraphics[ Verbatim[ cell ], width ] = checkedRasterize @ Append[ cell, PageWidth -> width ],
-        checkedRasterize @ Append[ cell, PageWidth -> width ]
-    ];
-
-rasterizeGraphics // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Video*)
 boxToString[ box: TemplateBox[ _, "VideoBox1"|"VideoBox2", ___ ] ] /;
@@ -3508,8 +3486,8 @@ escapeMarkdownCharacters[ text_ ] := text;
 $escapeMarkdown = False;
 
 $markdownReplacements = Flatten @ {
-    (* Underscores only mark emphasis at word boundaries (see $stringFormatRules in Formatting.wl), so underscores
-       inside words aren't escaped: *)
+    (* Underscores only mark emphasis at word boundaries (see $stringFormatRules in Formatting/Rules.wl), so
+       underscores inside words aren't escaped: *)
     "\\_" -> "\\_",
     (WordBoundary ~~ u: "_"..) | (u: "_".. ~~ WordBoundary) :> StringReplace[ u, "_" -> "\\_" ],
     { "\\" <> # -> "\\" <> #, # -> "\\" <> # } & /@ DeleteCases[ $escapedMarkdownCharacters, "_" ]
@@ -3628,117 +3606,6 @@ $noDocSearchResultsString = "BEGIN_DOCUMENTATION_SEARCH_RESULTS\n(no results fou
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*Documentation Notebooks*)
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*makeDocumentationString*)
-makeDocumentationString // SetFallthroughError;
-
-makeDocumentationString[ file_? FileExistsQ ] := makeDocumentationString[ file ] =
-    Module[ { nb, string },
-        nb = Import[ file, "NB" ];
-
-        string = TemplateApply[
-            "`Usage`\n\n`Details`\n\n`Examples`\n\n`Metadata`",
-            <|
-                "Usage"    -> getUsageString @ nb,
-                "Details"  -> getDetailsString @ nb,
-                "Examples" -> getExamplesString @ nb,
-                "Metadata" -> getMetadataString @ nb
-            |>
-        ];
-
-        StringDelete[ StringReplace[ StringTrim @ string, "\n\n\n\n" -> "\n\n" ], "```"~~"\n"..~~"```" ]
-    ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*getUsageString*)
-getUsageString // SetFallthroughError;
-
-getUsageString[ nb_Notebook ] := makeUsageString @ cellCases[
-    firstMatchingCellGroup[ nb, Cell[ __, "ObjectNameGrid", ___ ], All ],
-    Cell[ __, "ObjectNameGrid"|"Usage", ___ ]
-];
-
-
-makeUsageString // SetFallthroughError;
-
-makeUsageString[ usage_List ] := StringRiffle[ Flatten[ makeUsageString /@ usage ], "\n" ];
-
-makeUsageString[ Cell[ BoxData[ GridBox[ grid_List, ___ ], ___ ], "Usage", ___ ] ] := makeUsageString0 /@ grid;
-
-makeUsageString[ Cell[ BoxData[ GridBox[ { { cell_, _ } }, ___ ], ___ ], "ObjectNameGrid", ___ ] ] :=
-    "# " <> cellToString @ cell <> "\n";
-
-makeUsageString0 // SetFallthroughError;
-makeUsageString0[ list_List ] := StringTrim @ StringReplace[ StringRiffle[ cellToString /@ list ], Whitespace :> " " ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*getDetailsString*)
-getDetailsString // SetFallthroughError;
-
-getDetailsString[ nb_Notebook ] :=
-    Module[ { notes },
-        notes = cellToString /@ cellFlatten @ firstMatchingCellGroup[ nb, Cell[ __, "NotesSection", ___ ] ];
-        If[ MatchQ[ notes, { __String } ],
-            "## Notes\n\n" <> StringRiffle[ notes, "\n" ],
-            ""
-        ]
-    ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*getExamplesString*)
-getExamplesString // SetFallthroughError;
-
-getExamplesString[ nb_Notebook ] :=
-    Module[ { cells, examples },
-        cells    = cellFlatten @ firstMatchingCellGroup[ nb, Cell[ __, "PrimaryExamplesSection", ___ ] ];
-        examples = Block[ { $maxOutputCellStringLength = 100 }, cellToString /@ cells ];
-        If[ MatchQ[ examples, { __String } ],
-            "## Examples\n\n" <> StringRiffle[ examples, "\n" ],
-            ""
-        ]
-    ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*getMetadataString*)
-getMetadataString // SetFallthroughError;
-
-getMetadataString[ Notebook[ ___, TaggingRules -> tags_, ___ ] ] :=
-    getMetadataString @ tags;
-
-getMetadataString[ KeyValuePattern[ "Metadata" -> md: KeyValuePattern @ { } ] ] :=
-    formatMetadata @ KeyTake[ md, { "keywords", "specialkeywords", "summary", "synonyms", "tabletags", "title" } ];
-
-getMetadataString[ ___ ] := "";
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*formatMetadata*)
-formatMetadata // SetFallthroughError;
-
-formatMetadata[ as_Association ] :=
-    "## Metadata\n\n" <> StringRiffle[ KeyValueMap[ formatMetadata, as ], "\n\n" ];
-
-formatMetadata[ key_String, values: { __String } ] :=
-    "### " <> key <> "\n\n" <> StringRiffle[ ("* " <> #1 &) /@ values, "\n" ];
-
-formatMetadata[ _, { } ] :=
-    Nothing;
-
-formatMetadata[ key_String, value_String ] :=
-    "### "<>key<>"\n\n"<>value;
-
-formatMetadata[ ___ ] :=
-    Nothing;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
 (*Cell Utilities*)
 
 (* ::**************************************************************************************************************:: *)
@@ -3766,25 +3633,6 @@ codeBlockLanguage // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*cellMap*)
-cellMap // SetFallthroughError;
-cellMap[ f_, cells_List ] := (cellMap[ f, #1 ] &) /@ cells;
-cellMap[ f_, Cell[ CellGroupData[ cells_, a___ ], b___ ] ] := Cell[ CellGroupData[ cellMap[ f, cells ], a ], b ];
-cellMap[ f_, cell_Cell ] := f @ cell;
-cellMap[ f_, Notebook[ cells_, opts___ ] ] := Notebook[ cellMap[ f, cells ], opts ];
-cellMap[ f_, other_ ] := other;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*cellGroupMap*)
-cellGroupMap // SetFallthroughError;
-cellGroupMap[ f_, Notebook[ cells_, opts___ ] ] := Notebook[ cellGroupMap[ f, cells ], opts ];
-cellGroupMap[ f_, cells_List ] := Map[ cellGroupMap[ f, # ] &, cells ];
-cellGroupMap[ f_, Cell[ group_CellGroupData, a___ ] ] := Cell[ cellGroupMap[ f, f @ group ], a ];
-cellGroupMap[ f_, other_ ] := other;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*cellScan*)
 cellScan // SetFallthroughError;
 cellScan[ f_, Notebook[ cells_, opts___ ] ] := cellScan[ f, cells ];
@@ -3792,21 +3640,6 @@ cellScan[ f_, cells_List ] := Scan[ cellScan[ f, # ] &, cells ];
 cellScan[ f_, Cell[ CellGroupData[ cells_, _ ], ___ ] ] := cellScan[ f, cells ];
 cellScan[ f_, cell_Cell ] := (f @ cell; Null);
 cellScan[ ___ ] := Null;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*cellGroupScan*)
-cellGroupScan // SetFallthroughError;
-cellGroupScan[ f_, (Notebook|CellGroupData)[ cells_, ___ ] ] := cellGroupScan[ f, cells ];
-cellGroupScan[ f_, cells_List ] := Scan[ cellGroupScan[ f, # ] &, cells ];
-cellGroupScan[ f_, Cell[ group_CellGroupData, ___ ] ] := (f @ group; cellGroupScan[ f, group ]);
-cellGroupScan[ ___ ] := Null;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*cellCases*)
-cellCases // SetFallthroughError;
-cellCases[ cells_, patt_ ] := Cases[ cellFlatten @ cells, patt ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -3819,31 +3652,6 @@ cellFlatten[ cells_ ] :=
         cellScan[ Internal`StuffBag[ bag, # ] &, cells ];
         Internal`BagPart[ bag, All ]
     ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*firstMatchingCellGroup*)
-firstMatchingCellGroup // SetFallthroughError;
-
-firstMatchingCellGroup[ nb_, patt_ ] := firstMatchingCellGroup[ nb, patt, "Content" ];
-
-firstMatchingCellGroup[ nb_, patt_, All ] := Catch[
-    cellGroupScan[
-        Replace[ CellGroupData[ { header: patt, content___ }, _ ] :> Throw[ { header, content }, $cellGroupTag ] ],
-        nb
-    ];
-    Missing[ "NotFound" ],
-    $cellGroupTag
-];
-
-firstMatchingCellGroup[ nb_, patt_, "Content" ] := Catch[
-    cellGroupScan[
-        Replace[ CellGroupData[ { patt, content___ }, _ ] :> Throw[ { content }, $cellGroupTag ] ],
-        nb
-    ];
-    Missing[ "NotFound" ],
-    $cellGroupTag
-];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

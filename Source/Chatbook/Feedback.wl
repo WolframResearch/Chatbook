@@ -486,16 +486,6 @@ checkResponse // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*displayError*)
-displayError // beginDefinition;
-
-displayError[ nbo_NotebookObject ] :=
-    CurrentValue[ nbo, { TaggingRules, "ErrorText" } ];
-
-displayError // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*createImageFile*)
 createImageFile // beginDefinition;
 createImageFile[ data_Association ] := createImageFile @ data[ "Image" ];
@@ -623,8 +613,10 @@ dropSystemMessage // endDefinition;
 (*dropChatHistory*)
 dropChatHistory // beginDefinition;
 
+(* With prompt cache optimization, the current turn's turn messages (see PromptCache.wl) come between the user's message
+   and the response, so they are left out with the rest of the history: *)
 dropChatHistory[ data_Association ] :=
-    dropChatHistory[ data, data[ "ChatData", "Messages" ] ];
+    dropChatHistory[ data, DeleteCases[ data[ "ChatData", "Messages" ], _? promptCacheMessageQ ] ];
 
 dropChatHistory[
     data0_Association,

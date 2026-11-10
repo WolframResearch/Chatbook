@@ -15,13 +15,14 @@ $ContextAliases[ "sf`"  ] = "ServiceFramework`";
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$llmKit                := $llmKit = $VersionNumber >= 14.1;
+$llmKit                 = True;
 $llmKitService         := LogChatTiming @ getLLMKitService[ ];
 $fallbackLLMKitService := "LLMKit";
-$llmKitPrefix          := If[ TrueQ @ serviceFrameworkAvailable[ ], "LLMKit", "" ];
+$llmKitPrefix          := "LLMKit";
 $allowConnectionDialog  = True;
 $enableLLMServices      = Automatic;
-$modelListCache         = <| |>;
+$noModelListCache       = <| |>;
+$noModelListCacheTime   = 60;
 $modelSortOrder         = { "Preview", "Snapshot", "FineTuned", "Date", "DisplayName" };
 $servicesLoaded         = False;
 $useLLMServices        := MatchQ[ $enableLLMServices, Automatic|True ] && TrueQ @ $llmServicesAvailable;
@@ -47,7 +48,11 @@ $invalidModelNameParts = <|
 (* ::Section::Closed:: *)
 (*InvalidateServiceCache*)
 InvalidateServiceCache // beginDefinition;
-InvalidateServiceCache[ ] := catchAlways[ $serviceCache = None; updateDynamics[ { "Models", "Services" } ]; ];
+InvalidateServiceCache[ ] := catchAlways[
+    $serviceCache = None;
+    $noModelListCache = <| |>;
+    updateDynamics[ { "Models", "Services" } ];
+];
 InvalidateServiceCache // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -137,27 +142,6 @@ getUpdatedLLMKitService[ ] := Enclose[
 getUpdatedLLMKitService // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*serviceFrameworkAvailable*)
-serviceFrameworkAvailable // beginDefinition;
-
-serviceFrameworkAvailable[ ] :=
-    With[ { res = serviceFrameworkAvailable @ PacletObject[ "ServiceFramework" ] },
-        If[ TrueQ @ $mxFlag,
-            res, (* Never cache result if building MX file *)
-            serviceFrameworkAvailable[ ] = res
-        ]
-    ];
-
-serviceFrameworkAvailable[ sf_PacletObject? PacletObjectQ ] :=
-    Not @ TrueQ @ PacletNewerQ[ "0.1.0", sf ];
-
-serviceFrameworkAvailable[ _ ] :=
-    False;
-
-serviceFrameworkAvailable // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Available Services*)
 
@@ -167,11 +151,6 @@ serviceFrameworkAvailable // endDefinition;
 modelListCachedQ // beginDefinition;
 modelListCachedQ[ service_String ] := ListQ @ $serviceCache[ service, "CachedModels" ];
 modelListCachedQ // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*$availableServiceNames*)
-$availableServiceNames := getAvailableServiceNames[ ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -192,14 +171,6 @@ getAvailableServiceNames // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*getServiceInformation*)
-getServiceInformation // beginDefinition;
-getServiceInformation[ service_String ] := getServiceInformation[ service, $availableServices ];
-getServiceInformation[ service_String, services_Association ] := Lookup[ services, service, Missing[ "NotAvailable" ] ];
-getServiceInformation // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
 (*getServiceModels*)
 getServiceModelList // beginDefinition;
 
@@ -213,7 +184,10 @@ getServiceModelList[ service_String ] :=
             {
                 {  } | None :> Missing[ "NoModelList" ],
                 list_List :> list,
-                _ :> getServiceModelList[ service, $availableServices[ service ] ]
+                _ :> If[ noModelListCachedQ @ service,
+                         Missing[ "NoModelList" ],
+                         getServiceModelList[ service, $availableServices[ service ] ]
+                     ]
             }
         ]
     ];
@@ -241,10 +215,38 @@ getServiceModelList[ service_String, info_, models0_List ] := Enclose[
     throwInternalFailure
 ];
 
-getServiceModelList[ service_String, info_, Missing[ "NoModelList" ] ] :=
-    Missing[ "NoModelList" ];
+getServiceModelList[ service_String, info_, Missing[ "NoModelList" ] ] := (
+    (* Remember the failure briefly, so that retrying an unreachable service (e.g. a local Ollama server that isn't
+       running) does not repeat the connection timeout: *)
+    $noModelListCache[ service ] = AbsoluteTime[ ];
+    Missing[ "NoModelList" ]
+);
 
 getServiceModelList // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*noModelListCachedQ*)
+noModelListCachedQ // beginDefinition;
+
+noModelListCachedQ[ service_String ] :=
+    With[ { time = Lookup[ $noModelListCache, service ] },
+        If[ NumberQ @ time && AbsoluteTime[ ] - time < $noModelListCacheTime,
+            True,
+            KeyDropFrom[ $noModelListCache, service ];
+            False
+        ]
+    ];
+
+noModelListCachedQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*clearNoModelListCache*)
+(* Used before a retry the user asked for (e.g. after connecting a service), which should always fetch again: *)
+clearNoModelListCache // beginDefinition;
+clearNoModelListCache[ service_String ] := (KeyDropFrom[ $noModelListCache, service ]; Null);
+clearNoModelListCache // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -273,12 +275,12 @@ getModelListQuietly[ info_Association ] /; ! $allowConnectionDialog :=
         getModelListQuietly @ info
     ];
 
-getModelListQuietly[ info_Association ] := Quiet[
-    checkModelList[
-        info,
-        Check[ info[ "ModelList" ], Missing[ "NotConnected" ], DialogInput::nprmtv ]
-    ],
-    { DialogInput::nprmtv, ServiceConnect::genconerr, ServiceConnect::invs, ServiceExecute::nolink, ServiceConnect::authfail }
+(* The "ModelList" code belongs to the service provider and can emit arbitrary messages when it fails (e.g. the Ollama
+   model list when the local server isn't running), so all of them are quieted. Check still sees quieted messages, and
+   checkModelList turns any result that isn't a list into a Missing. *)
+getModelListQuietly[ info_Association ] := checkModelList[
+    info,
+    Quiet @ Check[ info[ "ModelList" ], Missing[ "NotConnected" ], DialogInput::nprmtv ]
 ];
 
 getModelListQuietly // endDefinition;

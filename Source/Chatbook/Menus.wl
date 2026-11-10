@@ -39,11 +39,6 @@ Needs[ "Wolfram`Chatbook`ErrorUtils`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*Configuration*)
-$submenuItems = False;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
 (*MakeSidebarMenu*)
 MakeSidebarMenu // beginDefinition;
 
@@ -1069,20 +1064,6 @@ addSubmenuHandler // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*sidebarSubMenuLabel*)
-sidebarSubMenuLabel // beginDefinition;
-
-sidebarSubMenuLabel[ label_ ] := Grid[
-    { {
-        Item[ label, ItemSize -> Fit, Alignment -> Left ],
-        Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "Triangle" ] } },
-    Spacings -> 0
-];
-
-sidebarSubMenuLabel // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
 (*submenuLabel*)
 submenuLabel // beginDefinition;
 
@@ -1185,35 +1166,6 @@ quadrant[ True , False ] := { Right, Top    };
 quadrant[ False, True  ] := { Left , Bottom };
 quadrant[ False, False ] := { Left , Top    };
 quadrant // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
-(*Attaching and Removing Menus*)
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*removeChatMenus*)
-removeChatMenus // beginDefinition;
-
-removeChatMenus[ obj: $$feObj ] :=
-    With[ { root = CurrentValue[ obj, { TaggingRules, "MenuData", "Root" } ] },
-        NotebookDelete @ root /; MatchQ[ root, _CellObject ]
-    ];
-
-removeChatMenus[ box_BoxObject ] :=
-    removeChatMenus @ parentCell @ box;
-
-removeChatMenus[ cell_CellObject ] /; MemberQ[ cellStyles @ cell, "AttachedChatMenu" ] :=
-    removeChatMenus @ parentCell @ cell;
-
-removeChatMenus[ cell_CellObject ] :=
-    NotebookDelete @ Cells[ cell, AttachedCell -> True, CellStyle -> "AttachedChatMenu" ];
-
-(* Cell has already been removed: *)
-removeChatMenus[ $Failed ] :=
-    Null;
-
-removeChatMenus // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

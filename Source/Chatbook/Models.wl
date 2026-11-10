@@ -522,6 +522,7 @@ chooseModelFamily0[ wordsPattern[ { "Claude", "2.0"|"2.1" } ] ] := "Claude2";
 chooseModelFamily0[ wordsPattern[ { "Claude", "3", ___ } ] ] := "Claude3";
 chooseModelFamily0[ wordsPattern[ { "Claude", "Opus", "4", "7"|"8", ___ } ] ] := "ClaudeOpus47Plus";
 chooseModelFamily0[ wordsPattern[ { "Claude", "Haiku"|"Sonnet"|"Opus", "4", ___ } ] ] := "Claude4";
+chooseModelFamily0[ wordsPattern[ { "Claude", "Haiku"|"Sonnet"|"Opus"|"Fable", "5", ___ } ] ] := "Claude5";
 
 chooseModelFamily0[ wordsPattern[ { "Gemini", "2", ___ } ] ] := "Gemini2";
 chooseModelFamily0[ wordsPattern[ { "Gemini", "3", ___ } ] ] := "Gemini3";
@@ -699,27 +700,6 @@ modelDate[ { ___String } ] :=
     None;
 
 modelDate // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*fineTunedModelName*)
-fineTunedModelName // beginDefinition;
-
-fineTunedModelName[ name_String ] :=
-    fineTunedModelName @ StringSplit[ name, ":" ];
-
-fineTunedModelName[ { "ft", rest__ } ] :=
-    fineTunedModelName @ { rest };
-
-fineTunedModelName[ { model_String, id__String } ] :=
-    StringJoin[
-        StringDelete[ modelDisplayName @ model, " ("~~__~~")"~~EndOfString ],
-        " (",
-        Replace[ { id }, "" -> "::", { 1 } ],
-        ")"
-    ];
-
-fineTunedModelName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

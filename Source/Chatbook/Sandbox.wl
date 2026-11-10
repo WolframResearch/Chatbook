@@ -423,10 +423,10 @@ sandboxLinguisticAssistantData // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*getSandboxKernel*)
 getSandboxKernel // beginDefinition;
-getSandboxKernel[ ] := getSandboxKernel @ Select[ Links[ ], sandboxKernelQ ];
+getSandboxKernel[ ] := Quiet[ getSandboxKernel @ Select[ Links[ ], sandboxKernelQ ], { LinkObject::linkd, LinkObject::linkn } ];
 getSandboxKernel[ { other__LinkObject, kernel_ } ] := (Scan[ LinkClose, { other } ]; getSandboxKernel @ { kernel });
 getSandboxKernel[ { kernel_LinkObject } ] := checkSandboxKernel @ kernel;
-getSandboxKernel[ { } ] := Quiet[ startSandboxKernel[ ], { LinkObject::linkd, LinkObject::linkn } ];
+getSandboxKernel[ { } ] := startSandboxKernel[ ];
 getSandboxKernel // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -472,7 +472,8 @@ pingSandboxKernel[ kernel_LinkObject ] := Enclose[
 
         ConfirmMatch[
             TimeConstrained[
-                While[ ! MatchQ[ return = LinkRead @ kernel, ReturnPacket @ { uuid, _ } ] ],
+                (* LinkRead gives $Failed and then stays unevaluated once the link has closed, so there's no reply to wait for: *)
+                While[ ! MatchQ[ return = LinkRead @ kernel, ReturnPacket @ { uuid, _ } | $Failed | _LinkRead ] ],
                 $sandboxPingTimeout,
                 $TimedOut
             ],
@@ -540,64 +541,92 @@ getCurrentLineNumber // endDefinition;
 startSandboxKernel // beginDefinition;
 
 startSandboxKernel[ ] := Enclose[
-    Module[ { kernel, readPaths, writePaths, executePaths, pid },
+    Module[ { kernel, readPaths, writePaths, executePaths, ready },
 
         Scan[ LinkClose, Select[ Links[ ], sandboxKernelQ ] ];
 
-        kernel = ConfirmMatch[ LinkLaunch @ $sandboxKernelCommandLine, _LinkObject, "LinkLaunch" ];
+        kernel = LinkLaunch @ $sandboxKernelCommandLine;
 
         readPaths = makeReadPaths @ $readPaths;
         writePaths = makeWritePaths @ $writePaths;
         executePaths = makeExecutePaths @ $executePaths;
 
-        (* Use StartProtectedMode instead of passing the -sandbox argument, since we need to initialize the FE first *)
-        With[ { read = readPaths, write = writePaths, execute = executePaths },
-            LinkWrite[
-                kernel,
-                Unevaluated @ EvaluatePacket[
-                    UsingFrontEnd @ Null;
-                    SetOptions[ First @ Streams[ "stdout" ], PageWidth -> Infinity ];
-                    Developer`StartProtectedMode[
-                        "Read"                -> read,
-                        "Write"               -> write,
-                        "Execute"             -> execute,
-                        "ResolveAllowedPaths" -> False (* Skip checking for existence of files for faster startup *)
-                    ]
-                ]
-            ]
+        (* This needs to cover all of the initialization, since LinkWrite blocks indefinitely if the process exits
+           before connecting to the link. Allows for the two reads in initializeSandboxKernel to each take the limit. *)
+        ready = TimeConstrained[
+            initializeSandboxKernel[ kernel, readPaths, writePaths, executePaths ],
+            2 * $sandboxPingTimeout,
+            False
         ];
 
-        pid = pingSandboxKernel @ kernel;
-
-        With[ { messages = $messageOverrides },
-            LinkWrite[
-                kernel,
-                Unevaluated @ EnterExpressionPacket[
-                    (* Redefine some messages to provide hints to the LLM: *)
-                    ReleaseHold @ messages;
-
-                    (* Reset line number and leave `In[1]:=` in the buffer *)
-                    $Line = 0
-                ]
-            ]
-        ];
-
-        TimeConstrained[
-            While[ ! MatchQ[ LinkRead @ kernel, _ReturnExpressionPacket ] ],
-            $sandboxPingTimeout,
-            Confirm[ $Failed, "LineReset" ]
-        ];
-
-        If[ IntegerQ @ pid,
+        If[ TrueQ @ ready,
             $SandboxKernel = kernel,
             Quiet @ LinkClose @ kernel;
-            throwFailure[ "NoSandboxKernel" ]
+            noSandboxKernelFailure[ ]
         ]
     ] // LogChatTiming[ "StartSandboxKernel" ],
     throwInternalFailure
 ];
 
 startSandboxKernel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*initializeSandboxKernel*)
+initializeSandboxKernel // beginDefinition;
+
+(* Gives True if the kernel is ready for evaluations. *)
+initializeSandboxKernel[ kernel_LinkObject, read_, write_, execute_ ] := (
+    (* Use StartProtectedMode instead of passing the -sandbox argument, since we need to initialize the FE first *)
+    LinkWrite[
+        kernel,
+        Unevaluated @ EvaluatePacket[
+            UsingFrontEnd @ Null;
+            SetOptions[ First @ Streams[ "stdout" ], PageWidth -> Infinity ];
+            Developer`StartProtectedMode[
+                "Read"                -> read,
+                "Write"               -> write,
+                "Execute"             -> execute,
+                "ResolveAllowedPaths" -> False (* Skip checking for existence of files for faster startup *)
+            ]
+        ]
+    ];
+
+    IntegerQ @ pingSandboxKernel @ kernel && resetSandboxKernelLine @ kernel
+);
+
+(* LinkLaunch failed: *)
+initializeSandboxKernel[ $Failed, ___ ] := False;
+
+initializeSandboxKernel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*resetSandboxKernelLine*)
+resetSandboxKernelLine // beginDefinition;
+
+resetSandboxKernelLine[ kernel_LinkObject ] := (
+    With[ { messages = $messageOverrides },
+        LinkWrite[
+            kernel,
+            Unevaluated @ EnterExpressionPacket[
+                (* Redefine some messages to provide hints to the LLM: *)
+                ReleaseHold @ messages;
+
+                (* Reset line number and leave `In[1]:=` in the buffer *)
+                $Line = 0
+            ]
+        ]
+    ];
+
+    TimeConstrained[
+        While[ ! MatchQ[ LinkRead @ kernel, _ReturnExpressionPacket ] ]; True,
+        $sandboxPingTimeout,
+        False
+    ]
+);
+
+resetSandboxKernelLine // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1139,7 +1168,7 @@ localSandboxEvaluate[ input: $$sandboxInput ] := Enclose[
         $lastSandboxMethod     = "Local";
         $lastSandboxEvaluation = input;
 
-        kernel = ConfirmMatch[ getSandboxKernel[ ], _LinkObject, "GetKernel" ];
+        kernel = ConfirmMatch[ getSandboxKernel[ ], _LinkObject|_Failure, "GetKernel" ];
         init   = ConfirmMatch[ includeDefinitions @ input[ "Definitions" ], HoldComplete[ _ ], "Definitions" ];
 
         records = ConfirmMatch[
@@ -1181,6 +1210,15 @@ localSandboxEvaluate // endDefinition;
 localSegmentEvaluate // beginDefinition;
 
 localSegmentEvaluate[ kernel_LinkObject ] := localSegmentEvaluate[ kernel, # ] &;
+
+(* The evaluator kernel could not be started. As with a kernel quit, there's no output, only the failure message: *)
+localSegmentEvaluate[ failure_Failure ] := Function[
+    <|
+        "Result"    -> stoppedSegmentResult[ failure, "KernelQuit" ],
+        "OutputLog" -> { failure[ "Message" ] },
+        "Packets"   -> { }
+    |>
+];
 
 localSegmentEvaluate[ kernel_LinkObject, program_HoldComplete ] := Enclose[
     Module[ { null, packets, $sandboxTag, $timedOut, $linkClosed, result, initialized },
@@ -2865,7 +2903,7 @@ overrideTagForcing[ HoldComplete[ symbols__Symbol ], eval_ ] :=
         Internal`InheritedBlock[ { symbols },
             protected = Unprotect @ symbols;
             overrideTagForcing0 /@ Unevaluated @ { symbols };
-            Protect @ protected;
+            Protect @ Evaluate @ protected;
             Block[ { $forceTagged = True }, eval ]
         ]
     ];
@@ -3124,6 +3162,23 @@ kernelQuitFailure[ ] := Failure[
 ];
 
 kernelQuitFailure // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*noSandboxKernelFailure*)
+noSandboxKernelFailure // beginDefinition;
+
+noSandboxKernelFailure[ ] := Failure[
+    "NoSandboxKernel",
+    <|
+        "MessageTemplate"   -> "\
+Unable to start a sandbox kernel: it failed to launch or did not respond in time. \
+This may mean that the number of currently running kernels exceeds the limit defined by $LicenseProcesses.",
+        "MessageParameters" -> { }
+    |>
+];
+
+noSandboxKernelFailure // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

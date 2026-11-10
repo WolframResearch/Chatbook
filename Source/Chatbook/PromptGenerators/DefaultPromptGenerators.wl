@@ -14,7 +14,7 @@ HoldComplete[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Config*)
-$filterDocumentationRAG := TrueQ[ $InlineChat || $WorkspaceChat || $SidebarChat || $llmKit ];
+$filterDocumentationRAG := TrueQ[ $WorkspaceChat || $SidebarChat || $llmKit ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -26,6 +26,7 @@ Chatbook::InvalidPromptGenerator = "Expected a valid LLMPromptGenerator instead 
 (*DefaultPromptGenerators*)
 $defaultPromptGenerators := $defaultPromptGenerators = insertPromptGeneratorNames @ <|
     "RelatedDocumentation"       -> LLMPromptGenerator[ relatedDocumentationGenerator      , "Messages" ],
+    "RelatedDocumentationList"   -> LLMPromptGenerator[ relatedDocumentationListGenerator  , "Messages" ],
     "RelatedWolframAlphaResults" -> LLMPromptGenerator[ relatedWolframAlphaResultsGenerator, "Messages" ],
     "WebSearch"                  -> LLMPromptGenerator[ webSearchGenerator                 , "Messages" ]
 |>;
@@ -121,13 +122,18 @@ relatedDocumentationGenerator // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*relatedWolframAlphaQueriesGenerator*)
-relatedWolframAlphaQueriesGenerator // beginDefinition;
+(*relatedDocumentationListGenerator*)
+(* Gives a catalog of related snippets for the model to retrieve with the DocumentationLookup tool. Without that tool
+   (e.g. tools are disabled, or the persona doesn't have it), it gives the snippets, like "RelatedDocumentation". *)
+relatedDocumentationListGenerator // beginDefinition;
 
-relatedWolframAlphaQueriesGenerator[ messages: $$chatMessages ] :=
-    LogChatTiming @ RelatedWolframAlphaQueries[ messages, "Prompt" ];
+relatedDocumentationListGenerator[ messages: $$chatMessages ] :=
+    If[ TrueQ @ toolSelectedQ[ "DocumentationLookup" ],
+        LogChatTiming @ RelatedDocumentation[ messages, "CatalogPrompt", MaxItems -> 50 ],
+        relatedDocumentationGenerator @ messages
+    ];
 
-relatedWolframAlphaQueriesGenerator // endDefinition;
+relatedDocumentationListGenerator // endDefinition;
 
 (* TODO: prompt generator selectors that work like tool selections *)
 
@@ -170,7 +176,6 @@ applyPromptGenerators // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*toPromptGenerator*)
 toPromptGenerator // beginDefinition;
-toPromptGenerator[ ___ ] /; $VersionNumber < 14.1 := Nothing;
 toPromptGenerator[ name_String ] := toPromptGenerator @ $defaultPromptGenerators @ name;
 toPromptGenerator[ generator: HoldPattern[ _LLMPromptGenerator ] ] := generator;
 toPromptGenerator[ other_ ] := throwFailure[ "InvalidPromptGenerator", other ];

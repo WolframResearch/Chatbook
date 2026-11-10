@@ -53,7 +53,7 @@ $vectorDatabases[ "DataRepositoryURIs" ] = <|
 (* ::Subsubsection::Closed:: *)
 (*DocumentationURIs*)
 $vectorDatabases[ "DocumentationURIs" ] = <|
-    "Version"         :> If[ $VersionNumber >= 15.0, "1.6.0", "1.5.0" ],
+    "Version"         -> "1.6.0",
     "Bias"            -> 0.0,
     "SnippetFunction" -> getStreamSnippets[ "Documentation" ],
     "Instructions"    -> None
@@ -156,7 +156,6 @@ $forcedVectorDBDownloads = { };
 
 $embeddingDimension      = 384;
 $maxNeighbors            = 250;
-$maxEmbeddingDistance    = 150.0;
 $embeddingService        = "Local";
 $embeddingModel          = "SentenceBERT";
 $embeddingAuthentication = Automatic;
@@ -167,13 +166,6 @@ $maxEmbeddingCacheSize      = 1000;
 
 
 $conversationVectorSearchPenalty = 1.0;
-
-$relatedQueryCount = 5;
-$relatedDocsCount  = 20;
-$querySampleCount  = 10;
-
-$relevantFileCount = 3;
-$maxExtraFiles     = 20;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -200,7 +192,6 @@ $vectorDBDownloadURLs := $vectorDBDownloadURLs = AssociationMap[
 (* Sizes of the downloaded archives (keyed by name and version): *)
 $vectorDBArchiveSizes = <|
     { "DataRepositoryURIs"     , "1.2.0" } ->   5812001,
-    { "DocumentationURIs"      , "1.5.0" } -> 348652827,
     { "DocumentationURIs"      , "1.6.0" } -> 369969648,
     { "EntityValues"           , "1.1.0" } ->  63998991,
     { "FunctionRepositoryURIs" , "1.3.0" } ->  61661803,
@@ -213,7 +204,6 @@ $vectorDBArchiveSizes = <|
 (* Expected sizes of the vector index files after extraction (keyed by name and version): *)
 $vectorDBIndexSizes = <|
     { "DataRepositoryURIs"     , "1.2.0" } ->   9805776,
-    { "DocumentationURIs"      , "1.5.0" } -> 564222592,
     { "DocumentationURIs"      , "1.6.0" } -> 593388624,
     { "EntityValues"           , "1.1.0" } -> 106272876,
     { "FunctionRepositoryURIs" , "1.3.0" } ->  98466704,
@@ -226,7 +216,6 @@ $vectorDBIndexSizes = <|
 (* SHA-256 hashes of the downloaded archives (keyed by name and version): *)
 $vectorDBDownloadHashes = <|
     { "DataRepositoryURIs"     , "1.2.0" } -> "e6eae133505af3d57d772f236f37b42298fa52d3d466ea5d26995f87af5be38e",
-    { "DocumentationURIs"      , "1.5.0" } -> "e7fba9a6ff5154ac5e70034c04ab99631e70a5d47b6f721bb8ae8e78a21f8ab9",
     { "DocumentationURIs"      , "1.6.0" } -> "d3b6336dbaa26cb6300de12c3cc5e4f11e87a618222d8e631f47b622c5b478c8",
     { "EntityValues"           , "1.1.0" } -> "3f28b96a20b2041e24c947440c40c2eae4c631a0f44fa5590fa7760a53cb7ba5",
     { "FunctionRepositoryURIs" , "1.3.0" } -> "2ceea0ef96368bb1262875d8ee732d8f5fd7ee8d4ca7f1a99413354d4b548350",
@@ -239,7 +228,6 @@ $vectorDBDownloadHashes = <|
 (* SHA-256 hashes of the vector index files after extraction (keyed by name and version): *)
 $vectorDBIndexHashes = <|
     { "DataRepositoryURIs"     , "1.2.0" } -> "d69717e8a419562bb0b52ae84d19333add82e0fe20047d8423413cda3e00f144",
-    { "DocumentationURIs"      , "1.5.0" } -> "c8bf047f33a1d04b2e1c2278fee70f3c700b1cc2141c210865133501142d7b61",
     { "DocumentationURIs"      , "1.6.0" } -> "29fdb2ec5681bfea5c445f1963a694dae4762500bc1661d65473f55331ee3921",
     { "EntityValues"           , "1.1.0" } -> "d56b31964bb2d93351bd8c1ea22966b5c758c5abf6374349f4d2ee62a01fabbc",
     { "FunctionRepositoryURIs" , "1.3.0" } -> "12c6cf606c5cdddb3584637edeac41d27e2e8359a77fbb77c4155235d552ae2b",
@@ -328,7 +316,6 @@ $usearchIndexReleaseTask = None;
 (*Messages*)
 Chatbook::InvalidVectorDatabaseName         = "Expected a string for vector database name instead of `1`";
 Chatbook::InvalidVectorDatabaseValues       = "Expected a list of strings for vector database values instead of `1`";
-Chatbook::VectorDatabaseValuesFileNotFound  = "Values file not found: `1`";
 Chatbook::InvalidVectorDatabaseDimensions   = "Dimensions of vectors (`1`) do not match expected dimensions (`2`)";
 Chatbook::InvalidVectorDatabaseValuesLength = "The number of values (`1`) does not match the number of vectors (`2`)";
 
@@ -2319,24 +2306,6 @@ getSnippetFunction // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*getSnippetAssetFunction*)
-getSnippetAssetFunction // beginDefinition;
-
-getSnippetAssetFunction[ name_String ] := Enclose[
-    Module[ { dir, file, snippets, function },
-        dir = ConfirmBy[ $thisPaclet[ "AssetLocation", "Snippets" ], DirectoryQ, "Directory" ];
-        file = ConfirmBy[ FileNameJoin @ { dir, name <> ".wxf" }, FileExistsQ, "File" ];
-        snippets = ConfirmBy[ Developer`ReadWXFFile @ file, AssociationQ, "Snippets" ];
-        function = With[ { s = snippets }, Lookup[ s, # ] & ];
-        If[ TrueQ @ $mxFlag, function, getSnippetAssetFunction[ name ] = function ]
-    ],
-    throwInternalFailure
-];
-
-getSnippetAssetFunction // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
 (*getNamedSnippet*)
 getNamedSnippet // beginDefinition;
 
@@ -2908,6 +2877,7 @@ getSentenceBERTEmbeddingFunction[ ] := Enclose[
     Module[ { name },
 
         Needs[ "SemanticSearch`" -> None ];
+        cacheSentenceBERTTokenizer[ ];
 
         name = ConfirmBy[
             SelectFirst[
@@ -2927,6 +2897,30 @@ getSentenceBERTEmbeddingFunction[ ] := Enclose[
 ];
 
 getSentenceBERTEmbeddingFunction // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*cacheSentenceBERTTokenizer*)
+(* SentenceBERTEmbedding uses the "Tokenizer" element of this resource. The repository reports "ByteCount" -> $Failed
+   for it, so ResourceSystemClient does not cache the element and downloads it again in every session (about 3 s).
+   This downloads it once in a way that caches it. When it is already cached, the check costs nothing extra, since
+   NetModel loads the tokenizer from the same files right after. Remove this once ResourceSystemClient caches it. *)
+$sentenceBERTTokenizerResource = "MiniLM V2 Reranker Trained on MS MARCO Data";
+
+cacheSentenceBERTTokenizer // beginDefinition;
+
+(* Skipped in the cloud, where ResourceSystemClient does not cache resource content on purpose: *)
+cacheSentenceBERTTokenizer[ ] := catchQuiet @ Module[ { ro },
+    NetModel; (* Loads NeuralNetworks` *)
+    If[ ! $CloudEvaluation && FailureQ @ NeuralNetworks`LocalNetModel[ $sentenceBERTTokenizerResource, "Tokenizer" ],
+        ro = ResourceObject @ $sentenceBERTTokenizerResource;
+        If[ MatchQ[ ro, _ResourceObject ],
+            ResourceSystemClient`ResourceDownload[ ro, <| "Element" -> "Tokenizer", "ResponseMethod" -> "Download" |> ]
+        ]
+    ];
+];
+
+cacheSentenceBERTTokenizer // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

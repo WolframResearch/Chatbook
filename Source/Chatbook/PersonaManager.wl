@@ -175,15 +175,9 @@ CreatePersonaManagerPanel[ ] := DynamicModule[ { favorites, delimiterColor, dial
         delimiterColor = CurrentValue[{StyleDefinitions, "DialogDelimiter", CellFrameColor}];
         GetPersonaData[]; (* sets $CachedPersonaData *)
         (* make sure there are no unexpected extra personas *)
-        Enclose[
-            CurrentChatSettings[ $FrontEnd, "VisiblePersonas" ] = ConfirmBy[
-                Quiet @ Intersection[ CurrentChatSettings[ $FrontEnd, "VisiblePersonas" ], Keys @ $CachedPersonaData ],
-                ListQ
-            ]
-        ]
+        removeUninstalledVisiblePersonas[ ]
     ),
     Deinitialization :> (
-        If[ MatchQ[ favorites, { ___String } ], CurrentChatSettings[ $FrontEnd, "PersonaFavorites" ] = favorites ];
         If[ Head[ NotebookGet @ dialogWindow ] === Notebook,
             NotebookClose @ dialogWindow; System`FEDump`$DialogReturnValue = $Canceled; System`FEDump`$DialogDone = True
         ];
@@ -191,6 +185,22 @@ CreatePersonaManagerPanel[ ] := DynamicModule[ { favorites, delimiterColor, dial
 ];
 
 CreatePersonaManagerPanel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*removeUninstalledVisiblePersonas*)
+removeUninstalledVisiblePersonas // beginDefinition;
+
+removeUninstalledVisiblePersonas[ ] :=
+    removeUninstalledVisiblePersonas[ CurrentChatSettings[ $FrontEnd, "VisiblePersonas" ], $CachedPersonaData ];
+
+removeUninstalledVisiblePersonas[ current: { ___String }, personas_Association? AssociationQ ] /;
+    ! SubsetQ[ Keys @ personas, current ] :=
+        CurrentChatSettings[ $FrontEnd, "VisiblePersonas" ] = Select[ current, KeyExistsQ[ personas, # ] & ];
+
+removeUninstalledVisiblePersonas[ _, _ ] := Null;
+
+removeUninstalledVisiblePersonas // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -227,7 +237,6 @@ formatPersonaData[ name_String, as_Association, link_, desc_, version_, icon_, o
     formatIcon @ icon,
     formatName[ origin, personaDisplayName @ name, link ],
     "", (* used for Grid's ItemSize -> Fit *)
-    (* formatDescription @ desc, *) (* not enough room for a fixed-width dialog where the "Name" column can be quite large *)
     formatVersion @ version,
     Which[
         FileExistsQ @ ResourceInstallLocation[ "Prompt", name ], uninstallButton[ name, True, "\[LongDash]" ],
@@ -268,19 +277,6 @@ formatName[ origin_String, name: Except[ $$unspecified ], link_ ] :=
     ];
 
 formatName // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*formatDescription*)
-formatDescription // beginDefinition;
-formatDescription[ _Missing ] := Style["\[LongDash]", FontColor -> color @ "ManagerGridFont_1"];
-formatDescription[ desc_String ] :=
-    Pane[(* If desc becomes a text resource then use FEPrivate`TruncateStringToWidth *)
-        If[StringLength[desc] > #nChars, StringTake[desc, UpTo[#nChars - 2]] <> "\[Ellipsis]", desc],
-        ImageSize -> {Full, Automatic},
-        ImageSizeAction -> "Clip"
-    ]&[<|"nChars" -> 30|>];
-formatDescription // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

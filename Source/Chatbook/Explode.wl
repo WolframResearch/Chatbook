@@ -162,7 +162,7 @@ postProcessExplodedCells // endDefinition;
 (* ::Subsection::Closed:: *)
 (*$preprocessingRules*)
 $preprocessingRules := $preprocessingRules = Dispatch @ {
-    (* Workspace/Inline chat template boxes: *)
+    (* Workspace chat template boxes: *)
     Cell[ BoxData @ TemplateBox[ { Cell[ text_, ___ ] }, "AssistantMessageBox" ], ___ ] :> text,
     TemplateBox[ { Cell[ text_, ___ ] }, "AssistantMessageBox", ___ ] :> text,
 

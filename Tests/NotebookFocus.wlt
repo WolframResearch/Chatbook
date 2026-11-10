@@ -52,6 +52,10 @@ VerificationTest[
     };
 
     notebookInformationStub[ All ] := ($scanCount++; $notebooks);
+    notebookInformationStub[ nbo_NotebookObject ] := (
+        $notebookInfoCount++;
+        SelectFirst[ $notebooks, #[ "NotebookObject" ] === nbo &, Missing[ "NotebookClosed", nbo ] ]
+    );
     notebookInformationStub[ { nbo_NotebookObject } ] := {
         SelectFirst[ $notebooks, #[ "NotebookObject" ] === nbo &, Missing[ "NotebookClosed", nbo ] ]
     };
@@ -66,6 +70,7 @@ VerificationTest[
             $notebooks          = notebooks,
             $focusWindowTitles  = titles,
             $scanCount          = 0,
+            $notebookInfoCount  = 0,
             $writes             = { },
             CurrentValue        = currentValueStub,
             CurrentChatSettings = Function[
@@ -293,6 +298,110 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*Locked Notebook Not Included*)
+
+(* A lock on an excluded or hidden notebook is treated as no lock: *)
+VerificationTest[
+    Table[
+        withFocusStubs[
+            Module[ { display },
+                display = Wolfram`Chatbook`ChatModes`Common`focusedNotebookDisplay[ $chatNB, None ];
+                {
+                    $writes[[ All, 3 ]],
+                    Cases[ display, Style[ "\[Checkmark] ", ShowContents -> True ], Infinity ],
+                    Cases[
+                        display,
+                        Verbatim[ RuleDelayed ][ Row @ { Style[ "\[Checkmark] ", ShowContents -> True ], rest___ }, _ ] :>
+                            Length @ { rest },
+                        Infinity
+                    ]
+                }
+            ],
+            $defaultNotebooks,
+            locked
+        ],
+        { locked, { $excludedNB, $hiddenNB } }
+    ],
+    ConstantArray[
+        {
+            { "Notebook A.nb" },
+            { Style[ "\[Checkmark] ", ShowContents -> True ] },
+            { 4 }
+        },
+        2
+    ],
+    SameTest -> MatchQ,
+    TestID   -> "FocusedNotebookDisplay-WorkspaceChat-LockedNotebookNotIncluded"
+]
+
+VerificationTest[
+    Table[
+        withFocusStubs[
+            Block[
+                {
+                    CurrentChatSettings = Function[
+                        Switch[ #2, "WorkspaceChat", True, "FocusedNotebook", locked, _, Inherited ]
+                    ]
+                },
+                GetFocusedNotebook @ $chatNB
+            ]
+        ],
+        { locked, { $excludedNB, $hiddenNB, $paletteNB, $userNB2, Inherited } }
+    ],
+    { $userNB1, $userNB1, $userNB1, $userNB2, $userNB1 },
+    SameTest -> MatchQ,
+    TestID   -> "GetFocusedNotebook-LockedNotebookNotIncluded"
+]
+
+VerificationTest[
+    Table[
+        withFocusStubs @ Block[
+            {
+                CurrentChatSettings = Function[
+                    Switch[ #2, "WorkspaceChat", True, "FocusedNotebook", locked, _, Inherited ]
+                ]
+            },
+            { GetFocusedNotebook @ $chatNB, $notebookInfoCount, $scanCount }
+        ],
+        { locked, { $excludedNB, $userNB2, Inherited } }
+    ],
+    { { $userNB1, 1, 1 }, { $userNB2, 1, 0 }, { $userNB1, 0, 1 } },
+    SameTest -> MatchQ,
+    TestID   -> "GetFocusedNotebook-ResolvesNotebookInformationOnce"
+]
+
+(* The context sent to the model never comes from an excluded or hidden locked notebook: *)
+VerificationTest[
+    Table[
+        withFocusStubs @ Catch[
+            Block[
+                {
+                    Wolfram`Chatbook`$WorkspaceChat = True,
+                    Wolfram`Chatbook`ChatModes`Context`Private`getNotebookMetadataString =
+                        Throw[ { #1, #2, $notebookInfoCount, $scanCount }, $contextSourceTag ] &
+                },
+                Wolfram`Chatbook`ChatModes`Common`getContextFromSelection[
+                    $chatNB,
+                    <| "FocusedNotebook" -> locked |>
+                ]
+            ],
+            $contextSourceTag
+        ],
+        { locked, { $excludedNB, $hiddenNB, $paletteNB, $userNB2, Inherited } }
+    ],
+    {
+        { $userNB1, KeyValuePattern[ "NotebookObject" -> $userNB1 ], 1, 1 },
+        { $userNB1, KeyValuePattern[ "NotebookObject" -> $userNB1 ], 1, 1 },
+        { $userNB1, KeyValuePattern[ "NotebookObject" -> $userNB1 ], 1, 1 },
+        { $userNB2, KeyValuePattern[ "NotebookObject" -> $userNB2 ], 1, 0 },
+        { $userNB1, KeyValuePattern[ "NotebookObject" -> $userNB1 ], 0, 1 }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "GetContextFromSelection-LockedNotebookNotIncluded"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*Sidebar*)
 
 (* The sidebar does not scan all notebooks when its own notebook is included: *)
@@ -340,6 +449,35 @@ VerificationTest[
     { Spacer[ 0 ], 1 },
     SameTest -> MatchQ,
     TestID   -> "FocusedNotebookDisplay-Sidebar-NoIncludedNotebooks@@Tests/NotebookFocus.wlt:335,1-343,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Sources Overlay*)
+
+(* The notebook list and its checkboxes read Chatbook symbols that change on every catchTop call, so they must only
+   track front end values. Otherwise they re-trigger each other continuously while the overlay is open: *)
+VerificationTest[
+    Cases[
+        ToBoxes @ Wolfram`Chatbook`ChatModes`UI`Private`notebookSources[ $chatNB, # ],
+        DynamicBox[ content_, opts___ ] /; ! FreeQ[ HoldComplete @ content, SourceNotebookObjectInformation ] :>
+            HoldForm @ { opts },
+        Infinity
+    ] & /@ { None, $sidebarCell },
+    { { HoldForm @ { TrackedSymbols :> { } } }, { HoldForm @ { TrackedSymbols :> { } } } },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookSources-TrackedSymbols@@Tests/NotebookFocus.wlt:351,1-361,2"
+]
+
+VerificationTest[
+    Cases[
+        ToBoxes @ Wolfram`Chatbook`ChatModes`UI`Private`inclusionCheckbox @ $userNB1,
+        CheckboxBox[ Dynamic[ _, _, opts___ ], ___ ] :> HoldForm @ { opts },
+        { 0, Infinity }
+    ],
+    { HoldForm @ { TrackedSymbols :> { } } },
+    SameTest -> MatchQ,
+    TestID   -> "InclusionCheckbox-TrackedSymbols@@Tests/NotebookFocus.wlt:363,1-372,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

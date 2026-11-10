@@ -18,22 +18,12 @@ System`LightDarkSwitched;
 $inputFieldPaneMargins       = { { 5, 5 }, { 0, 5 } };
 $inputFieldGridMagnification = Inherited;
 $inputFieldOuterBackground   = color @ "NA_ChatInputFieldBackgroundArea";
-$initialInlineChatWidth      = Scaled[ 0.85 ];
-$initialInlineChatHeight     = UpTo[ 300 ];
-$inputFieldBox               = None;
-$inlineChatScrollPosition    = 0.0;
-$lastScrollPosition          = 0.0;
 $maxHistoryItems             = 20;
-$messageAuthorImagePadding   = { { 0, 0 }, { 0, 6 } };
+$historyNotice               = None; (* shown above the History overlay, e.g. after a chat failed to load *)
 $sidebarScrollPosition;        (* never has a value, uses Unique to create variables per sidebar *)
 
-$inputFieldOptions = Sequence[
-    Alignment  -> { Automatic, Baseline },
-    Appearance -> "Frameless",
-    BaseStyle  -> { "Text", "TextStyleInputField" }, (* second BaseStyle makes contractions, line wrapping, etc. more text like *)
-    BoxID      -> "AttachedChatInputField",
-    ImageSize  -> { Scaled[ 1 ], Automatic }
-];
+(* the docked cells below the window's top stripe (see writeWorkspaceChatSubDockedCell): *)
+$$workspaceChatSubDockedCellTag = "WorkspaceChatTitleDockedCell" | "WorkspaceChatMovedToHistoryDockedCell";
 
 $inputFieldFrameOptions = Sequence[
     Alignment      -> { Automatic, Baseline },
@@ -245,15 +235,6 @@ removeSidebarChatSubDockedCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*removeSidebarTopCell*)
-removeSidebarTopCell // beginDefinition;
-
-removeSidebarTopCell[ nbo_NotebookObject, sidebarTopCell_CellObject ] := NotebookDelete @ sidebarTopCell;
-
-removeSidebarTopCell // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
 (*makeSidebarChatScrollingCell*)
 
 makeSidebarChatScrollingCell // beginDefinition;
@@ -431,7 +412,7 @@ sidebarOpenAsAssistantWindowButton[ nbo_, sidebarCell_ ] := Button[
         toolbarButtonLabel[ "WorkspaceToolbarIconOpenAsChatbook", None, "SidebarToolbarButtonTooltipOpenAsWindowedAssistant" ],
         { 24, 24 }
     ],
-    Module[ { newNB, cells, chatTitle },
+    Module[ { newNB, cells, chatTitle, settings },
         cells = ReplaceRepeated[
             NotebookRead @ Cells[ First[ Cells[ sidebarCell, CellTags -> "SidebarScrollingContentCell" ], { } ], CellTags -> "SidebarTopCell" ], (* fail gracefully *)
             (* so far there's only one TemplateBox that needs to be unconverted *)
@@ -447,6 +428,8 @@ sidebarOpenAsAssistantWindowButton[ nbo_, sidebarCell_ ] := Button[
             }
         ];
         chatTitle = CurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" } ];
+        (* read before the sidebar gets a new UUID, so the window keeps the conversation's UUID *)
+        settings = KeyDrop[ CurrentValue[ sidebarCell, { TaggingRules, "ChatNotebookSettings" } ], "SidebarChat" ];
 
         FrontEndTokenExecute[ nbo, "HideSidebar" ]; (* not displaying the sidebar should reduce dynamics *)
 
@@ -457,16 +440,21 @@ sidebarOpenAsAssistantWindowButton[ nbo_, sidebarCell_ ] := Button[
         CurrentChatSettings[ sidebarCell, "ConversationUUID" ] = createUUID[ ];
         setCurrentValue[ sidebarCell, { TaggingRules, "ConversationTitle" }, "" ];
         
-        (* open a new workspace window *)
-        newNB = ShowNotebookAssistance[ nbo, "Window", "ChatNotebookSettings" -> KeyDrop[ CurrentValue[ sidebarCell, { TaggingRules, "ChatNotebookSettings" } ], "SidebarChat" ] ];
-
-        If[ chatTitle =!= "",
-            setCurrentValue[ newNB, { TaggingRules, "ConversationTitle" }, chatTitle ];
-            writeWorkspaceChatTitleDockedCell[ newNB, WindowTitle ]
-        ];
-        SelectionMove[ newNB, Before, Notebook ];
-        NotebookWrite[ newNB, cells ];
-        attachWorkspaceChatInput @ newNB; (* reveal the written cells by moving the chat input field to the bottom of the window *)
+        If[ MatchQ[ cells, { __Cell } ],
+            (* always open a new workspace window, so the conversation isn't merged into one that's already open: *)
+            newNB = ShowNotebookAssistance[ nbo, "Window", "NewChat" -> True, "ChatNotebookSettings" -> settings ];
+            If[ chatTitle =!= "",
+                setCurrentValue[ newNB, { TaggingRules, "ConversationTitle" }, chatTitle ];
+                writeWorkspaceChatTitleDockedCell[ newNB, WindowTitle ]
+            ];
+            SelectionMove[ newNB, After, Notebook ];
+            NotebookWrite[ newNB, cells ];
+            (* reveal the written cells by moving the chat input field to the bottom of the window: *)
+            attachWorkspaceChatInput @ newNB
+            ,
+            (* there is nothing to move, so just show the assistant window: *)
+            ShowNotebookAssistance[ nbo, "Window" ]
+        ]
     ],
     Appearance -> "Suppressed",
     BoxID      -> "NASidebarOpenAsAssistantWindowButton",
@@ -503,37 +491,70 @@ sidebarChatInputCellSendButton // beginDefinition;
 
 Attributes[ sidebarChatInputCellSendButton ] = { HoldAll };
 
-sidebarChatInputCellSendButton[ fieldContent_, input_, returnKeyDownQ_, chatEvalCell_ ] :=
-PaneSelector[
+sidebarChatInputCellSendButton[ fieldContent_, input_, returnKeyDownQ_, initializedQ_ ] :=
+With[
     {
-        False ->
-            Button[
-                blueHueButtonAppearance[ chatbookIcon[ "SendChatArrow", False, color @ "NA_BlueHueButtonIcon", 13 ], { 24.5, 24.5 } ],
-                If[ ! validInputStringQ @ fieldContent, fieldContent = "", input = fieldContent; fieldContent = ""; returnKeyDownQ = True ],
-                Appearance   -> "Suppressed",
-                BoxID        -> "NASidebarChatInputCellSendButton",
-                FrameMargins -> 0,
-                ImageSize    -> Automatic,
-                Method       -> "Preemptive"
-            ],
-        True ->
-            Button[
-                blueHueButtonAppearance[ chatbookIcon[ "StopChatButton", False, 21 ], { 24.5, 24.5 } ],
-                Needs[ "Wolfram`Chatbook`" -> None ];
-                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChat" ],
-                Appearance   -> "Suppressed",
-                BoxID        -> "NASidebarChatInputCellStopButton",
-                FrameMargins -> 0,
-                ImageSize    -> Automatic
-            ]
+        sendButton = Button[
+            blueHueButtonAppearance[ chatbookIcon[ "SendChatArrow", False, color @ "NA_BlueHueButtonIcon", 13 ], { 24.5, 24.5 } ],
+            If[ ! validInputStringQ @ fieldContent, fieldContent = "", input = fieldContent; fieldContent = ""; returnKeyDownQ = True ],
+            Appearance   -> "Suppressed",
+            BoxID        -> "NASidebarChatInputCellSendButton",
+            FrameMargins -> 0,
+            ImageSize    -> Automatic,
+            Method       -> "Preemptive"
+        ]
     },
-    Dynamic[ Wolfram`Chatbook`$ChatEvaluationCell === chatEvalCell ],
-    Alignment        -> { Automatic, Baseline },
-    BaselinePosition -> Baseline,
-    ImageSize        -> Automatic
+    (* The front end evaluates any kernel Dynamic in a DynamicModule with the module's variables, even if it doesn't use
+       them. When the sidebar is first opened from the menu, that can happen before the kernel knows the variables,
+       which printed FE`ExecuteInDynamicModule::novaldu (chatbar-8). So the kernel Dynamic is only shown once the
+       module's Initialization has run; this check runs in the front end: *)
+    PaneSelector[
+        {
+            False -> sendButton,
+            True  -> PaneSelector[
+                {
+                    False -> sendButton,
+                    True ->
+                        Button[
+                            blueHueButtonAppearance[ chatbookIcon[ "StopChatButton", False, 21 ], { 24.5, 24.5 } ],
+                            Needs[ "Wolfram`Chatbook`" -> None ];
+                            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChatIn", ParentCell @ EvaluationCell[ ] ],
+                            Appearance   -> "Suppressed",
+                            BoxID        -> "NASidebarChatInputCellStopButton",
+                            FrameMargins -> 0,
+                            ImageSize    -> Automatic
+                        ]
+                },
+                chatEvaluatingInDynamic @ ParentCell @ EvaluationCell[ ],
+                Alignment        -> { Automatic, Baseline },
+                BaselinePosition -> Baseline,
+                ImageSize        -> Automatic
+            ]
+        },
+        Dynamic @ FEPrivate`SameQ[ initializedQ, True ],
+        Alignment        -> { Automatic, Baseline },
+        BaselinePosition -> Baseline,
+        ImageSize        -> Automatic
+    ]
 ];
 
 sidebarChatInputCellSendButton // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*chatEvaluatingInDynamic*)
+chatEvaluatingInDynamic // beginDefinition;
+chatEvaluatingInDynamic // Attributes = { HoldFirst };
+
+(* The send/stop selectors of the assistant window and the sidebar show Stop only for a chat in their own container
+   (robustness-4). TrueQ keeps the value True or False, since the selectors have no default pane, and TrackedSymbols
+   makes it update only when a chat starts or ends: *)
+chatEvaluatingInDynamic[ container_ ] := Dynamic[
+    TrueQ @ chatEvaluatingInQ @ container,
+    TrackedSymbols :> { Wolfram`Chatbook`$ChatEvaluationCell }
+];
+
+chatEvaluatingInDynamic // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -546,7 +567,8 @@ makeSidebarChatInputCell[ ] := Cell[
         {
             Typeset`chatInputFieldCell, Typeset`chatEvalCell = { }(* don't use None *), Typeset`nbo, Typeset`sidebarCell,
             Typeset`fieldContent = "", Typeset`returnKeyDownQ = False, Typeset`input,
-            Typeset`focusArea = "" (* initialization is synchronous, else we could use a progress indicator here *)
+            Typeset`focusArea = "", (* initialization is synchronous, else we could use a progress indicator here *)
+            Typeset`initializedQ = False
         },
         EventHandler[
             Pane[
@@ -563,7 +585,7 @@ makeSidebarChatInputCell[ ] := Cell[
                                                 ImageSize          -> { Scaled[ 1 ], UpTo[ 100 ] },
                                                 Scrollbars         -> { False, Automatic }
                                             ],
-                                            sidebarChatInputCellSendButton[ Typeset`fieldContent, Typeset`input, Typeset`returnKeyDownQ, Typeset`chatEvalCell ]
+                                            sidebarChatInputCellSendButton[ Typeset`fieldContent, Typeset`input, Typeset`returnKeyDownQ, Typeset`initializedQ ]
                                         } }, Alignment -> { Left, Center }
                                     ],
                                     $inputFieldFrameOptions
@@ -571,7 +593,7 @@ makeSidebarChatInputCell[ ] := Cell[
                                 ,
                                 If[ TrueQ @ Typeset`returnKeyDownQ,
                                     CurrentValue[ Typeset`sidebarCell, { TaggingRules, "CurrentSelections" } ] = FE`Evaluate @ FEPrivate`GetCurrentSelections @ Typeset`nbo;
-                                    clearOverlayMenus @ Typeset`nbo;
+                                    clearSidebarOverlayMenus @ Typeset`nbo;
                                     Typeset`returnKeyDownQ = False;
                                     Needs[ "Wolfram`Chatbook`" -> None ];
                                     If[ Not @ TrueQ @ $workspaceChatInitialized, initializeWorkspaceChat[ ] ];
@@ -619,6 +641,7 @@ makeSidebarChatInputCell[ ] := Cell[
             Typeset`chatInputFieldCell = EvaluationCell[ ];
             Typeset`sidebarCell        = ParentCell @ Typeset`chatInputFieldCell;
             Typeset`focusArea          = focusedNotebookDisplay[ Typeset`nbo, Typeset`sidebarCell ];
+            Typeset`initializedQ       = True;
         )
     ],
     "ChatInputField",
@@ -844,31 +867,6 @@ Button[
 ]
 
 chatbarMinimizeButton // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*menuTick*)
-menuTick[ Dynamic[ val_ ], text_ ] :=
-Row[
-    {
-        Style[
-            Graphics[
-                Line[ { { -0.4, 0.5 }, { 0, 0 }, { 0.8, 1 } } ],
-                AspectRatio      -> Automatic,
-                BaselinePosition -> (Center -> Center),
-                BaseStyle        -> { AbsoluteThickness[ 1.5 ], LightDarkSwitched[ GrayLevel[ 0.35 ], GrayLevel[ 0.892 ] ], JoinForm[ "Round" ], CapForm[ "Round" ] },
-                ImagePadding     -> { { 2, 2 }, { 2, 2 } },
-                ImageSize        -> { 14, 14 }
-            ],
-            ShowContents -> Dynamic @ val
-        ],
-        Spacer[ 3 ],
-        text
-    },
-    StripOnInput -> True
-]
-
-
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1660,30 +1658,31 @@ chatbarAddServiceCreditsDisplay[ userdata_, tier: "Research", creditChoices_ ] :
 (*chatbarStateSetterBar*)
 
 
+chatbarStateSetterBar // beginDefinition;
+
 chatbarStateSetterBar[ nbo_NotebookObject ] :=
-    DynamicModule[ { localSetting },
-        DynamicWrapper[
-            Pane[
-                Grid[
-                    {
-                        Table[
-                            chatbarStateSetter[ nbo, Dynamic @ localSetting, state ],
-                            { state, { "Full", "Minimized", "Off" } }
-                        ]
-                    }
-                ],
-                ImageMargins -> 0
-            ]
-            ,
-            setChatbarState[ nbo, localSetting ]
-            ,
-            Method         -> "Queued",
-            TrackedSymbols :> { localSetting }
-        ],
-        Initialization   :> (localSetting = "Full") (* the only way to open the menu is from a full state *)
+    DynamicModule[ { localSetting = "Full" }, (* the only way to open the menu is from a full state *)
+        Pane[
+            Grid[
+                {
+                    Table[
+                        chatbarStateSetter[ nbo, Dynamic @ localSetting, state ],
+                        { state, { "Full", "Minimized", "Off" } }
+                    ]
+                }
+            ],
+            ImageMargins -> 0
+        ]
     ];
 
-chatbarStateSetter[ nbo_NotebookObject, Dynamic[ localSetting_ ], state_ ] :=
+chatbarStateSetterBar // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatbarStateSetter*)
+chatbarStateSetter // beginDefinition;
+
+chatbarStateSetter[ nbo_NotebookObject, Dynamic[ localSetting_ ], state_String ] :=
     Button[
         Pane[
             Column[
@@ -1700,7 +1699,7 @@ chatbarStateSetter[ nbo_NotebookObject, Dynamic[ localSetting_ ], state_ ] :=
                     Grid[
                         { {
                             RadioButton[
-                                Dynamic @ localSetting,
+                                Dynamic[ localSetting, (localSetting = #; setChatbarState[ nbo, # ])& ],
                                 state
                             ],
                             tr[ "ChatbarOptions" <> state ]
@@ -1716,13 +1715,16 @@ chatbarStateSetter[ nbo_NotebookObject, Dynamic[ localSetting_ ], state_ ] :=
             BaselinePosition -> Baseline,
             ImageMargins     -> 10
         ],
-        localSetting = state,
+        localSetting = state;
+        setChatbarState[ nbo, state ],
         Appearance       -> "Suppressed",
         BaselinePosition -> Baseline,
         BaseStyle        -> { FontSize -> Inherited-1 },
         BoxID            -> "NAChatbarSetterState" <> state,
         DefaultBaseStyle -> { }
-    ]
+    ];
+
+chatbarStateSetter // endDefinition;
 
 
 setChatbarState[ nbo_NotebookObject, newValue_ ] := With[ { chatbarCell = First[ Cells[ nbo, AttachedCell -> True, CellStyle -> "ChatInputField" ], $Failed ] },
@@ -1908,7 +1910,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                                 Automatic
                                 ,
                                 Dynamic @ {
-                                    Min[ CurrentValue[ "DefaultWindowSize" ][[1]], CurrentValue[ "ViewSize" ][[1]] ] /
+                                    Min[ AbsoluteCurrentValue[ "DefaultWindowSize" ][[1]], AbsoluteCurrentValue[ "ViewSize" ][[1]] ] /
                                         AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
                                     - 25,
                                     Automatic
@@ -2455,8 +2457,7 @@ makeWorkspaceChatDockedCell[ ] := With[ { nbo = EvaluationNotebook[ ] },
                             ]
                         },
                         FrontEnd`MoveCursorToInputField[ nbo, "AttachedChatInputField", chatInputCell, chatInputCell ]
-                    ];
-                    restoreVerticalScrollbar @ nbo
+                    ]
                 );
                 (* then initialize chat (most costly step) without the loading overlay, showing progress in the top stripe *)
                 If[ Not @ TrueQ @ $workspaceChatInitialized, withWorkspaceGlobalProgress[ nbo, initializeWorkspaceChat[ ] ] ]
@@ -2497,59 +2498,78 @@ makeWorkspaceChatSubDockedCellExpression // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*writeWorkspaceChatSourcesDockedCell*)
-writeWorkspaceChatSourcesDockedCell // beginDefinition;
+(*writeWorkspaceChatSubDockedCell*)
+(* The window has a single docked cell below the top stripe, which shows either the chat's title or the notice that the
+   previous chat was moved to History, so writing one replaces the other: *)
+writeWorkspaceChatSubDockedCell // beginDefinition;
 
-writeWorkspaceChatSourcesDockedCell[ nbo_NotebookObject, content_ ] := (
-setCurrentValue[ nbo, DockedCells,
-    Replace[
-        DeleteCases[ AbsoluteCurrentValue[ nbo, DockedCells ], Cell[ ___, CellTags -> "WorkspaceChatSourcesDockedCell", ___ ] ],
-        { a:Cell[ ___, "NotebookAssistant`TopStripe", ___ ], b__Cell } :> {
-            a,
-            makeWorkspaceChatSubDockedCellExpression[
-                content,
-                color @ "NA_ToolbarTitleBackground",
-                "WorkspaceChatSourcesDockedCell"
-            ],
-            b
-        }
-    ]
-]
-);
+writeWorkspaceChatSubDockedCell[ nbo_NotebookObject, content_, tag_String ] :=
+    setCurrentValue[ nbo, DockedCells,
+        Replace[
+            DeleteCases[ AbsoluteCurrentValue[ nbo, DockedCells ], Cell[ ___, CellTags -> $$workspaceChatSubDockedCellTag, ___ ] ],
+            { a:Cell[ ___, "NotebookAssistant`TopStripe", ___ ], b__Cell } :> {
+                a,
+                makeWorkspaceChatSubDockedCellExpression[ content, color @ "NA_ToolbarTitleBackground", tag ],
+                b
+            }
+        ]
+    ];
 
-writeWorkspaceChatSourcesDockedCell // endDefinition;
+writeWorkspaceChatSubDockedCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*writeWorkspaceChatTitleDockedCell*)
 writeWorkspaceChatTitleDockedCell // beginDefinition;
 
-writeWorkspaceChatTitleDockedCell[ nbo_NotebookObject, WindowTitle ] := (
-setCurrentValue[ nbo, DockedCells,
-    Replace[
-        DeleteCases[ AbsoluteCurrentValue[ nbo, DockedCells ], Cell[ ___, CellTags -> "WorkspaceChatTitleDockedCell", ___ ] ],
-        { a:Cell[ ___, "NotebookAssistant`TopStripe", ___ ], b__Cell } :> {
-            a,
-            makeWorkspaceChatSubDockedCellExpression[
-                Style[
-                    FE`Evaluate @ FEPrivate`TruncateStringToWidth[
-                        CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ],
-                        "WorkspaceChatToolbarTitle",
-                        #,
-                        Right
-                    ]&[ AbsoluteCurrentValue[ nbo, { WindowSize, 1 } ] - 10 ],
-                    "WorkspaceChatToolbarTitle"
-                ],
-                color @ "NA_ToolbarTitleBackground",
-                "WorkspaceChatTitleDockedCell"
-            ],
-            b
-        }
-    ]
-]
-);
+writeWorkspaceChatTitleDockedCell[ nbo_NotebookObject, WindowTitle ] :=
+    writeWorkspaceChatSubDockedCell[
+        nbo,
+        Style[
+            FE`Evaluate @ FEPrivate`TruncateStringToWidth[
+                CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ],
+                "WorkspaceChatToolbarTitle",
+                #,
+                Right
+            ]&[ AbsoluteCurrentValue[ nbo, { WindowSize, 1 } ] - 10 ],
+            "WorkspaceChatToolbarTitle"
+        ],
+        "WorkspaceChatTitleDockedCell"
+    ];
 
 writeWorkspaceChatTitleDockedCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*writeWorkspaceChatMovedToHistoryDockedCell*)
+(* Shown in a new window when it replaces one whose chat was saved, until the new chat gets a title: *)
+writeWorkspaceChatMovedToHistoryDockedCell // beginDefinition;
+
+writeWorkspaceChatMovedToHistoryDockedCell[ nbo_NotebookObject ] :=
+    writeWorkspaceChatSubDockedCell[
+        nbo,
+        Button[
+            MouseAppearance[
+                Style[
+                    Row @ {
+                        trExprTemplate[ "WorkspaceToolbarSourcesSubTitleMoved" ][
+                            <| "1" -> chatbookIcon[ "WorkspaceToolbarIconHistorySmall", False ] |>
+                        ]
+                    },
+                    "WorkspaceChatToolbarTitle",
+                    FontSlant  -> Italic,
+                    FontWeight -> Plain
+                ],
+                "LinkHand" (* indicates that the docked cell is clickable *)
+            ],
+            toggleOverlayMenu[ nbo, None, "History" ],
+            Appearance -> "Suppressed",
+            BoxID      -> "NAMovedLastChatToHistory"
+        ],
+        "WorkspaceChatMovedToHistoryDockedCell"
+    ];
+
+writeWorkspaceChatMovedToHistoryDockedCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -2773,7 +2793,7 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                                         (* use explicit keys for both buttons: the front end keeps animating the stop
                                            button's spinner in the default pane even while it's hidden, which burns CPU
                                            when idle. With no default pane, nothing shows for a value that matches no
-                                           key, so use =!=, which always gives True or False *)
+                                           key, so chatEvaluatingInDynamic always gives True or False *)
                                         PaneSelector[
                                             {
                                                 False -> Button[
@@ -2796,13 +2816,13 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                                                 True -> Button[
                                                     blueHueButtonAppearance[ chatbookIcon[ "StopChatButton", False, 21 ], { 24.5, 24.5 } ],
                                                     Needs[ "Wolfram`Chatbook`" -> None ];
-                                                    Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChat" ],
+                                                    Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChatIn", EvaluationNotebook[ ] ],
                                                     Appearance   -> "Suppressed",
                                                     BoxID        -> "NAStopChatButton",
                                                     FrameMargins -> 0
                                                 ]
                                             },
-                                            Dynamic[ Wolfram`Chatbook`$ChatEvaluationCell =!= None ],
+                                            chatEvaluatingInDynamic @ EvaluationNotebook[ ],
                                             Alignment -> { Automatic, Baseline }
                                         ]
                                     } },
@@ -2917,24 +2937,6 @@ saveWorkspaceChatInput[ cell_CellObject, input_ ] :=
     $WorkspaceChatInput = input;
 
 saveWorkspaceChatInput // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*workspaceChatInitializer*)
-workspaceChatInitializer // beginDefinition;
-
-(* :!CodeAnalysis::BeginBlock:: *)
-(* :!CodeAnalysis::Disable::NoVariables::DynamicModule:: *)
-workspaceChatInitializer[ expr_ ] :=
-    DynamicModule[
-        { },
-        expr,
-        Initialization :> initializeWorkspaceChat[ ],
-        SynchronousInitialization -> False
-    ];
-(* :!CodeAnalysis::EndBlock:: *)
-
-workspaceChatInitializer // endDefinition;
 
 $workspaceChatInitialized = False;
 
@@ -3060,79 +3062,10 @@ moveChatInputToBottom // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*Inline Chat*)
+(*Selection Info*)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*attachInlineChatInput*)
-attachInlineChatInput // beginDefinition;
-
-attachInlineChatInput[ nbo_NotebookObject ] :=
-    attachInlineChatInput[ nbo, <| |> ];
-
-attachInlineChatInput[ nbo_NotebookObject, settings_Association ] :=
-    If[ TrueQ @ userNotebookQ @ nbo,
-        attachInlineChatInput[ nbo, settings, SelectedCells @ nbo ],
-        Null
-    ];
-
-attachInlineChatInput[ nbo_NotebookObject, settings_Association, { root_CellObject } ] := Enclose[
-    Module[ { selectionInfo, attached },
-
-        NotebookDelete @ $lastAttachedInlineChat;
-        NotebookDelete @ Cells[ nbo, AttachedCell -> True, CellStyle -> "AttachedChatInput" ];
-
-        selectionInfo = ConfirmMatch[
-            getSelectionInfo @ root,
-            None | KeyValuePattern[ "CursorPosition" -> { _Integer, _Integer } ],
-            "SelectionInfo"
-        ];
-
-        $lastScrollPosition       = 0.0;
-        $inlineChatScrollPosition = 0.0;
-
-        (* TODO: Watch the root cell for changes and remove (or disable) the attached chat if cell changed *)
-        attached = ConfirmMatch[
-            AttachCell[
-                NotebookSelection @ nbo,
-                inlineChatInputCell[ root, selectionInfo, settings ],
-                { "WindowCenter", Bottom },
-                0,
-                { Center, Top },
-                RemovalConditions -> { "EvaluatorQuit" }
-            ],
-            _CellObject,
-            "Attach"
-        ];
-
-        SelectionMove[ attached, Before, CellContents ];
-        FrontEndExecute @ FrontEnd`FrontEndToken[ "MoveNextPlaceHolder" ];
-
-        $lastAttachedInlineChat = attached
-    ],
-    throwInternalFailure
-];
-
-(* TODO: moving the selection probably isn't ideal: *)
-attachInlineChatInput[ nbo_NotebookObject, settings_, { } ] := Enclose[
-    Module[ { root },
-        SelectionMove[ nbo, Previous, Cell ];
-        root = Replace[ SelectedCells @ nbo, { cell_CellObject } :> cell ];
-        If[ MatchQ[ root, _CellObject ],
-            attachInlineChatInput[ nbo, settings, { root } ],
-            Null
-        ]
-    ],
-    throwInternalFailure
-];
-
-(* FIXME: Need to handle multiple cell selections *)
-attachInlineChatInput[ nbo_NotebookObject, settings_, { ___ } ] := Null;
-
-attachInlineChatInput // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*getSelectionInfo*)
 getSelectionInfo // beginDefinition;
 
@@ -3166,352 +3099,6 @@ cellHash[ cell_CellObject, KeyValuePattern @ { "DirtiableContentsHash" -> hash_S
 cellHash // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*inlineChatInputCell*)
-inlineChatInputCell // beginDefinition;
-
-inlineChatInputCell[ root_CellObject, selectionInfo_, settings_ ] := Cell[
-    BoxData @ inlineTemplateBox @ TemplateBox[
-        {
-            ToBoxes @ DynamicModule[ { messageCells = { }, cell },
-                Dynamic[
-                    Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
-                        "DisplayInlineChat",
-                        cell,
-                        root,
-                        selectionInfo,
-                        Dynamic[ messageCells ]
-                    ]
-                ],
-
-                UnsavedVariables :> { cell },
-
-                (* ParentCell and ParentNotebook do not work for cells attached to NotebookSelection[ ],
-                   so we create temporary overrides here. *)
-                Initialization :> (
-                    cell = EvaluationCell[ ];
-                    parentCell[ cell ] = root;
-                    parentNotebook[ cell ] = parentNotebook @ root;
-                    attachInlineChatButtons[ EvaluationCell[ ], Dynamic @ messageCells ]
-                ),
-
-                Deinitialization :> Quiet[
-                    $inputFieldBox = None;
-                    Unset @ parentCell @ cell;
-                    Unset @ parentNotebook @ cell;
-                    ClearAll @ evaluateAttachedInlineChat;
-                ]
-            ]
-        },
-        "DropShadowPaneBox"
-    ],
-    "AttachedChatInput",
-    Background    -> None,
-    Magnification :> AbsoluteCurrentValue[ FrontEnd`EvaluationNotebook[ ], Magnification ],
-    Selectable    -> True,
-    TaggingRules  -> <| "ChatNotebookSettings" -> settings |>
-];
-
-inlineChatInputCell // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*attachInlineChatButtons*)
-attachInlineChatButtons // beginDefinition;
-
-attachInlineChatButtons[ cell_CellObject, messageCells_Dynamic ] := AttachCell[
-    cell,
-    inlineChatButtonsCell[ cell, messageCells ],
-    { Right, Top },
-    Offset[ { -57, -7 }, 0 ],
-    { Left, Top }
-];
-
-attachInlineChatButtons // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*inlineChatButtonsCell*)
-inlineChatButtonsCell // beginDefinition;
-
-(* TODO: define a template box for this in the stylesheet *)
-inlineChatButtonsCell[ cell_CellObject, messageCells_Dynamic ] :=
-    Cell @ BoxData @ GridBox[
-        { { closeButton @ cell }, { popOutButton[ cell, messageCells ] } },
-        AutoDelete      -> False,
-        GridBoxItemSize -> { "Columns" -> { { 0 } }, "Rows" -> { { 0 } } },
-        GridBoxSpacings -> { "Columns" -> { { 0 } }, "Rows" -> { { 0 } } }
-    ];
-
-inlineChatButtonsCell // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*closeButton*)
-closeButton // beginDefinition;
-
-closeButton[ cell_CellObject ] := ToBoxes @ Button[
-    RawBoxes @ FrameBox[
-        GraphicsBox[
-            {
-                color @ "NA_ChatOutputInlineButtonIcon",
-                AbsoluteThickness[ 1 ],
-                CapForm[ "Round" ],
-                LineBox @ { { { -1, -1 }, { 1, 1 } }, { { 1, -1 }, { -1, 1 } } }
-            },
-            ImagePadding -> { { 0, 1 }, { 1, 0 } },
-            ImageSize    -> { 6, 6 },
-            PlotRange    -> 1
-        ],
-        Alignment      -> { Center, Center },
-        Background     -> color @ "NA_ChatOutputInlineButtonBackground",
-        ContentPadding -> False,
-        FrameMargins   -> None,
-        FrameStyle     -> color @ "NA_ChatOutputInlineButtonFrame",
-        ImageSize      -> { 16, 16 },
-        RoundingRadius -> 2,
-        StripOnInput   -> False
-    ],
-    NotebookDelete @ cell,
-    Appearance -> "Suppressed",
-    BoxID      -> "NACloseInlineChat",
-    Tooltip    -> ToBoxes @ tr[ "InlineChatButtonTooltipClose" ]
-];
-
-closeButton // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*popOutButton*)
-popOutButton // beginDefinition;
-
-popOutButton[ cell_CellObject, messageCells_Dynamic ] := ToBoxes @ Button[
-    RawBoxes @ FrameBox[
-        GraphicsBox[
-            {
-                color @ "NA_ChatOutputInlineButtonIcon",
-                AbsoluteThickness[ 1 ],
-                CapForm[ "Round" ],
-                LineBox @ {
-                    { { -0.4, 0.8 }, { -0.8, 0.8 }, { -0.8, -0.8 }, { 0.8, -0.8 }, { 0.8, -0.4 } },
-                    { { -0.1, -0.1 }, { 1, 1 } },
-                    { { 0.2, 1 }, { 1, 1 }, { 1, 0.2 } }
-                }
-            },
-            ImagePadding -> { { 0, 1 }, { 1, 0 } },
-            ImageSize    -> { 10, 10 },
-            PlotRange    -> 1
-        ],
-        Alignment      -> { Center, Center },
-        Background     -> color @ "NA_ChatOutputInlineButtonBackground",
-        ContentPadding -> False,
-        FrameMargins   -> None,
-        FrameStyle     -> color @ "NA_ChatOutputInlineButtonFrame",
-        ImageSize      -> { 16, 16 },
-        RoundingRadius -> 2,
-        StripOnInput   -> False
-    ],
-    NotebookDelete @ cell;
-    popOutWorkspaceChatNB @ messageCells,
-    Appearance -> "Suppressed",
-    BoxID      -> "NAPopOutAsWorkspaceChat",
-    Tooltip    -> ToBoxes @ tr[ "InlineChatButtonTooltipViewNotebookAssist" ]
-];
-
-popOutButton // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*displayInlineChat*)
-displayInlineChat // beginDefinition;
-
-displayInlineChat[ cell_CellObject, root_CellObject, selectionInfo_, Dynamic[ messageCells_Symbol ] ] :=
-    Module[ { inputField },
-
-        inputField = inlineChatInputField[
-            cell,
-            root,
-            selectionInfo,
-            Dynamic @ CurrentValue[ cell, { TaggingRules, "ChatInputString" } ],
-            Dynamic @ messageCells
-        ];
-
-        displayInlineChatMessages[ messageCells, inputField ]
-    ];
-
-displayInlineChat // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*inlineChatInputField*)
-inlineChatInputField // beginDefinition;
-
-inlineChatInputField[
-    cell_CellObject,
-    root_CellObject,
-    selectionInfo_,
-    Dynamic[ currentInput_ ],
-    Dynamic[ messageCells_ ]
-] := (
-    evaluateAttachedInlineChat[ ] := ChatbookAction[
-        "EvaluateInlineChat",
-        cell,
-        root,
-        selectionInfo,
-        Dynamic @ currentInput,
-        Dynamic @ messageCells
-    ];
-    EventHandler[
-        Pane[
-            Grid[
-                {
-                    {
-                        RawBoxes @ inlineTemplateBox @ TemplateBox[ { }, "ChatIconUser" ],
-                        Framed[
-                            DynamicWrapper[
-                                InputField[ Dynamic @ currentInput, String, $inputFieldOptions ],
-                                $inputFieldBox = EvaluationBox[ ]
-                            ],
-                            $inputFieldFrameOptions
-                        ],
-                        (* FIXME: this needs a custom button *)
-                        RawBoxes @ inlineTemplateBox @
-                            DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatButton" ][ #1, { 24, 24 }, 12, 18 ] ]&[ RGBColor[ "#a3c9f2" ] ]
-                    }
-                },
-                BaseStyle -> { Magnification -> $inputFieldGridMagnification*0.8 }
-            ],
-            FrameMargins -> $inputFieldPaneMargins
-        ],
-        {
-            "ReturnKeyDown" :> (
-                Needs[ "Wolfram`Chatbook`" -> None ];
-                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
-                    "EvaluateInlineChat",
-                    cell,
-                    root,
-                    selectionInfo,
-                    Dynamic @ currentInput,
-                    Dynamic @ messageCells
-                ]
-            )
-        },
-        Method -> "Queued"
-    ]
-);
-
-inlineChatInputField // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*moveToInlineChatInputField*)
-moveToInlineChatInputField // beginDefinition;
-
-moveToInlineChatInputField[ ] :=
-    moveToInlineChatInputField @ $inputFieldBox;
-
-moveToInlineChatInputField[ box_BoxObject ] := Quiet @ Catch[
-    SelectionMove[ box, Before, Expression ];
-    FrontEnd`MoveCursorToInputField[ parentNotebook @ box, "AttachedChatInputField" ],
-    _
-];
-
-moveToInlineChatInputField[ None ] := Null;
-
-moveToInlineChatInputField // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*displayInlineChatMessages*)
-displayInlineChatMessages // beginDefinition;
-
-displayInlineChatMessages[ { }, inputField_ ] :=
-    Pane[ inputField, ImageSize -> { $initialInlineChatWidth, Automatic } ];
-
-displayInlineChatMessages[ cells: { __Cell }, inputField_ ] :=
-    DynamicModule[ { w, h, size },
-
-        (* TODO: use cell tagging rules instead so it remembers the size when refreshing *)
-        w = $initialInlineChatWidth;
-        h = $initialInlineChatHeight;
-        size = { w, h };
-
-        Column[
-            {
-                Pane[
-                    Column[
-                        formatInlineMessageCells /@ cells,
-                        Alignment  -> Left,
-                        BaseStyle  -> { Magnification -> 0.8 * Inherited },
-                        ItemSize   -> { Fit, Automatic },
-                        Spacings   -> 0.5
-                    ],
-                    FrameMargins       -> 5,
-                    ImageSize          -> Dynamic[ size, Function[ { w, h } = size = # ] ],
-                    Scrollbars         -> Automatic,
-                    AppearanceElements -> { "ResizeArea" },
-                    ScrollPosition     -> Dynamic[
-                        { 0, $inlineChatScrollPosition },
-                        Function[ $lastScrollPosition = $inlineChatScrollPosition = Last[ # ] ]
-                    ]
-                ],
-                Pane[ inputField, ImageSize -> Dynamic[ { w, Automatic } ] ]
-            },
-            Alignment -> Left
-        ],
-        Initialization :> ($inlineChatScrollPosition = $lastScrollPosition)
-    ];
-
-displayInlineChatMessages // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*scrollInlineChat*)
-scrollInlineChat // beginDefinition;
-scrollInlineChat[ ] := scrollInlineChat[ 500 ];
-scrollInlineChat[ amount_ ] := (scrollInlineChat0 @ amount; updateDynamics[ "InlineChatScrollPane" ]);
-scrollInlineChat // endDefinition;
-
-scrollInlineChat0 // beginDefinition;
-scrollInlineChat0[ amount_ ] := scrollInlineChat0[ amount, $lastScrollPosition ];
-scrollInlineChat0[ amount_? NumberQ, current_? NumberQ ] := $lastScrollPosition = current + amount;
-scrollInlineChat0[ amount_? NumberQ, _  ] := $lastScrollPosition = amount;
-scrollInlineChat0 // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*formatInlineMessageCells*)
-formatInlineMessageCells // beginDefinition;
-
-formatInlineMessageCells[ cell: Cell[ __, "ChatInput", ___ ] ] :=
-    Item[
-        Grid[
-            { { RawBoxes @ cell, Pane[ userImage[ ], ImageMargins -> $messageAuthorImagePadding ] } },
-            Alignment -> { Right, Top }
-        ],
-        Alignment -> Right
-    ];
-
-formatInlineMessageCells[ cell: Cell[ __, "ChatOutput", ___ ] ] :=
-    Block[ { $InlineChat = True },
-        Grid[
-            {
-                {
-                    Pane[ assistantImage[ ], ImageMargins -> $messageAuthorImagePadding ],
-                    RawBoxes @ InputFieldBox[
-                        Append[ DeleteCases[ cell, Background -> _ ], Background -> None ],
-                        Appearance -> None,
-                        ImageSize  -> { Scaled[ 1 ], Automatic }
-                    ]
-                }
-            },
-            Alignment -> { Left, Top }
-        ]
-    ];
-
-formatInlineMessageCells // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Input Field Movement*)
 
@@ -3520,7 +3107,6 @@ formatInlineMessageCells // endDefinition;
 (*moveToChatInputField*)
 moveToChatInputField // beginDefinition;
 
-(* TODO: support inline chat cells too *)
 moveToChatInputField[ nbo_ ] :=
     moveToChatInputField[ nbo, $WorkspaceChat ];
 
@@ -3729,8 +3315,6 @@ assistantMessageButtons[ includeFeedback_, sidebarCellQ_ ] := assistantMessageBu
                     Method     -> "Queued"
                 ],
                 Item[ Spacer[ 0 ], ItemSize -> Fit ],
-                (* Waiting for sharing functionality to be implemented: *)
-                (* Tooltip[ assistantShareAsActionMenu[ Dynamic[ Typeset`cell ] ], tr[ "WorkspaceOutputRaftShareAsTooltip" ] ], *)
                 If[ TrueQ @ includeFeedback,
                     Splice @ {
                         Button[
@@ -3835,73 +3419,6 @@ assistantCopyAsActionMenu // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*assistantShareAsActionMenu*)
-assistantShareAsActionMenu // beginDefinition;
-
-(* :!CodeAnalysis::BeginBlock:: *)
-(* :!CodeAnalysis::Disable::NoVariables::DynamicModule:: *)
-assistantShareAsActionMenu[ Dynamic[ cell_ ] ] :=
-DynamicModule[ { Typeset`menuActiveQ = False },
-    EventHandler[
-        PaneSelector[
-            {
-                "Default" ->
-                    Framed[
-                        chatbookIcon[ "WorkspaceOutputRaftShareIcon" , False, color @ "NA_OutputRaftIcon" ],
-                        Background -> color @ "NA_NotebookBackground", RoundingRadius -> 3, FrameMargins -> 0, FrameStyle -> color @ "NA_NotebookBackground",
-                        Alignment -> { Center, Center }, ImageSize -> { 22, 22 } ],
-                "Hover" ->
-                    Framed[
-                        chatbookIcon[ "WorkspaceOutputRaftShareIcon" , False, color @ "NA_OutputRaftIcon" ],
-                        Background -> color @ "NA_OutputRaftBackgroundHover", RoundingRadius -> 3, FrameMargins -> 0, FrameStyle -> color @ "NA_OutputRaftBackgroundHover",
-                        Alignment -> { Center, Center }, ImageSize -> { 22, 22 } ],
-                "Down" ->
-                    Framed[
-                        chatbookIcon[ "WorkspaceOutputRaftShareIcon" , False, color @ "NA_OutputRaftIconPressed" ],
-                        Background -> color @ "NA_OutputRaftBackgroundPressed", RoundingRadius -> 3, FrameMargins -> 0, FrameStyle -> color @ "NA_OutputRaftBackgroundPressed",
-                        Alignment -> { Center, Center }, ImageSize -> { 22, 22 } ] },
-            Dynamic[
-                Which[
-                    Typeset`menuActiveQ, "Down",
-                    CurrentValue[ "MouseOver" ], "Hover",
-                    True, "Default" ] ],
-            ImageSize -> Automatic ],
-        {
-            "MouseDown" :> (
-                Typeset`menuActiveQ = True;
-                AttachCell[ EvaluationBox[ ],
-                    Cell[ BoxData @ ToBoxes @
-                        DynamicModule[ { },
-                            Framed[
-                                Grid[
-                                    {
-                                        { Style[ tr[ "WorkspaceOutputRaftShareAs" ], FontColor -> color @ "NA_RaftMenuHeaderFont", FontSize -> 12 ] },
-                                        { assistantActionMenuItem[ tr[ "WorkspaceOutputRaftShareAsCloudDeployment" ], ChatbookAction[ "ShareAsCloudDeployment", cell ] ] },
-                                        { assistantActionMenuItem[ tr[ "WorkspaceOutputRaftShareAsPDF" ], ChatbookAction[ "ShareAsPDF", cell ] ] },
-                                        { assistantActionMenuItem[ tr[ "WorkspaceOutputRaftShareAsImage" ], ChatbookAction[ "ShareAsImage", cell ] ] }
-                                    },
-                                    Alignment -> Left,
-                                    BaseStyle -> { FontFamily -> "Source Sans Pro" },
-                                    Spacings -> { 0, { 0, 0.5, { 0 } } }
-                                ],
-                                Background -> color @ "NA_RaftMenuBackground", FrameStyle -> color @ "NA_RaftMenuFrame", ImageSize -> 158, RoundingRadius -> 4 ],
-                            InheritScope -> True,
-                            Initialization :> (True), (* Deinitialization won't run without an Init *)
-                            Deinitialization :> (Typeset`menuActiveQ = False)
-                        ],
-                        CellTags -> "CustomActionMenu",
-                        Magnification -> Inherited * 0.85 ],
-                    { Right, Bottom }, 0, { Right, Top }, (* Because this is an attached cell, it has to exist within the NA window *)
-                    RemovalConditions -> "MouseExit" ]) },
-        PassEventsDown -> True,
-        Method -> "Preemptive",
-        PassEventsUp -> True ] ]
-(* :!CodeAnalysis::EndBlock:: *)
-
-assistantShareAsActionMenu // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*assistantActionMenuItem*)
 assistantActionMenuItem // beginDefinition;
 
@@ -3930,73 +3447,8 @@ assistantActionMenuItem // endDefinition
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*popOutWorkspaceChatNB*)
-popOutWorkspaceChatNB // beginDefinition;
-
-popOutWorkspaceChatNB[ Dynamic[ cells_ ] ] :=
-    popOutWorkspaceChatNB @ cells;
-
-popOutWorkspaceChatNB[ cells0: { ___Cell } ] := Enclose[
-    Module[ { cells, settings, nbo },
-        NotebookClose @ findCurrentWorkspaceChat[ ];
-
-        cells = cells0 //. $inlineToWorkspaceConversionRules;
-
-        nbo = ConfirmMatch[
-            createWorkspaceChat[ EvaluationNotebook[ ], cells ],
-            _NotebookObject,
-            "Notebook"
-        ];
-
-        moveToChatInputField @ nbo;
-
-        settings = ConfirmBy[ AbsoluteCurrentChatSettings @ nbo, AssociationQ, "Settings" ];
-        If[ TrueQ @ settings[ "AutoSaveConversations" ], SaveChat[ nbo, settings ] ];
-
-        nbo
-    ],
-    throwInternalFailure
-];
-
-popOutWorkspaceChatNB // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*$inlineToWorkspaceConversionRules*)
-$inlineToWorkspaceConversionRules := $inlineToWorkspaceConversionRules = Dispatch @ {
-    Cell[ BoxData @ TemplateBox[ { Cell[ text_ ] }, "UserMessageBox", __ ], "ChatInput", ___ ] :>
-        Cell[
-            BoxData @ TemplateBox[
-                { Cell[ Flatten @ TextData @ text, Background -> None, Selectable -> True, Editable -> True ] },
-                "UserMessageBox"
-            ],
-            "ChatInput"
-        ]
-    ,
-    Cell[
-        BoxData @ TemplateBox[ { Cell[ text_, ___ ] }, "AssistantMessageBox", ___ ],
-        "ChatOutput",
-        ___,
-        TaggingRules -> tags_,
-        ___
-    ] :>
-        Cell[
-            BoxData @ TemplateBox[
-                { Cell[ Flatten @ TextData @ text, Background -> None, Editable -> True, Selectable -> True ] },
-                "AssistantMessageBox"
-            ],
-            "ChatOutput",
-            TaggingRules      -> tags,
-            GeneratedCell     -> True,
-            CellAutoOverwrite -> True
-        ]
-};
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
 (*SaveAsChatNotebook*)
 SaveAsChatNotebook // beginDefinition;
-(* FIXME: This seems to often lead to a crash in 14.1, so we might need a version check to make this 14.2+ *)
 SaveAsChatNotebook[ nbo_NotebookObject ] := catchMine @ saveAsChatNB @ nbo;
 SaveAsChatNotebook // endExportedDefinition;
 
@@ -4047,21 +3499,29 @@ popOutChatNB // endDefinition;
 
 popOutChatNB0 // beginDefinition;
 
-popOutChatNB0[ id_, settings_Association ] := Enclose[
+(* a chat that can't be loaded (deleted since History was shown, or unreadable) returns its Missing *)
+popOutChatNB0[ id_, settings_Association ] := Catch[ popOutChatNB1[ id, settings ], $loadFailedTag ];
+
+popOutChatNB0 // endDefinition;
+
+
+popOutChatNB1 // beginDefinition;
+
+popOutChatNB1[ id_, settings_Association ] := Enclose[
     Module[ { loaded, uuid, title, messages, dingbat, cells, options },
-        loaded = ConfirmBy[ LoadChat @ id, AssociationQ, "Loaded" ];
+        loaded = ConfirmBy[ loadSavedChat @ id, AssociationQ, "Loaded" ];
         uuid = ConfirmBy[ loaded[ "ConversationUUID" ], StringQ, "UUID" ];
         title = ConfirmBy[ loaded[ "ConversationTitle" ], StringQ, "Title" ];
         messages = ConfirmBy[ loaded[ "Messages" ], ListQ, "Messages" ];
         dingbat = Cell[ BoxData @ makeOutputDingbat @ settings, Background -> None ];
         cells = ConfirmMatch[ updateCellDingbats[ ChatMessageToCell @ messages, dingbat ], { __Cell }, "Cells" ];
-        options = Sequence @@ Normal[ settings, Association ];
+        options = Sequence @@ Normal[ KeyTake[ settings, $popOutSettings ], Association ];
         ConfirmMatch[ CreateChatNotebook[ cells, options ], _NotebookObject, "Notebook" ]
     ],
     throwInternalFailure
 ];
 
-popOutChatNB0 // endDefinition;
+popOutChatNB1 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -4082,6 +3542,17 @@ clearOverlayMenus[ nbo_NotebookObject ] := (
 );
 
 clearOverlayMenus // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*clearSidebarOverlayMenus*)
+clearSidebarOverlayMenus // beginDefinition;
+
+(* Sidebar overlays never hide the vertical scrollbar, so the user's notebook options are left alone: *)
+clearSidebarOverlayMenus[ nbo_NotebookObject ] :=
+    NotebookDelete @ Cells[ nbo, CellStyle -> "AttachedOverlayMenu", AttachedCell -> True ];
+
+clearSidebarOverlayMenus // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -4286,7 +3757,9 @@ withLoadingOverlay[ { nbo_NotebookObject, appContainer_ }, eval_ ] :=
         WithCleanup[
             attached = attachOverlayMenu[ nbo, appContainer, "Loading" ],
             eval,
-            NotebookDelete @ attached
+            NotebookDelete @ attached;
+            (* the window overlay hides the vertical scrollbar, so it's restored even if eval fails or is aborted *)
+            If[ appContainer === None, restoreVerticalScrollbar @ nbo ]
         ]
     ];
 
@@ -4353,65 +3826,75 @@ notebookSources[ appNotebook_, appContainer_ ] := Framed[
                 FrameMargins -> { { 5, 5 }, { 3, 3 } }
             ],
             Pane[
-                Dynamic @ Grid[
-                    Function[ results,
-                        If[ results === { },
-                            { {
-                                Pane[
-                                    Style[ tr[ "WorkspaceSourcesNoOpenNotebooks" ], FontFamily -> "Source Sans Pro", FontSlant -> "Italic" ],
-                                    Alignment -> { Center, Center }, ImageSize -> { Scaled[ 1 ], 30 } ] } },
-                            results ]
-                    ] @
-                    Cases[
-                        SortBy[
-                            If[ appContainer === None,
-                                SourceNotebookObjectInformation[ ]
-                                , (* ELSE the app is a sub-part of its notebook e.g. the side bar, so exclude its notebook *)
-                                Select[ SourceNotebookObjectInformation[ ], #[ "NotebookObject" ] =!= appNotebook& ]
-                            ],
-                            #[ "WindowTitle" ] & ],
-                        KeyValuePattern @ { "NotebookObject" -> nbo_NotebookObject, "WindowTitle" -> title_ } :> {
-                            Spacer[ 3 ],
-                            inclusionCheckbox @ nbo,
-                            Item[
+                (*
+                    The list reads Chatbook globals that change on every catchTop call (e.g. catchTop and
+                    $chatEvaluationID), and the inclusion checkboxes it creates set them again, so tracking them would
+                    re-run the list continuously while the overlay is open. The front end still tracks the front end
+                    values it reads, such as Notebooks[], SelectedNotebook[], InputNotebook[] and TaggingRules, but
+                    not window titles from NotebookInformation, so a renamed notebook shows its new title after the
+                    next tracked change. *)
+                Dynamic[
+                    Grid[
+                        Function[ results,
+                            If[ results === { },
+                                { {
+                                    Pane[
+                                        Style[ tr[ "WorkspaceSourcesNoOpenNotebooks" ], FontFamily -> "Source Sans Pro", FontSlant -> "Italic" ],
+                                        Alignment -> { Center, Center }, ImageSize -> { Scaled[ 1 ], 30 } ] } },
+                                results ]
+                        ] @
+                        Cases[
+                            SortBy[
+                                If[ appContainer === None,
+                                    SourceNotebookObjectInformation[ ]
+                                    , (* ELSE the app is a sub-part of its notebook e.g. the side bar, so exclude its notebook *)
+                                    Select[ SourceNotebookObjectInformation[ ], #[ "NotebookObject" ] =!= appNotebook& ]
+                                ],
+                                #[ "WindowTitle" ] & ],
+                            KeyValuePattern @ { "NotebookObject" -> nbo_NotebookObject, "WindowTitle" -> title_ } :> {
+                                Spacer[ 3 ],
+                                inclusionCheckbox @ nbo,
+                                Item[
+                                    Button[
+                                        MouseAppearance[
+                                            Grid[
+                                                { {
+                                                    $notebookIcon,
+                                                    If[ MatchQ[ title, None|"" ], formatNotebookTitle @ title, Style[ title, color @ "NA_OverlayMenuFont" ] ]
+                                                } },
+                                                Alignment -> { Left, Baseline }
+                                            ],
+                                            "LinkHand"
+                                        ],
+                                        ToggleChatInclusion @ nbo,
+                                        Alignment  -> Left,
+                                        Appearance -> "Suppressed",
+                                        BaseStyle  -> { "Text", FontSize -> 14, LineBreakWithin -> False },
+                                        BoxID      -> "NASourcesToggleChatInclusions"
+                                    ],
+                                    ItemSize -> Fit
+                                ],
                                 Button[
                                     MouseAppearance[
-                                        Grid[
-                                            { {
-                                                $notebookIcon,
-                                                If[ MatchQ[ title, None|"" ], formatNotebookTitle @ title, Style[ title, color @ "NA_OverlayMenuFont" ] ]
-                                            } },
-                                            Alignment -> { Left, Baseline }
+                                        Mouseover[
+                                            Style[ "   \[RightGuillemet]   ", FontColor -> color @ "NA_OverlayMenuFont_2" ],
+                                            Style[ "   \[RightGuillemet]   ", FontColor -> color @ "NA_OverlayMenuFont" ]
                                         ],
                                         "LinkHand"
                                     ],
-                                    ToggleChatInclusion @ nbo,
-                                    Alignment  -> Left,
+                                    SetSelectedNotebook @ nbo,
+                                    Alignment  -> Right,
                                     Appearance -> "Suppressed",
-                                    BaseStyle  -> { "Text", FontSize -> 14, LineBreakWithin -> False },
-                                    BoxID      -> "NASourcesToggleChatInclusions"
-                                ],
-                                ItemSize -> Fit
-                            ],
-                            Button[
-                                MouseAppearance[
-                                    Mouseover[
-                                        Style[ "   \[RightGuillemet]   ", FontColor -> color @ "NA_OverlayMenuFont_2" ],
-                                        Style[ "   \[RightGuillemet]   ", FontColor -> color @ "NA_OverlayMenuFont" ]
-                                    ],
-                                    "LinkHand"
-                                ],
-                                SetSelectedNotebook @ nbo,
-                                Alignment  -> Right,
-                                Appearance -> "Suppressed",
-                                BaseStyle  -> { "Text", FontFamily -> "Source Sans Pro", FontSize -> 22, FontWeight -> "Plain" },
-                                BoxID      -> "NASourcesGoToNotebook"
-                            ]
-                        }
+                                    BaseStyle  -> { "Text", FontFamily -> "Source Sans Pro", FontSize -> 22, FontWeight -> "Plain" },
+                                    BoxID      -> "NASourcesGoToNotebook"
+                                ]
+                            }
+                        ],
+                        Alignment -> { Left, Center },
+                        Dividers  -> { False, { False, { color @ "NA_OverlayMenuFrame" }, False } },
+                        Spacings  -> { Automatic, { 0, { 1 }, 0 } }
                     ],
-                    Alignment -> { Left, Center },
-                    Dividers  -> { False, { False, { color @ "NA_OverlayMenuFrame" }, False } },
-                    Spacings  -> { Automatic, { 0, { 1 }, 0 } }
+                    TrackedSymbols :> { }
                 ],
                 FrameMargins -> { { 0, 0 }, { 5, 5 } }
             ]
@@ -4440,10 +3923,13 @@ formatNotebookTitle // endDefinition;
 (*inclusionCheckbox*)
 inclusionCheckbox // beginDefinition;
 
+(* CurrentChatSettings sets Chatbook globals via catchMine, so only the front end's TaggingRules tracking should update
+   this (ToggleChatInclusion writes TaggingRules). *)
 inclusionCheckbox[ nbo_NotebookObject ] :=
     Checkbox @ Dynamic[
         ! TrueQ @ CurrentChatSettings[ nbo, "ExcludeFromChat" ],
-        ToggleChatInclusion[ nbo, #1 ] &
+        ToggleChatInclusion[ nbo, #1 ] &,
+        TrackedSymbols :> { }
     ];
 
 inclusionCheckbox // endDefinition;
@@ -4458,14 +3944,20 @@ inclusionCheckbox // endDefinition;
 historyOverlay // beginDefinition;
 
 historyOverlay[ nbo_NotebookObject, appContainer_ ] :=
+    historyOverlay[ nbo, appContainer, $historyNotice ];
+
+historyOverlay[ nbo_NotebookObject, appContainer_, notice_ ] :=
     DynamicModule[ { searching = False, query = "", overlayCell },
-        PaneSelector[
-            {
-                True  -> historySearchView[ nbo, appContainer, Dynamic @ searching, Dynamic @ query, Dynamic @ overlayCell ],
-                False -> historyDefaultView[ nbo, appContainer, Dynamic @ searching ]
-            },
-            Dynamic @ searching,
-            ImageSize -> Automatic
+        withHistoryNotice[
+            PaneSelector[
+                {
+                    True  -> historySearchView[ nbo, appContainer, Dynamic @ searching, Dynamic @ query, Dynamic @ overlayCell ],
+                    False -> historyDefaultView[ nbo, appContainer, Dynamic @ searching ]
+                },
+                Dynamic @ searching,
+                ImageSize -> Automatic
+            ],
+            notice
         ],
 
         Initialization   :> (overlayCell = EvaluationCell[ ]),
@@ -4478,6 +3970,26 @@ historyOverlay[ nbo_NotebookObject, appContainer_ ] :=
     ];
 
 historyOverlay // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*withHistoryNotice*)
+withHistoryNotice // beginDefinition;
+
+withHistoryNotice[ view_, None ] := view;
+
+withHistoryNotice[ view_, notice_ ] := Column[
+    {
+        Pane[
+            Style[ notice, "Text", FontSize -> 13, FontColor -> color @ "NA_OverlayMenuFontSubtle", FontSlant -> Italic ],
+            FrameMargins -> { { 5, 5 }, { 0, 3 } }
+        ],
+        view
+    },
+    Spacings -> 0.5
+];
+
+withHistoryNotice // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -4519,8 +4031,10 @@ historySearchView // endDefinition;
 (*makeHistorySearchResults*)
 makeHistorySearchResults // beginDefinition;
 
-makeHistorySearchResults[ nbo_NotebookObject, appContainer_, appName_String, Dynamic[ query_ ] ] := Dynamic[
+(* the results are searched again when saved chats change, e.g. after a chat was deleted or saved elsewhere *)
+makeHistorySearchResults[ nbo_NotebookObject, appContainer_, appName_String, Dynamic[ query_ ] ] := trackedDynamic[
     showSearchResults[ nbo, appContainer, appName, query ],
+    "SavedChats",
     SynchronousUpdating -> False, (* searching should not block typing in the search field *)
     TrackedSymbols      :> { query }
 ];
@@ -4745,40 +4259,64 @@ makeDefaultHistoryView // endDefinition;
 makeDefaultHistoryView0 // beginDefinition;
 
 makeDefaultHistoryView0[ nbo_NotebookObject, appContainer_, Dynamic[ page_ ], Dynamic[ totalPages_ ] ] := Enclose[
-    DynamicModule[ { appName, chats, display },
+    DynamicModule[ { appName, chats = None, display },
         display = Pane[ ProgressIndicator[ Appearance -> { "Percolate", color @ "NA_OverlayMenuPercolate" } ], ImageMargins -> 25 ];
         appName = ConfirmBy[ CurrentChatSettings[ If[ appContainer === None, nbo, appContainer ], "AppName" ], StringQ, "AppName" ];
-        chats = ConfirmMatch[ ListSavedChats @ appName, { ___Association }, "Chats" ];
 
-        DynamicWrapper[
-            Dynamic @ display,
-            display =
-                Grid[
-                    With[ { pages = Partition[ chats, UpTo @ $maxHistoryItems ] },
-                        totalPages = Length @ pages;
-                        If[ totalPages == 0,
-                            { {
-                                Item[
-                                    Style[ tr @ "WorkspaceHistoryNone", FontFamily -> "Source Sans Pro", FontSlant  -> Italic ],
-                                    Alignment          -> { Center, Center },
-                                    System`ItemMargins -> 10
-                                ] } }
-                            ,
-                            If[ Not[ IntegerQ @ page && page >= 1 && page <= totalPages ], page = 1 ];
-                            makeHistoryMenuItem[ Dynamic @ chats, nbo, appContainer ] /@ pages[[ page ]]
+        (* chats are read from storage when shown and again whenever saved chats change, e.g. after a chat was deleted
+           in the search view or in another History overlay, or a new chat was saved *)
+        trackedDynamicWrapper[
+            DynamicWrapper[
+                Dynamic @ display,
+                If[ ListQ @ chats,
+                    display =
+                        Grid[
+                            With[ { pages = Partition[ chats, UpTo @ $maxHistoryItems ] },
+                                totalPages = Length @ pages;
+                                If[ totalPages == 0,
+                                    { {
+                                        Item[
+                                            Style[ tr @ "WorkspaceHistoryNone", FontFamily -> "Source Sans Pro", FontSlant  -> Italic ],
+                                            Alignment          -> { Center, Center },
+                                            System`ItemMargins -> 10
+                                        ] } }
+                                    ,
+                                    (* stay on the last page if deleting chats removed the current one *)
+                                    If[ Not[ IntegerQ @ page && page >= 1 && page <= totalPages ],
+                                        page = If[ IntegerQ @ page && page > totalPages, totalPages, 1 ]
+                                    ];
+                                    makeHistoryMenuItem[ Dynamic @ chats, nbo, appContainer ] /@ pages[[ page ]]
+                                ]
+                            ],
+                            Alignment -> { Left, Center },
+                            Dividers  -> { False, { False, { color @ "NA_OverlayMenuFrame" }, False } },
+                            Spacings  -> { Automatic, { 0, { 1 }, 0 } }
                         ]
-                    ],
-                    Alignment -> { Left, Center },
-                    Dividers  -> { False, { False, { color @ "NA_OverlayMenuFrame" }, False } },
-                    Spacings  -> { Automatic, { 0, { 1 }, 0 } }
                 ],
-            TrackedSymbols :> { page, chats }
+                TrackedSymbols :> { page, chats }
+            ],
+            chats = readHistoryChats[ appName, chats ],
+            "SavedChats",
+            SynchronousUpdating -> False
         ]
     ],
     throwInternalFailure
 ];
 
 makeDefaultHistoryView0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*readHistoryChats*)
+readHistoryChats // beginDefinition;
+
+(* if storage can't be read, the rows that are already shown are kept *)
+readHistoryChats[ appName_String, current_ ] := Replace[
+    catchAlways @ ListSavedChats @ appName,
+    Except[ { ___Association } ] :> If[ ListQ @ current, current, { } ]
+];
+
+readHistoryChats // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -4857,7 +4395,7 @@ makeHistoryMenuItem[ Dynamic[ chats_ ], nbo_NotebookObject, appContainer_, chat_
                     { {
                         Button[
                             chatbookIcon[ "WorkspaceHistoryPopOutIcon", False ],
-                            popOutChatNB[ chat, CurrentChatSettings @ If[ appContainer === None, nbo, appContainer ] ],
+                            popOutFromHistory[ nbo, appContainer, chat ],
                             Appearance       -> "Suppressed",
                             BaselinePosition -> Center -> Center,
                             BoxID            -> "NAHistoryPopOutConversation" <> title,
@@ -4905,13 +4443,38 @@ removeChatFromRows // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*popOutFromHistory*)
+popOutFromHistory // beginDefinition;
+
+popOutFromHistory[ nbo_NotebookObject, appContainer_, chat_Association ] := Replace[
+    popOutChatNB[ chat, CurrentChatSettings @ If[ appContainer === None, nbo, appContainer ] ],
+    missing_Missing :> historyLoadFailed[ nbo, appContainer, missing ]
+];
+
+popOutFromHistory // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*loadConversation*)
 loadConversation // beginDefinition;
 
-loadConversation[ nbo_NotebookObject, None, id_ ] := Enclose[
+(* a chat that can't be loaded (deleted since History was shown, or unreadable) throws its Missing to $loadFailedTag
+   from inside withLoadingOverlay, so History is only reopened after the loading overlay is gone *)
+loadConversation[ nbo_NotebookObject, appContainer_, id_ ] := Catch[
+    loadConversation0[ nbo, appContainer, id ],
+    $loadFailedTag,
+    historyLoadFailed[ nbo, appContainer, #1 ] &
+];
+
+loadConversation // endDefinition;
+
+
+loadConversation0 // beginDefinition;
+
+loadConversation0[ nbo_NotebookObject, None, id_ ] := Enclose[
     Module[ { loaded, uuid, title, messages, cells, cellObjects },
 
-        loaded = ConfirmBy[ LoadChat @ id, AssociationQ, "Loaded" ];
+        loaded = ConfirmBy[ loadSavedChat @ id, AssociationQ, "Loaded" ];
         uuid = ConfirmBy[ loaded[ "ConversationUUID" ], StringQ, "UUID" ];
         title = ConfirmBy[ loaded[ "ConversationTitle" ], StringQ, "Title" ];
         messages = ConfirmBy[ loaded[ "Messages" ], ListQ, "Messages" ];
@@ -4940,10 +4503,10 @@ loadConversation[ nbo_NotebookObject, None, id_ ] := Enclose[
 ];
 
 (* if we need to distinguish this further then condition on TrueQ @ CurrentValue[ sidebarCell, { TaggingRules, "ChatNotebookSettings", "SidebarChat" } ] *)
-loadConversation[ nbo_NotebookObject, sidebarCell_CellObject, id_ ] := Enclose[
+loadConversation0[ nbo_NotebookObject, sidebarCell_CellObject, id_ ] := Enclose[
     Module[ { loaded, uuid, title, messages, cells, lastDockedCell, scrollablePaneCell },
         (* load new cells *)
-        loaded = ConfirmBy[ LoadChat @ id, AssociationQ, "Loaded" ];
+        loaded = ConfirmBy[ loadSavedChat @ id, AssociationQ, "Loaded" ];
         uuid = ConfirmBy[ loaded[ "ConversationUUID" ], StringQ, "UUID" ];
         title = ConfirmBy[ loaded[ "ConversationTitle" ], StringQ, "Title" ];
         messages = ConfirmBy[ loaded[ "Messages" ], ListQ, "Messages" ];
@@ -4966,7 +4529,27 @@ loadConversation[ nbo_NotebookObject, sidebarCell_CellObject, id_ ] := Enclose[
     throwInternalFailure
 ];
 
-loadConversation // endDefinition;
+loadConversation0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*loadSavedChat*)
+loadSavedChat // beginDefinition;
+loadSavedChat[ id_ ] := Replace[ LoadChat @ id, missing_Missing :> Throw[ missing, $loadFailedTag ] ];
+loadSavedChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*historyLoadFailed*)
+historyLoadFailed // beginDefinition;
+
+(* History is reopened from storage, so a chat that no longer exists isn't listed anymore *)
+historyLoadFailed[ nbo_NotebookObject, appContainer_, _Missing ] := (
+    Block[ { $historyNotice = tr[ "WorkspaceHistoryLoadFailed" ] }, attachOverlayMenu[ nbo, appContainer, "History" ] ];
+    Null
+);
+
+historyLoadFailed // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -5018,56 +4601,11 @@ withWorkspaceGlobalProgress[ nbo_NotebookObject, eval_ ] := Enclose[
 
 withWorkspaceGlobalProgress // endDefinition;
 
-
-(* Work around VertexColors not understanding LightDarkSwitched. *)
-$workspaceChatProgressBar := With[
-    {
-        darkModeQ = AbsoluteCurrentValue[ FrontEnd`EvaluationNotebook[ ], LightDark ] === "Dark"
-    },
-    {(* (* save for posterity *)
-        background  = Replace[ color @ "NA_ProgressBarEdgeColor",   l_LightDarkSwitched :> If[ darkModeQ, Last, First ][ l ] ],
-        colorCenter = Replace[ color @ "NA_ProgressBarCenterColor", l_LightDarkSwitched :> If[ darkModeQ, Last, First ][ l ] ],
-        colorEdges  = Replace[ color @ "NA_ProgressBarEdgeColor",   l_LightDarkSwitched :> If[ darkModeQ, Last, First ][ l ] ],
-        *)
-        background  = Replace[ LightDarkSwitched[ RGBColor[ "#128ED1" ], RGBColor[ "#7FC7FB" ] ], l_LightDarkSwitched :> If[ darkModeQ, Last, First ][ l ] ],
-        colorCenter = Replace[ LightDarkSwitched[ RGBColor[ "#E0F2FC" ], RGBColor[ "#F5F5F5" ] ], l_LightDarkSwitched :> If[ darkModeQ, Last, First ][ l ] ],
-        colorEdges  = Replace[ LightDarkSwitched[ RGBColor[ "#128ED1" ], RGBColor[ "#7FC7FB" ] ], l_LightDarkSwitched :> If[ darkModeQ, Last, First ][ l ] ],
-        duration    = 2.5
-    },
-    Graphics[
-        {
-            Thickness[ 1 ],
-            Dynamic @ TemplateBox[
-                { Clock[ { -0.2, 1.0 }, duration ], Clock[ { 0.0, 1.2 }, duration ] },
-                "WorkspaceChatProgressBar",
-                DisplayFunction -> Function[
-                    LineBox[
-                        {
-                            { #1, 0 },
-                            { (#1 + #2) / 2, 0 },
-                            { #2, 0 }
-                        },
-                        VertexColors -> { colorEdges, colorCenter, colorEdges }
-                    ]
-                ]
-            ]
-        },
-        AspectRatio      -> Full,
-        Background       -> background,
-        ImageMargins     -> 0,
-        ImageSize        -> { Full, 6 },
-        PlotRange        -> { { 0, 1 }, Automatic },
-        PlotRangePadding -> None
-    ]
-];
-
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
 addToMXInitialization[
-    $inlineToWorkspaceConversionRules;
     $defaultUserImage;
-    $smallNotebookIcon;
 ];
 
 End[ ];

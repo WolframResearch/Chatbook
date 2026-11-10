@@ -31,7 +31,7 @@ $maxTagLength = Max[ StringLength /@ (List @@ $$severityTag) ] + 2;
 (*Initialization*)
 $buffer = "";
 
-(* The last dynamic content that was found to have no split points (see `splitDynamicContent`): *)
+(* The last dynamic content that has no split points, or only declined ones (see `splitDynamicContent`): *)
 $dynamicSplitChecked = None;
 
 (* State for emulated stop tokens (used when the model does not support server-side stop tokens): *)
@@ -220,7 +220,7 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] /
             throwIfChatStopped[ ]
         ];
 
-        If[ ! Or[ TrueQ @ $WorkspaceChat, TrueQ @ $InlineChat, TrueQ @ $SidebarChat ],
+        If[ ! Or[ TrueQ @ $WorkspaceChat, TrueQ @ $SidebarChat ],
             SelectionMove[ cellObj, After, Cell ] (* mimic the selection behavior of standard cell evaluations *)
         ];
 
@@ -379,7 +379,13 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] :
         cellTags = CurrentValue[ evalCell, CellTags ];
         cell = activeAIAssistantCell[
             container,
-            Association[ settings, "Container" :> container, "CellObject" :> cellObject, "Task" :> task ],
+            Association[
+                settings,
+                "Data"       -> frontEndChatData @ data,
+                "Container"  :> container,
+                "CellObject" :> cellObject,
+                "Task"       :> task
+            ],
             cellTags
         ];
 
@@ -480,9 +486,22 @@ writeChatOutputData // beginDefinition;
 writeChatOutputData[ cell_CellObject, data_Association ] /; $cloudNotebooks := Null;
 
 writeChatOutputData[ cell_CellObject, data_Association ] :=
-    LogChatTiming[ CurrentChatSettings[ cell, "Data" ] = data, "WriteChatOutputData" ];
+    LogChatTiming[ CurrentChatSettings[ cell, "Data" ] = frontEndChatData @ data, "WriteChatOutputData" ];
 
 writeChatOutputData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*frontEndChatData*)
+frontEndChatData // beginDefinition;
+
+(* The messages keep their images for the requests that follow tool calls, but the output cell doesn't need them: *)
+frontEndChatData[ data: KeyValuePattern[ "Messages" -> messages_List ] ] :=
+    <| data, "Messages" -> revertMultimodalContent @ messages |>;
+
+frontEndChatData[ data_Association ] := data;
+
+frontEndChatData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -544,10 +563,11 @@ makeHTTPRequest // endDefinition;
 prepareMessagesForLLM // beginDefinition;
 
 prepareMessagesForLLM[ settings_, messages0_ ] := Enclose[
-    Module[ { messages, newRoles, replaced, split, stringResults, noSources, cleanBase, reasoning },
+    Module[ { messages, cleanAdded, newRoles, replaced, split, stringResults, noSources, cleanBase, reasoning },
 
         messages      = ConfirmMatch[ prepareMessagesForLLM0[ settings, messages0 ], { ___Association }, "Messages" ];
-        newRoles      = ConfirmMatch[ rewriteMessageRoles[ settings, messages ], { ___Association }, "NewRoles" ];
+        cleanAdded    = ConfirmMatch[ removeAddedPromptTags @ messages, { ___Association }, "CleanAdded" ];
+        newRoles      = ConfirmMatch[ rewriteMessageRoles[ settings, cleanAdded ], { ___Association }, "NewRoles" ];
         replaced      = ConfirmMatch[ replaceUnicodeCharacters[ settings, newRoles ], { ___Association }, "Replaced" ];
         split         = ConfirmMatch[ splitToolResponses[ settings, replaced ], { ___Association }, "Split" ];
         stringResults = ConfirmMatch[ makeStringResults[ settings, split ], { ___Association }, "StringResults" ];
@@ -697,21 +717,24 @@ rewriteServiceToolCalls // beginDefinition;
 rewriteServiceToolCalls[ settings_, messages_List ] :=
     Flatten[ rewriteServiceToolCalls[ settings, # ] & /@ messages ];
 
+(* The message for a tool call that is being evaluated ends with that call, which is given in "ToolRequests".
+   Earlier calls in the same response already have results, so they are split like any other assistant message: *)
 rewriteServiceToolCalls[
     settings_,
     message: HoldPattern @ KeyValuePattern @ {
         "Content"      -> content_String,
         "ToolRequest"  -> True,
-        "ToolRequests" -> requests: { __LLMToolRequest }
+        "ToolRequests" -> { __LLMToolRequest }
     }
-] := <|
-    message,
-    "Content" -> StringDelete[
-        content,
-        "\n"... ~~ StartOfLine ~~ "TOOLCALL: " ~~ ___ ~~ "\nENDARGUMENTS\nENDTOOLCALL" ~~ EndOfString
-    ]
-|>;
+] := serviceToolMessageMerge @ Flatten @ {
+    rewriteServiceToolCalls[
+        settings,
+        <| KeyDrop[ message, { "ToolRequest", "ToolRequests" } ], "Content" -> removeLastToolCall @ content |>
+    ],
+    <| message, "Content" -> { } |>
+};
 
+(* Tool results end with "ENDRESULT(id)", where id is the request ID the tool call was sent with: *)
 rewriteServiceToolCalls[
     settings_,
     message: KeyValuePattern @ { "Role" -> "Assistant", "Content" -> content_String }
@@ -719,9 +742,12 @@ rewriteServiceToolCalls[
     message,
     Flatten @ StringSplit[
         content,
-        Shortest[
-            req: ("TOOLCALL: " ~~ __ ~~ "\nENDARGUMENTS") ~~ "\nENDTOOLCALL\nRESULT\n" ~~ result__ ~~ "\nENDRESULT"
-        ] :> toolStringSplit[ req, result ]
+        StringExpression[
+            Shortest[
+                req: ("TOOLCALL: " ~~ __ ~~ "\nENDARGUMENTS") ~~ "\nENDTOOLCALL\nRESULT\n" ~~ result__ ~~ "\nENDRESULT"
+            ],
+            ("(" ~~ id: (LetterCharacter|DigitCharacter).. ~~ ")") | ""
+        ] :> toolStringSplit[ req, result, id ]
     ]
 ];
 
@@ -729,6 +755,23 @@ rewriteServiceToolCalls[ settings_, message_Association ] :=
     message;
 
 rewriteServiceToolCalls // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*removeLastToolCall*)
+removeLastToolCall // beginDefinition;
+
+removeLastToolCall[ content_String ] := StringReplace[
+    content,
+    StringExpression[
+        StartOfString,
+        before: Longest[ ___ ],
+        StartOfLine ~~ "TOOLCALL: " ~~ ___ ~~ "\nENDARGUMENTS\nENDTOOLCALL",
+        EndOfString
+    ] :> before
+];
+
+removeLastToolCall // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -771,12 +814,15 @@ serviceToolMessageMerge // endDefinition;
 (*toolStringSplit*)
 toolStringSplit // beginDefinition;
 
-toolStringSplit[ req_String, result_String ] :=
-    toolStringSplit[ toolRequestParser @ req, result ];
+toolStringSplit[ req_String, result_String, id_String ] :=
+    toolStringSplit[ toolRequestParser @ req, result, id ];
 
-toolStringSplit[ { _, req: HoldPattern @ LLMToolRequest[ as_Association, opts___ ] }, result_String ] :=
-    With[ { id = tinyHash[ req, 9 ] },
-        toolStringSplit[ LLMToolRequest @ <| as, "RequestID" -> id |>, result ]
+(* Results written without an ID, or with a 5 character ID from before 3eee65a8 (MistralAI only accepts 9 characters),
+   get one from the request: *)
+toolStringSplit[ { _, req: HoldPattern @ LLMToolRequest[ as_Association, opts___ ] }, result_String, id_String ] :=
+    toolStringSplit[
+        LLMToolRequest @ <| as, "RequestID" -> If[ StringLength @ id === 9, id, tinyHash[ req, 9 ] ] |>,
+        result
     ];
 
 toolStringSplit[ req: HoldPattern[ _LLMToolRequest ], result_String ] :=
@@ -790,7 +836,9 @@ toolStringSplit[ req: HoldPattern[ _LLMToolRequest ], tool: HoldPattern[ _LLMToo
             "Tool"                       -> tool,
             "InterpretedParameterValues" -> Association @ req[ "ParameterValues" ],
             "Output"                     -> result,
-            "ResponseString"             -> result
+            "ResponseString"             -> result,
+            (* Without a version, LLMToolResponse runs its legacy updater, which takes about 50 ms: *)
+            "LLMPacletVersion"           -> req[ "Data" ][ "LLMPacletVersion" ]
         |>
     };
 
@@ -1082,7 +1130,7 @@ chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] :
                     standardizeMessageKeys @ messages,
                     makeLLMConfiguration @ settings,
                     Authentication       -> settings[ "Authentication" ],
-                    HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
+                    HandlerFunctions     -> chatHandlers[ container, cellObject, settings, messages ],
                     HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings,
                     "TestConnection"     -> False
                 ],
@@ -1280,8 +1328,14 @@ chatHandlers // beginDefinition;
 chatHandlers // Attributes = { HoldFirst };
 
 chatHandlers[ container_, cellObject_, settings_ ] :=
+    chatHandlers[ container, cellObject, settings, None ];
+
+chatHandlers[ container_, cellObject_, settings_, messages_ ] :=
     $lastHandlers = With[
         {
+            (* The output so far and where this response starts in the log, for handling a refused response: *)
+            snapshot      = KeyTake[ container, { "FullContent", "DynamicContent" } ],
+            logStart      = Internal`BagLength @ $debugLog,
             autoOpen      = TrueQ @ $autoOpen,
             alwaysOpen    = TrueQ @ $alwaysOpen,
             autoAssist    = $AutomaticAssistance,
@@ -1368,7 +1422,12 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                         checkFinishReason[ #1 ];
                         logUsage @ container;
                         trimStopTokens[ container, stop ];
-                        checkResponse[ $settings, Unevaluated @ container, cellObject, #1 ]
+                        With[ { refusal = refusalDetails @ logStart },
+                            If[ AssociationQ @ refusal,
+                                handleRefusal[ $settings, Unevaluated @ container, cellObject, messages, snapshot, refusal, #1 ],
+                                checkResponse[ $settings, Unevaluated @ container, cellObject, #1 ]
+                            ]
+                        ]
                     ]
                 ]
             ]
@@ -1640,6 +1699,146 @@ checkFinishReason // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*refusalDetails*)
+
+(* Gives the "stop_details" of a refused response (with "category" and "explanation" keys), <| |> if a refused response
+   has none, or None if the response wasn't refused. `start` is the position of the response in the debug log.
+   LLMConnections only gives the finish reason in processed chunks, so the details come from the raw chunks. These are
+   joined before parsing, since a raw chunk can have more than one event or only part of one. *)
+refusalDetails // beginDefinition;
+
+refusalDetails[ start_Integer ] :=
+    refusalDetails @ Internal`BagPart[ $debugLog, start + 1 ;; ];
+
+refusalDetails[ log_List ] :=
+    If[ MemberQ[ Flatten @ Lookup[ log, "BodyChunkProcessed", { } ], KeyValuePattern[ "FinishReason" -> "refusal" ] ],
+        FirstCase[
+            Quiet[
+                Developer`ReadRawJSONString /@ StringCases[
+                    StringJoin @ Cases[ log, KeyValuePattern[ "BodyChunk" -> s_String ] :> s ],
+                    StartOfLine ~~ "data:" ~~ json: Except[ "\n" ].. :> json
+                ]
+            ],
+            KeyValuePattern[ "delta" -> KeyValuePattern[ "stop_details" -> details_Association ] ] :> details,
+            <| |>
+        ],
+        None
+    ];
+
+refusalDetails // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*handleRefusal*)
+
+(* Claude's safety classifiers can decline a request with a normal response whose stop reason is "refusal", having
+   empty or partial content. Any partial output is discarded, since it's incomplete. Cybersecurity refusals are retried
+   on the model given by the "RefusalFallbackModel" setting, like Claude Code does. This has to be done here because
+   LLMConnections doesn't support the server-side `fallbacks` parameter, and it fails on the content blocks it returns.
+   Other refusals aren't retried, so a notice is written in order to avoid leaving the output empty.
+
+   Note: If DynamicSplit has already written some partial output as static cells, it stays until the final rewrite. *)
+handleRefusal // beginDefinition;
+
+handleRefusal[ settings_, container_Symbol, cell_, messages_List, snapshot_, refusal_Association, as_Association ] /;
+    refusalFallbackQ[ settings, refusal ] :=
+        If[ TrueQ @ $AutomaticAssistance,
+            submitRefusalFallback[ settings, Unevaluated @ container, cell, messages, snapshot ],
+            $nextTaskEvaluation = Hold @ submitRefusalFallback[ settings, Unevaluated @ container, cell, messages, snapshot ]
+        ];
+
+handleRefusal[ settings_, container_Symbol, cell_, messages_, snapshot_, refusal_Association, as_Association ] := (
+    container = <| container, snapshot |>;
+    With[ { text = refusalNotice @ refusal }, writeChunk0[ Dynamic @ container, cell, text, text ] ];
+    checkResponse[ settings, Unevaluated @ container, cell, as ]
+);
+
+handleRefusal // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*refusalFallbackQ*)
+refusalFallbackQ // beginDefinition;
+refusalFallbackQ[ settings_Association, refusal_Association ] := refusalFallbackQ[ settings[ "RefusalFallbackModel" ], refusal ];
+refusalFallbackQ[ _String, KeyValuePattern[ "category" -> "cyber" ] ] := True;
+refusalFallbackQ[ _, _ ] := False;
+refusalFallbackQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*refusalNotice*)
+refusalNotice // beginDefinition;
+
+refusalNotice[ KeyValuePattern[ "explanation" -> explanation_String ] ] :=
+    "The model declined to respond to this request: " <> explanation;
+
+refusalNotice[ _ ] :=
+    "The model declined to respond to this request.";
+
+refusalNotice // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*submitRefusalFallback*)
+submitRefusalFallback // beginDefinition;
+
+submitRefusalFallback[ settings_, container_Symbol, cell_, messages_List, snapshot_ ] := Enclose[
+    catchChatStopped @ Module[ { fallback, task },
+
+        fallback = ConfirmBy[ refusalFallbackSettings @ settings, AssociationQ, "Settings" ];
+
+        container = <| container, snapshot |>;
+        updateDynamicDisplay @ container;
+
+        (* Stopped before retrying: *)
+        throwIfChatStopped[ ];
+
+        task = $lastTask = chatSubmit[ container, messages, cell, fallback ];
+
+        throwIfChatStopped @ task;
+
+        addHandlerArguments[ "Task" -> task ];
+
+        If[ MatchQ[ cell, _CellObject ],
+            setCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "Task" }, task ]
+        ];
+
+        If[ FailureQ @ task, throwFailureToChatOutput @ task ];
+
+        If[ task === $Canceled, throwTop @ StopChat @ cell ];
+
+        task
+    ],
+    throwInternalFailure
+];
+
+submitRefusalFallback // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*refusalFallbackSettings*)
+
+(* The settings stay on the fallback model for the rest of this chat request (including any tool calls that follow),
+   and the fallback model does not fall back again if it also refuses. *)
+refusalFallbackSettings // beginDefinition;
+
+refusalFallbackSettings[ settings_Association ] := Enclose[
+    <|
+        settings,
+        "Model" -> ConfirmBy[
+            resolveFullModelSpec @ { settings[ "Model", "Service" ], settings[ "RefusalFallbackModel" ] },
+            AssociationQ,
+            "Model"
+        ],
+        "RefusalFallbackModel" -> None
+    |>,
+    throwInternalFailure
+];
+
+refusalFallbackSettings // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*feTaskQ*)
 feTaskQ // beginDefinition;
 feTaskQ[ settings_ ] /; $headlessChat := False;
@@ -1729,7 +1928,7 @@ writeChunk0[ Dynamic[ container_ ], cell_, chunk_String, text_String ] := (
 
     (* FIXME: figure out what to do here when there's a custom formatter *)
     With[ { newContent = appendStringContent[ container[ "DynamicContent" ], text ] },
-        If[ Not @ Or[ $InlineChat, Not @ TrueQ @ $dynamicSplit, insufficientVersionQ[ "DynamicSplit" ], $cloudNotebooks ],
+        If[ Not @ Or[ Not @ TrueQ @ $dynamicSplit, $cloudNotebooks ],
             (* Convert as much of the dynamic content as possible to static boxes and write to cell: *)
             With[ { splitString = splitDynamicContent @ newContent },
                 If[ Length @ splitString > 1,
@@ -1777,8 +1976,9 @@ $maxChunkDebugSize = 1000;
 (*splitDynamicContent*)
 
 (* Splits dynamic content at completed code blocks, images, and tool calls (see `$dynamicSplitRules`), so that the
-   completed parts can be written as static content. The dynamic content can be the entire response so far, so the
-   full split is skipped whenever it's clear that the content has no split points (see `dynamicSplitSkipQ`). *)
+   completed parts can be written as static content. A split in a think tag is declined (see `thinkTagSplitQ`). The
+   dynamic content can be the entire response so far, so the full split is skipped whenever it's clear that the
+   content has no split points, or only declined ones (see `dynamicSplitSkipQ`). *)
 splitDynamicContent // beginDefinition;
 
 splitDynamicContent[ content_String ] :=
@@ -1787,9 +1987,16 @@ splitDynamicContent[ content_String ] :=
         DeleteCases[ { content }, "" ]
         ,
         With[ { split = StringSplit[ content, $dynamicSplitRules, All ] },
-            (* With All, any match gives at least three parts, so a single part means there are no split points: *)
-            $dynamicSplitChecked = If[ Length @ split === 1, content, None ];
-            DeleteCases[ split, "" ]
+            If[ thinkTagSplitQ @ split,
+                (* Only a new match can change a declined split, so the next chunk doesn't need to check again unless it
+                   can complete one (see `dynamicSplitSkipQ`): *)
+                $dynamicSplitChecked = content;
+                { content }
+                ,
+                (* With All, any match gives at least three parts, so a single part means there are no split points: *)
+                $dynamicSplitChecked = If[ Length @ split === 1, content, None ];
+                DeleteCases[ split, "" ]
+            ]
         ]
     ];
 
@@ -1797,12 +2004,32 @@ splitDynamicContent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*thinkTagSplitQ*)
+
+(* The split rules don't see think tags, so a split in an open think tag isn't a boundary between the parts that the
+   formatter gives for the whole text (quirk 202). `split` is the result of `StringSplit[ content, rules, All ]`, and
+   the static part ends with its last match. Only the tags in the text between the matches count, since a tag in a code
+   block outside the thoughts is code. When a match starts in the thoughts and contains the closing tag (a code fence
+   that opens mid-line and closes after them), the thoughts look open from then on, so every later split is declined.
+   That's needed, since the split rules pair the code fences after it differently from the formatter. *)
+thinkTagSplitQ // beginDefinition;
+
+thinkTagSplitQ[ split_List ] :=
+    With[ { text = StringJoin @ split[[ 1 ;; -2 ;; 2 ]] },
+        StringCount[ text, "<think", IgnoreCase -> True ] > StringCount[ text, "</think", IgnoreCase -> True ]
+    ];
+
+thinkTagSplitQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*dynamicSplitSkipQ*)
 
 (* None of the patterns in `$dynamicSplitRules` look past the end of a match, so if `content` starts with `checked`
-   (which has no split points), any match in `content` must end after `checked`. Every match ends with "```",
-   "ENDRESULT", or ")" (closing an image or "ENDRESULT(id)"), so if none of these can end after `checked`, the content
-   has no split points either. See `$dynamicSplitRules` in Formatting.wl for everything this relies on, including the
+   (which has no split points, or only declined ones), any new match in `content` must end after `checked`. Every match
+   ends with "```", "ENDRESULT", or ")" (closing an image or "ENDRESULT(id)"), so if none of these can end after
+   `checked`, the content has the same split points, and isn't split either (`thinkTagSplitQ` only depends on the text
+   up to the last match). See `$dynamicSplitRules` in Formatting/Rules.wl for everything this relies on, including the
    conditions that also depend on `$ChatHandlerData[ "ToolShortNames" ]`. *)
 dynamicSplitSkipQ // beginDefinition;
 
@@ -1936,6 +2163,8 @@ $llmAutoCorrectRulesNoMoonshot := $llmAutoCorrectRulesNoMoonshot = Flatten @ {
     "<|image_sentinel|>" :> "",
     "paclet:ref/ResourceFunction/" :> "https://resources.wolframcloud.com/FunctionRepository/resources/",
     "paclet:ref/resource-function/" :> "https://resources.wolframcloud.com/FunctionRepository/resources/",
+    (* Short resource URIs from the documentation catalog, e.g. "resource:function/" (see $shortURIPrefixes): *)
+    $shortURIExpansionRules,
     StartOfLine ~~ "/functions." -> "/",
     StartOfLine ~~ "[end]" ~~ EndOfLine -> "/end",
     $longNameCharacters
@@ -2353,11 +2582,7 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
             <| "ToolResponse" -> toolResponse, "ToolResponseString" -> output |>
         ];
 
-        messages = ConfirmMatch[
-            removeToolPreferencePrompt @ removeBasePrompt[ settings[ "Data", "Messages" ], { "AutoAssistant" } ],
-            { __Association },
-            "Messages"
-        ];
+        messages = ConfirmMatch[ toolLoopBaseMessages @ settings, { __Association }, "Messages" ];
 
         roles = ConfirmMatch[ allowedMultimodalRoles @ settings, All | { __String }, "Roles" ];
         role  = ConfirmBy[ toolResponseRole @ settings, StringQ, "Role" ];
@@ -2377,14 +2602,14 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
                 "ToolRequest"  -> True,
                 "ToolRequests" -> { toolCall }
             |>,
-            makeToolResponseMessage[ settings, checkMarkdownOutput @ response, toolResponse ]
+            makeToolResponseMessage[ settings, checkToolMarkdownOutput[ toolCall, response ], toolResponse ]
         };
 
         $finishReason = None;
 
         req = If[ TrueQ @ $useLLMServices,
                   ConfirmMatch[
-                      prepareMessagesForLLM[ settings, constructMessages[ settings, newMessages ] ],
+                      prepareMessagesForLLM[ settings, constructToolResponseMessages[ settings, newMessages ] ],
                       { __Association },
                       "ConstructMessages"
                   ],
@@ -2420,6 +2645,23 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 ];
 
 toolEvaluation // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toolLoopBaseMessages*)
+(* The messages of the turn's first request, which the request after a tool call starts with. Without prompt cache
+   optimization, the AutoAssistant instructions and the tool call frequency preference are removed from the system
+   prompt. With it, the system prompt can't change, so these are disabled with a hint instead (see disabledPromptHints
+   in PromptCache.wl): *)
+toolLoopBaseMessages // beginDefinition;
+
+toolLoopBaseMessages[ settings_? promptCacheOptimizationQ ] :=
+    settings[ "Data", "Messages" ];
+
+toolLoopBaseMessages[ settings_ ] :=
+    removeToolPreferencePrompt @ removeBasePrompt[ settings[ "Data", "Messages" ], { "AutoAssistant" } ];
+
+toolLoopBaseMessages // endDefinition;
 
 (* $noRepeatMessage = "\
 The user has already been provided with this result, so you do not need to repeat it.
@@ -2550,8 +2792,11 @@ makeToolResponseMessage[ settings_, model_Association, response_, toolResponse_ 
         response,
         toolResponse
     ],
-    If[ TrueQ @ settings[ "ToolCallRetryMessage" ], $toolCallRetryMessage, Nothing ](* ,
-    If[ TrueQ @ discourageExtraToolCallsQ @ settings, $discourageExtraToolCallsMessage, Nothing ], *)
+    (* With prompt cache optimization, this is a base prompt component instead (see needsSettingsBasePrompts): *)
+    If[ TrueQ @ settings[ "ToolCallRetryMessage" ] && ! promptCacheOptimizationQ @ settings,
+        $toolCallRetryMessage,
+        Nothing
+    ]
 };
 
 makeToolResponseMessage // endDefinition;
@@ -2607,17 +2852,6 @@ $toolCallRetryMessage = <|
     "HoldTemporary" -> True
 |>;
 
-$discourageExtraToolCallsPrompt = "\
-IMPORTANT: Do not make any more tool calls unless absolutely necessary! \
-Stop and think about what the user was asking for. \
-Does the tool response give you enough information to answer the user's query? \
-If so, respond to the user now instead of making any additional tool calls.";
-
-$discourageExtraToolCallsMessage = <|
-    "Role"          -> "System",
-    "Content"       -> $discourageExtraToolCallsPrompt,
-    "HoldTemporary" -> True
-|>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2650,6 +2884,22 @@ toolResponseString[ as_, KeyValuePattern[ "String" -> output_ ] ] := toolRespons
 toolResponseString[ as_, output_String ] := output;
 toolResponseString[ as_, output_ ] := makeToolResponseString @ output;
 toolResponseString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*checkToolMarkdownOutput*)
+checkToolMarkdownOutput // beginDefinition;
+
+(* NotebookReader results come from the user's own notebook, so the user already sees their images.
+   Tool requests use the machine name of the tool (e.g. "notebook_reader"), so compare canonical names: *)
+checkToolMarkdownOutput[ request_LLMToolRequest, output_ ] /;
+    toolName[ request[ "Name" ], "Canonical" ] === "NotebookReader" :=
+        output;
+
+checkToolMarkdownOutput[ _, output_ ] :=
+    checkMarkdownOutput @ output;
+
+checkToolMarkdownOutput // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2694,19 +2944,29 @@ appendToolResult // Attributes = { HoldFirst };
 
 appendToolResult[ container_Symbol, KeyValuePattern[ "ToolMethod" -> "Simple" ], output_String, id_String ] :=
     Module[ { append },
-        append = "\n/exec\nRESULT\n"<>output<>"\nENDRESULT(" <> id <> ")\n\n";
+        append = "\n/exec\nRESULT\n"<>escapeToolCallEnd[ output ]<>"\nENDRESULT(" <> id <> ")\n\n";
         container[ "FullContent"    ] = container[ "FullContent"    ] <> append;
         container[ "DynamicContent" ] = container[ "DynamicContent" ] <> append;
     ];
 
 appendToolResult[ container_Symbol, settings_, output_String, id_String ] :=
     Module[ { append },
-        append = "\nENDTOOLCALL\nRESULT\n"<>output<>"\nENDRESULT(" <> id <> ")\n\n";
+        append = "\nENDTOOLCALL\nRESULT\n"<>escapeToolCallEnd[ output ]<>"\nENDRESULT(" <> id <> ")\n\n";
         container[ "FullContent"    ] = container[ "FullContent"    ] <> append;
         container[ "DynamicContent" ] = container[ "DynamicContent" ] <> append;
     ];
 
 appendToolResult // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*escapeToolCallEnd*)
+(* A tool's output can contain the end marker (e.g. when reading a chat notebook), which would end the tool call there.
+   This only changes the response text. The request right after the tool call and the Interpreted view of the tool call
+   (while the result is available) use the original output. The Raw view and later requests show the backslash. *)
+escapeToolCallEnd // beginDefinition;
+escapeToolCallEnd[ output_String ] := StringReplace[ output, "ENDRESULT" -> "END\\RESULT" ];
+escapeToolCallEnd // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -3051,9 +3311,6 @@ openChatCellOnce // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*WriteChatOutputCell*)
-WriteChatOutputCell[ cell_, new_Cell, info_ ] /; $InlineChat :=
-    writeInlineChatOutputCell[ cell, new, info ];
-
 (* $SidebarChat may be False by the time this function is called so we can't use it in a separate Conditioned definition *)
 WriteChatOutputCell[
     cell_CellObject,
@@ -3107,7 +3364,6 @@ WriteChatOutputCell[ args___ ] :=
 (* ::Subsubsection::Closed:: *)
 (*createNewChatOutput*)
 createNewChatOutput // beginDefinition;
-createNewChatOutput[ settings_, target_, cell_Cell ] /; $InlineChat := createNewInlineOutput[ settings, target, cell ];
 createNewChatOutput[ settings_, None, cell_Cell ] := cellPrint @ cell;
 createNewChatOutput[ settings_, target_, cell_Cell ] /; settings[ "TabbedOutput" ] === False := cellPrint @ cell;
 createNewChatOutput[ settings_, target_CellObject, cell_Cell ] := prepareChatOutputPage[ target, cell ];
@@ -3191,28 +3447,6 @@ prepareChatOutputPage[ target_CellObject, cell_Cell ] := Enclose[
 
 prepareChatOutputPage // endDefinition;
 
-
-deleteFEObjectIfKernelQuit // beginDefinition;
-
-deleteFEObjectIfKernelQuit[ expr_, Hold[ objToDelete_ ] ] :=
-DynamicModule[ { kernelWasQuitQ = False, originalSessionID = $SessionID }, (* front-end boxes memoize the $SessionID that created them *)
-    DynamicWrapper[
-        PaneSelector[
-            { False -> expr, True -> Spacer @ 0 }, (* hide content while we wait for the cell to delete *)
-            Dynamic @ kernelWasQuitQ,
-            ImageSize -> Automatic],
-
-        If[ kernelWasQuitQ, NotebookDelete @ objToDelete ],
-
-        SynchronousUpdating -> False
-    ],
-
-    Initialization :> (kernelWasQuitQ = (originalSessionID =!= $SessionID)) (* whenever the cell re-draws, check the $SessionID *)
-];
-
-deleteFEObjectIfKernelQuit // endDefinition;
-
-
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*activeAIAssistantCell*)
@@ -3293,7 +3527,6 @@ activeAIAssistantCell[
             cellTags  = Replace[ cellTags0, Except[ _String | { ___String } ] :> Inherited ],
             outer     = Which[
                 TrueQ @ $WorkspaceChat, assistantMessageBoxActive[ #, "Workspace" ]&,
-                TrueQ @ $InlineChat,    assistantMessageBoxActive[ #, "Inline" ]&,
                 TrueQ @ $SidebarChat,   assistantMessageBoxActive[ #, "Sidebar" ]&,
                 True,                   # & ]
         },
@@ -3727,7 +3960,7 @@ scrollOutputQ // beginDefinition;
 
 scrollOutputQ[ settings_Association ] :=
     TrueQ @ Replace[ settings[ "TrackScrollingWhenPlaced" ],
-                     $$unspecified :> sufficientVersionQ[ "TrackScrollingWhenPlaced" ]
+                     $$unspecified :> True
             ];
 
 scrollOutputQ[ settings_Association, cell_ ] := False;
@@ -3859,10 +4092,7 @@ attachMinimizedIcon[ chatCell_CellObject, label_ ] :=
         cell = makeMinimizedIconCell[ label, chatCell ];
         NotebookDelete @ Cells[ prev, AttachedCell -> True, CellStyle -> "MinimizedChatIcon" ];
         With[ { prev = prev, cell = cell },
-            If[ TrueQ @ BoxForm`sufficientVersionQ[ 13.2 ],
-                FE`Evaluate @ FEPrivate`AddCellTrayWidget[ prev, "MinimizedChatIcon" -> <| "Content" -> cell |> ],
-                AttachCell[ prev, cell, { "CellBracket", Top }, { 0, 0 }, { Right, Top } ]
-            ]
+            FE`Evaluate @ FEPrivate`AddCellTrayWidget[ prev, "MinimizedChatIcon" -> <| "Content" -> cell |> ]
         ]
     ];
 
@@ -3902,6 +4132,7 @@ makeReformattedCellTaggingRules[
             "MessageTag"       -> tag,
             "ChatData"         -> chatData,
             "HasChatData"      -> hasChatData @ chatData,
+            "PromptCacheID"    -> promptCacheID @ settings,
             "PageData"         -> If[ $cloudNotebooks, Inherited, <|
                 "Pages"      -> Append[ pages, p -> makeMinimalPageData[ content, settings ] ],
                 "PageCount"  -> p,
@@ -3919,7 +4150,8 @@ makeReformattedCellTaggingRules[ settings_, string_, tag: _String|Inherited, con
                 "CellToStringData" -> string,
                 "MessageTag"       -> tag,
                 "ChatData"         -> chatData,
-                "HasChatData"      -> hasChatData @ chatData
+                "HasChatData"      -> hasChatData @ chatData,
+                "PromptCacheID"    -> promptCacheID @ settings
             |>,
             Inherited
         ]
@@ -3957,7 +4189,7 @@ makeCompactChatData[
                 "Data" -> Association[
                     data,
                     "Messages" -> revertMultimodalContent @ Append[
-                        messages,
+                        dropReplayedTurnMessages @ messages,
                         <| "Role" -> "Assistant", "Content" -> message |>
                     ]
                 ]
@@ -3995,7 +4227,8 @@ BaseEncode @ BinarySerialize[
                     #, "Messages", Missing[ "NoMessages" ],
                     If[ ! MatchQ[ #, { ___Association } ],
                         Missing[ "UnexpectedMessages" ]
-                        , (* remove any surrounding non-user prompts and response messages *)
+                        , (* remove any surrounding non-user prompts and response messages, and the images *)
+                        revertMultimodalContent @
                         If[ MatchQ[ Last @ #, KeyValuePattern[ { "Role" -> Except[ "User" ] } ] ], Most, Identity ] @
                             If[ MatchQ[ First @ #, KeyValuePattern[ { "Role" -> Except[ "User" ] } ] ], Rest, Identity ] @
                                 #
@@ -4081,7 +4314,7 @@ restoreLastPage // endDefinition;
 (*attachChatOutputMenu*)
 attachChatOutputMenu // beginDefinition;
 
-attachChatOutputMenu[ cell_CellObject ] /; $cloudNotebooks || $WorkspaceChat || $InlineChat || $SidebarChat := Null;
+attachChatOutputMenu[ cell_CellObject ] /; $cloudNotebooks || $WorkspaceChat || $SidebarChat := Null;
 
 attachChatOutputMenu[ cell_CellObject ] := (
     $lastChatOutput = cell;
@@ -4305,27 +4538,6 @@ textLink[ label_, url_String ] := ButtonBox[
 ];
 
 textLink // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*errorBoxes*)
-errorBoxes // ClearAll;
-
-(* TODO: define error messages for other documented responses *)
-errorBoxes[ as: KeyValuePattern[ "Error" -> "ServerResponseEmpty" ] ] :=
-    ToBoxes @ messageFailure[ "ServerResponseEmpty", as ];
-
-errorBoxes[ as: KeyValuePattern[ "StatusCode" -> 429 ] ] :=
-    ToBoxes @ messageFailure[ "RateLimitReached", as ];
-
-errorBoxes[ as: KeyValuePattern[ "StatusCode" -> code: Except[ 100|200 ] ] ] :=
-    ToBoxes @ messageFailure[ "UnknownStatusCode", as ];
-
-errorBoxes[ failure_Failure ] :=
-    ToBoxes @ failure;
-
-errorBoxes[ as___ ] :=
-    ToBoxes @ messageFailure[ "UnknownResponse", as ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

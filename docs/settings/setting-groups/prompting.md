@@ -83,7 +83,7 @@ The value must be a `String` or `None`. When `Automatic`, it resolves to `$$unsp
 
 When the resolved value is a non-empty string, it is formatted by `addUserInstructions` (`ChatMessages.wl`) using `$customInstructionsTemplate`, which wraps the text in a structured template: a `"# User Instructions"` heading, a precedence directive (`"IMPORTANT: The following user instructions take precedence over ALL other instructions."`), and XML-style `<user-instructions>` tags around the user's text.
 
-The formatted instructions are then appended to the assembled custom prompt (from the `"Prompts"` setting) within `assembleCustomPrompt` (`ChatMessages.wl`): if `"Prompts"` produced a string, the user instructions are appended with a `"\n\n"` separator; if `"Prompts"` produced `None`, the user instructions template is used alone. The combined result flows into `addPrompts` (`ChatMessages.wl`), where it is joined with workspace and inline chat context prompts via `StringRiffle` (with `"\n\n"` separators), then appended to the existing system message's `"Content"` (or used to create a new system message if none exists).
+The formatted instructions are then appended to the assembled custom prompt (from the `"Prompts"` setting) within `assembleCustomPrompt` (`ChatMessages.wl`): if `"Prompts"` produced a string, the user instructions are appended with a `"\n\n"` separator; if `"Prompts"` produced `None`, the user instructions template is used alone. The combined result flows into `addPrompts` (`ChatMessages.wl`), where it is joined with workspace and sidebar chat context prompts via `StringRiffle` (with `"\n\n"` separators), wrapped in `<added-prompts>` tags, and appended to the existing system message's `"Content"` (or used to create a new system message if none exists). If the system message already has an `<added-prompts>` section (for example, when messages are rebuilt for a tool response), that section is replaced rather than appended to, so the prompts appear once per request. The tags are retained in internal message data so the tool-call loop can find the section, then removed centrally by `prepareMessagesForLLM` before role rewriting and submission. The tags are still present when the `"ChatMessages"` processing function and prompt generators run, so a custom processing function that rewrites the system message should keep the `<added-prompts>` section intact.
 
 ### Persona Overrides
 
@@ -112,7 +112,7 @@ A single string, a list of strings, or a list containing `TemplateObject` elemen
 
 ### Implementation
 
-When non-empty, the prompt strings are assembled by `assembleCustomPrompt0` (`ChatMessages.wl`) and appended to the system message content via `addPrompts`. A single string is used directly; a list of strings is joined with `"\n\n"` separators via `StringRiffle`. After assembly, the custom prompt is combined with `"UserInstructions"` via `addUserInstructions`, then with workspace and inline chat context prompts, and the combined result is appended to the existing system message's `"Content"` (or creates a new system message if none exists).
+When non-empty, the prompt strings are assembled by `assembleCustomPrompt0` (`ChatMessages.wl`) and appended to the system message content via `addPrompts`. A single string is used directly; a list of strings is joined with `"\n\n"` separators via `StringRiffle`. After assembly, the custom prompt is combined with `"UserInstructions"` via `addUserInstructions`, then with workspace and sidebar chat context prompts, and the combined result is added to the system message by `addPrompts`, replacing any earlier `<added-prompts>` section (see `"UserInstructions"` above).
 
 Additionally, `"Prompts"` appears in the `getPrePrompt` fallback chain (`ChatMessages.wl`), which constructs the `"Pre"` section of the system prompt template used by `buildSystemPrompt`. The fallback priority is: persona-level `"ChatContextPreprompt"` > persona `"Pre"` > persona `"PromptTemplate"` > persona `"Prompts"` > settings-level `"ChatContextPreprompt"` > settings `"Pre"` > settings `"PromptTemplate"` > settings `"Prompts"`. Values in this chain must match `_String | _TemplateObject | { (_String|_TemplateObject)... }`.
 
@@ -140,13 +140,12 @@ When `Automatic`, resolves to `{}` (no generators) via `resolveAutoSetting0` (`S
 
 ### Built-in Generators
 
-Three built-in generators are registered in `$defaultPromptGenerators` (`DefaultPromptGenerators.wl`):
+Four built-in generators are registered in `$defaultPromptGenerators` (`DefaultPromptGenerators.wl`):
 
-- **`"RelatedDocumentation"`** — searches documentation via vector databases, returning formatted markdown with citations; uses `RelatedDocumentation` from `RelatedDocumentation.wl`
+- **`"RelatedDocumentation"`** — searches documentation via vector databases and inserts the relevant snippets; uses `RelatedDocumentation[messages, "Prompt", ...]` from `RelatedDocumentation.wl`. In workspace, sidebar and LLMKit chats, a small LLM picks up to 10 of about 50 search results; otherwise the top 5 results are used without filtering.
+- **`"RelatedDocumentationList"`** — the same search, but inserts only a catalog: one `<URI> - <short description>` line per result (`RelatedDocumentation[messages, "CatalogPrompt", MaxItems -> 50]`), with instructions to retrieve the snippets that help with the `"DocumentationLookup"` tool, all in one call. There is no LLM filter. Resource URIs are shortened in the catalog (e.g. `resource:function/FITImport#334957977`), and results without a description (from the `"Descriptions"` snippet store) are left out. When the `"DocumentationLookup"` tool is not selected (e.g. tools are disabled, or the persona doesn't have it), it does exactly what `"RelatedDocumentation"` does. The catalog's full URIs are in the handler data as `"RelatedDocumentationCatalog" -> <|"Results" -> uris|>`.
 - **`"RelatedWolframAlphaResults"`** — queries Wolfram Alpha for relevant results via `RelatedWolframAlphaResults` from `RelatedWolframAlphaResults.wl`
 - **`"WebSearch"`** — performs web searches using the Tavily API, requiring a `TAVILY_API_KEY` system credential
-
-Requires Wolfram Engine 14.1+ (`LLMPromptGenerator` support); on older versions, `toPromptGenerator` returns `Nothing` for all generators.
 
 ### Resolution
 
@@ -154,7 +153,9 @@ Resolution occurs in two stages:
 
 1. **Settings resolution** (`resolveAutoSettings0` in `Settings.wl`, line 692): `resolvePromptGenerators` (`Common.wl`) reads the `"PromptGenerators"` list, conditionally appends `"RelatedWolframAlphaResults"` if `featureEnabledQ["RelatedWolframAlphaResults", settings]` is `True` (triggered by `"WolframAlphaCAGEnabled" -> True`), conditionally appends `"WebSearch"` if `featureEnabledQ["RelatedWebSearchResults", settings]` is `True` (triggered by `"WebSearchRAGMethod" -> "Tavily"`), then resolves each string name to an `LLMPromptGenerator` object via `resolvePromptGenerator` (which looks up the name in `$defaultPromptGenerators`; invalid names throw `"InvalidPromptGenerator"` failure). `ParentList` and `$$unspecified` entries are removed via `Nothing`. The resolved list is deduplicated and stored back as `{ ___LLMPromptGenerator }`.
 
-2. **Message construction** (`augmentChatMessages` in `ChatMessages.wl`, line 276): `applyPromptGenerators` (`DefaultPromptGenerators.wl`) converts each generator to an `LLMPromptGenerator` via `toPromptGenerator`, creates generator data via `makePromptGeneratorData` (which extracts `"Input"` from the last message's content and `"Messages"` from the full message list), then applies each generator. Each invocation triggers `"PromptGeneratorStart"` and `"PromptGeneratorEnd"` handler function events. Generator results are processed by `formatGeneratedPrompt` and the non-empty results are wrapped as message Associations with `"Role"` set to `PromptGeneratorMessageRole`, `"Content"` set to the generated text, and `"Temporary" -> True`, inserted at the position specified by `PromptGeneratorMessagePosition`.
+2. **Message construction** (`augmentChatMessages` in `ChatMessages.wl`, line 276): `applyPromptGenerators` (`DefaultPromptGenerators.wl`) converts each generator to an `LLMPromptGenerator` via `toPromptGenerator`, creates generator data via `makePromptGeneratorData` (which extracts `"Input"` from the last message's content and `"Messages"` from the full message list), then applies each generator. Each invocation triggers `"PromptGeneratorStart"` and `"PromptGeneratorEnd"` handler function events. Generator results are processed by `formatGeneratedPrompt` and the non-empty results are wrapped as message Associations with `"Role"` set to `PromptGeneratorMessageRole`, `"Content"` set to the generated text, `"Temporary" -> True` and `"PromptGenerated" -> True`, inserted at the position specified by `PromptGeneratorMessagePosition`.
+
+Generators run once per chat request, not again for the requests that follow tool calls: `toolEvaluation` (`SendChat.wl`) passes the messages of the first request back to `constructMessages` (`ChatMessages.wl`), which reuses the messages marked `"PromptGenerated" -> True` instead of calling `applyPromptGenerators` again. If the first request had no generated prompts, the generators run again after a tool call.
 
 ### ExperimentalFeatures Interaction
 
@@ -162,18 +163,20 @@ Interacts with `"ExperimentalFeatures"` bidirectionally: `ExperimentalFeatures` 
 
 ### Persona Overrides
 
-- **AgentOne**: `{"RelatedDocumentation", "RelatedWolframAlphaResults"}`
-- **AgentOneCoder**: `{"RelatedDocumentation"}`
-- **CodeAssistant/CodeWriter/Wolfie/Birdnardo/NotebookAssistant**: `{"RelatedDocumentation", ParentList}`
+- **AgentOne**: `{"RelatedDocumentationList", "RelatedWolframAlphaResults"}`
+- **AgentOneCoder**: `{"RelatedDocumentationList"}`
+- **CodeAssistant/CodeWriter/Wolfie/Birdnardo/NotebookAssistant/WolframAIAssistant**: `{"RelatedDocumentationList", ParentList}`
 - **WolframAlpha**: `{"RelatedWolframAlphaResults", ParentList}`
 - **RawModel**: `{}` (no generators)
 - **PlainChat**: does not set this (inherits default)
 
 `ParentList` in persona values enables merging with the parent scope's generators via `mergeChatSettings`.
 
+The personas with tools also list the `"DocumentationLookup"` tool, so they get the catalog of `"RelatedDocumentationList"`. CodeWriter has no tools, so its generator gives full snippets. Custom personas that name `"RelatedDocumentation"` keep getting full snippets.
+
 ### Chat Mode Overrides
 
-NotebookAssistance mode (`ShowNotebookAssistance.wl`) overrides to `{"RelatedDocumentation"}` in `$notebookAssistanceBaseSettings`.
+NotebookAssistance mode (`ShowNotebookAssistance.wl`) overrides to `{"RelatedDocumentationList"}` in `$notebookAssistanceBaseSettings`. Its persona (WolframAIAssistant) merges its own list with this one through `ParentList`, so both must name the same documentation generator, or both generators run.
 
 ### Integration Points
 
@@ -186,6 +189,40 @@ NotebookAssistance mode (`ShowNotebookAssistance.wl`) overrides to `{"RelatedDoc
 ### Preferences UI
 
 Not exposed in the preferences UI.
+
+## `"PromptCacheOptimization"`
+
+Controls whether requests are built so that LLM providers can reuse cached prompt prefixes. Providers such as OpenAI cache the longest prefix of a request that matches an earlier request, which reduces latency and cost, but any change to an earlier message invalidates the cache from that point on.
+
+### Accepted Values
+
+- **`Automatic`** (default) — resolves via `$modelAutoSettings` (`Settings.wl`): `True` by default, `False` for the Anthropic service (LLMConnections moves every system message into the top-level system prompt, so turn messages would collect there), for the MistralAI service (its API rejects requests that end with a system message) and for models that need user role tool responses (DeepSeek reasoner and Flash, Qwen, Nemotron, Mistral), since turn messages are system messages after the user's message
+- **`True`** — use the prompt-cache-friendly behavior described below
+- **`False`** — legacy behavior
+
+### Behavior
+
+When `True`, messages that are added to a chat turn without being part of its cells are appended after the user's message and kept for later requests instead of being regenerated:
+
+- **Prompt generator results** are appended after the user message instead of being inserted at `"PromptGeneratorMessagePosition"`, and requests that follow a tool call send them unchanged. Prompt generators run once per turn, even if they give no results.
+- **Turn records**: these messages are stored in an in-memory record (`PromptCache.wl`), and the chat output cell of the turn gets a small `"PromptCacheID"` tagging rule that refers to the record. When the cell appears in the history of a later request, the record's messages are inserted before the cell's message, so they are sent the same way in every later request (if they no longer fit in the token budget, they are left out). Records are not saved with the notebook: after restarting the kernel, history is rebuilt from cells only, and the next request misses the cache once. The number of records kept in memory is bounded (`$maxPromptCacheRecords`), and is shared by all conversations.
+
+- **System prompt**: only includes the base prompt components that are determined by the settings (persona and settings `"BasePrompt"`, the tools, `"AutoFormat"`, etc.; see `withStaticBasePrompts` in `Prompting.wl`), so it is the same for every request of a conversation, and for other conversations with the same settings.
+- **Base prompt hints**: components that become needed because of the content of the conversation (e.g. `"MarkdownImageBox"` when the notebook context contains images, or `"SpecialURIAudio"` after a tool returns audio) are sent once per conversation in a `<system-hint>` turn message instead. Components that are only meant for one response (`"AutoAssistant"` and the notebook assistance instructions, `$perTurnBasePrompts` in `PromptCache.wl`) are sent in each turn that needs them, worded as instructions for that response. Hints that are needed after a tool call are added to the turn messages of the current turn, before the response; this misses the cache once for the earlier tool calls of that turn. Tool calls made for automatic assistance don't get base prompt hints, since they don't run in a chat state (they do get the "disable" hints below).
+- **Disabled instructions**: instructions that are removed from the system prompt after a tool call in legacy mode (`"AutoAssistant"` and the `"ToolCallFrequency"` preference) are disabled with a hint for the rest of the response instead.
+- **Tool call retry**: when `"ToolCallRetryMessage"` is `True`, its instructions are a base prompt component (`"ToolCallRetry"`) instead of a temporary message after each tool response. Like the other base prompt components, they are left out with `"BasePrompt" -> None`.
+- **History length limits**: older messages in the chat history are shortened to `"MaxCellStringLength"` instead of a limit that shrinks as the conversation grows (token pressure), so they are sent the same way in every request. A history message that doesn't fit in the token budget is left out with all older ones instead of being shortened, and so is a turn message that doesn't fit. The left-out cells are rounded up to blocks counted from the start of the conversation (`blockTrimmedHistory` in `ChatMessages.wl`; one cell for each `2^13` tokens of `"MaxContextTokens"`, but at least 8), so the oldest message that is sent, and the number of excised cells, stay the same for several requests instead of changing with every new message. This only applies to chat history: cells that are serialized for something else (the notebook context, `NotebookReader` pages, content suggestions) are shortened as before.
+- **Notebook context** (sidebar and workspace chats with `"AllowSelectionContext"`): the content of the user's notebook is sent once per conversation, as a turn message of the first input, instead of being added to the system prompt of every request. Images from the notebook context are sent in a separate user message after it. Later inputs get a short `<system-hint>` notice when the user switched notebooks, moved their selection, or the notebook changed since the last notebook context or notice in the conversation, based on a cheap fingerprint (selected cells and the front end's content hash, which also changes with some notebook options, such as the window size or position, the magnification, opened or closed cell groups, and tagging rules; see `notebookContextTurnMessages` in `ChatModes/Context.wl`). With the `NotebookReader` tool, the AI can read the current content when the user's message refers to the notebook. Without it, the full context is sent again instead of the notice. Turning `"AllowSelectionContext"` off leaves the notebook content that was sent out of later requests (this misses the cache once). Other notebook content that was sent, e.g. cells that were excluded later or a notebook the user switched away from, stays in the conversation; starting a new chat clears it. In the sidebar, `"AllowSelectionContext"` is `False` until the user turns notebook content on.
+
+The messages in turn records are still marked as `"Temporary"`, so they are not displayed, saved with conversations, or used for chat titles and search context. The chat data written to an output cell (`"ChatData"`) only includes the turn messages of its own turn, since earlier turns' are in their records.
+
+When `False`, prompt generator results are inserted at `"PromptGeneratorMessagePosition"` for each request and regenerated for each turn, the system prompt includes every base prompt component that is needed for the current request, and the notebook context of sidebar and workspace chats is added to the system prompt for every request.
+
+### Integration Points
+
+- **Dependencies**: None in `$autoSettingKeyDependencies`.
+- **Model-specific overrides**: Global default `True` in `$modelAutoSettings[Automatic, Automatic]`; `False` for the Anthropic and MistralAI services and the models listed above.
+- **LLM passthrough**: Not in `$llmConfigPassedKeys`.
 
 ## `"PromptGeneratorsEnabled"`
 
@@ -201,9 +238,11 @@ The default is a fixed numeric value (`2`), not `Automatic`. When `Automatic`, r
 
 ### Implementation
 
-Used in `augmentChatMessages` (`ChatMessages.wl`): after chat messages are constructed and optionally merged (via `MergeMessages`), prompt generators produce additional context strings. These strings are wrapped as message Associations with `"Role"` set to the `PromptGeneratorMessageRole` value, `"Content"` set to the generated text, and `"Temporary" -> True` (marking them for exclusion in subsequent chat turns). The messages are then inserted via `Insert[merged, generatedMessages, genPos]`, where `genPos` is this setting's resolved value. A position of `2` places the generated messages after the first message in the list (typically the system prompt), ensuring they appear early in the context before user/assistant conversation history.
+Used in `augmentChatMessages` (`ChatMessages.wl`): after chat messages are constructed and optionally merged (via `MergeMessages`), prompt generators produce additional context strings. These strings are wrapped as message Associations with `"Role"` set to the `PromptGeneratorMessageRole` value, `"Content"` set to the generated text, `"Temporary" -> True` (marking them for exclusion in subsequent chat turns), and `"PromptGenerated" -> True` (so that the requests after tool calls in the same turn reuse them). The messages are then inserted via `Insert[merged, generatedMessages, genPos]`, where `genPos` is this setting's resolved value. A position of `2` places the generated messages after the first message in the list (typically the system prompt), ensuring they appear early in the context before user/assistant conversation history.
 
 If the position is invalid (e.g., out of bounds for the message list), `throwFailure["InvalidPromptGeneratorPosition", genPos]` is called. The value can be any valid `Insert` position specification (positive or negative integer).
+
+This setting is ignored when `"PromptCacheOptimization"` is `True`: generated messages are then appended after the user message (see [`"PromptCacheOptimization"`](#promptcacheoptimization)).
 
 ### Integration Points
 
@@ -232,7 +271,7 @@ The three valid values determine how the LLM interprets the generated context: `
 
 ### Implementation
 
-Used in `augmentChatMessages` (`ChatMessages.wl`): each generated prompt string is wrapped as a message Association with `"Role"` set to this setting's resolved value, `"Content"` set to the generated text, and `"Temporary" -> True`. The generated messages are then inserted into the merged message list at the position specified by `PromptGeneratorMessagePosition`.
+Used in `augmentChatMessages` (`ChatMessages.wl`): each generated prompt string is wrapped as a message Association with `"Role"` set to this setting's resolved value, `"Content"` set to the generated text, `"Temporary" -> True` and `"PromptGenerated" -> True`. The generated messages are then inserted into the merged message list at the position specified by `PromptGeneratorMessagePosition`.
 
 ### Integration Points
 

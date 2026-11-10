@@ -197,16 +197,9 @@ createCloudPreferencesContent[ ] /; ! $CloudEvaluation :=
     Block[ { $CloudEvaluation = True }, createCloudPreferencesContent[ ] ];
 
 createCloudPreferencesContent[ ] := createCloudPreferencesContent[ ] =
-    inlineChatbookExpressions @ createPreferencesContent[ ];
+    createPreferencesContent[ ];
 
 createCloudPreferencesContent // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*cloudModelSelector*)
-cloudModelSelector // beginDefinition;
-cloudModelSelector[ ] := makeModelSelector[ "Cloud" ];
-cloudModelSelector // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

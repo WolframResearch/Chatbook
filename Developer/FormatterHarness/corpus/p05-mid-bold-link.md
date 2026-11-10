@@ -1,0 +1,3 @@
+The key difference between `Set` and `SetDelayed` is **when the right-hand side is evaluated**. With `=`, it's evaluated immediately; with `:=`, it's evaluated every time the definition is used. See [`SetDelayed`](paclet:ref/SetDelayed) and the tutorial on [Immediate and Delayed Definitions](paclet:tutorial/ImmediateAndDelayedDefinitions) for details.
+
+This matters most for **random numbers and impor

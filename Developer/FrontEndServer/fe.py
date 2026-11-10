@@ -1017,6 +1017,10 @@ def cmd_launch(args):
     xvfb = wm = front_end = None
     try:
         env = dict(os.environ)
+        # T3 Code sends HTTP probes to the listening ports of processes with this variable (an agent's processes),
+        # including the ports the front end opens for its kernels' links. The front end takes a probe for the kernel,
+        # whose own connection is then refused, so it exits during startup:
+        env.pop("T3CODE_THREAD_ID", None)
         if WINDOWS:
             if args.display not in (None, "current", "desktop"):
                 raise CLIError("On Windows, front ends always run on the desktop; --display is for X11")

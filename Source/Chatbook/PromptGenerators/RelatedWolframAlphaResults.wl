@@ -396,7 +396,7 @@ usingDocumentationQ[ _ ] /; $docsProvided := True;
 usingDocumentationQ[ generators_List ] := AnyTrue[ generators, usingDocumentationQ ];
 usingDocumentationQ[ HoldPattern @ LLMPromptGenerator[ as_, ___ ] ] := usingDocumentationQ @ as;
 usingDocumentationQ[ KeyValuePattern[ "Name" -> name_String ] ] := usingDocumentationQ @ name;
-usingDocumentationQ[ "RelatedDocumentation" ] := True;
+usingDocumentationQ[ "RelatedDocumentation"|"RelatedDocumentationList" ] := True;
 usingDocumentationQ[ _ ] := False;
 usingDocumentationQ // endDefinition;
 
@@ -753,30 +753,7 @@ makeWolframAlphaURL // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*Wolfram Alpha Private Functions*)
-normalizeWhitespace := normalizeWhitespace = Symbol[ "WolframAlphaClient`Private`customNormalizeWhitespace" ];
-expandData          := expandData          = Symbol[ "WolframAlphaClient`Private`expandData" ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*loadWolframAlphaClient*)
-loadWolframAlphaClient // beginDefinition;
-loadWolframAlphaClient[ ] := loadWolframAlphaClient[ ] = Quiet @ WolframAlpha[ ];
-loadWolframAlphaClient // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
 (*Direct API Method*)
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*relatedWolframAlphaResultsContent*)
-relatedWolframAlphaResultsContent // beginDefinition;
-
-relatedWolframAlphaResultsContent[ messages: $$chatMessages, count_, relatedCount_, randomCount_ ] :=
-    relatedWolframAlphaResultsFullData[ messages, count, relatedCount, randomCount ][ "Content" ];
-
-relatedWolframAlphaResultsContent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

@@ -16,7 +16,6 @@ $targetTokens      = 2^9;
 $targetTokensLow   = $targetTokens/2;
 $targetTokensHigh  = 2*$targetTokens;
 $maxTokens         = 2*$targetTokensHigh;
-$minTokens         = $targetTokensLow/4;
 
 (* The tokenizer to use for chunking: *)
 $chunkingTokenizer = "gpt-4o";

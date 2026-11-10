@@ -15,7 +15,7 @@ Chatbook (`Wolfram/Chatbook`) is a Wolfram Language paclet that adds LLM-powered
 
 Always use the WolframLanguageContext tool when working with Wolfram Language code to ensure that you are aware of the latest documentation and other Wolfram resources.
 
-When you make changes to paclet source code, you should also write and run tests for the changes you made using the TestReport tool and check your work with the CodeInspector tool.
+When you make nontrivial changes to paclet source code, you should also write and run tests for the changes you made using the TestReport tool and check the updated files (including test files) with the CodeInspector tool. Avoid writing tautological or low-signal tests.
 
 If you need to test changes in the WolframLanguageEvaluator tool, you'll first need to evaluate:
 ```wl
@@ -99,13 +99,13 @@ PacletInfo.wl defines three kernel extensions loaded in order:
 - **CommonSymbols.wl** — Symbol declarations shared across subpackages
 - **SendChat.wl** — Core chat message sending logic
 - **Serialization.wl** — Chat data serialization/deserialization
-- **Formatting.wl** — LLM response formatting for notebook display
 - **ChatMessages.wl** / **ChatState.wl** — Message history and session state
 - **Settings.wl** — User preferences management; **PreferencesContent.wl** — preferences UI
 - **Sandbox.wl** — Sandboxed Wolfram Language evaluation for LLM-generated code
 - **Storage.wl** — Persistent chat storage; **SearchChats.wl** / **Search.wl** — search
 - **Models.wl** — LLM model definitions and family classification
 - **Prompting.wl** — Base prompt component management and on-demand prompt system
+- **PromptCache.wl** — Prompt cache optimization (the `"PromptCacheOptimization"` setting): turn records that keep messages added to a chat turn (prompt generator results, base prompt hints, notebook context) the same in later requests
 - **Personas.wl** / **PersonaManager.wl** — LLM persona (system prompt) management
 - **Reasoning.wl** — Reasoning summaries and signatures from the Responses API (`"RequestMethod" -> "Responses"`): the `<think type='summary' id='...'>` string representation, stream conversion, and replacing summaries with signatures in outgoing messages
 - **Skills.wl** — Agent skills (`LLMSkill`): `SKILL.md` parsing, the `"Skills"` setting, the skills catalog prompt, and the `ActivateSkill` tool
@@ -114,6 +114,7 @@ PacletInfo.wl defines three kernel extensions loaded in order:
 
 **Subdirectories:**
 - **ChatModes/** — Chat mode extensions (Evaluate, UI, Context, NotebookAssistance, ContentSuggestions)
+- **Formatting/** — LLM response formatting for notebook display (`Formatting.wl` loads the other files, which share its ``Wolfram`Chatbook`Formatting`Private` `` context)
 - **PromptGenerators/** — Prompt augmentation (RelatedDocumentation, WolframAlpha queries, VectorDatabases, NotebookChunking)
 - **Tools/** — LLM tool definitions (WolframLanguageEvaluator, WebSearcher, WebFetcher, DocumentationSearcher, WolframAlpha, NotebookEditor, etc.)
 
@@ -152,6 +153,14 @@ The Chatbook notebook stylesheet (`FrontEnd/StyleSheets/Chatbook.nb`) is generat
 - Code analysis directives: `(* :!CodeAnalysis::BeginBlock:: *)` to suppress specific warnings
 - Pattern variables use `$$` prefix for reusable patterns (e.g., `$$chatInputStyle`, `$$string`)
 - Build scripts use ``Wolfram`PacletCICD` `` for CI/CD utilities
+
+## Code style and review
+
+Code review is the bottleneck, so simple and reviewable beats complete:
+
+- Prefer the smaller design. Do not chase edge cases that are unlikely in practice; note them as a comment instead.
+- After making changes, consider whether it's more complicated than it needs to be. Try to simplify when appropriate.
+- A good PR that gets merged is better than a perfect one that never gets reviewed because it's too large or complex.
 
 ## Writing and Running Tests
 
@@ -199,3 +208,7 @@ Both of these will evaluate the code in an entirely separate process.
 Note: To print input form from wolframscript, use `Print[ToString[expr, InputForm]]`.
 
 You only need to use this wolframscript fallback if you're certain that your changes will affect the tools, or if the tools stop working as expected. The WolframLanguageEvaluator tool is designed to produce better output for AI than wolframscript.
+
+Setting `$AllowInternet` persists in future sessions. Be sure to set back to `True` if you change it, or only modify it via `Block`.
+
+The `BuildPaclet.wls` script temporarily disables the installed Chatbook paclet. Use `PacletEnable` to restore it if the script was interrupted. Be careful running this script while multiple agents are working on the repo.

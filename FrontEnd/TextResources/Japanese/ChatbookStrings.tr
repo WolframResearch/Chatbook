@@ -74,12 +74,14 @@
 "FormattingToolUsing" -> "\:4f7f\:7528\:4e2d\:ff1a",
 "FormattingToolUsed" -> "\:4f7f\:7528\:ff1a",
 "FormattingToolUsingLoading" -> "\:30c4\:30fc\:30eb\:3092\:4f7f\:7528\:3057\:3066\:3044\:307e\:3059\[Ellipsis]",
+"FormattingToolCancelled" -> "Cancelled ",
+"FormattingToolCancelledUnnamed" -> "Cancelled tool call",
 "FormattingThinkingActive" -> "\:8003\:3048\:3066\:3044\:307e\:3059\[Ellipsis]",
 "FormattingThinkingComplete" -> "`time`\:79d2\:9593\:8003\:3048\:307e\:3057\:305f",
 "FormattingThinkingCompleteSingular" -> "1\:79d2\:9593\:8003\:3048\:307e\:3057\:305f",
 "FormattingThinkingCompleteFallback" -> "\:8003\:3048\:307e\:3057\:305f",
 "FormattingHide" -> "\:96a0\:3059",
-"FormattingDiscardedMaterial" -> "Discarded material",
+"FormattingDiscardedMaterial" -> "\:7834\:68c4\:3055\:308c\:305f\:7269\:8cea",
 
 "InlineReferencesFieldHint" -> "\:30d7\:30ed\:30f3\:30d7\:30c8\:540d",
 "InlineReferencesInsertLabel" -> "\:633f\:5165\:ff1a",
@@ -169,6 +171,7 @@
 "ToolManagerTooltipNonDeletable1" -> "`name`\:306f\:7d44\:8fbc\:307f\:306e\:30c4\:30fc\:30eb\:306a\:306e\:3067\:524a\:9664\:3067\:304d\:307e\:305b\:3093\:ff0e",
 "ToolManagerTooltipNonDeletable2" -> "`name`\:306f\:30da\:30eb\:30bd\:30ca`persona`\:306b\:3088\:3063\:3066\:63d0\:4f9b\:3055\:308c\:305f\:3082\:306e\:3067\:ff0c\:500b\:5225\:306b\:524a\:9664\:3059\:308b\:3053\:3068\:306f\:3067\:304d\:307e\:305b\:3093\:ff0e",
 "ToolManagerDeleteTool" -> "\:30c4\:30fc\:30eb\:306e\:524a\:9664",
+"ToolManagerToolsDisabled" -> "\:73fe\:884c\:306e\:30c1\:30e3\:30c3\:30c8\:8a2d\:5b9a\:3067\:306f\:30c4\:30fc\:30eb\:306f\:7121\:52b9\:306b\:306a\:3063\:3066\:3044\:307e\:3059\:ff0e",
 
 "UIInitializeChatbook" -> "\:521d\:671f\:5316\:3057\:3066\:3044\:307e\:3059\[Ellipsis]",
 "UIEnableChatFeatures" -> "AI\:30c1\:30e3\:30c3\:30c8\:6a5f\:80fd\:306e\:6709\:52b9\:5316",
@@ -247,7 +250,6 @@
 "ChatbarOptionsGettingData" -> "\:30E6\:30FC\:30B6\:30D7\:30ED\:30D5\:30A1\:30A4\:30EB\:3092\:53D6\:5F97\:4E2D\[Ellipsis]",
 
 "MenuItemShowNotebookAssistanceWindow" -> "AI Assistant\:30C1\:30E3\:30C3\:30C8\[Ellipsis]",
-"MenuItemShowNotebookAssistanceInline" -> "\:9078\:629E\:7BC4\:56F2\:306EAI Assistant",
 "MenuItemShowContentSuggestions" -> "AI\:306B\:3088\:308B\:30B3\:30F3\:30C6\:30F3\:30C4\:306E\:63D0\:6848",
 
 "SidebarToolbarButtonTooltipHideSidebar" -> "AI Assistant\:3092\:96a0\:3059",
@@ -275,6 +277,7 @@
 "WorkspaceHistoryLastPage" -> "\:6700\:5f8c\:306e\:30da\:30fc\:30b8",
 "WorkspaceHistoryTitle" -> "\:5c65\:6b74",
 "WorkspaceHistoryFieldHint" -> "\:691c\:7d22",
+"WorkspaceHistoryLoadFailed" -> "\:305d\:306e\:30c1\:30e3\:30c3\:30c8\:306f\:30ed\:30fc\:30c9\:3067\:304d\:307e\:305b\:3093\:3067\:3057\:305f\:ff0e",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "\:56de\:7b54\:3092\:30af\:30ea\:30c3\:30d7\:30dc\:30fc\:30c9\:306b\:30b3\:30d4\:30fc\:3059\:308b\[Ellipsis]",
 "WorkspaceOutputRaftCopyAs" -> "\:5225\:306e\:5f62\:5f0f\:3067\:56de\:7b54\:3092\:30b3\:30d4\:30fc\[Ellipsis]",
@@ -295,9 +298,6 @@
 "WorkspaceFocusIndicatorMenuTooltip" -> "\:8ffd\:52a0\:306e\:30b3\:30f3\:30c6\:30ad\:30b9\:30c8\:306e\:305f\:3081\:306b\:7126\:70b9\:3092\:5f53\:3066\:308b\:30ce\:30fc\:30c8\:30d6\:30c3\:30af\:3092\:9078\:629e\:3059\:308b",
 "WorkspaceFocusIndicatorMenuAutomatic" -> "\:81ea\:52d5\:7684\:306b\:9078\:629e\:3059\:308b",
 
-"InlineChatButtonTooltipClose" -> "\:9589\:3058\:308b",
-"InlineChatButtonTooltipViewNotebookAssist" -> "\:30ce\:30fc\:30c8\:30d6\:30c3\:30af\:30a2\:30b7\:30b9\:30bf\:30f3\:30b9\:30c1\:30e3\:30c3\:30c8\:3067\:898b\:308b",
-
 "NotebookAssistanceInputGettingStarted" -> "\:3069\:306E\:3088\:3046\:306B\:59CB\:3081\:307E\:3057\:3087\:3046\:304B\:FF1F",
 "NotebookAssistanceInputErrorMessage" -> "\:4F55\:304C\:9593\:9055\:3063\:3066\:3044\:307E\:3057\:305F\:304B\:FF1F",
 
@@ -311,10 +311,10 @@
 "ProgressTextGeneratingSuggestions" -> "\:30b5\:30b8\:30a7\:30b9\:30c1\:30e7\:30f3\:3092\:751f\:6210\:3057\:3066\:3044\:307e\:3059",
 "ProgressTextDownloadingSnippet" -> "`1`\:306e\:30c9\:30ad\:30e5\:30e1\:30f3\:30c8\:306e\:629c\:7c8b\:3092\:30c0\:30a6\:30f3\:30ed\:30fc\:30c9\:3057\:3066\:3044\:307e\:3059",
 "ProgressTextDownloadingSnippets" -> "`1`\:306e\:30c9\:30ad\:30e5\:30e1\:30f3\:30c8\:306e\:629c\:7c8b\:3092\:30c0\:30a6\:30f3\:30ed\:30fc\:30c9\:3057\:3066\:3044\:307e\:3059",
-"DownloadRedownloadPrompt" -> "Some locally installed files appear to be incomplete or corrupt:\n\n`1`\n\nWould you like to download them again?",
-"DownloadRetryPrompt" -> "The download of some semantic search resources did not complete. Would you like to try again?",
-"ProgressTextDownloadingSearchIndices" -> "Downloading semantic search indices\[Ellipsis]",
-"ProgressTextUnpackingFiles" -> "Unpacking files\[Ellipsis]"
+"DownloadRedownloadPrompt" -> "\:30ed\:30fc\:30ab\:30eb\:306b\:30a4\:30f3\:30b9\:30c8\:30fc\:30eb\:3055\:308c\:305f\:30d5\:30a1\:30a4\:30eb\:306e\:4e2d\:306b\:4e0d\:5b8c\:5168\:306a\:3082\:306e\:3042\:308b\:3044\:306f\:7834\:640d\:3057\:305f\:3082\:306e\:304c\:3042\:308b\:3088\:3046\:3067\:3059\:ff1a\n\n`1`\n\n\:3082\:3046\:4e00\:5ea6\:30c0\:30a6\:30f3\:30ed\:30fc\:30c9\:3057\:307e\:3059\:304b\:ff0e",
+"DownloadRetryPrompt" -> "\:610f\:5473\:691c\:7d22\:30ea\:30bd\:30fc\:30b9\:306e\:4e2d\:306b\:30c0\:30a6\:30f3\:30ed\:30fc\:30c9\:304c\:5b8c\:4e86\:3057\:306a\:304b\:3063\:305f\:3082\:306e\:304c\:3042\:308a\:307e\:3059\:ff0e\:3082\:3046\:4e00\:5ea6\:30c0\:30a6\:30f3\:30ed\:30fc\:30c9\:3092\:8a66\:307f\:307e\:3059\:304b\:ff0e",
+"ProgressTextDownloadingSearchIndices" -> "\:610f\:5473\:691c\:7d22\:7d22\:5f15\:3092\:30c0\:30a6\:30f3\:30ed\:30fc\:30c9\:3057\:3066\:3044\:307e\:3059\[Ellipsis]",
+"ProgressTextUnpackingFiles" -> "\:30d5\:30a1\:30a4\:30eb\:3092\:89e3\:51cd\:3057\:3066\:3044\:307e\:3059\[Ellipsis]"
 }
 @|
 @|

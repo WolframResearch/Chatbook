@@ -74,6 +74,8 @@
 "FormattingToolUsing" -> "Using ",
 "FormattingToolUsed" -> "Used ",
 "FormattingToolUsingLoading" -> "Using tool\[Ellipsis]",
+"FormattingToolCancelled" -> "Cancelled ",
+"FormattingToolCancelledUnnamed" -> "Cancelled tool call",
 "FormattingThinkingActive" -> "Thinking\[Ellipsis]",
 "FormattingThinkingComplete" -> "Thought for `time` seconds",
 "FormattingThinkingCompleteSingular" -> "Thought for a second",
@@ -169,6 +171,7 @@
 "ToolManagerTooltipNonDeletable1" -> "`name` is a built-in tool and cannot be deleted.",
 "ToolManagerTooltipNonDeletable2" -> "`name` is provided by the persona `persona` and cannot be deleted separately.",
 "ToolManagerDeleteTool" -> "Delete Tool",
+"ToolManagerToolsDisabled" -> "Tools are disabled in the current chat settings.",
 
 "UIInitializeChatbook" -> "Initializing\[Ellipsis]",
 "UIEnableChatFeatures" -> "Enable AI Chat Features",
@@ -247,7 +250,6 @@
 "ChatbarOptionsGettingData" -> "Retrieving user profile\[Ellipsis]",
 
 "MenuItemShowNotebookAssistanceWindow" -> "AI Assistant Chat\[Ellipsis]",
-"MenuItemShowNotebookAssistanceInline" -> "AI Assistant for Selection",
 "MenuItemShowContentSuggestions" -> "AI Content Suggestion",
 
 "SidebarToolbarButtonTooltipHideSidebar" -> "Hide notebook assistant",
@@ -275,6 +277,7 @@
 "WorkspaceHistoryLastPage" -> "Last page",
 "WorkspaceHistoryTitle" -> "History",
 "WorkspaceHistoryFieldHint" -> "Search",
+"WorkspaceHistoryLoadFailed" -> "That chat could not be loaded.",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "Copy response to clipboard\[Ellipsis]",
 "WorkspaceOutputRaftCopyAs" -> "Copy response as\[Ellipsis]",
@@ -294,9 +297,6 @@
 "WorkspaceFocusIndicatorFocus" -> "Focus:",
 "WorkspaceFocusIndicatorMenuTooltip" -> "Choose a notebook to focus on for additional context",
 "WorkspaceFocusIndicatorMenuAutomatic" -> "Choose Automatically",
-
-"InlineChatButtonTooltipClose" -> "Close",
-"InlineChatButtonTooltipViewNotebookAssist" -> "View in Notebook Assistance Chat",
 
 "NotebookAssistanceInputGettingStarted" -> "Help me get started",
 "NotebookAssistanceInputErrorMessage" -> "What went wrong?",

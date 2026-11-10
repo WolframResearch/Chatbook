@@ -85,11 +85,11 @@ The setting is evaluated by the `dynamicSplitQ` function (`Settings.wl`), which 
 
 ### Behavior
 
-When dynamic splitting is enabled (`$dynamicSplit` is `True`), the `splitDynamicContent` function (`SendChat.wl`) is called on each `"BodyChunkReceived"` event: it splits the accumulated dynamic content string using `$dynamicSplitRules` (`Formatting.wl`) — a set of string patterns defining safe split points (e.g., after complete code blocks, headings, paragraphs) — then writes the completed static portions as final formatted notebook cells and keeps only the remaining dynamic portion updating live. This reduces the amount of content being dynamically re-rendered, improving performance for long responses.
+When dynamic splitting is enabled (`$dynamicSplit` is `True`), the `splitDynamicContent` function (`SendChat.wl`) is called on each `"BodyChunkReceived"` event: it splits the accumulated dynamic content string using `$dynamicSplitRules` (`Formatting/Rules.wl`) — a set of string patterns defining safe split points (e.g., after complete code blocks, headings, paragraphs) — then writes the completed static portions as final formatted notebook cells and keeps only the remaining dynamic portion updating live. This reduces the amount of content being dynamically re-rendered, improving performance for long responses.
 
 When disabled, all streaming content remains in a single dynamic cell until the response completes.
 
-Dynamic splitting is also disabled in headless mode (`$headlessChat`), inline chat (`$InlineChat`), cloud notebooks (`$cloudNotebooks`), and when the Wolfram Engine version is insufficient (`insufficientVersionQ["DynamicSplit"]`).
+Dynamic splitting is also disabled in headless mode (`$headlessChat`) and cloud notebooks (`$cloudNotebooks`).
 
 ### Integration Points
 
@@ -243,7 +243,7 @@ The resolved value is stored in the `$openToolCallBoxes` global variable (`Commo
 
 Used in two places:
 
-1. **Tool call box rendering**: in `parseFullToolCallString` (`Formatting.wl`), the parsed tool call data includes `"Open" -> TrueQ @ $openToolCallBoxes`, which is then passed to `makeToolCallBoxLabel` where it controls whether the `openerView` displaying the tool call details (raw and interpreted views) starts in the open or closed state.
+1. **Tool call box rendering**: in `parseFullToolCallString` (`Formatting/ToolCalls.wl`), the parsed tool call data includes `"Open" -> TrueQ @ $openToolCallBoxes`, which is then passed to `makeToolCallBoxLabel` where it controls whether the `openerView` displaying the tool call details (raw and interpreted views) starts in the open or closed state.
 
 2. **Markdown output handling**: in `checkMarkdownOutput` (`SendChat.wl`), when `$openToolCallBoxes` is truthy, tool output containing markdown images is passed through unchanged; when falsy, `$useMarkdownMessage` is appended to the tool response, which tells the LLM: *"The user does not see the output of this tool call. You must use this output in your response for them to see it."* — prompting the LLM to include image links and other formatted content in its visible response text.
 
@@ -266,11 +266,11 @@ Whether to auto-scroll the notebook to follow new output as it is placed during 
 
 - **`True`** — the output cell includes `PrivateCellOptions -> {"TrackScrollingWhenPlaced" -> True}`, enabling auto-scroll during streaming; after the final reformatted cell is written, `scrollOutput` calls `SelectionMove` with `AutoScroll -> True` to scroll to the completed output
 - **`False`** — auto-scrolling is disabled entirely
-- **`Automatic`** (default) — resolves based on Wolfram Engine version (see Resolution)
+- **`Automatic`** (default) — resolves to `True` (see Resolution)
 
 ### Resolution
 
-Resolved via `scrollOutputQ` (`SendChat.wl`), which checks whether the Wolfram Engine version meets the minimum requirement of 14.0 (defined in `$versionRequirements` in `Common.wl` via `sufficientVersionQ["TrackScrollingWhenPlaced"]`); if the version is sufficient, auto-scrolling is enabled, otherwise it is disabled.
+Resolved via `scrollOutputQ` (`SendChat.wl`), which resolves an unspecified value to `True`, so auto-scrolling is enabled by default.
 
 Note: `scrollOutputQ` has a two-argument form `scrollOutputQ[settings, cell]` that always returns `False` — this is used when computing the `"ScrollOutput"` key for the `reformatCell` path, meaning the post-write `SelectionMove`-based scrolling does not occur for reformatted cells (the `PrivateCellOptions`-based scrolling during streaming is sufficient).
 

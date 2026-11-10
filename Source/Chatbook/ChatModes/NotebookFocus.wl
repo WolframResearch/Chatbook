@@ -32,7 +32,7 @@ getFocusedNotebook[ obj: $$feObj ] /; ! TrueQ @ CurrentChatSettings[ obj, "Works
 getFocusedNotebook[ obj: $$feObj ] := Enclose[
     Module[ { locked },
         locked = ConfirmMatch[ getLockedNotebook @ obj, _NotebookObject | None, "Locked" ];
-        If[ notebookObjectQ @ locked, locked, getUserNotebook[ ] ]
+        First @ resolveFocusedNotebook @ locked
     ],
     throwInternalFailure
 ];
@@ -66,6 +66,8 @@ focusedNotebookDisplay[ chatNB_, appContainer_ ] := Enclose[
         ];
 
         If[ notebooks === { }, Throw @ Spacer[ 0 ] ];
+
+        If[ ! MemberQ[ notebooks, KeyValuePattern[ "NotebookObject" -> locked ] ], locked = None ];
 
         info = ConfirmMatch[ addFocusInfo[ locked, notebooks ], { __Association }, "Info" ];
         current = ConfirmBy[ First @ info, AssociationQ, "Current" ];
@@ -190,17 +192,6 @@ DynamicModule[
 
 focusedNotebookDisplay0 // endDefinition;
 
-
-$enableNotebookFocusLabel := $enableNotebookFocusLabel = Tooltip[
-    chatbookIcon[ "WorkspaceFocusIndicatorUncheck", False ],
-    tr[ "WorkspaceFocusIndicatorEnableTooltip" ]
-];
-
-$disableNotebookFocusLabel := $disableNotebookFocusLabel = Tooltip[
-    chatbookIcon[ "WorkspaceFocusIndicatorCheck", False ],
-    tr[ "WorkspaceFocusIndicatorDisableTooltip" ]
-];
-
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*setFocusWindowTitle*)
@@ -278,8 +269,6 @@ currentNotebookButtonLabel[ title_ ] := Mouseover[
 ];
 
 currentNotebookButtonLabel // endDefinition;
-
-$smallNotebookIcon := $smallNotebookIcon = chatbookIcon[ "WorkspaceFocusIndicatorNotebook", False ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

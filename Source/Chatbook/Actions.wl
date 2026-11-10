@@ -83,9 +83,7 @@ chatbookAction[ "CopyExplodedCells"               , args___ ] := CopyExplodedCel
 chatbookAction[ "CopyImage"                       , args___ ] := copyImage @ args;
 chatbookAction[ "CopyPlainText"                   , args___ ] := copyPlainText @ args;
 chatbookAction[ "DisableAssistance"               , args___ ] := DisableAssistance @ args;
-chatbookAction[ "DisplayInlineChat"               , args___ ] := displayInlineChat @ args;
 chatbookAction[ "EvaluateChatInput"               , args___ ] := EvaluateChatInput @ args;
-chatbookAction[ "EvaluateInlineChat"              , args___ ] := evaluateInlineChat @ args;
 chatbookAction[ "EvaluateSidebarChat"             , args___ ] := evaluateSidebarChat @ args;
 chatbookAction[ "EvaluateWorkspaceChat"           , args___ ] := evaluateWorkspaceChat @ args;
 chatbookAction[ "ExclusionToggle"                 , args___ ] := ExclusionToggle @ args;
@@ -107,6 +105,7 @@ chatbookAction[ "RemoveCellAccents"               , args___ ] := removeCellAccen
 chatbookAction[ "Send"                            , args___ ] := SendChat @ args;
 chatbookAction[ "SendFeedback"                    , args___ ] := SendFeedback @ args;
 chatbookAction[ "StopChat"                        , args___ ] := StopChat @ args;
+chatbookAction[ "StopChatIn"                      , args___ ] := stopChatIn @ args;
 chatbookAction[ "TabLeft"                         , args___ ] := TabLeft @ args;
 chatbookAction[ "TabRight"                        , args___ ] := TabRight @ args;
 chatbookAction[ "ToggleFormatting"                , args___ ] := ToggleFormatting @ args;
@@ -323,10 +322,32 @@ disableAssistance // endDefinition;
 (*InsertInlineReference*)
 InsertInlineReference // beginDefinition;
 
+(* Inline cells inherit the chat input cell's key events, but in an inline cell these keys should just type: *)
+InsertInlineReference[ type_, cell_CellObject? inlineCellQ ] :=
+    NotebookWrite[ parentNotebook @ cell, $inlineReferenceKeys @ type ];
+
 InsertInlineReference[ type_, cell_ ] :=
     insertInlineReference[ type, loadDefinitionNotebook @ ensureChatInputCell @ cell ];
 
 InsertInlineReference // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$inlineReferenceKeys*)
+(* The key that triggers each type of inline reference (see the "ChatInput" style's CellEventActions): *)
+$inlineReferenceKeys = <|
+    "PersonaTemplate"  -> "@",
+    "FunctionTemplate" -> "!",
+    "ModifierTemplate" -> "#",
+    "WLTemplate"       -> "\\"
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*inlineCellQ*)
+(* Checking chatInputCellQ first (it's cached) avoids an extra front end call for the usual case: *)
+inlineCellQ[ cell_CellObject ] :=
+    ! chatInputCellQ @ cell && MatchQ[ Developer`CellInformation @ cell, KeyValuePattern[ "InlineCellPosition" -> _ ] ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -496,24 +517,22 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association
                 ]
             ];
 
-            blockChatObject[
-                If[ ListQ @ $lastMessages && StringQ @ $lastChatString,
-                    With[
-                        {
-                            chat = constructChatObject @ mergeToolCallMessages @ Append[
-                                $lastMessages,
-                                <| "Role" -> "Assistant", "Content" -> $lastChatString |>
-                            ] // LogChatTiming[ "ConstructChatObject" ]
-                        },
-                        If[ TrueQ @ settings[ "AutoSaveConversations" ],
-                            SaveChat[ nbo, chat, settings, "AutoSaveOnly" -> True ]
-                        ];
-                        applyChatPost[ chat, settings, nbo, $aborted ]
-                    ],
-                    applyChatPost[ None, settings, nbo, $aborted ];
-                    Null
-                ];
-            ]
+            If[ ListQ @ $lastMessages && StringQ @ $lastChatString,
+                With[
+                    {
+                        chat = constructChatObject @ mergeToolCallMessages @ Append[
+                            $lastMessages,
+                            <| "Role" -> "Assistant", "Content" -> $lastChatString |>
+                        ] // LogChatTiming[ "ConstructChatObject" ]
+                    },
+                    If[ TrueQ @ settings[ "AutoSaveConversations" ],
+                        SaveChat[ nbo, chat, settings, "AutoSaveOnly" -> True ]
+                    ];
+                    applyChatPost[ chat, settings, nbo, $aborted ]
+                ],
+                applyChatPost[ None, settings, nbo, $aborted ];
+                Null
+            ];
         ]
     ];
 
@@ -533,22 +552,6 @@ applyChatPost[ chat_, settings_, nbo_, aborted: True|False ] := (
 );
 
 applyChatPost // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*blockChatObject*)
-blockChatObject // beginDefinition;
-blockChatObject // Attributes = { HoldFirst };
-blockChatObject[ eval_ ] /; Quiet @ PacletNewerQ[ PacletObject[ "Wolfram/LLMFunctions" ], "1.1.0" ] := eval;
-blockChatObject[ eval_ ] := Block[ { chatObject = delayedChatObject, delayedChatObject }, eval ];
-blockChatObject // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*delayedChatObject*)
-delayedChatObject // beginDefinition;
-delayedChatObject[ args___ ] := delayedChatObject[ args ] = System`ChatObject @ args;
-delayedChatObject // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -781,6 +784,38 @@ StopChat // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*stopChatIn*)
+stopChatIn // beginDefinition;
+
+(* The stop buttons of the assistant window and the sidebar only stop a chat that is evaluating in their own container,
+   in case another chat started after the button was drawn. The no-argument StopChat also stops a chat that has no
+   output cell yet: *)
+stopChatIn[ container_ ] := If[ TrueQ @ chatEvaluatingInQ @ container, StopChat[ ] ];
+
+stopChatIn // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*chatEvaluatingInQ*)
+chatEvaluatingInQ // beginDefinition;
+
+(* True if the chat that is evaluating ($ChatEvaluationCell) is in the given container: a notebook (the assistant
+   window, whose chat cells are top-level cells) or a cell that contains the chat's cell (the sidebar). The send/stop
+   buttons call this from a Dynamic that only tracks $ChatEvaluationCell, so the front end calls below only run when
+   a chat starts or ends: *)
+chatEvaluatingInQ[ container_ ] := chatEvaluatingInQ[ container, $ChatEvaluationCell ];
+
+chatEvaluatingInQ[ nbo_NotebookObject, cell_CellObject ] := parentNotebook @ cell === nbo;
+
+chatEvaluatingInQ[ container_CellObject, cell_CellObject ] :=
+    MemberQ[ NestWhileList[ parentCell, cell, MatchQ[ _CellObject ], 1, 10 ], container ];
+
+chatEvaluatingInQ[ _, _ ] := False;
+
+chatEvaluatingInQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*stopEvaluatingChat*)
 stopEvaluatingChat // beginDefinition;
 
@@ -876,14 +911,22 @@ CopyChatObject // endDefinition;
 constructChatObject // beginDefinition;
 
 constructChatObject[ messages_List ] :=
+    constructChatObject0 @ messages;
+
+constructChatObject // endDefinition;
+
+
+constructChatObject0 // beginDefinition;
+
+constructChatObject0[ messages_List ] :=
     With[ { chat = Quiet[ chatObject @ standardizeMessageKeys @ messages, ChatObject::bdprompt ] },
         chat /; MatchQ[ chat, _chatObject ]
     ];
 
-constructChatObject[ messages_List ] :=
+constructChatObject0[ messages_List ] :=
     Dataset[ KeyMap[ Capitalize ] /@ messages ];
 
-constructChatObject // endDefinition;
+constructChatObject0 // endDefinition;
 
 chatObject := chatObject = Symbol[ "System`ChatObject" ];
 
@@ -1051,7 +1094,7 @@ chatContextDialogChatContextPreprompt[ existingSetting_ ] := {
                 InputField[
                     Dynamic @ fieldContent,
                     String,
-                    BaseStyle         -> { "DialogText", FontColor -> If[ sufficientVersionQ[ 14.3 ], ThemeColor[ "Foreground" ], Black ] },
+                    BaseStyle         -> { "DialogText", FontColor -> ThemeColor[ "Foreground" ] },
                     ContinuousAction  -> False,
                     FrameMargins      -> 4,
                     ImageSize         -> Scaled[ 1 ],
@@ -1089,7 +1132,7 @@ chatContextDialogInputFormCell[ existingSetting_, tag_String ] :=
                 InputField[
                     Dynamic @ fieldContent,
                     Hold[Expression], (* Can't be ContinuousAction -> True *)
-                    BaseStyle         -> {"Input", FormatType -> StandardForm, FontColor -> If[ sufficientVersionQ[ 14.3 ], ThemeColor[ "Foreground" ], Black ], ShowSyntaxStyles -> True},
+                    BaseStyle         -> {"Input", FormatType -> StandardForm, FontColor -> ThemeColor[ "Foreground" ], ShowSyntaxStyles -> True},
                     FrameMargins      -> 4,
                     ImageSize         -> Scaled[ 1 ],
                     ReturnEntersInput -> False,
@@ -1204,15 +1247,13 @@ scrapeChatContextDialog // endDefinition;
 AttachCodeButtons // beginDefinition;
 
 AttachCodeButtons[ Dynamic[ attached_ ], cell_CellObject? chatCodeBlockQ, string_, lang_ ] :=
-    Block[ { $InlineChat = inlineChatQ @ cell },
-        attached = AttachCell[
-            cell,
-            floatingButtonGrid[ attached, cell, lang ],
-            { Left, Bottom },
-            Offset[ { 0, 0 }, Automatic ],
-            { Left, Bottom }, (* attaches to ChatCodeBlockTemplate's bottom ImageMargins, not the cell content *)
-            RemovalConditions -> { }
-        ]
+    attached = AttachCell[
+        cell,
+        floatingButtonGrid[ attached, cell, lang ],
+        { Left, Bottom },
+        Offset[ { 0, 0 }, Automatic ],
+        { Left, Bottom }, (* attaches to ChatCodeBlockTemplate's bottom ImageMargins, not the cell content *)
+        RemovalConditions -> { }
     ];
 
 AttachCodeButtons[ attached_, cell_CellObject, string_, lang_ ] := Enclose[
@@ -1237,13 +1278,6 @@ AttachCodeButtons[ attached_, cell_CellObject, string_, lang_ ] := Enclose[
 ];
 
 AttachCodeButtons // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*inlineChatQ*)
-inlineChatQ // beginDefinition;
-inlineChatQ[ cell_CellObject ] := inlineChatQ[ cell ] = currentChatSettings[ cell, "InlineChat" ];
-inlineChatQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1308,8 +1342,6 @@ WidgetSend // beginDefinition;
 
 WidgetSend[ cell_CellObject ] := withChatState @
     Block[ { $alwaysOpen = True, cellPrint = cellPrintAfter @ cell, $finalCell = cell, $AutomaticAssistance = True },
-        (* TODO: this is currently the only UI method to turn this back on *)
-        setCurrentValue[ parentNotebook @ cell, { TaggingRules, "ChatNotebookSettings", "Assistance" }, True ];
         SendChat @ cell
     ];
 
@@ -1375,9 +1407,6 @@ resolveAppContainer[ c_CellObject, nbo_NotebookObject ] := Enclose[
         Which[
             TrueQ @ $WorkspaceChat || MatchQ[ CurrentValue[ nbo, StyleDefinitions ], FrontEnd`FileName[ { "Wolfram" }, "WorkspaceChat.nb", ___ ] ],
                 "Workspace",
-
-            TrueQ @ $InlineChat,
-                "Inline",
 
             tags = Flatten @ List @ Replace[ AbsoluteCurrentValue[ c, CellTags ], Except[ _List | _String ] :> { } ]; (* Cloud may not get CellTags *)
             TrueQ @ $SidebarChat || AnyTrue[ tags, StringStartsQ[ "Sidebar" | "NotebookAssistantSidebar" ] ],
@@ -1502,24 +1531,6 @@ clearMinimizedChats[ nbo_NotebookObject, cells_List ] :=
     ];
 
 clearMinimizedChats // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*clearMinimizedChat*)
-clearMinimizedChat // beginDefinition;
-
-clearMinimizedChat[ attached_CellObject, parentCell_CellObject ] :=
-    Module[ { next },
-        NotebookDelete @ attached;
-        next = NextCell @ parentCell;
-        If[ MemberQ[ cellStyles @ next, $$chatOutputStyle ] && TrueQ[ ! CurrentValue[ next, CellOpen ] ],
-            NotebookDelete @ next;
-            next,
-            Nothing
-        ]
-    ];
-
-clearMinimizedChat // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

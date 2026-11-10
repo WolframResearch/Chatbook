@@ -29,7 +29,6 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$DefaultToolOptions;
 `$DefaultTools;
 `$IncludedCellWidget;
-`$InlineChat;
 `$InstalledTools;
 `$LastChatbookFailure;
 `$LastChatbookFailureText;
@@ -179,6 +178,7 @@ $ChatbookContexts = {
     "Wolfram`Chatbook`Personas`",
     "Wolfram`Chatbook`PreferencesContent`",
     "Wolfram`Chatbook`PreferencesUtils`",
+    "Wolfram`Chatbook`PromptCache`",
     "Wolfram`Chatbook`PromptGenerators`",
     "Wolfram`Chatbook`Prompting`",
     "Wolfram`Chatbook`Reasoning`",
@@ -226,7 +226,6 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "$DefaultSkills",
     "$DefaultToolOptions",
     "$DefaultTools",
-    "$InlineChat",
     "$InstalledTools",
     "$LastChatbookFailure",
     "$LastChatbookFailureText",

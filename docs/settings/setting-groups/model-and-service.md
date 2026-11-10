@@ -4,10 +4,7 @@
 
 ### Default Value
 
-The default is defined via `RuleDelayed` (`:>`) in `$defaultChatSettings` (`Settings.wl`), so `$DefaultModel` is evaluated lazily each time the setting is accessed:
-
-- **Wolfram Engine 14.1+**: `<|"Service" -> "LLMKit", "Name" -> Automatic|>`
-- **Older versions**: `<|"Service" -> "OpenAI", "Name" -> "gpt-4o"|>`
+The default is defined via `RuleDelayed` (`:>`) in `$defaultChatSettings` (`Settings.wl`), so `$DefaultModel` is evaluated lazily each time the setting is accessed. Its value is `<|"Service" -> "LLMKit", "Name" -> Automatic|>`.
 
 ### Accepted Formats
 
@@ -115,7 +112,7 @@ The setting value is read from `CurrentChatSettings` and assigned to the `$enabl
 Other settings depend on this:
 
 - `HandlerFunctionsKeys` depends on `EnableLLMServices` for resolution order.
-- `Multimodal` depends on both `EnableLLMServices` and `Model`. When LLM Services are disabled but the model supports multimodal, multimodal is enabled directly. When enabled, it additionally checks for multimodal paclet availability.
+- `Multimodal` is declared as depending on both `EnableLLMServices` and `Model` (in `$autoSettingKeyDependencies`), but it resolves from the model alone (see `"Multimodal"` below).
 
 ### Inheritance and Overrides
 
@@ -131,17 +128,7 @@ Controls whether Chatbook includes image data in messages sent to the LLM.
 
 ### Resolution
 
-When `Automatic`, resolved by `multimodalQ` (`Settings.wl`), which evaluates three factors:
-
-1. Whether the model supports multimodal input (via `multimodalModelQ` in `Models.wl`)
-2. Whether LLMServices is enabled (`EnableLLMServices`)
-3. Whether required paclets are available
-
-The resolution logic:
-
-- If the model does not support multimodal, returns `False`.
-- If the model supports multimodal and `EnableLLMServices` is `False`, returns `True` (the direct API path needs no extra paclets).
-- If the model supports multimodal and `EnableLLMServices` is `True`, returns `multimodalPacletsAvailable[]`, which checks that `Wolfram/LLMFunctions` version 1.2.4+ and `ServiceConnection_OpenAI` version 13.3.18+ (with multimodal support) are installed.
+When `Automatic`, resolved by `multimodalQ` (`Settings.wl`), which returns whether the model supports multimodal input (via `multimodalModelQ` in `Models.wl`).
 
 ### Model Detection
 
@@ -153,7 +140,7 @@ The `multimodalModelQ` function (`Models.wl`) determines model capability by:
 
 Model-specific overrides in `$modelAutoSettings`:
 
-- **`True`**: Claude 4, Gemini 2, Gemini 3, GPT-4.1, GPT-5, O1, O3, O4-Mini
+- **`True`**: Claude 4, Claude 5, Gemini 2, Gemini 3, GPT-4.1, GPT-5, O1, O3, O4-Mini
 - **`False`**: O1-Mini, O3-Mini
 
 ### Dependencies

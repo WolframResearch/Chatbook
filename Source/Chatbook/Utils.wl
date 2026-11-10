@@ -318,22 +318,6 @@ replaceSpecialCharacters[ string_String? StringQ ] := StringReplace[
 replaceSpecialCharacters // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*unreadableFileFailure*)
-unreadableFileFailure // beginDefinition;
-
-unreadableFileFailure[ file_ ] :=
-    Failure[
-        "FileUnreadable",
-        <|
-            "MessageTemplate" -> "Cannot read content from `1`.",
-            "MessageParameters" -> { file }
-        |>
-    ];
-
-unreadableFileFailure // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*fastFileHash*)
 fastFileHash // beginDefinition;
@@ -344,19 +328,6 @@ fastFileHash // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*File Format Utilities*)
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*$fileFormats*)
-$fileFormats := ToLowerCase @ Union[ $ImportFormats, $ExportFormats ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*fileFormatQ*)
-fileFormatQ // beginDefinition;
-fileFormatQ[ fmt_String ] := fileFormatQ[ fmt ] = MemberQ[ $fileFormats, ToLowerCase @ fmt ];
-fileFormatQ[ _ ] := False
-fileFormatQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -967,7 +938,6 @@ evaluateWithProgress // beginDefinition;
 evaluateWithProgress // Attributes = { HoldFirst };
 evaluateWithProgress[ args___ ] /; $WorkspaceChat := evaluateWithWorkspaceProgress @ args;
 evaluateWithProgress[ args___ ] /; $SidebarChat := evaluateWithSidebarProgress @ args;
-evaluateWithProgress[ args___ ] /; $InlineChat := evaluateWithInlineProgress @ args;
 evaluateWithProgress[ args___ ] /; $ContentSuggestions := evaluateWithProgressContainer[ $progressContainer, args ];
 evaluateWithProgress[ args___ ] := Progress`EvaluateWithProgress[ args, "Delay" -> 0 ];
 evaluateWithProgress // endDefinition;
@@ -1079,70 +1049,6 @@ evaluateWithSidebarProgress[ args___ ] :=
     ];
 
 evaluateWithSidebarProgress // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*evaluateWithInlineProgress*)
-evaluateWithInlineProgress // beginDefinition;
-evaluateWithInlineProgress // Attributes = { HoldFirst };
-
-evaluateWithInlineProgress[ args___ ] := Enclose[
-    Catch @ Module[ { container, cells, inserted },
-
-        container = ProgressIndicator[ Appearance -> "Percolate" ];
-        cells = $inlineChatState[ "MessageCells" ];
-        inserted = insertInlineProgressIndicator[ Dynamic @ container, cells ];
-        If[ ! MatchQ[ inserted, { ___Cell } ], Throw @ evaluateWithDialogProgress @ args ];
-
-        WithCleanup[
-            Progress`EvaluateWithProgress[
-                args,
-                "Container" :> container,
-                "Delay"     -> 0
-            ],
-            ConfirmMatch[ removeInlineProgressIndicator @ cells, { ___Cell }, "Removed" ];
-            Quiet @ Remove @ container;
-        ]
-    ],
-    throwInternalFailure
-];
-
-evaluateWithInlineProgress // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*insertInlineProgressIndicator*)
-insertInlineProgressIndicator // beginDefinition;
-
-insertInlineProgressIndicator[ Dynamic[ container_ ], Dynamic[ cells0_Symbol ] ] := Enclose[
-    Module[ { cells, cell },
-        cells = ConfirmMatch[ cells0, { ___Cell }, "Cells" ];
-        cell = Cell[
-            BoxData @ assistantMessageBox @ ToBoxes @ Dynamic[
-                container,
-                Deinitialization :> Quiet @ Remove @ container
-            ],
-            "ChatOutput",
-            "EvaluateWithProgressContainer",
-            CellFrame          -> 0,
-            PrivateCellOptions -> { "ContentsOpacity" -> 1 }
-        ];
-        cells0 = Append[ cells, cell ]
-    ],
-    throwInternalFailure
-];
-
-insertInlineProgressIndicator // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*removeInlineProgressIndicator*)
-removeInlineProgressIndicator // beginDefinition;
-
-removeInlineProgressIndicator[ Dynamic[ cells_Symbol ] ] :=
-    cells = DeleteCases[ cells, Cell[ __, "EvaluateWithProgressContainer", ___ ] ];
-
-removeInlineProgressIndicator // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1449,7 +1355,7 @@ chatTime // endDefinition;
 (* ::Section::Closed:: *)
 (*Package Footer*)
 addToMXInitialization[
-    Scan[ fileFormatQ, $fileFormats ];
+    Null
 ];
 
 End[ ];

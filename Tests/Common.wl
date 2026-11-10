@@ -7,9 +7,13 @@ BeginPackage[ "Wolfram`ChatbookTests`" ];
 HoldComplete[
     `$TestDefinitionsLoaded,
     `$TestNotebook;
+    `ConstructWorkspaceContextMessages;
     `CreateChatCell;
     `CreateChatCells;
     `CreateTestChatNotebook;
+    `FormatMarkdown;
+    `MarkdownRoundTrip;
+    `NormalizeTextData;
     `WithTestNotebook;
 ];
 
@@ -161,6 +165,101 @@ CreateChatCell[ { arg_, opts___ } ] :=
     ];
 
 CreateChatCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Formatting Helpers*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*FormatMarkdown*)
+(* Gives the list of TextData items that FormatChatOutput creates for a markdown string: *)
+FormatMarkdown // ClearAll;
+FormatMarkdown[ md_String ] := FormatMarkdown[ md, "Finished" ];
+FormatMarkdown[ md_String, status: "Finished"|"Streaming" ] :=
+    Replace[
+        Wolfram`Chatbook`FormatChatOutput[ md, <| "Status" -> status |> ],
+        {
+            RawBoxes @ Cell[ TextData[ items_List ], ___ ] :> items,
+            RawBoxes @ Cell[ TextData[ item_ ], ___ ] :> { item },
+            other_ :> abort[ "Unexpected FormatChatOutput result: ", other ]
+        }
+    ];
+FormatMarkdown // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*NormalizeTextData*)
+(* Removes differences that are not visible: adjacent strings are joined, empty strings are dropped, and spaces before
+   a line break are removed. Applies to TextData nested at any depth too. *)
+NormalizeTextData // ClearAll;
+NormalizeTextData[ items_List ] := normalizeTextDataList[ normalizeNestedTextData /@ Flatten @ items ];
+NormalizeTextData[ TextData[ items_ ] ] := TextData @ NormalizeTextData @ Flatten @ { items };
+NormalizeTextData[ other_ ] := normalizeNestedTextData @ other;
+
+(* Joins adjacent strings, drops empty strings, and removes spaces before line breaks: *)
+normalizeTextDataList[ items_List ] :=
+    DeleteCases[
+        Flatten @ Replace[
+            SplitBy[ items, StringQ ],
+            { strings__String } :> StringReplace[ StringJoin @ strings, " ".. ~~ "\n" -> "\n" ],
+            { 1 }
+        ],
+        ""
+    ];
+
+(* Normalizes the TextData anywhere inside an item, e.g. in the BoxData of a heading or a thoughts box: *)
+normalizeNestedTextData[ expr_ ] :=
+    ReplaceAll[ expr, TextData[ items_ ] :> TextData @ NormalizeTextData @ Flatten @ { items } ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*MarkdownRoundTrip*)
+(* Formats a markdown string and serializes the result back to a string, as is done for chat history: *)
+MarkdownRoundTrip // ClearAll;
+MarkdownRoundTrip[ md_String ] := MarkdownRoundTrip[ md, "Finished" ];
+MarkdownRoundTrip[ md_String, status_String ] :=
+    Wolfram`Chatbook`CellToString @ Cell[ TextData @ FormatMarkdown[ md, status ], "ChatOutput" ];
+MarkdownRoundTrip // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ConstructWorkspaceContextMessages*)
+ConstructWorkspaceContextMessages // ClearAll;
+
+ConstructWorkspaceContextMessages[ cells: { __Cell }, settings0_Association, messages: { __Association } ] :=
+    Block[
+        {
+            Wolfram`Chatbook`Common`$contextPrompt   = None,
+            Wolfram`Chatbook`Common`$selectionPrompt = None,
+            Wolfram`Chatbook`$ChatHandlerData        = <| |>
+        },
+        UsingFrontEnd @ Module[ { nb, settings },
+            WithCleanup[
+                nb = NotebookPut @ Notebook @ cells;
+                SelectionMove[ Last @ Cells @ nb, All, Cell ];
+                settings = <|
+                    AbsoluteCurrentChatSettings @ nb,
+                    "AllowSelectionContext" -> True,
+                    "FocusedNotebook"       -> nb,
+                    "PromptGenerators"      -> { },
+                    "Tools"                 -> { },
+                    settings0
+                |>;
+                Block[
+                    {
+                        Wolfram`Chatbook`$WorkspaceChat             = True,
+                        Wolfram`Chatbook`Common`$evaluationNotebook = nb,
+                        Wolfram`Chatbook`Common`$multimodalMessages = TrueQ @ settings[ "Multimodal" ]
+                    },
+                    Wolfram`Chatbook`Common`constructMessages[ settings, messages ]
+                ],
+                NotebookClose @ nb
+            ]
+        ]
+    ];
+
+ConstructWorkspaceContextMessages // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

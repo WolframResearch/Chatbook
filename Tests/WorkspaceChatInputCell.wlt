@@ -94,78 +94,122 @@ VerificationTest[
 (*Selected Pane*)
 
 (* Emulates the front end: the selector's Dynamic is evaluated in the kernel and the pane with a matching key is shown,
-   falling back to the default pane (if any) when no key matches. *)
+   falling back to the default pane (if any) when no key matches. The window's chat cells are top-level cells of the
+   window notebook (EvaluationNotebook[ ] in the Dynamic): *)
 VerificationTest[
     Clear[ selectedButtonID, selectedButtonID0 ];
+    $windowNB = NotebookObject[ "TestWindow", "TestWindow" ];
 
     (* the BoxID of the displayed button for a given value of $ChatEvaluationCell (or when it has no value) *)
     selectedButtonID[ value_ ] := Block[ { Wolfram`Chatbook`$ChatEvaluationCell = value }, selectedButtonID0[ ] ];
     selectedButtonID[ ] := Block[ { Wolfram`Chatbook`$ChatEvaluationCell }, selectedButtonID0[ ] ];
 
-    selectedButtonID0[ ] := FirstCase[
-        Replace[
-            ReleaseHold @ Extract[ $selector, { 2, 1 }, Hold ],
-            {
-                k_ /; KeyExistsQ[ First @ $selector, k ] :> Lookup[ First @ $selector, k ],
-                _ :> If[ Length @ $selector >= 3 && ! OptionQ @ $selector[[ 3 ]], $selector[[ 3 ]], Missing[ "NoPane" ] ]
-            }
-        ],
-        HoldPattern[ BoxID -> id_String ] :> id,
-        Missing[ "NoButton" ],
-        Infinity
+    selectedButtonID0[ ] := Block[
+        {
+            EvaluationNotebook = $windowNB &,
+            Wolfram`Chatbook`Common`parentNotebook = Replace[ {
+                CellObject[ "WindowInput" ] -> $windowNB,
+                CellObject[ "OtherInput" ]  -> NotebookObject[ "Other", "Other" ],
+                _                           -> $Failed
+            } ]
+        },
+        FirstCase[
+            Replace[
+                ReleaseHold @ Extract[ $selector, { 2, 1 }, Hold ],
+                {
+                    k_ /; KeyExistsQ[ First @ $selector, k ] :> Lookup[ First @ $selector, k ],
+                    _ :> If[ Length @ $selector >= 3 && ! OptionQ @ $selector[[ 3 ]], $selector[[ 3 ]], Missing[ "NoPane" ] ]
+                }
+            ],
+            HoldPattern[ BoxID -> id_String ] :> id,
+            Missing[ "NoButton" ],
+            Infinity
+        ]
     ];
 
     "selectedButtonID defined",
     "selectedButtonID defined",
     SameTest -> MatchQ,
-    TestID   -> "SelectedPane-Definition@@Tests/WorkspaceChatInputCell.wlt:98,1-122,2"
+    TestID   -> "SelectedPane-Definition@@Tests/WorkspaceChatInputCell.wlt:99,1-134,2"
 ]
 
 VerificationTest[
     selectedButtonID @ None,
     "NASendChatButton",
     SameTest -> MatchQ,
-    TestID   -> "SelectedPane-NoChat@@Tests/WorkspaceChatInputCell.wlt:124,1-129,2"
+    TestID   -> "SelectedPane-NoChat@@Tests/WorkspaceChatInputCell.wlt:136,1-141,2"
 ]
 
 VerificationTest[
-    selectedButtonID @ CellObject[ "12345678-0000-0000-0000-000000000000" ],
+    selectedButtonID @ CellObject[ "WindowInput" ],
     "NAStopChatButton",
     SameTest -> MatchQ,
-    TestID   -> "SelectedPane-ChatRunning@@Tests/WorkspaceChatInputCell.wlt:131,1-136,2"
+    TestID   -> "SelectedPane-ChatRunning@@Tests/WorkspaceChatInputCell.wlt:143,1-148,2"
 ]
 
-(* Anything other than None (e.g. if the symbol does not have a value yet) shows the stop button, as before: *)
+(* A chat in another notebook (or the sidebar) doesn't turn the window's send button into a stop button: *)
+VerificationTest[
+    selectedButtonID @ CellObject[ "OtherInput" ],
+    "NASendChatButton",
+    SameTest -> MatchQ,
+    TestID   -> "SelectedPane-OtherNotebookChat-robustness-4@@Tests/WorkspaceChatInputCell.wlt:151,1-156,2"
+]
+
+(* If the symbol does not have a value yet, there is no chat in this window: *)
 VerificationTest[
     selectedButtonID[ ],
-    "NAStopChatButton",
+    "NASendChatButton",
     SameTest -> MatchQ,
-    TestID   -> "SelectedPane-NoValue@@Tests/WorkspaceChatInputCell.wlt:139,1-144,2"
+    TestID   -> "SelectedPane-NoValue@@Tests/WorkspaceChatInputCell.wlt:159,1-164,2"
+]
+
+(* The Dynamic is only updated when a chat starts or ends: *)
+VerificationTest[
+    Cases[ $selector[[ 2 ]], HoldPattern[ TrackedSymbols :> s_ ] :> HoldComplete @ s, { 0, Infinity } ],
+    { HoldComplete[ { Wolfram`Chatbook`$ChatEvaluationCell } ] },
+    SameTest -> MatchQ,
+    TestID   -> "SelectedPane-TrackedSymbols@@Tests/WorkspaceChatInputCell.wlt:167,1-172,2"
+]
+
+(* The stop button only stops a chat in this window: *)
+VerificationTest[
+    FirstCase[
+        Lookup[ First @ $selector, True ],
+        HoldPattern[ ButtonFunction :> f_ ] :> HoldComplete @ f,
+        Missing[ ],
+        Infinity
+    ],
+    HoldComplete[ CompoundExpression[ _, Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChatIn", EvaluationNotebook[ ] ] ] ],
+    SameTest -> MatchQ,
+    TestID   -> "StopButton-Scoped-robustness-4@@Tests/WorkspaceChatInputCell.wlt:175,1-185,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*sidebarChatInputCellSendButton*)
 
-(* The sidebar's send/stop selector must also keep the stop button (and its spinner) out of a default pane: *)
+(* The sidebar's send/stop selector (and the initialization gate around it) must also keep the stop button (and its
+   spinner) out of a default pane: *)
 VerificationTest[
     $sidebarSelector = ToBoxes @ Wolfram`Chatbook`ChatModes`UI`Private`sidebarChatInputCellSendButton[
         fieldContent,
         input,
         returnKeyDownQ,
-        chatEvalCell
+        initializedQ
     ],
-    PaneSelectorBox[ { False -> _, True -> _ }, _Dynamic, ___?OptionQ ],
+    PaneSelectorBox[ { False -> _, True -> PaneSelectorBox[ { False -> _, True -> _ }, _Dynamic, ___?OptionQ ] }, _Dynamic, ___?OptionQ ],
     SameTest -> MatchQ,
-    TestID   -> "SidebarSendStopSelector-NoDefaultPane@@Tests/WorkspaceChatInputCell.wlt:151,1-161,2"
+    TestID   -> "SidebarSendStopSelector-NoDefaultPane@@Tests/WorkspaceChatInputCell.wlt:193,1-203,2"
 ]
 
 VerificationTest[
+    $sidebarStopSelector = Lookup[ First @ $sidebarSelector, True ];
     FreeQ[ Lookup[ First @ $sidebarSelector, False ], "StopChatButton" ] &&
-        ! FreeQ[ Lookup[ First @ $sidebarSelector, True ], "StopChatButton" ],
+        FreeQ[ Lookup[ First @ $sidebarStopSelector, False ], "StopChatButton" ] &&
+        ! FreeQ[ Lookup[ First @ $sidebarStopSelector, True ], "StopChatButton" ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "SidebarSendStopSelector-SpinnerOnlyInStopPane@@Tests/WorkspaceChatInputCell.wlt:163,1-169,2"
+    TestID   -> "SidebarSendStopSelector-SpinnerOnlyInStopPane@@Tests/WorkspaceChatInputCell.wlt:205,1-213,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

@@ -74,12 +74,14 @@
 "FormattingToolUsing" -> "Utilisation de ",
 "FormattingToolUsed" -> "Utilisant ",
 "FormattingToolUsingLoading" -> "Utilisation de l\[CloseCurlyQuote]outil\[Ellipsis]",
+"FormattingToolCancelled" -> "Cancelled ",
+"FormattingToolCancelledUnnamed" -> "Cancelled tool call",
 "FormattingThinkingActive" -> "En train de r\[EAcute]fl\[EAcute]chir\[Ellipsis]",
 "FormattingThinkingComplete" -> "A r\[EAcute]fl\[EAcute]chi pendant `time` secondes",
 "FormattingThinkingCompleteSingular" -> "A r\[EAcute]fl\[EAcute]chi pendant une seconde",
 "FormattingThinkingCompleteFallback" -> "R\[EAcute]flexion",
 "FormattingHide" -> "Cacher",
-"FormattingDiscardedMaterial" -> "Discarded material",
+"FormattingDiscardedMaterial" -> "Mat\[EAcute]riel rejet\[EAcute]",
 
 "InlineReferencesFieldHint" -> "Nom de l\[CloseCurlyQuote]invite",
 "InlineReferencesInsertLabel" -> "Ins\[EAcute]rer\[NonBreakingSpace]:",
@@ -169,6 +171,7 @@
 "ToolManagerTooltipNonDeletable1" -> "`name` est un outil int\[EAcute]gr\[EAcute] et ne peut pas \[EHat]tre supprim\[EAcute].",
 "ToolManagerTooltipNonDeletable2" -> "`name` est fourni par le personnage `persona` et ne peut pas \[EHat]tre supprim\[EAcute] s\[EAcute]par\[EAcute]ment.",
 "ToolManagerDeleteTool" -> "Supprimer l\[CloseCurlyQuote]outil",
+"ToolManagerToolsDisabled" -> "Les outils sont d\[EAcute]sactiv\[EAcute]s dans les param\[EGrave]tres de Chat actuels.",
 
 "UIInitializeChatbook" -> "Initialisation\[Ellipsis]",
 "UIEnableChatFeatures" -> "Activer les fonctions de chat de l\[CloseCurlyQuote]IA",
@@ -247,7 +250,6 @@
 "ChatbarOptionsGettingData" -> "R\[EAcute]cup\[EAcute]ration du profil utilisateur\[Ellipsis]",
 
 "MenuItemShowNotebookAssistanceWindow" -> "Chat AI Assistant\[Ellipsis]",
-"MenuItemShowNotebookAssistanceInline" -> "AI Assistant pour la s\[EAcute]lection",
 "MenuItemShowContentSuggestions" -> "Suggestion de contenu par l\[CloseCurlyQuote]IA",
 
 "SidebarToolbarButtonTooltipHideSidebar" -> "Masquer l\[CloseCurlyQuote]assistant du notebook",
@@ -275,6 +277,7 @@
 "WorkspaceHistoryLastPage" -> "Derni\[EGrave]re page",
 "WorkspaceHistoryTitle" -> "Historique",
 "WorkspaceHistoryFieldHint" -> "Recherche",
+"WorkspaceHistoryLoadFailed" -> "Ce Chat n\[CloseCurlyQuote]a pas pu \[EHat]tre charg\[EAcute].",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "Copier la r\[EAcute]ponse dans le presse\[Hyphen]papiers\[Ellipsis]",
 "WorkspaceOutputRaftCopyAs" -> "Copier la r\[EAcute]ponse en tant que\[Ellipsis]",
@@ -295,9 +298,6 @@
 "WorkspaceFocusIndicatorMenuTooltip" -> "Choisissez un notebook sur lequel vous vous concentrerez pour obtenir un contexte suppl\[EAcute]mentaire.",
 "WorkspaceFocusIndicatorMenuAutomatic" -> "Choisir automatiquement",
 
-"InlineChatButtonTooltipClose" -> "Fermer",
-"InlineChatButtonTooltipViewNotebookAssist" -> "Voir dans le chat de l\[CloseCurlyQuote]assistant du notebook",
-
 "NotebookAssistanceInputGettingStarted" -> "Aide\[Hyphen]moi \[AGrave] d\[EAcute]marrer",
 "NotebookAssistanceInputErrorMessage" -> "Qu\[CloseCurlyQuote]est\[Hyphen]ce qui n\[CloseCurlyQuote]a pas fonctionn\[EAcute]\[NonBreakingSpace]?",
 
@@ -310,10 +310,10 @@
 "ProgressTextGeneratingSuggestions" -> "G\[EAcute]n\[EAcute]ration de suggestions",
 "ProgressTextDownloadingSnippet" -> "T\[EAcute]l\[EAcute]chargement de l\[CloseCurlyQuote]extrait de documentation `1`",
 "ProgressTextDownloadingSnippets" -> "T\[EAcute]l\[EAcute]chargement des extraits de la documentation `1`",
-"DownloadRedownloadPrompt" -> "Some locally installed files appear to be incomplete or corrupt:\n\n`1`\n\nWould you like to download them again?",
-"DownloadRetryPrompt" -> "The download of some semantic search resources did not complete. Would you like to try again?",
-"ProgressTextDownloadingSearchIndices" -> "Downloading semantic search indices\[Ellipsis]",
-"ProgressTextUnpackingFiles" -> "Unpacking files\[Ellipsis]"
+"DownloadRedownloadPrompt" -> "Certains fichiers install\[EAcute]s localement semblent \[EHat]tre incomplets ou corrompus :\n\n`1`\n\nSouhaitez\[Hyphen]vous les t\[EAcute]l\[EAcute]charger \[AGrave] nouveau ?",
+"DownloadRetryPrompt" -> "Le t\[EAcute]l\[EAcute]chargement de certaines ressources de recherche s\[EAcute]mantique ne s\[CloseCurlyQuote]est pas termin\[EAcute]. Souhaitez\[Hyphen]vous r\[EAcute]essayer ?",
+"ProgressTextDownloadingSearchIndices" -> "T\[EAcute]l\[EAcute]chargement des indices de recherche s\[EAcute]mantique\[Ellipsis]",
+"ProgressTextUnpackingFiles" -> "D\[EAcute]compression des fichiers\[Ellipsis]"
 }
 @|
 @|

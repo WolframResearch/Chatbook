@@ -68,7 +68,7 @@ When `Automatic`, resolved by `chooseMaxCellStringLength` (`Settings.wl`): if `M
 
 ### Implementation
 
-The resolved value is used as the initial `$cellStringBudget` in `makeChatMessages` (`ChatMessages.wl`), which dynamically decreases the budget as messages are added based on token pressure: `$cellStringBudget = Ceiling[(1 - $tokenPressure) * $initialCellStringBudget]`, dropping to `0` when the remaining token budget falls below `$reservedTokens` (500). Each cell is serialized via `CellToString` with `"MaxCellStringLength" -> $cellStringBudget` (`ChatMessages.wl`), which truncates cell content exceeding this limit.
+The resolved value is used as the initial `$cellStringBudget` in `makeChatMessages` (`ChatMessages.wl`), which dynamically decreases the budget as messages are added based on token pressure: `$cellStringBudget = Ceiling[(1 - $tokenPressure) * $initialCellStringBudget]`, dropping to `0` when the remaining token budget falls below `$reservedTokens` (500). When `"PromptCacheOptimization"` is `True`, the budget stays at its initial value for chat history instead (see [`"PromptCacheOptimization"`](prompting.md#promptcacheoptimization)). Each cell is serialized via `CellToString` with `"MaxCellStringLength" -> $cellStringBudget` (`ChatMessages.wl`), which truncates cell content exceeding this limit.
 
 ### Dependent Settings
 
@@ -112,7 +112,6 @@ Additionally, `truncateString` is used throughout `Serialization.wl` for other c
 Special local overrides within `Serialization.wl`:
 
 - `GridBox` table rendering temporarily sets `$maxOutputCellStringLength = 2*$cellPageWidth` for table cell content.
-- `getExamplesString` (documentation example extraction) temporarily sets it to `100` for compact example summaries.
 - Cells matching `$$noTruncateStyle` (`"AlphabeticalListing"`) temporarily set it to `Infinity` to disable truncation entirely.
 
 ### Chat Mode Overrides
@@ -249,4 +248,4 @@ When `True`, LLM responses are processed immediately rather than being queued fo
 
 ### Preferences UI
 
-Exposed in the notebook preferences UI as "Enable automatic assistance".
+Not currently exposed in the preferences UI or the sidebar. It can be set with `CurrentChatSettings` or in the notebook's `TaggingRules`. Sending a cell with the "Send to LLM" widget uses assistance mode for that one send only and does not change this setting.

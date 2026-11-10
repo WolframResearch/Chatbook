@@ -61,9 +61,16 @@ VerificationTest[
 (*Tools*)
 VerificationTest[
     Sort[ #[ "Data" ][ "CanonicalName" ] & /@ GenerateLLMConfiguration[ "NotebookAssistant" ][ "Tools" ] ],
-    { "CreateNotebook", "DocumentationSearcher", "WebFetcher", "WolframAlpha", "WolframLanguageEvaluator" },
+    {
+        "CreateNotebook",
+        "DocumentationLookup",
+        "DocumentationSearcher",
+        "WebFetcher",
+        "WolframAlpha",
+        "WolframLanguageEvaluator"
+    },
     SameTest -> MatchQ,
-    TestID   -> "Named-Tools@@Tests/GenerateLLMConfiguration.wlt:62,1-67,2"
+    TestID   -> "Named-Tools@@Tests/GenerateLLMConfiguration.wlt:62,1-74,2"
 ]
 
 VerificationTest[
@@ -73,7 +80,7 @@ VerificationTest[
     ],
     { "WebSearcher" },
     SameTest -> MatchQ,
-    TestID   -> "Named-Tools-Filtered@@Tests/GenerateLLMConfiguration.wlt:69,1-77,2"
+    TestID   -> "Named-Tools-Filtered@@Tests/GenerateLLMConfiguration.wlt:76,1-84,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -83,21 +90,21 @@ VerificationTest[
     model = GenerateLLMConfiguration[ "NotebookAssistant" ][ "Model" ],
     KeyValuePattern[ "Authentication" -> "LLMKit" ],
     SameTest -> MatchQ,
-    TestID   -> "Model@@Tests/GenerateLLMConfiguration.wlt:82,1-87,2"
+    TestID   -> "Model@@Tests/GenerateLLMConfiguration.wlt:89,1-94,2"
 ]
 
 VerificationTest[
     model[ "Service" ],
-    If[ $VersionNumber >= 14.3, _String? (StringStartsQ[ "LLMKit" ]), _String ],
+    _String? (StringStartsQ[ "LLMKit" ]),
     SameTest -> MatchQ,
-    TestID   -> "Model-Service@@Tests/GenerateLLMConfiguration.wlt:89,1-94,2"
+    TestID   -> "Model-Service@@Tests/GenerateLLMConfiguration.wlt:96,1-101,2"
 ]
 
 VerificationTest[
     model[ "Name" ],
     _String,
     SameTest -> MatchQ,
-    TestID   -> "Model-Name@@Tests/GenerateLLMConfiguration.wlt:96,1-101,2"
+    TestID   -> "Model-Name@@Tests/GenerateLLMConfiguration.wlt:103,1-108,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -108,5 +115,5 @@ VerificationTest[
     Failure[ "GenerateLLMConfiguration::PersonaNotFound", _ ],
     { GenerateLLMConfiguration::PersonaNotFound },
     SameTest -> MatchQ,
-    TestID   -> "Error-1@@Tests/GenerateLLMConfiguration.wlt:106,1-112,2"
+    TestID   -> "Error-1@@Tests/GenerateLLMConfiguration.wlt:113,1-119,2"
 ]
