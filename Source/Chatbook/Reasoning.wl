@@ -297,6 +297,14 @@ convertReasoningChunk[ settings_, chunk: KeyValuePattern[ "ReasoningChunk" -> te
     )
 |>;
 
+(* A new part of the summary starts. It's separated from the summary already shown by an empty line, and a part that
+   opens the summary needs no separator: *)
+convertReasoningChunk[ settings_, chunk: KeyValuePattern[ "ReasoningPartStart" -> _ ] ] :=
+    If[ StringQ @ $reasoningStreamID,
+        <| KeyDrop[ chunk, { "ReasoningPartStart", "Type" } ], "ContentChunk" -> "\n\n" |>,
+        Nothing
+    ];
+
 convertReasoningChunk[ settings_, chunk: KeyValuePattern[ "ResponseContent" -> parts_List ] ] := <|
     KeyDrop[ chunk, "ResponseContent" ],
     "ContentChunk" -> StringJoin[ reasoningPartString[ settings, # ] & /@ parts ]
