@@ -346,4 +346,26 @@ VerificationTest[
     TestID   -> "StopChat-Tool-Call-Cancelled-GH#575@@Tests/SendChat.wlt:331,1-347,2"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*initializeChatSubmit*)
+
+(* Loading what the first request needs must not send anything: *)
+VerificationTest[
+    Module[ { requests = 0 },
+        Block[ { URLSubmit = (requests++; None) &, ServiceSubmit = (requests++; None) &, URLRead = (requests++; None) & },
+            {
+                Wolfram`Chatbook`Common`initializeChatSubmit @ <|
+                    "Model"         -> <| "Service" -> "OpenAI", "Name" -> "gpt-4o" |>,
+                    "RequestMethod" -> "ChatCompletions"
+                |>,
+                Wolfram`Chatbook`Common`initializeChatSubmit @ Missing[ "NotAuthenticated" ],
+                requests
+            }
+        ]
+    ],
+    { Null, Null, 0 },
+    TestID -> "InitializeChatSubmit@@Tests/SendChat.wlt:354,1-369,2"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)

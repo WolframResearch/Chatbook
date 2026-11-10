@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions"
+    TestID   -> "GetDefinitions@@Tests/Services.wlt:4,1-9,2"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext"
+    TestID   -> "LoadContext@@Tests/Services.wlt:11,1-16,2"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -75,7 +75,7 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "Definitions"
+    TestID   -> "Definitions@@Tests/Services.wlt:24,1-79,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -88,7 +88,7 @@ VerificationTest[
     ],
     If[ $usingLLMServices, None, _Association ],
     SameTest -> MatchQ,
-    TestID   -> "ServiceIcon-DoesNotBuildServiceTable"
+    TestID   -> "ServiceIcon-DoesNotBuildServiceTable@@Tests/Services.wlt:84,1-92,2"
 ]
 
 VerificationTest[
@@ -98,7 +98,7 @@ VerificationTest[
     ],
     { },
     SameTest -> SameQ,
-    TestID   -> "ServiceIcon-SameAsCachedServiceTable"
+    TestID   -> "ServiceIcon-SameAsCachedServiceTable@@Tests/Services.wlt:94,1-102,2"
 ]
 
 VerificationTest[
@@ -108,7 +108,7 @@ VerificationTest[
     ],
     { },
     SameTest -> SameQ,
-    TestID   -> "ServiceIcon-SameAsFullTableLookup"
+    TestID   -> "ServiceIcon-SameAsFullTableLookup@@Tests/Services.wlt:104,1-112,2"
 ]
 
 VerificationTest[
@@ -118,7 +118,7 @@ VerificationTest[
     ],
     { "", True },
     SameTest -> MatchQ,
-    TestID   -> "ServiceIcon-CachedServiceTable-Unknown"
+    TestID   -> "ServiceIcon-CachedServiceTable-Unknown@@Tests/Services.wlt:114,1-122,2"
 ]
 
 (* Calls made while $availableServices is building the table see the temporarily empty table: *)
@@ -133,7 +133,7 @@ VerificationTest[
     ],
     { True, <| |>, { "".. } },
     SameTest -> MatchQ,
-    TestID   -> "ServiceIcon-DuringServiceTableBuild"
+    TestID   -> "ServiceIcon-DuringServiceTableBuild@@Tests/Services.wlt:125,1-137,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -152,7 +152,7 @@ VerificationTest[
     ],
     { "P", 0, "D!", 1, None },
     SameTest -> MatchQ,
-    TestID   -> "GetServiceIcon-OnlyEvaluatesRequestedIcon"
+    TestID   -> "GetServiceIcon-OnlyEvaluatesRequestedIcon@@Tests/Services.wlt:142,1-156,2"
 ]
 
 VerificationTest[
@@ -166,7 +166,7 @@ VerificationTest[
         1
     },
     SameTest -> MatchQ,
-    TestID   -> "GetServiceIcon-CustomServices"
+    TestID   -> "GetServiceIcon-CustomServices@@Tests/Services.wlt:158,1-170,2"
 ]
 
 VerificationTest[
@@ -175,7 +175,7 @@ VerificationTest[
     ],
     $customServiceIcons,
     SameTest -> SameQ,
-    TestID   -> "GetServiceIcon-CustomServices-SameAsFullTable"
+    TestID   -> "GetServiceIcon-CustomServices-SameAsFullTable@@Tests/Services.wlt:172,1-179,2"
 ]
 
 VerificationTest[
@@ -189,7 +189,7 @@ VerificationTest[
     ],
     { { Missing[ "KeyAbsent", "Ollama" ], "P" }, { Missing[ "KeyAbsent", "Ollama" ], "P" } },
     SameTest -> MatchQ,
-    TestID   -> "GetServiceIcon-CloudExclusions"
+    TestID   -> "GetServiceIcon-CloudExclusions@@Tests/Services.wlt:181,1-193,2"
 ]
 
 VerificationTest[
@@ -201,7 +201,7 @@ VerificationTest[
     ],
     { { icon: Except[ _Missing ], Missing[ "KeyAbsent", "Plain" ] }, { icon_, Missing[ "KeyAbsent", "Plain" ] } },
     SameTest -> MatchQ,
-    TestID   -> "GetServiceIcon-FallbackServices"
+    TestID   -> "GetServiceIcon-FallbackServices@@Tests/Services.wlt:195,1-205,2"
 ]
 
 VerificationTest[
@@ -217,7 +217,7 @@ VerificationTest[
     ],
     { True, True, False, False, False, False },
     SameTest -> SameQ,
-    TestID   -> "LiteralModelListQ"
+    TestID   -> "LiteralModelListQ@@Tests/Services.wlt:207,1-221,2"
 ]
 
 (* Building the table memoizes standardized models from literal model lists, so the full table is built as usual: *)
@@ -233,7 +233,7 @@ VerificationTest[
     ],
     { Missing[ "KeyAbsent", "Plain" ], True },
     SameTest -> MatchQ,
-    TestID   -> "GetServiceIcon-LiteralModelLists-FullTable"
+    TestID   -> "GetServiceIcon-LiteralModelLists-FullTable@@Tests/Services.wlt:224,1-237,2"
 ]
 
 (* Unexpected service information (e.g. a failure from LLMServiceInformation) also uses the full table as usual: *)
@@ -246,7 +246,7 @@ VerificationTest[
     ],
     { Missing[ "KeyAbsent", "Plain" ], True },
     SameTest -> MatchQ,
-    TestID   -> "GetServiceIcon-InvalidInfo-FullTable-1"
+    TestID   -> "GetServiceIcon-InvalidInfo-FullTable-1@@Tests/Services.wlt:240,1-250,2"
 ]
 
 VerificationTest[
@@ -258,7 +258,7 @@ VerificationTest[
     ],
     { Missing[ "KeyAbsent", "Plain" ], True },
     SameTest -> MatchQ,
-    TestID   -> "GetServiceIcon-InvalidInfo-FullTable-2"
+    TestID   -> "GetServiceIcon-InvalidInfo-FullTable-2@@Tests/Services.wlt:252,1-262,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -275,7 +275,7 @@ VerificationTest[
     ],
     If[ $usingLLMServices, None, _Association ],
     SameTest -> MatchQ,
-    TestID   -> "ResolveFullModelSpec-LLMKit-DoesNotBuildServiceTable"
+    TestID   -> "ResolveFullModelSpec-LLMKit-DoesNotBuildServiceTable@@Tests/Services.wlt:267,1-279,2"
 ]
 
 VerificationTest[
@@ -285,7 +285,7 @@ VerificationTest[
         KeyValuePattern @ { "Authentication" -> "LLMKit", "Icon" -> _, "ResolvedModel" -> True }
     },
     SameTest -> MatchQ,
-    TestID   -> "ResolveFullModelSpec-LLMKit-Resolved"
+    TestID   -> "ResolveFullModelSpec-LLMKit-Resolved@@Tests/Services.wlt:281,1-289,2"
 ]
 
 VerificationTest[
@@ -295,7 +295,110 @@ VerificationTest[
     ],
     $testLLMKitModel[ "Icon" ],
     SameTest -> SameQ,
-    TestID   -> "ResolveFullModelSpec-LLMKit-Icon"
+    TestID   -> "ResolveFullModelSpec-LLMKit-Icon@@Tests/Services.wlt:291,1-299,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*LLM Kit Info Request*)
+
+(* Evaluates with a signed-in test user, no LLM Kit info, and without sending any requests. `sent` counts the requests
+   of startLLMKitInfoRequest, and `updates` the requests that getLLMKitInfo0 sends itself. *)
+withLLMKitInfoTest // Attributes = { HoldFirst };
+
+withLLMKitInfoTest[ eval_ ] := (
+    LLMSynthesize;
+    Block[
+        {
+            $CloudConnected = True,
+            $CloudUserID    = "chatbook-test@example.com",
+            $CloudBase      = "https://www.wolframcloud.com/",
+            Wolfram`LLMFunctions`Common`$LLMKitInfo = None,
+            Wolfram`Chatbook`Services`Private`$llmKitInfoRequest = None,
+            ServiceSubmit = Function[ sent++; submitted = Association @ Cases[ { ## }, _Rule ]; None ],
+            submitted = <| |>,
+            sent = 0,
+            updates = 0
+        },
+        Internal`InheritedBlock[ { Wolfram`LLMFunctions`Common`UpdateLLMKitInfo },
+            Wolfram`LLMFunctions`Common`UpdateLLMKitInfo[ ] := (updates++; Null);
+            eval
+        ]
+    ]
+);
+
+(* Gives a response with this body to the handler that startLLMKitInfoRequest passed to ServiceSubmit, with only the
+   keys that it asked for, as URLSubmit does: *)
+sendLLMKitInfoResponse[ body_String ] := submitted[ HandlerFunctions ][ "BodyReceived" ][
+    KeyTake[ <| "BodyByteArray" -> StringToByteArray[ body, "UTF-8" ] |>, submitted[ HandlerFunctionsKeys ] ]
+];
+
+$testLLMKitInfoBody = "{\"success\": true, \"data\": {\"userHasSubscription\": true}}";
+
+(* The response of the request that was sent ahead of time is used, and no other request is sent: *)
+VerificationTest[
+    withLLMKitInfoTest @ Module[ { started, info },
+        Wolfram`Chatbook`Common`startLLMKitInfoRequest[ ];
+        Wolfram`Chatbook`Common`startLLMKitInfoRequest[ ];
+        started = Wolfram`Chatbook`Services`Private`$llmKitInfoRequest;
+        sendLLMKitInfoResponse @ $testLLMKitInfoBody;
+        info = Wolfram`Chatbook`Services`Private`getLLMKitInfo0[ ];
+        { KeyDrop[ started, "Task" ], info, sent, updates, Wolfram`Chatbook`Services`Private`$llmKitInfoRequest }
+    ],
+    {
+        <| "User" -> "chatbook-test@example.com", "Cloud" -> "https://www.wolframcloud.com/", "Body" -> None |>,
+        <| "userHasSubscription" -> True |>,
+        1,
+        0,
+        None
+    },
+    TestID -> "LLMKitInfoRequest-ResponseUsed@@Tests/Services.wlt:339,1-356,2"
+]
+
+(* Without a usable response, getLLMKitInfo0 sends its own request as before: *)
+VerificationTest[
+    withLLMKitInfoTest @ {
+        (* No response: *)
+        Wolfram`Chatbook`Common`startLLMKitInfoRequest[ ];
+        Wolfram`Chatbook`Services`Private`getLLMKitInfo0[ ];
+        updates,
+        (* A response that is not the LLM Kit info: *)
+        Wolfram`Chatbook`Common`startLLMKitInfoRequest[ ];
+        sendLLMKitInfoResponse[ "{\"success\": false}" ];
+        Wolfram`Chatbook`Services`Private`getLLMKitInfo0[ ];
+        updates,
+        (* A response for another user: *)
+        Wolfram`Chatbook`Common`startLLMKitInfoRequest[ ];
+        sendLLMKitInfoResponse @ $testLLMKitInfoBody;
+        Block[ { $CloudUserID = "other-user@example.com" }, Wolfram`Chatbook`Services`Private`getLLMKitInfo0[ ] ];
+        updates,
+        (* No request was sent ahead of time: *)
+        Wolfram`Chatbook`Services`Private`getLLMKitInfo0[ ];
+        updates,
+        sent
+    },
+    { 1, 2, 3, 4, 3 },
+    TestID -> "LLMKitInfoRequest-Fallback@@Tests/Services.wlt:359,1-382,2"
+]
+
+(* The response is decoded as UTF-8: *)
+VerificationTest[
+    withLLMKitInfoTest[
+        Wolfram`Chatbook`Common`startLLMKitInfoRequest[ ];
+        sendLLMKitInfoResponse[ "{\"success\": true, \"data\": {\"plan\": \"caf\[EAcute] \:2713\"}}" ];
+        { Wolfram`Chatbook`Services`Private`getLLMKitInfo0[ ], updates }
+    ],
+    { <| "plan" -> "caf\[EAcute] \:2713" |>, 0 },
+    TestID -> "LLMKitInfoRequest-UTF8@@Tests/Services.wlt:385,1-393,2"
+]
+
+(* Nothing is sent when the user is not signed in: *)
+VerificationTest[
+    withLLMKitInfoTest @ Block[ { $CloudConnected = False, $CloudUserID = None },
+        { Wolfram`Chatbook`Common`startLLMKitInfoRequest[ ], sent, Wolfram`Chatbook`Services`Private`$llmKitInfoRequest }
+    ],
+    { Null, 0, None },
+    TestID -> "LLMKitInfoRequest-NotSignedIn@@Tests/Services.wlt:396,1-402,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

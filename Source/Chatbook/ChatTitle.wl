@@ -13,7 +13,6 @@ $maxTitleLength         = 30;
 $hardMaxTitleLength     = 50; (* Use 40 for gpt-4o-mini *)
 $maxContextLength       = 100000; (* characters *)
 $multimodalTitleContext = False;
-$tokenLengthMultiplier  = 3.0;
 $defaultEvaluator       = <| "Model" -> <| "Service" -> Automatic, "Name" -> "gpt-4.1-nano" |> |>;
 
 $titlePrompt := "\
@@ -202,7 +201,7 @@ postProcessChatTitle[ maxLength_ ] :=
     postProcessChatTitle[ maxLength, ## ] &;
 
 postProcessChatTitle[ maxLength_Integer? Positive, title0_String, KeyValuePattern[ "StatusCode" -> 200 ] ] := Enclose[
-    Module[ { title, clean, length },
+    Module[ { title, clean },
 
         title = ConfirmBy[
             StringReplace[
@@ -220,8 +219,6 @@ postProcessChatTitle[ maxLength_Integer? Positive, title0_String, KeyValuePatter
 
         If[ StringLength @ clean < maxLength / 2, clean = title ];
 
-        length = ConfirmBy[ titleLength @ clean, NumberQ, "Length" ];
-
         Which[
             (* This test is meant to catch outputs where the LLM attempted to directly answer the user's query in the
                transcript instead of writing a title. This might not be necessary anymore since the prompting has been
@@ -234,8 +231,9 @@ postProcessChatTitle[ maxLength_Integer? Positive, title0_String, KeyValuePatter
 
             (* This test is meant to catch outputs where the LLM didn't understand the instructions and returned
                something like "Sure, here's a title for you: ...". This might not be necessary anymore since the
-               prompting has been improved. *)
-            length > maxLength,
+               prompting has been improved. Titles are measured in characters, which is what matters for the space
+               they take in the history list. *)
+            StringLength @ clean > maxLength,
             Failure[
                 "TitleLength",
                 <| "MessageTemplate" -> "Generated title exceeds the maximum length.", "Title" -> clean |>
@@ -274,24 +272,6 @@ removeRedundantSubstrings // endDefinition;
 
 $$connector = "in"|"with"|"using";
 $$wolframLanguage = Longest[ "Mathematica"|"Wolfram Language"|"Wolfram Lang"|"Wolfram"|"WL" ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*titleLength*)
-(* Measure title length using both character and token counts.
-   LLMs can estimate character counts for many words, but not reliably for all,
-   so token counts better handle unusually wide or single-token words.
-   Combining both reduces errors (e.g., " Histogram" is one token). *)
-titleLength // beginDefinition;
-titleLength[ title_String ] := (StringLength @ title + tokenLength @ title) / 2.0;
-titleLength // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*tokenLength*)
-tokenLength // beginDefinition;
-tokenLength[ title_String ] := Length @ cachedTokenizer[ "gpt-4o" ][ title ] * $tokenLengthMultiplier;
-tokenLength // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

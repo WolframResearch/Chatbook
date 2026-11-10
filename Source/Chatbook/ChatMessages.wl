@@ -1058,9 +1058,16 @@ cachedHistoryMessageQ // endDefinition;
 cutMessageContent // beginDefinition;
 
 cutMessageContent[ as_, message: KeyValuePattern[ "Content" -> content_String ], count_, budget_ ] := Enclose[
-    Module[ { scale, resized },
-        scale   = ConfirmBy[ 0.9 * N[ budget / count ], NumberQ, "Scale" ];
-        resized = ConfirmBy[ truncateString[ content, Floor[ scale * StringLength @ content ] ], StringQ, "Resized" ];
+    Module[ { scale, length, resized },
+        scale  = ConfirmBy[ 0.9 * N[ budget / count ], NumberQ, "Scale" ];
+        length = Floor[ scale * StringLength @ content ];
+        (* A few characters can't be shortened any further (and wouldn't say anything), so nothing is left of the
+           content when the budget is that small: *)
+        resized = ConfirmBy[
+            If[ length < $minCutMessageLength, "", truncateString[ content, length ] ],
+            StringQ,
+            "Resized"
+        ];
         <| message, "Content" -> resized |>
     ],
     throwInternalFailure[ cutMessageContent[ as, message, count, budget ], ## ] &
@@ -1079,6 +1086,8 @@ cutMessageContent[ as_, message_String, count_, budget_ ] :=
     cutMessageContent[ as, <| "Content" -> message, "Type" -> "Text" |>, count, budget ];
 
 cutMessageContent // endDefinition;
+
+$minCutMessageLength = 20;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1122,7 +1131,8 @@ tokenCountCacheKey // beginDefinition;
    can cost more than counting them: *)
 tokenCountCacheKey[ as_Association, tokenizer_, content_String ] :=
     With[ { name = as[ "TokenizerName" ] },
-        { name, Hash @ content } /; StringQ @ name && $cachedTokenizers[ name ] === tokenizer
+        { name, TrueQ @ $estimateTokenCounts, Hash @ content } /;
+            StringQ @ name && $cachedTokenizers[ name ] === tokenizer
     ];
 
 tokenCountCacheKey[ as_, tokenizer_, content_ ] := None;
@@ -2161,10 +2171,154 @@ $tokenizerDirectory := $tokenizerDirectory = FileNameJoin @ { $thisPaclet[ "Loca
 (* ::Subsubsubsection::Closed:: *)
 (*Pre-cached small tokenizer functions*)
 $cachedTokenizers[ "chat-bison"   ] = ToCharacterCode[ #, "UTF8" ] &;
-$cachedTokenizers[ "gpt-4-vision" ] = If[ graphicsQ @ #, gpt4ImageTokenizer, cachedTokenizer[ "gpt-4" ] ][ # ] &;
-$cachedTokenizers[ "gpt-4o"       ] = If[ graphicsQ @ #, gpt4ImageTokenizer, cachedTokenizer[ "gpt-4o-text" ] ][ # ] &;
-$cachedTokenizers[ "claude-3"     ] = If[ graphicsQ @ #, claude3ImageTokenizer, cachedTokenizer[ "claude" ] ][ # ] &;
-$cachedTokenizers[ "generic"      ] = If[ graphicsQ @ #, { }, cachedTokenizer[ "gpt-2" ][ # ] ] &;
+$cachedTokenizers[ "gpt-4-vision" ] = If[ graphicsQ @ #, gpt4ImageTokenizer, textTokenizer[ "gpt-4" ] ][ # ] &;
+$cachedTokenizers[ "gpt-4o"       ] = If[ graphicsQ @ #, gpt4ImageTokenizer, textTokenizer[ "gpt-4o-text" ] ][ # ] &;
+$cachedTokenizers[ "claude-3"     ] = If[ graphicsQ @ #, claude3ImageTokenizer, textTokenizer[ "claude" ] ][ # ] &;
+$cachedTokenizers[ "generic"      ] = If[ graphicsQ @ #, { }, textTokenizer[ "gpt-2" ][ # ] ] &;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*textTokenizer*)
+(* The tokenizer that the tokenizers above use for text: an estimate of the token count by default (see
+   estimatedTokenizer), or the named tokenizer when $estimateTokenCounts is False. The tokenizers that are not listed
+   above (e.g. "gpt-4o-text" or "gpt-4") always count exactly. *)
+textTokenizer // beginDefinition;
+textTokenizer[ name_String ] := If[ TrueQ @ $estimateTokenCounts, estimatedTokenizer, cachedTokenizer @ name ];
+textTokenizer // endDefinition;
+
+$estimateTokenCounts = True;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Token Count Estimates*)
+(*
+    Counting tokens exactly needs a NetEncoder whose first use takes about a second in each session, and the
+    tokenizers that we have are not the ones of the current models anyway. Token counts are only used to keep requests
+    within the context window, so an estimate that doesn't undercount is enough.
+
+    The estimate is a weighted sum of character statistics. The weights were fitted so that the estimate is rarely
+    below the larger of the gpt-4o and claude tokenizer counts, on source code (WL and other languages), markdown,
+    documentation snippets, notebook expressions, JSON, numbers, base64, and prose in several languages. Compared to
+    the gpt-4o count, it is about 1.1-1.3 times as high for English text and code, 1.4-1.8 times for German, French,
+    Spanish, Chinese, Japanese and Korean, and 4.5-6 times for Greek, Cyrillic and Arabic text (for which the claude
+    tokenizer gives three to five times as many tokens as gpt-4o). Short strings are also overcounted more. A single
+    English text or piece of code of a few thousand characters is rarely below the gpt-4o count, and then by at most
+    about 12%. Long runs of lowercase letters that aren't words (e.g. DNA sequences) are an exception: they can be
+    counted two to three times too low. It takes about 0.4 microseconds per character.
+*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*estimatedTokenizer*)
+(* Tokenizers give a list of tokens, of which only the length is used: *)
+estimatedTokenizer // beginDefinition;
+estimatedTokenizer[ text_String ] := ConstantArray[ 0, estimateTokenCount @ text ];
+estimatedTokenizer // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*estimateTokenCount*)
+estimateTokenCount // beginDefinition;
+estimateTokenCount[ "" ] := 0;
+estimateTokenCount[ text_String ] := Ceiling[ $tokenEstimateWeights . tokenEstimateFeatures @ text ];
+estimateTokenCount // endDefinition;
+
+(* The weights of the counts that tokenEstimateFeatures gives, in the same order: *)
+$tokenEstimateWeights = {
+    0.35, (* words that follow a space *)
+    2.25, (* other words *)
+    1.1,  (* uppercase letters that follow a lowercase letter *)
+    0.15, (* lowercase letters after the first six letters of a word *)
+    0.6,  (* uppercase letters inside a word *)
+    1.25, (* numbers *)
+    0.4,  (* digits *)
+    1.05, (* runs of spaces *)
+    0.02, (* spaces *)
+    0.85, (* newlines and tabs *)
+    0.2,  (* ASCII punctuation *)
+    5.0,  (* control characters and characters from U+0080 to U+036F (accented Latin letters, symbols) *)
+    2.0,  (* characters from U+0370 to U+07FF (Greek, Cyrillic, Armenian, Hebrew, Arabic) *)
+    1.85  (* characters above U+07FF *)
+};
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*tokenEstimateFeatures*)
+(* Everything here is arithmetic on packed arrays of the length of the text, so that long texts are counted quickly.
+   A "word" is a run of ASCII letters, and uppercase after lowercase (as in "ListPlot") starts a new part of it. *)
+tokenEstimateFeatures // beginDefinition;
+
+tokenEstimateFeatures[ text_String ] :=
+    Module[
+        {
+            codes, n, class, previous, lower, upper, letter, digit, space,
+            afterLower, afterLetter, afterDigit, afterSpace, starts, position
+        },
+
+        codes = ToCharacterCode @ text;
+        n     = Length @ codes;
+
+        (* The class of each character (see $characterClasses), and of the character before it: *)
+        class    = $characterClasses[[ Clip[ codes, { 0, 127 } ] + 1 ]];
+        class    = class + UnitStep[ codes - 880 ] + UnitStep[ codes - 2048 ];
+        previous = Prepend[ Most @ class, 0 ];
+
+        lower  = characterClassQ[ class, 1 ];
+        upper  = characterClassQ[ class, 2 ];
+        letter = lower + upper;
+        digit  = characterClassQ[ class, 3 ];
+        space  = characterClassQ[ class, 4 ];
+
+        afterLower  = characterClassQ[ previous, 1 ];
+        afterLetter = afterLower + characterClassQ[ previous, 2 ];
+        afterDigit  = characterClassQ[ previous, 3 ];
+        afterSpace  = characterClassQ[ previous, 4 ];
+
+        (* The position of each letter in its part of a word (0 for the first one): *)
+        starts = Unitize[ (1 - letter) + letter * (1 - afterLetter) + upper * afterLower ];
+        starts[[ 1 ]] = 1;
+        position = Range @ n - Pick[ Range @ n, starts, 1 ][[ Accumulate @ starts ]];
+
+        {
+            Total[ letter * afterSpace ],
+            Total[ letter * (1 - afterLetter) * (1 - afterSpace) ],
+            Total[ upper * afterLower ],
+            Total[ lower * UnitStep[ position - 6 ] ],
+            Total[ upper * afterLetter * (1 - afterLower) ],
+            Total[ digit * (1 - afterDigit) ],
+            Total @ digit,
+            Total[ space * (1 - afterSpace) ],
+            Total @ space,
+            Total @ characterClassQ[ class, 5 ],
+            Total @ characterClassQ[ class, 6 ],
+            Total @ characterClassQ[ class, 7 ],
+            Total @ characterClassQ[ class, 8 ],
+            Total @ characterClassQ[ class, 9 ]
+        }
+    ];
+
+tokenEstimateFeatures // endDefinition;
+
+(* 1 where a character has the given class, and 0 elsewhere: *)
+characterClassQ // beginDefinition;
+characterClassQ[ class_List, k_Integer ] := 1 - Unitize[ class - k ];
+characterClassQ // endDefinition;
+
+(* The classes of the ASCII characters: 1 lowercase letter, 2 uppercase letter, 3 digit, 4 space, 5 newline or tab,
+   6 punctuation, 7 control character. Characters from U+0080 to U+036F also get class 7 (as DEL does, which Clip
+   maps them to), characters from U+0370 to U+07FF class 8, and higher ones class 9. *)
+$characterClasses = Developer`ToPackedArray @ Table[
+    Which[
+        97 <= c <= 122, 1,
+        65 <= c <= 90, 2,
+        48 <= c <= 57, 3,
+        c === 32, 4,
+        MemberQ[ { 9, 10, 13 }, c ], 5,
+        33 <= c <= 126, 6,
+        True, 7
+    ],
+    { c, 0, 127 }
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
