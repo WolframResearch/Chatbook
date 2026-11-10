@@ -94,10 +94,10 @@ focusedNotebookDisplay[ chatNB_, appContainer_ ] := Enclose[
                                 Tooltip[
                                     PaneSelector[
                                         {
-                                            "UncheckTrue"  -> chatbookIcon[ "SidebarFocusIndicatorUncheck", False, Transparent, color @ "NA_ChatInputFieldFocusFontHover" ],
-                                            "UncheckFalse" -> chatbookIcon[ "SidebarFocusIndicatorUncheck", False, Transparent, color @ "NA_ChatInputFieldFocusFont"      ],
-                                            "CheckTrue"    -> chatbookIcon[ "SidebarFocusIndicatorCheck",   False, Transparent, color @ "NA_ChatInputFieldFocusFontHover" ],
-                                            "CheckFalse"   -> chatbookIcon[ "SidebarFocusIndicatorCheck",   False, Transparent, color @ "NA_ChatInputFieldFocusFont"      ]
+                                            "UncheckTrue"  -> chatbookIcon[ "SidebarFocusIndicatorUncheck", False, Transparent, color @ "Blue_75C2EB_669CBD" ],
+                                            "UncheckFalse" -> chatbookIcon[ "SidebarFocusIndicatorUncheck", False, Transparent, color @ "Blue_128ED1_7FC7FB"      ],
+                                            "CheckTrue"    -> chatbookIcon[ "SidebarFocusIndicatorCheck",   False, Transparent, color @ "Blue_75C2EB_669CBD" ],
+                                            "CheckFalse"   -> chatbookIcon[ "SidebarFocusIndicatorCheck",   False, Transparent, color @ "Blue_128ED1_7FC7FB"      ]
                                         },
                                         Dynamic @ If[ Typeset`val, If[ Typeset`mouseOver, "CheckTrue", "CheckFalse" ], If[ Typeset`mouseOver, "UncheckTrue", "UncheckFalse" ] ],
                                         BaselinePosition -> Baseline,
@@ -118,7 +118,7 @@ focusedNotebookDisplay[ chatNB_, appContainer_ ] := Enclose[
                         focusedNotebookDisplay0[ chatNB, focused, locked, info ]
                     } },
                     Alignment        -> { Left, Baseline },
-                    BaseStyle        -> { "Text", FontColor -> color @ "NA_ChatInputFieldFocusFont", FontSize -> 13 },
+                    BaseStyle        -> { "Text", FontColor -> color @ "Blue_128ED1_7FC7FB", FontSize -> 13 },
                     BaselinePosition -> { 1, 2 } (* align to the text *)
                 ],
                 Alignment    -> Left,
@@ -150,10 +150,11 @@ focusedNotebookDisplay0[ chatNB_, focused_, locked_, info_ ] := Grid[
     Alignment        -> { Left, Baseline },
     BaselinePosition -> { 1, 1 }, (* align to the button *)
     Dividers         -> Center,
-    FrameStyle       -> color @ "NA_ChatInputFieldFocusDividerFrame"
+    FrameStyle       -> color @ "Gray75_51"
 ];
 
 focusedNotebookDisplay0[ sidebarCell_CellObject ] :=
+With[ { hoverColor = color @ "Blue_75C2EB_669CBD", defaultColor = color @ "Blue_128ED1_7FC7FB" },
 DynamicModule[
     {
         Typeset`val = TrueQ @ Replace[ CurrentChatSettings[ sidebarCell, "AllowSelectionContext" ], Automatic -> False ],
@@ -164,10 +165,10 @@ DynamicModule[
             { {
                 PaneSelector[
                     {
-                        "UncheckTrue"  -> chatbookIcon[ "SidebarFocusIndicatorUncheck", False, Transparent, color @ "NA_ChatInputFieldFocusFontHover" ],
-                        "UncheckFalse" -> chatbookIcon[ "SidebarFocusIndicatorUncheck", False, Transparent, color @ "NA_ChatInputFieldFocusFont"      ],
-                        "CheckTrue"    -> chatbookIcon[ "SidebarFocusIndicatorCheck",   False, Transparent, color @ "NA_ChatInputFieldFocusFontHover" ],
-                        "CheckFalse"   -> chatbookIcon[ "SidebarFocusIndicatorCheck",   False, Transparent, color @ "NA_ChatInputFieldFocusFont"      ]
+                        "UncheckTrue"  -> chatbookIcon[ "SidebarFocusIndicatorUncheck", False, Transparent, hoverColor   ],
+                        "UncheckFalse" -> chatbookIcon[ "SidebarFocusIndicatorUncheck", False, Transparent, defaultColor ],
+                        "CheckTrue"    -> chatbookIcon[ "SidebarFocusIndicatorCheck",   False, Transparent, hoverColor   ],
+                        "CheckFalse"   -> chatbookIcon[ "SidebarFocusIndicatorCheck",   False, Transparent, defaultColor ]
                     },
                     Dynamic @ If[ Typeset`val, If[ Typeset`mouseOver, "UncheckTrue", "UncheckFalse" ], If[ Typeset`mouseOver, "CheckTrue", "CheckFalse" ] ],
                     BaselinePosition -> Baseline,
@@ -175,7 +176,7 @@ DynamicModule[
                     ImageSize        -> Automatic
                 ]
                 ,
-                Style[ tr[ "SidebarFocusIndicator" ], FontColor -> Dynamic[ If[ Typeset`mouseOver, color @ "NA_ChatInputFieldFocusFontHover", color @ "NA_ChatInputFieldFocusFont" ] ] ]
+                Style[ tr[ "SidebarFocusIndicator" ], FontColor -> Dynamic[ If[ Typeset`mouseOver, hoverColor, defaultColor ] ] ]
             } },
             Alignment        -> { Left, Baseline },
             BaseStyle        -> { "Text", FontSize -> 12.35 },
@@ -188,6 +189,7 @@ DynamicModule[
           "MouseClicked" :> (Function[ Typeset`val = #; CurrentChatSettings[ sidebarCell, "AllowSelectionContext" ] = # ] @ Not[ Typeset`val ])},
       PassEventsDown -> True
     ]
+]
 ];
 
 focusedNotebookDisplay0 // endDefinition;
@@ -236,7 +238,7 @@ currentNotebookButton[ as: KeyValuePattern @ { "NotebookObject" -> nbo_NotebookO
         ],
         SetSelectedNotebook @ nbo,
         Appearance       -> "Suppressed",
-        BaseStyle        -> { "Text", FontColor -> color @ "NA_ChatInputFieldFocusFont", FontSize -> 13 },
+        BaseStyle        -> { "Text", FontColor -> color @ "Blue_128ED1_7FC7FB", FontSize -> 13 },
         BaselinePosition -> Baseline,
         BoxID            -> "NAFocusMenuGoToNotebook" <> If[ StringQ @ title, title, "" ]
     ];
@@ -261,7 +263,7 @@ currentNotebookButtonLabel[ title_ ] := Mouseover[
         {
             chatbookIcon[ "WorkspaceFocusIndicatorNotebookActive", False ],
             Spacer[ 3 ],
-            Style[ title, FontColor -> color @ "NA_ChatInputFieldFocusNotebookIconHover_3" ]
+            Style[ title, FontColor -> color @ "Blue_3383AC_58BBEA" ]
         },
         BaselinePosition -> Baseline
     ],
@@ -287,7 +289,7 @@ selectNotebookFocusMenu[ chatNB_, locked_, first_, rest_ ] := Tooltip[
             otherNotebookActions[ chatNB, locked, rest ]
         },
         Appearance       -> "Suppressed",
-        BaseStyle        -> { "Text", FontColor -> color @ "NA_ChatInputFieldFocusFont", FontSize -> 13, Magnification -> Inherited / 0.85 },
+        BaseStyle        -> { "Text", FontColor -> color @ "Blue_128ED1_7FC7FB", FontSize -> 13, Magnification -> Inherited / 0.85 },
         BaselinePosition -> Baseline
     ],
     tr[ "WorkspaceFocusIndicatorMenuTooltip" ]

@@ -47,7 +47,7 @@ Graphics[
 							}
 						]
 					},
-					FaceForm @ LightDarkSwitched @ RGBColor[1., 1., 1., 1.]
+					FaceForm @ color @ "Gray100_10"
 				],
 				Style[
 					{
@@ -97,7 +97,7 @@ Graphics[
 					CapForm @ Butt,
 					JoinForm @ {Miter, 1.},
 					Thickness @ 0.08600345478355505,
-					LightDarkSwitched @ RGBColor[0.5372549019607843, 0.5372549019607843, 0.5372549019607843, 1.]
+					color @ "Gray54_Auto"
 				],
 				Style[
 					{
@@ -186,7 +186,7 @@ Graphics[
 							}
 						]
 					},
-					FaceForm @ LightDarkSwitched @ RGBColor[1., 1., 1., 1.]
+					FaceForm @ color @ "Gray100_10"
 				]
 			}
 		}

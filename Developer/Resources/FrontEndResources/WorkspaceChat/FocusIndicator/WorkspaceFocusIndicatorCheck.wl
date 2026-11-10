@@ -31,7 +31,7 @@ RawBoxes @ ToBoxes @ Mouseover[
       }
      ]
     },
-    FaceForm @ color @ "NA_ChatInputFieldFocus_Gray_1"
+    FaceForm @ color @ "Gray54_50"
    ],
    Style[
     {
@@ -53,7 +53,7 @@ RawBoxes @ ToBoxes @ Mouseover[
     },
     CapForm[ "Round" ],
     JoinForm[ "Round" ],
-    color @ "NA_ChatInputFieldFocus_Gray_4"
+    color @ "Gray100_14"
    ]
   },
   (* ImageMargins -> { { 0, 1 }, { 1, 0 } }, *)
@@ -92,7 +92,7 @@ RawBoxes @ ToBoxes @ Mouseover[
       }
      ]
     },
-    FaceForm @ color @ "NA_ChatInputFieldFocus_Gray_2"
+    FaceForm @ color @ "Gray75_71"
    ],
    Style[
     {
@@ -114,7 +114,7 @@ RawBoxes @ ToBoxes @ Mouseover[
     },
     CapForm[ "Round" ],
     JoinForm[ "Round" ],
-    color @ "NA_ChatInputFieldFocus_Gray_4"
+    color @ "Gray100_14"
    ]
   },
   (* ImageMargins -> { { 0, 1 }, { 1, 0 } }, *)

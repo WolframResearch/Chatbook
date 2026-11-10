@@ -1,6 +1,6 @@
 (* Created with the Wolfram Language : www.wolfram.com *)
 RawBoxes @ ToBoxes @ Mouseover[Graphics[GeometricTransformation[{Thickness[0.01150848701747978], 
-    color @ "NA_OverlayMenuHistoryPaginationIcon",
+    color @ "Gray45_85",
    FilledCurve[{{{1, 4, 3}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 
      1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}}}, {{{61.80509948730469, 
      3.213900089263916}, {60.27009952068329, 3.213900089263916}, 
@@ -22,7 +22,7 @@ RawBoxes @ ToBoxes @ Mouseover[Graphics[GeometricTransformation[{Thickness[0.011
    PlotRange -> {{0., 86.89239501953125}, {0., 
    86.89239501953125}}], Graphics[GeometricTransformation[
    {Thickness[0.01150848701747978], 
-    color @ "NA_OverlayMenuIcon_Blue",
+    color @ "Blue_66ADD2_66ADD2",
  FilledCurve[{{{1, 4, 3}, {0, 1, 0}, {0, 
      1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 
      3}}}, {{{61.80509948730469, 3.213900089263916}, {60.27009952068329, 

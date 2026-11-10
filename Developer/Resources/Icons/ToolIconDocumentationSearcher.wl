@@ -6,7 +6,7 @@ Overlay[
     {
      Thickness[ 0.041667 ],
      {
-      FaceForm @ { color @ "IconsToolIconDocumentationSearcher_1", Opacity[ 1.0 ] },
+      FaceForm @ { color @ "Gray39_72", Opacity[ 1.0 ] },
       FilledCurve[
        {
         {
@@ -126,7 +126,7 @@ Overlay[
       ]
      },
      {
-      FaceForm @ { color @ "IconsToolIconDocumentationSearcher_2", Opacity[ 1.0 ] },
+      FaceForm @ { color @ "Gray100_10", Opacity[ 1.0 ] },
       FilledCurve[
        {
         {
@@ -172,7 +172,7 @@ Overlay[
       ]
      },
      {
-      FaceForm @ { color @ "IconsToolIconDocumentationSearcher_3", Opacity[ 1.0 ] },
+      FaceForm @ { color @ "Red_DD1100_EE1F22", Opacity[ 1.0 ] },
       FilledCurve[
        {
         {
@@ -384,7 +384,7 @@ Overlay[
       ]
      },
      {
-      FaceForm @ { color @ "IconsToolIconDocumentationSearcher_3", Opacity[ 1.0 ] },
+      FaceForm @ { color @ "Red_DD1100_EE1F22", Opacity[ 1.0 ] },
       FilledCurve[
        { { { 1, 4, 3 }, { 1, 3, 3 }, { 1, 3, 3 }, { 1, 3, 3 } } },
        {
@@ -463,9 +463,9 @@ Overlay[
   ],
   Graphics[
    {
-    { color @ "IconsToolIconDocumentationSearcher_2", EdgeForm @ None, Disk[ { 10.5, 13.5 }, 7.5 ] },
+    { color @ "Gray100_10", EdgeForm @ None, Disk[ { 10.5, 13.5 }, 7.5 ] },
     {
-     color @ "IconsToolIconDocumentationSearcher_2",
+     color @ "Gray100_10",
      CapForm[ "Round" ],
      Thickness[ 0.225 ],
      Line @ { { 10, 14 }, { 19.5, 4.5 } }
@@ -473,7 +473,7 @@ Overlay[
     {
      Thickness[ 0.041667 ],
      {
-      FaceForm @ { color @ "IconsToolIconDocumentationSearcher_4", Opacity[ 1.0 ] },
+      FaceForm @ { color @ "Gray54_71", Opacity[ 1.0 ] },
       FilledCurve[
        { { { 1, 4, 3 }, { 0, 1, 0 }, { 1, 3, 3 }, { 1, 3, 3 }, { 0, 1, 0 }, { 1, 3, 3 }, { 1, 3, 3 } } },
        {
@@ -501,7 +501,7 @@ Overlay[
       ]
      },
      {
-      FaceForm @ { color @ "IconsToolIconDocumentationSearcher_2", Opacity[ 1.0 ] },
+      FaceForm @ { color @ "Gray100_10", Opacity[ 1.0 ] },
       FilledCurve[
        { { { 1, 4, 3 }, { 1, 3, 3 }, { 1, 3, 3 }, { 1, 3, 3 } } },
        {
@@ -524,7 +524,7 @@ Overlay[
       ]
      },
      {
-      FaceForm @ { color @ "IconsToolIconDocumentationSearcher_1", Opacity[ 1.0 ] },
+      FaceForm @ { color @ "Gray39_72", Opacity[ 1.0 ] },
       FilledCurve[
        {
         { { 1, 4, 3 }, { 1, 3, 3 }, { 1, 3, 3 }, { 1, 3, 3 } },

@@ -26,7 +26,7 @@ unformat[ file_ ] :=
 (* ::Section::Closed:: *)
 (*Run*)
 files = cicd`ScriptConfirmMatch[
-    FileNames[ "*.nb", { FileNameJoin @ { $pacletDir, "FrontEnd" }, FileNameJoin @ { $pacletDir, "DarkModeSupport" } }, Infinity ],
+    FileNames[ "*.nb", FileNameJoin @ { $pacletDir, "FrontEnd" }, Infinity ],
     { __String }
 ];
 

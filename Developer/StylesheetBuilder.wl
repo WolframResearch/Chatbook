@@ -50,17 +50,6 @@ $coreExtensionsTarget       = FileNameJoin @ { $pacletDirectory, "FrontEnd", "As
 $styleSheetTarget           = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Chatbook.nb" };
 $floatStyleSheetTarget      = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Wolfram", "WorkspaceChat.nb" };
 
-$darkStyleSheetTarget       = FileNameJoin @ { $pacletDirectory, "DarkModeSupport", "StyleSheets", "Chatbook.nb" };
-$darkFloatStyleSheetTarget  = FileNameJoin @ { $pacletDirectory, "DarkModeSupport", "StyleSheets", "Wolfram", "WorkspaceChat.nb" };
-$darkDisplayFunctionsFile   = FileNameJoin @ { $pacletDirectory, "Assets", "DisplayFunctionsDark.wxf" };
-
-
-(* ::Subsection::Closed:: *)
-(* Flag to build stylesheets with dark mode supported *)
-
-
-$BuildWithDarkModeSupportQ = False; (* Block[ ] any expressions that can build with dark mode switch *)
-
 
 (* ::Subsection::Closed:: *)
 (*Load Paclet*)
@@ -410,7 +399,7 @@ makeMenu[ items_List, frameColor_, width_ ] := Pane[
         {
             ToBoxes @ Column[ menuItem /@ items, ItemSize -> { Full, 0 }, Spacings -> 0, Alignment -> Left ],
             FrameMargins   -> 3,
-            Background     -> color @ "ChatMenuItemBackground",
+            Background     -> color @ "Gray98_19",
             RoundingRadius -> 3,
             FrameStyle     -> Directive[ AbsoluteThickness[ 1 ], frameColor ],
             ImageMargins   -> 0
@@ -479,7 +468,7 @@ $chatOutputMenu := $chatOutputMenu = ToBoxes @ makeMenu[
         { "TypesettingIcon"  , tr[ "StylesheetToggleFormatting" ]     , "ToggleFormatting"   },
         { "InPlaceIcon"      , tr[ "StylesheetCopyChatObject" ]       , "CopyChatObject"     }
     },
-    color @ "ChatMenuFrame",
+    color @ "Gray85_41",
     250
 ];
 
@@ -505,10 +494,10 @@ discardedMaterialLabelBox[ Dynamic[ hover_ ], Dynamic[ open_ ] ] := TagBox[
                 ],
                 "Grid"
             ],
-            Background -> (Dynamic[ FEPrivate`If[ hover, #1, #2 ] ]&[ color @ "DiscardedMaterialBackgroundHover", color @ "DiscardedMaterialBackground" ]),
+            Background -> (Dynamic[ FEPrivate`If[ hover, #1, #2 ] ]&[ color @ "Gray100_26", color @ "Blue_F2F7FC_2D3646" ]),
             BaseStyle -> { "Text", "IconizedDefaultName", ShowStringCharacters -> False },
             FrameMargins -> 2,
-            FrameStyle -> color @ "DiscardedMaterialFrame",
+            FrameStyle -> color @ "Blue_E8EEF3_4A545F",
             RoundingRadius -> 5,
             StripOnInput -> False
         ],
@@ -525,7 +514,7 @@ discardedMaterialLabelBox[ Dynamic[ hover_ ], Dynamic[ open_ ] ] := TagBox[
 ];
 
 discardedMaterialLabelIcon[ Dynamic[ hover_ ], Dynamic[ open_ ] ] :=
-    With[ { hoverColor = color @ "DiscardedMaterialIconHover", defaultColor = color @ "DiscardedMaterialIcon" },
+    With[ { hoverColor = LightDarkSwitched[ RGBColor[ "#58B8FA" ], RGBColor[ "#57A0D8" ] ], defaultColor = color @ "Gray75_54" },
         PaneSelectorBox[
             {
                 { True , False } -> TemplateBox[ { hoverColor   }, "DiscardedMaterialOpenerIcon" ],
@@ -548,9 +537,9 @@ $discardedMaterialLabel = discardedMaterialLabelBox[ Dynamic @ Typeset`hover$$, 
 $workspaceChatDockedCells = {
     With[
         {
-            background  = LightDarkSwitched[ RGBColor["#128ED1"], RGBColor["#7FC7FB"] ],
+            background  = color @ "Blue_128ED1_7FC7FB",
             colorCenter = LightDarkSwitched[ RGBColor["#E0F2FC"], RGBColor["#F5F5F5"] ],
-            colorEdges  = LightDarkSwitched[ RGBColor["#128ED1"], RGBColor["#7FC7FB"] ]
+            colorEdges  = color @ "Blue_128ED1_7FC7FB"
         },
         Cell[ BoxData @
             ToBoxes @ PaneSelector[
@@ -644,9 +633,9 @@ userMessageBoxFrame = Function[ x, Evaluate @
                 FrameBox[
                     x,
                     BaseStyle      -> { "Text", Editable -> False, Selectable -> False },
-                    Background     -> color @ "UserMessageBoxBackground",
+                    Background     -> color @ "Gray100_10",
                     FrameMargins   -> { { 14, 8 }, { 8, 8 } },
-                    FrameStyle     -> Directive[ AbsoluteThickness[ 2 ], color @ "UserMessageBoxFrame" ],
+                    FrameStyle     -> Directive[ AbsoluteThickness[ 2 ], color @ "Blue_D4F0FF_344858" ],
                     ImageMargins   -> { { 8, 0 }, { 0, 0 } },
                     RoundingRadius -> 8,
                     StripOnInput   -> False
@@ -671,9 +660,9 @@ assistantMessageBoxFrameChatbook = Function[ x, Evaluate @
     FrameBox[
         x,
         BaseStyle      -> { "Text", Editable -> False, Selectable -> False },
-        Background     -> color @ "AssistantMessageBoxBackground",
+        Background     -> LightDarkSwitched[ RGBColor[ "#FCFDFF" ], GrayLevel[ 0.2461 ] ],
         FrameMargins   -> { { 15, 8 }, { 8, 8 } },
-        FrameStyle     -> color @ "AssistantMessageBoxFrame",
+        FrameStyle     -> LightDarkSwitched[ RGBColor[ "#C9CCD0" ], RGBColor[ "#777B81" ] ],
         ImageSize      -> { Scaled[ 1 ], Automatic },
         RoundingRadius -> 10,
         StripOnInput   -> False
@@ -687,9 +676,9 @@ assistantMessageBoxFrame = Function[ x, Evaluate @
                 FrameBox[
                     x,
                     BaseStyle      -> { "Text", Editable -> False, Selectable -> False },
-                    Background     -> color @ "NA_AssistantMessageBoxBackground",
+                    Background     -> color @ "Blue_F9FDFF_1D1F21",
                     FrameMargins   -> { { 14, 8 }, { 8, 8 } },
-                    FrameStyle     -> Directive[ AbsoluteThickness[ 2 ], color @ "NA_AssistantMessageBoxFrame" ],
+                    FrameStyle     -> Directive[ AbsoluteThickness[ 2 ], color @ "Blue_EBF3F7_37424A" ],
                     ImageMargins   -> { { 8, 0 }, { 0, 0 } },
                     ImageSize      -> { Scaled[ 1 ], Automatic },
                     RoundingRadius -> 8,
@@ -730,9 +719,9 @@ EventHandlerTag @ {
 chatCodeBlockTemplateButtonFrame = Function[ x, Evaluate @
     FrameBox[
         x,
-        Background   -> color @ "NA_ChatCodeBlockTemplateBackgroundBottom",
+        Background   -> color @ "Blue_F9FDFF_1D1F21",
         FrameMargins -> { { 7, 2 }, { 2, 2 } },
-        FrameStyle   -> Directive[ AbsoluteThickness[ 2 ], color @ "NA_ChatCodeBlockTemplateFrame" ],
+        FrameStyle   -> Directive[ AbsoluteThickness[ 2 ], color @ "Blue_EBF3F7_37424A" ],
         ImageMargins -> { { 0, 0 }, { 8, -2 } }, (* negative margin to barely overlap the frame above *)
         ImageSize    -> { Full, Automatic }
     ]
@@ -844,13 +833,7 @@ fixContexts[ expr_ ] := ResourceFunction[ "ReplaceContext" ][
 ];
 
 
-BuildChatbookStylesheet[ ] := {
-    If[ BoxForm`sufficientVersionQ[ 14.3 ],
-        BuildChatbookStylesheet @ $darkStyleSheetTarget
-        ,
-        BuildChatbookStylesheet @ $styleSheetTarget
-    ]
-}
+BuildChatbookStylesheet[ ] := BuildChatbookStylesheet @ $styleSheetTarget;
 
 BuildChatbookStylesheet[ target_ ] :=
     Block[ { $Context = "Global`", $ContextPath = { "System`", "Global`" } },
@@ -879,13 +862,7 @@ BuildChatbookStylesheet[ target_ ] :=
 (*BuildWorkspaceStylesheet*)
 
 
-BuildWorkspaceStylesheet[ ] := {
-    If[ BoxForm`sufficientVersionQ[ 14.3 ],
-        BuildWorkspaceStylesheet @ $darkFloatStyleSheetTarget
-        ,
-        BuildWorkspaceStylesheet @ $floatStyleSheetTarget
-    ]
-}
+BuildWorkspaceStylesheet[ ] := BuildWorkspaceStylesheet @ $floatStyleSheetTarget;
 
 BuildWorkspaceStylesheet[ target_ ] :=
     Block[ { $Context = "Global`", $ContextPath = { "System`", "Global`" } },
@@ -909,11 +886,7 @@ BuildWorkspaceStylesheet[ target_ ] :=
     ];
 
 
-(* CoreExtensions.nb is a 14.2 feature. It is ignored entirely by 14.1. 14.2 understands dark mode but may not support all features. *)
-BuildCoreExtensionsStylesheet[ ] :=
-    If[ BoxForm`sufficientVersionQ[ 14.3 ],
-        BuildCoreExtensionsStylesheet @ $coreExtensionsTarget
-    ]
+BuildCoreExtensionsStylesheet[ ] := BuildCoreExtensionsStylesheet @ $coreExtensionsTarget;
 
 revisedCoreExtensions[ ] :=
 Module[ { excludedCoreExtensions },
@@ -973,11 +946,7 @@ BuildCoreExtensionsStylesheet[ target_ ] :=
 (*CompileTemplateData*)
 
 
-CompileTemplateData[ ] := If[ BoxForm`sufficientVersionQ[ 14.3 ],
-    Developer`WriteWXFFile[ $darkDisplayFunctionsFile, fixContexts @ $templateBoxDisplayFunctions ]
-    ,
-    Developer`WriteWXFFile[ $displayFunctionsFile, fixContexts @ $templateBoxDisplayFunctions ]
-];
+CompileTemplateData[ ] := Developer`WriteWXFFile[ $displayFunctionsFile, fixContexts @ $templateBoxDisplayFunctions ];
 
 
 (* ::Section::Closed:: *)

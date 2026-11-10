@@ -36,7 +36,6 @@ PacletObject[ <|
             "Assets"  -> {
                 { "AIAssistant"         , "AIAssistant"              },
                 { "DisplayFunctions"    , "DisplayFunctions.wxf"     },
-                { "DisplayFunctionsDark", "DisplayFunctionsDark.wxf" },
                 { "Snippets"            , "Snippets"                 },
                 { "SandboxMessages"     , "SandboxMessages.wl"       },
                 { "Skills"              , "Skills"                   },
@@ -63,11 +62,6 @@ PacletObject[ <|
         },
         { "FrontEnd",
             "Root" -> "FrontEnd",
-            Prepend -> True
-        },
-        { "FrontEnd",
-            "Root" -> "DarkModeSupport",
-            "WolframVersion" -> "15.0+",
             Prepend -> True
         }
     }

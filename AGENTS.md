@@ -138,6 +138,8 @@ The Chatbook notebook stylesheet (`FrontEnd/StyleSheets/Chatbook.nb`) is generat
 2. Load `Developer/StylesheetBuilder.wl`
 3. Evaluate `BuildChatbookStylesheet[]`
 
+UI colors are `LightDarkSwitched` pairs looked up by name with `color["Name"]` (`Source/Chatbook/ColorData.wl`). There is one set of stylesheets and front end resources (in `FrontEnd/`) for both light and dark mode. Front end expression resources (`FrontEnd/TextResources/ChatbookResources.tr`) are built from `Developer/Resources/FrontEndResources` and `Developer/Resources/Icons` with `WriteTextResource[All]` from `Developer/FrontEndResourceBuilder.wl`.
+
 ### Assets
 
 - `.wxf` files — Serialized Wolfram expressions (icons, display functions, syntax data)

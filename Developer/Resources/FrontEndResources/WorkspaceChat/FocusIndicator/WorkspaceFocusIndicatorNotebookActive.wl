@@ -30,7 +30,7 @@ Graphics[
      }
     ]
    },
-   FaceForm @ color @ "NA_ChatInputFieldFocusNotebookIconHover_1"
+   FaceForm @ LightDarkSwitched[ RGBColor[ "#84BEDC" ], RGBColor[ "#6A8FA5" ] ]
   ],
   Style[
    {
@@ -55,7 +55,7 @@ Graphics[
      }
     ]
    },
-   FaceForm @ color @ "NA_ChatInputFieldFocusNotebookIconHover_2"
+   FaceForm @ color @ "Blue_97CFED_577C94"
   ],
   Style[
    {
@@ -77,7 +77,7 @@ Graphics[
      }
     ]
    },
-   FaceForm @ color @ "NA_ChatInputFieldFocusNotebookIconHover_2"
+   FaceForm @ color @ "Blue_97CFED_577C94"
   ],
   Style[
    {
@@ -99,7 +99,7 @@ Graphics[
      }
     ]
    },
-   FaceForm @ color @ "NA_ChatInputFieldFocusNotebookIconHover_2"
+   FaceForm @ color @ "Blue_97CFED_577C94"
   ],
   Style[
    {
@@ -121,7 +121,7 @@ Graphics[
      }
     ]
    },
-   FaceForm @ color @ "NA_ChatInputFieldFocusNotebookIconHover_2"
+   FaceForm @ color @ "Blue_97CFED_577C94"
   ],
   Style[
    {
@@ -146,7 +146,7 @@ Graphics[
      }
     ]
    },
-   FaceForm @ color @ "NA_ChatInputFieldFocusNotebookIconHover_2"
+   FaceForm @ color @ "Blue_97CFED_577C94"
   ],
   Style[
    {
@@ -175,7 +175,7 @@ Graphics[
      }
     ]
    },
-   FaceForm @ color @ "NA_ChatInputFieldFocus_Gray_4"
+   FaceForm @ color @ "Gray100_14"
   ],
   Style[
    {
@@ -271,7 +271,7 @@ Graphics[
      }
     ]
    },
-   FaceForm @ color @ "NA_ChatInputFieldFocusNotebookIconHover_3"
+   FaceForm @ color @ "Blue_3383AC_58BBEA"
   ]
  },
  ImageSize -> { 12.0, 12.0 },

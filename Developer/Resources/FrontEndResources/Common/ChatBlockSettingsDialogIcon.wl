@@ -3,7 +3,7 @@ Graphics[
   {
    Thickness[ 0.038462 ],
    {
-    FaceForm @ { color @ "IconsChatBlockSettingsMenuIcon_1", Opacity[ 1.0 ] },
+    FaceForm @ { color @ "Gray50_75", Opacity[ 1.0 ] },
     RawBoxes @ FilledCurveBox[
      {
       {
@@ -24,7 +24,7 @@ Graphics[
     ]
    },
    {
-    FaceForm @ { color @ "IconsChatBlockSettingsMenuIcon_2", Opacity[ 1.0 ] },
+    FaceForm @ { color @ "Gray100_20", Opacity[ 1.0 ] },
     RawBoxes @ FilledCurveBox[
      {
       {

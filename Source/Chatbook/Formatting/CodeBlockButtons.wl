@@ -386,7 +386,7 @@ attachCopiedTooltip[ ] :=
                    Hyphenation -> False,
                    HyphenationOptions -> {"HyphenationCharacter" -> "\[Null]"},
                    FontFamily -> "Source Sans Pro", FontSize -> 12,
-                   FontColor -> color @ "NA_ChatCodeBlockTemplateCopiedButtonFont"}],
+                   FontColor -> color @ "Gray50_75"}],
                 Alignment    -> { Center, Bottom },
                 FrameMargins -> 0,
                 ImageSize    -> { All, 60 }
@@ -599,8 +599,8 @@ buttonFrameDefault[ expr_, extendMarginsQ: True|False : True ] :=
 buttonFrameHover[ expr_, extendMarginsQ: True|False : True ] :=
     Framed[
         expr,
-        FrameStyle       -> color @ "NA_ChatCodeBlockTemplateButtonFrameHover",
-        Background       -> color @ "NA_ChatCodeBlockTemplateButtonBackgroundHover",
+        FrameStyle       -> color @ "Blue_B1D5E8_607D8F",
+        Background       -> color @ "Gray100_10",
         BaselinePosition -> Baseline,
         FrameMargins     -> If[ extendMarginsQ, { { 0, 4 }, { 0, 0 } }, 0 ], (* If there's text then we need larger right-margins *)
         RoundingRadius   -> 2
@@ -612,8 +612,8 @@ buttonFrameHover[ expr_, extendMarginsQ: True|False : True ] :=
 buttonFramePressed[ expr_, extendMarginsQ: True|False : True ] :=
     Framed[
         expr,
-        FrameStyle       -> color @ "NA_ChatCodeBlockTemplateButtonFramePressed",
-        Background       -> color @ "NA_ChatCodeBlockTemplateButtonBackgroundPressed",
+        FrameStyle       -> color @ "Blue_75C2EB_669CBD",
+        Background       -> color @ "Blue_D4F0FF_385061",
         BaselinePosition -> Baseline,
         FrameMargins     -> If[ extendMarginsQ, { { 0, 4 }, { 0, 0 } }, 0 ], (* If there's text then we need larger right-margins *)
         RoundingRadius   -> 2
@@ -650,7 +650,7 @@ labeledIcon[ { iconTemplateName_String, "Disabled" }, textResource_String ] := G
             buttonPane @ chatbookExpression @ iconTemplateName,
             Style[
                 tr @ textResource,
-                FontColor  -> color @ "NA_ChatCodeBlockTemplateButtonFontDisabled",
+                FontColor  -> LightDarkSwitched[ GrayLevel[ 0.2, 0.5 ], GrayLevel[ 0.9456, 0.5 ] ],
                 FontFamily -> "Source Sans Pro",
                 FontSize   -> 12
             ]
@@ -667,7 +667,7 @@ labeledIcon[ icon_, textResource_String ] := Grid[
             buttonPane @ icon,
             Style[
                 tr @ textResource,
-                FontColor  -> color @ "NA_ChatCodeBlockTemplateButtonFont",
+                FontColor  -> color @ "Gray20_94",
                 FontFamily -> "Source Sans Pro",
                 FontSize   -> 12
             ]
@@ -690,13 +690,13 @@ fancyTooltip[ expr_, tooltip_ ] := Tooltip[
         Style[
             tooltip,
             "Text",
-            FontColor    -> color @ "ChatOutputTooltipFont",
+            FontColor    -> color @ "Gray54_71",
             FontSize     -> 12,
             FontWeight   -> "Plain",
             FontTracking -> "Plain"
         ],
-        Background   -> color @ "ChatOutputTooltipBackground",
-        FrameStyle   -> color @ "ChatOutputTooltipFrame",
+        Background   -> color @ "Gray98_19",
+        FrameStyle   -> color @ "Gray90_36",
         FrameMargins -> 8
     ],
     TooltipDelay -> 0.15,

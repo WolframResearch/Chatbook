@@ -119,7 +119,7 @@ makeBulletCell[ "", item_String ] := {
     "\n",
     Cell[
         TextData @ Flatten @ {
-            StyleBox[ "\[Bullet]", FontColor -> color @ "NA_ChatOutputResultCellBulletFont" ],
+            StyleBox[ "\[Bullet]", FontColor -> color @ "Gray50_75" ],
             " ",
             formatTextString @ item
         },
@@ -132,7 +132,7 @@ makeBulletCell[ whitespace_String, item_String ] := {
     Cell[
         TextData @ Flatten @ {
             whitespace,
-            StyleBox[ "\[Bullet]", FontColor -> color @ "NA_ChatOutputResultCellBulletFont" ],
+            StyleBox[ "\[Bullet]", FontColor -> color @ "Gray50_75" ],
             " ",
             formatTextString @ item
         },
@@ -155,14 +155,14 @@ makeBlockQuoteCell[ quote_String ] := Cell[
                     formatTextToBoxes @ StringDelete[ StringTrim @ quote, StartOfLine ~~ ">" ~~ " "... ],
                     ImageMargins -> 5,
                     ImageSize    -> { Full, Automatic },
-                    BaseStyle    -> { "Text", FontColor -> color @ "NA_ChatOutputResultCellBlockQuoteFont" }
+                    BaseStyle    -> { "Text", FontColor -> color @ "Gray35_86" }
                 ]
             }
         },
         AutoDelete        -> False,
-        GridBoxBackground -> { "Columns" -> { { color @ "NA_ChatOutputResultCellBlockQuoteBackground" } } },
+        GridBoxBackground -> { "Columns" -> { { color @ "Gray100_28" } } },
         GridBoxDividers   -> {
-            "ColumnsIndexed" -> { 1 -> Directive[ color @ "NA_ChatOutputResultCellBlockQuoteFrame", AbsoluteThickness[ 4 ] ] },
+            "ColumnsIndexed" -> { 1 -> Directive[ LightDarkSwitched[ RGBColor[ "#DEF0FF" ], RGBColor[ "#40546C" ] ], AbsoluteThickness[ 4 ] ] },
             "Rows"           -> { { False } }
         },
         GridBoxItemSize -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } }

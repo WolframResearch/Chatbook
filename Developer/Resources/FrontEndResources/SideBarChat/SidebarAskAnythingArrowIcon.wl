@@ -1,6 +1,6 @@
 Graphics[
     {
-        FaceForm @ color @ "NA_OverlayAskAnythingArrowIcon",
+        FaceForm @ LightDarkSwitched[ GrayLevel[ 0.8196 ], GrayLevel[ 0.3922 ] ],
         FilledCurve @ Line @ {
             { 0, 1.7366173205033308 },
             { 0.233009708737864, 0.4119170984455958 },
