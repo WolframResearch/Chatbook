@@ -23,15 +23,19 @@ Pre-cached tokenizer functions exist for:
 | Tokenizer | Notes |
 | --------- | ----- |
 | `"chat-bison"` | UTF-8 byte encoding via `ToCharacterCode` |
-| `"gpt-4-vision"` / `"gpt-4o"` | Special image token counting for `Graphics` content |
-| `"claude-3"` | Claude-specific image token counting |
-| `"generic"` | GPT-2 fallback |
+| `"gpt-4-vision"` / `"gpt-4o"` | Estimated count for text, special image token counting for `Graphics` content |
+| `"claude-3"` | Estimated count for text, Claude-specific image token counting |
+| `"generic"` | Estimated count for text; the fallback for models without a tokenizer of their own |
 
-Additional tokenizers are loaded on demand from `.wxf` files in the `Assets/Tokenizers/` directory, or discovered via `` Wolfram`LLMFunctions`Utilities`Tokenization`FindTokenizer` ``; if no model-specific tokenizer is found, the generic GPT-2 tokenizer is used as a fallback.
+These four are what current models resolve to, and they don't tokenize text: they estimate its token count from character statistics (`estimateTokenCount` in `ChatMessages.wl`). An exact count needs a `NetEncoder` that takes about a second to load and set up in each session, and the tokenizers in `Assets/Tokenizers/` are not the ones of current models anyway. The estimate is fitted to rarely fall below the larger of the gpt-4o and claude tokenizer counts: on average it is 15-30% above the gpt-4o count for English text and code (more for other languages and for short strings), and a single text of a few thousand characters is rarely below the gpt-4o count (by at most about 12% in the texts it was checked on). Since counts are only used to keep requests within `"MaxContextTokens"`, overcounting only means that long conversations are trimmed somewhat earlier.
+
+Exact counts are still available by naming a tokenizer that is not in the table, e.g. `"TokenizerName" -> "gpt-4o-text"` (text only), or by giving a tokenizer function. The internal flag `$estimateTokenCounts` (default `True`) switches the four tokenizers above back to exact counting.
+
+Other tokenizers are loaded on demand from `.wxf` files in the `Assets/Tokenizers/` directory, or discovered via `` Wolfram`LLMFunctions`Utilities`Tokenization`FindTokenizer` ``; if no model-specific tokenizer is found, the `"generic"` tokenizer is used as a fallback.
 
 The resolved tokenizer is applied via `applyTokenizer` in `tokenCount` (`ChatMessages.wl`), which tokenizes message content and returns the token list length.
 
-Counts for text content are memoized for the session in `$tokenCountCache`, keyed by `{tokenizerName, Hash[content]}`. A count is only memoized when `"TokenizerName"` names a registered tokenizer in `$cachedTokenizers` that is the same as the tokenizer being applied, so custom tokenizer functions and image content are always counted directly. When the cache reaches `$maxTokenCountCacheSize` (5000) entries, the oldest half is discarded.
+Counts for text content are memoized for the session in `$tokenCountCache`, keyed by `{tokenizerName, $estimateTokenCounts, Hash[content]}`. A count is only memoized when `"TokenizerName"` names a registered tokenizer in `$cachedTokenizers` that is the same as the tokenizer being applied, so custom tokenizer functions and image content are always counted directly. When the cache reaches `$maxTokenCountCacheSize` (5000) entries, the oldest half is discarded.
 
 ### Serialization
 

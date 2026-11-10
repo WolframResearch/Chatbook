@@ -65,7 +65,7 @@ VerificationTest[
 
 VerificationTest[
     KeyExistsQ[ Wolfram`Chatbook`Common`$cachedTokenizers, "gpt-4o-text" ],
-    True,
+    False, (* token counts are estimated, so the tokenizer (which takes about a second to load) is not needed *)
     SameTest -> MatchQ,
     TestID   -> "InitializeWorkspaceChat-Tokenizer@@Tests/WorkspaceChatInitialization.wlt:66,1-71,2"
 ]

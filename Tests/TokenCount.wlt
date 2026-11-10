@@ -226,7 +226,7 @@ VerificationTest[
             {
                 sizes,
                 (* The oldest half of the entries is discarded when the cache is full: *)
-                keys === ({ "gpt-4o", Hash @ # } & /@ Take[ messages, -10 ]),
+                keys === ({ "gpt-4o", True, Hash @ # } & /@ Take[ messages, -10 ]),
                 countTokens[ settings, messages ] === withoutTokenCountCache @ countTokens[ settings, messages ],
                 tokenCountCacheSize[ ] <= 10
             }
@@ -308,6 +308,115 @@ VerificationTest[
     { KeyValuePattern @ { "Prompt" -> _Integer, "Completion" -> _Integer, "Requests" -> 2 }, True, True },
     SameTest -> MatchQ,
     TestID   -> "LogUsage"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Token Count Estimates*)
+
+(* The tokenizers of the current models estimate the token count of text, which doesn't need a NetEncoder: *)
+VerificationTest[
+    withTokenCountCache @ Block[
+        {
+            Wolfram`Chatbook`Common`$cachedTokenizers = KeyDrop[
+                Wolfram`Chatbook`Common`$cachedTokenizers,
+                { "gpt-4o-text", "claude", "gpt-2" }
+            ]
+        },
+        {
+            countTokens[ tokenizerSettings @ #, { $longText } ] & /@ { "gpt-4o", "claude-3", "generic" },
+            Keys @ KeyTake[ Wolfram`Chatbook`Common`$cachedTokenizers, { "gpt-4o-text", "claude", "gpt-2" } ]
+        }
+    ],
+    { { { n_Integer? Positive }, { n_ }, { n_ } }, { } },
+    SameTest -> MatchQ,
+    TestID   -> "Estimate-NoNetEncoder"
+]
+
+(* The estimate must not be below the exact counts for typical content, and not far above them: *)
+VerificationTest[
+    Module[ { texts, estimates, exact },
+        texts = {
+            $longText,
+            "How do I compute the eigenvalues of a matrix, and which function plots them in the complex plane?",
+            "Plot3D[Sin[x] Cos[y], {x, 0, 2 Pi}, {y, 0, 2 Pi}, PlotRange -> All, ColorFunction -> \"Rainbow\"]",
+            StringRiffle[ Table[ ToString @ N[ Sqrt @ i, 10 ], { i, 200 } ], ", " ],
+            StringRiffle[ "paclet:ref/" <> # <> "#" <> ToString @ Hash @ # & /@ Take[ Names[ "System`*Plot*" ], 60 ], "
+" ],
+            ExampleData @ { "Text", "DeclarationOfIndependence" }
+        };
+        estimates = Wolfram`Chatbook`Common`estimateTokenCount /@ texts;
+        exact = Table[
+            Length @ Wolfram`Chatbook`Common`cachedTokenizer[ name ][ text ],
+            { name, { "gpt-4o-text", "claude" } },
+            { text, texts }
+        ];
+        {
+            And @@ Thread[ estimates >= Max /@ Transpose @ exact ],
+            And @@ Thread[ estimates <= 1.6 * Max /@ Transpose @ exact ]
+        }
+    ],
+    { True, True },
+    TestID -> "Estimate-NotBelowExactCounts"
+]
+
+VerificationTest[
+    {
+        Wolfram`Chatbook`Common`estimateTokenCount[ "" ],
+        Wolfram`Chatbook`Common`estimateTokenCount /@ { "a", " ", "
+", "\[Alpha]", "\:65e5", "\|01f600", "7" },
+        Length @ Wolfram`Chatbook`ChatMessages`Private`estimatedTokenizer[ "Hello world" ] === Wolfram`Chatbook`Common`estimateTokenCount[ "Hello world" ],
+        (* Texts of the same kind are counted in proportion to their length: *)
+        Wolfram`Chatbook`Common`estimateTokenCount @ StringRepeat[ $longText <> "
+
+", 20 ] / Wolfram`Chatbook`Common`estimateTokenCount[ $longText <> "
+
+" ]
+    },
+    { 0, { __Integer? Positive }, True, n_ /; 19.9 <= n <= 20.1 },
+    SameTest -> MatchQ,
+    TestID   -> "Estimate-EdgeCases"
+]
+
+(* Exact counts are still available, and the two kinds of counts are cached separately: *)
+VerificationTest[
+    withTokenCountCache @ Module[ { settings, estimated, exact },
+        settings  = tokenizerSettings[ "gpt-4o" ];
+        estimated = Wolfram`Chatbook`ChatMessages`Private`tokenCount[ settings, $longText ];
+        exact     = Block[ { Wolfram`Chatbook`Common`$estimateTokenCounts = False }, Wolfram`Chatbook`ChatMessages`Private`tokenCount[ settings, $longText ] ];
+        {
+            estimated === Wolfram`Chatbook`Common`estimateTokenCount @ $longText,
+            exact === Length @ Wolfram`Chatbook`Common`cachedTokenizer[ "gpt-4o-text" ][ $longText ],
+            estimated =!= exact,
+            Wolfram`Chatbook`ChatMessages`Private`tokenCount[ settings, $longText ] === estimated,
+            Wolfram`Chatbook`ChatMessages`Private`tokenCount[ tokenizerSettings[ "gpt-4o-text" ], $longText ] === exact
+        }
+    ],
+    { True, True, True, True, True },
+    TestID -> "Estimate-ExactCounts"
+]
+
+(* A message is left empty when the remaining budget is too small for any of it: *)
+VerificationTest[
+    Table[
+        Block[
+            {
+                Wolfram`Chatbook`Common`$tokenBudget             = budget,
+                Wolfram`Chatbook`Common`$tokenPressure           = 0.0,
+                Wolfram`Chatbook`Common`$initialCellStringBudget = 10000,
+                Wolfram`Chatbook`Common`$cellStringBudget        = 10000,
+                Wolfram`Chatbook`Common`$tokenBudgetLog          = Internal`Bag[ ]
+            },
+            StringLength @ Wolfram`Chatbook`ChatMessages`Private`tokenCheckedMessage[
+                tokenizerSettings[ "gpt-4o" ],
+                <| "Role" -> "User", "Content" -> $longText |>
+            ][ "Content" ]
+        ],
+        { budget, { 0, 1, 5, 100 } }
+    ],
+    { 0, 0, 0, n_Integer /; n > 100 },
+    SameTest -> MatchQ,
+    TestID   -> "TinyBudget"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

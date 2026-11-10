@@ -290,8 +290,22 @@ titleLength // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*tokenLength*)
 tokenLength // beginDefinition;
-tokenLength[ title_String ] := Length @ cachedTokenizer[ "gpt-4o" ][ title ] * $tokenLengthMultiplier;
+tokenLength[ title_String ] := titleTokenCount @ title * $tokenLengthMultiplier;
 tokenLength // endDefinition;
+
+(* Token counts are estimates by default, which are high on purpose (see estimateTokenCount). For strings like titles
+   they are about 1.55 times the gpt-4o token count, so they are scaled back to keep the same title lengths: *)
+titleTokenCount // beginDefinition;
+
+titleTokenCount[ title_String ] :=
+    If[ TrueQ @ $estimateTokenCounts,
+        $titleTokenScale * estimateTokenCount @ title,
+        Length @ cachedTokenizer[ "gpt-4o" ][ title ]
+    ];
+
+titleTokenCount // endDefinition;
+
+$titleTokenScale = 0.64;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
