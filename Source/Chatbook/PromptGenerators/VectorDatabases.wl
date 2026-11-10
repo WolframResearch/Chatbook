@@ -1980,7 +1980,8 @@ loadVectorDatabase // endDefinition;
 (* The data of the VectorDatabaseObject, read from its file without creating the object. The first VectorDatabaseObject
    of a session loads several unrelated paclets (about 0.8 s), and searches normally don't need it, since they use an
    index handle that is created from this data (see vectorDatabaseSearch).
-   NOTE: A file that can be read here but gives no valid VectorDatabaseObject is not repaired by loadVectorDB. *)
+   NOTE: A file that can be read here but gives no valid VectorDatabaseObject is not repaired by loadVectorDB. Instead,
+   the database is skipped once a search needs the object (see vectorDatabaseObject). *)
 loadVectorDBMetadata // beginDefinition;
 
 loadVectorDBMetadata[ name_String ] := Enclose[
@@ -1997,7 +1998,9 @@ loadVectorDBMetadata // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*vectorDatabaseObject*)
 (* The VectorDatabaseObject of a loaded database (see getVectorDB). For a built-in database, it's created the first
-   time that it's needed, which is when a search can't use an index handle that has already been verified. *)
+   time that it's needed, which is when a search can't use an index handle that has already been verified.
+   If it can't be created, the database is skipped for the rest of the session like one that can't be loaded (see
+   vectorDBLoadFailed), and the search that needed it gives no results (see vectorDatabaseSearch). *)
 vectorDatabaseObject // beginDefinition;
 
 vectorDatabaseObject[ name_String, KeyValuePattern[ "VectorDatabaseObject" -> db_ ] ] :=
@@ -2009,7 +2012,14 @@ vectorDatabaseObject[ name_String, _Association ] :=
     ];
 
 vectorDatabaseObject[ name_String, _Association ] :=
-    $vectorDatabaseObjects[ name ] = loadVectorDatabase @ name;
+    With[ { db = catchQuiet @ loadVectorDatabase @ name },
+        If[ MatchQ[ db, $$vectorDatabase ],
+            $vectorDatabaseObjects[ name ] = db,
+            (* The warm-up (see initializeVectorDatabases) leaves this to the next search, which shows the message: *)
+            If[ TrueQ @ $allowDownload, clearVectorDBCaches @ name; vectorDBLoadFailed @ name ];
+            Throw[ { }, $vectorDatabaseObjectTag ]
+        ]
+    ];
 
 vectorDatabaseObject // endDefinition;
 
@@ -2446,8 +2456,10 @@ cacheVectorDBResult // endDefinition;
 *)
 vectorDatabaseSearch // beginDefinition;
 
-vectorDatabaseSearch[ name_String, info_Association, vector_NumericArray, n_Integer ] :=
-    vectorDatabaseSearch[ name, info, vector, n, touchUSearchIndex @ getUSearchIndex[ name, info ] ];
+vectorDatabaseSearch[ name_String, info_Association, vector_NumericArray, n_Integer ] := Catch[
+    vectorDatabaseSearch[ name, info, vector, n, touchUSearchIndex @ getUSearchIndex[ name, info ] ],
+    $vectorDatabaseObjectTag
+];
 
 (* No usable index handle: *)
 vectorDatabaseSearch[ name_, info_, vector_, n_, _Missing ] :=
@@ -2585,7 +2597,8 @@ usearchIndexSource // endDefinition;
     The check against VectorDatabaseSearch needs the VectorDatabaseObject, and creating the first one of a session
     loads several unrelated paclets (about 0.8 s). The check itself is another search of each database (0.1-0.9 s the
     first time). So the index files that passed it are saved, and later sessions skip it for the same index file
-    (path, size and modification date) with the same versions of Wolfram and SemanticSearch.
+    (path, size and modification date) with the same versions of Wolfram, SemanticSearch and Chatbook (since the check
+    is a check of Chatbook's own search code).
 *)
 savedUSearchVerificationQ // beginDefinition;
 
@@ -2597,10 +2610,10 @@ savedUSearchVerificationQ // endDefinition;
 
 saveUSearchVerification // beginDefinition;
 
-(* Failing to save only means that the next session verifies again: *)
-saveUSearchVerification[ index_Association ] /; TrueQ @ $saveUSearchVerifications := Quiet @ catchAlways[
+(* Failing to save only means that the next session verifies again. The newest entries are kept: *)
+saveUSearchVerification[ index_Association ] /; TrueQ @ $saveUSearchVerifications := catchQuiet[
     $savedUSearchVerifications = Take[
-        Reverse @ DeleteDuplicates @ Prepend[ savedUSearchVerifications[ ], usearchVerificationHash @ index ],
+        DeleteDuplicates @ Prepend[ savedUSearchVerifications[ ], usearchVerificationHash @ index ],
         UpTo[ $maxSavedUSearchVerifications ]
     ];
     Developer`WriteWXFFile[ $usearchVerificationsFile, $savedUSearchVerifications ]
@@ -2620,7 +2633,7 @@ savedUSearchVerifications[ ] :=
 
 savedUSearchVerifications[ ] :=
     $savedUSearchVerifications = Replace[
-        Quiet @ catchAlways @ If[ FileExistsQ @ $usearchVerificationsFile,
+        catchQuiet @ If[ FileExistsQ @ $usearchVerificationsFile,
             Developer`ReadWXFFile @ $usearchVerificationsFile
         ],
         Except[ { ___Integer } ] :> { }
@@ -2634,12 +2647,14 @@ $usearchVerificationsFile := FileNameJoin @ { ChatbookFilesDirectory[ "VectorDat
 
 usearchVerificationHash // beginDefinition;
 
+(* The modification date is a Unix time, so that it doesn't change with the time zone or daylight saving time: *)
 usearchVerificationHash[ index_Association ] := Hash @ {
     $Version,
     $semanticSearchVersion,
+    $thisPaclet[ "Version" ],
     index[ "File" ],
     FileByteCount @ index[ "File" ],
-    First @ index[ "FileDate" ]
+    UnixTime @ index[ "FileDate" ]
 };
 
 usearchVerificationHash // endDefinition;

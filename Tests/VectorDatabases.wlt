@@ -776,6 +776,77 @@ VerificationTest[
     TestID -> "FastVectorSearch-SavedVerification-Mismatch@@Tests/VectorDatabases.wlt:752,1-777,2"
 ]
 
+(* Only the newest saved verifications are kept: *)
+VerificationTest[
+    Module[ { dir, saved },
+        dir = CreateDirectory[ ];
+        saved = Block[
+            {
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$saveUSearchVerifications     = True,
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$maxSavedUSearchVerifications = 3,
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$savedUSearchVerifications    = None,
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchVerificationsFile     = FileNameJoin @ { dir, "VerifiedIndexes.wxf" },
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`usearchVerificationHash       = Function[ #[ "Hash" ] ]
+            },
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`saveUSearchVerification[ <| "Hash" -> # |> ] & /@ Range[ 5 ];
+            { Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`savedUSearchVerifications[ ], Developer`ReadWXFFile @ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchVerificationsFile }
+        ];
+        DeleteDirectory[ dir, DeleteContents -> True ];
+        saved
+    ],
+    { { 5, 4, 3 }, { 5, 4, 3 } },
+    SameTest -> MatchQ,
+    TestID   -> "FastVectorSearch-SavedVerification-NewestKept@@Tests/VectorDatabases.wlt:780,1-800,2"
+]
+
+(* Saved verifications don't depend on the time zone of the session (which changes with daylight saving time): *)
+VerificationTest[
+    Module[ { file, date, hash, result },
+        file   = Export[ FileNameJoin @ { $TemporaryDirectory, CreateUUID[ ] <> ".txt" }, "test", "String" ];
+        date   = FileDate @ file;
+        hash   = Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`usearchVerificationHash @ <| "File" -> file, "FileDate" -> TimeZoneConvert[ date, # ] |> &;
+        result = hash[ -5 ] === hash[ -4 ];
+        DeleteFile @ file;
+        result
+    ],
+    True,
+    SameTest -> MatchQ,
+    TestID   -> "FastVectorSearch-SavedVerification-TimeZone@@Tests/VectorDatabases.wlt:803,1-815,2"
+]
+
+(* A database whose VectorDatabaseObject can't be created when a search needs it is skipped like one that can't be loaded,
+   instead of failing the chat. The warm-up leaves this to the next search, which shows the message: *)
+VerificationTest[
+    Module[ { name, vector },
+        name   = "NeuralNetRepositoryURIs";
+        vector = Wolfram`Chatbook`Common`getEmbedding[ "Is there a neural net that can classify images?" ];
+        Block[
+            {
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexCache        = <| |>,
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexVerified     = <| |>,
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$usearchIndexFailures     = <| |>,
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDatabaseObjects    = <| |>,
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDBLoadFailures     = { },
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$saveUSearchVerifications = False,
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`loadVectorDatabase        = Function[
+                    Enclose[ ConfirmMatch[ $Failed, _VectorDatabaseObject, "Database" ], Wolfram`Chatbook`Common`throwInternalFailure ]
+                ]
+            },
+            {
+                Block[ { Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$allowDownload = False }, Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDatabaseSearch[ name, vectorDBInfo @ name, vector, 250 ] ],
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDBLoadFailures,
+                Wolfram`Chatbook`Common`catchTop @ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDatabaseSearch[ name, vectorDBInfo @ name, vector, 250 ],
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDBLoadFailures,
+                vectorDBInfo @ name
+            }
+        ]
+    ],
+    { { }, { }, { }, { "NeuralNetRepositoryURIs" }, Missing[ "LoadFailed", "NeuralNetRepositoryURIs" ] },
+    { Chatbook::VectorDatabaseLoadFailed },
+    SameTest -> MatchQ,
+    TestID   -> "FastVectorSearch-DatabaseObjectFailed@@Tests/VectorDatabases.wlt:819,1-848,2"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*All Values*)
@@ -784,7 +855,7 @@ VerificationTest[
     Wolfram`Chatbook`PromptGenerators`Common`vectorDBSearch[ "NeuralNetRepositoryURIs", All, "Values" ],
     { __String },
     SameTest -> MatchQ,
-    TestID   -> "VectorDBSearch-AllValues-GH#1612@@Tests/VectorDatabases.wlt:783,1-788,2"
+    TestID   -> "VectorDBSearch-AllValues-GH#1612@@Tests/VectorDatabases.wlt:854,1-859,2"
 ]
 
 VerificationTest[
@@ -795,7 +866,7 @@ VerificationTest[
     ],
     { __String },
     SameTest -> MatchQ,
-    TestID   -> "VectorDBSearch-AllValues-Multiple-GH#1612@@Tests/VectorDatabases.wlt:790,1-799,2"
+    TestID   -> "VectorDBSearch-AllValues-Multiple-GH#1612@@Tests/VectorDatabases.wlt:861,1-870,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -808,7 +879,7 @@ VerificationTest[
     NeuralNetworks`LocalNetModel[ "MiniLM V2 Reranker Trained on MS MARCO Data", "Tokenizer" ],
     _NetEncoder,
     SameTest -> MatchQ,
-    TestID   -> "SentenceBERTTokenizerCached@@Tests/VectorDatabases.wlt:806,1-812,2"
+    TestID   -> "SentenceBERTTokenizerCached@@Tests/VectorDatabases.wlt:877,1-883,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
