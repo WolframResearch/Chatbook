@@ -3036,8 +3036,9 @@ initializeWorkspaceChatSettings // endDefinition;
     $chatPreloadSteps are evaluated one at a time by scheduled tasks.
 
     A step only runs while the kernel is idle. A scheduled task can fire inside another evaluation, where loading
-    packages could interfere with it, so the step is postponed then. While a step runs (up to about 3 s for the
-    longest one), evaluations and dynamic updates wait for it, like for any other evaluation.
+    packages could interfere with it, so the step is postponed then. While a step runs (usually 1-2 s, but about 7 s
+    once after the vector database caches have been rebuilt), Shift+Enter and other queued evaluations wait for it, and
+    so do dynamic updates: unlike a main link evaluation, a scheduled task does not let preemptive evaluations through.
 
     NOTE: this costs memory (a few hundred MB) and several seconds of kernel time in every session, also in the ones
     that never use the notebook assistant, which is why it's opt-in.
@@ -3049,9 +3050,11 @@ initializeWorkspaceChatSettings // endDefinition;
 scheduleChatPreload // beginDefinition;
 
 (* Called when Chatbook is loaded. This only schedules a task: the first step checks whether there is a front end and
-   reads the setting, since the kernel may not be connected to the front end yet while it starts. *)
+   reads the setting, since the kernel may not be connected to the front end yet while it starts. The tasks of an
+   earlier load are removed first, so that reloading Chatbook does not start a second chain of steps. *)
 scheduleChatPreload[ ] :=
     If[ chatPreloadPossibleQ[ ],
+        Quiet @ TaskRemove @ chatPreloadTasks[ ];
         $chatPreloadEnabled = None;
         $chatPreloadStep    = 1;
         scheduleChatPreloadStep @ $chatPreloadInitialDelay;
@@ -3064,7 +3067,12 @@ $chatPreloadStepDelay    = 0.25;
 $chatPreloadRetryDelay   = 2;
 $chatPreloadEnabled      = None;
 $chatPreloadStep         = 1;
-$chatPreloadTask         = None;
+
+(* The pending tasks of scheduleChatPreloadStep. Reloading Chatbook clears the private symbols, so this looks at the
+   tasks themselves instead of keeping them in a symbol: *)
+chatPreloadTasks // beginDefinition;
+chatPreloadTasks[ ] := Select[ Tasks[ ], ! FreeQ[ #[ "EvaluationExpression" ], chatPreloadStep ] & ];
+chatPreloadTasks // endDefinition;
 
 (* Not in the cloud, or in the kernels that Chatbook starts for evaluating code: *)
 chatPreloadPossibleQ // beginDefinition;
@@ -3083,8 +3091,10 @@ chatPreloadPossibleQ // endDefinition;
 (*scheduleChatPreloadStep*)
 scheduleChatPreloadStep // beginDefinition;
 
+(* Not wrapped in catchAlways, since its first use in a kernel loads ServiceFramework` (about 0.35 s), and the first
+   step runs in every kernel. The steps themselves are evaluated with catchAlways. *)
 scheduleChatPreloadStep[ seconds_ ] :=
-    $chatPreloadTask = Quiet @ SessionSubmit @ ScheduledTask[ Quiet @ catchAlways @ chatPreloadStep[ ], { seconds } ];
+    Quiet @ SessionSubmit @ ScheduledTask[ Quiet @ chatPreloadStep[ ], { seconds } ];
 
 scheduleChatPreloadStep // endDefinition;
 
@@ -3100,13 +3110,16 @@ chatPreloadStep[ ] := Which[
     (* A kernel without a front end (e.g. a script): *)
     ! TrueQ @ $Notebooks,
         Null,
+    (* Read even if the kernel is busy, so that nothing else is scheduled when the setting is off: *)
+    $chatPreloadEnabled === None,
+        $chatPreloadEnabled = chatPreloadSettingQ[ ];
+        If[ $chatPreloadEnabled, scheduleChatPreloadStep @ $chatPreloadStepDelay ],
+    ! TrueQ @ $chatPreloadEnabled || $chatPreloadStep > Length @ $chatPreloadSteps,
+        Null,
     (* This task fired inside another evaluation: *)
     ! kernelIdleQ[ ],
         scheduleChatPreloadStep @ $chatPreloadRetryDelay,
-    $chatPreloadEnabled === None,
-        $chatPreloadEnabled = TrueQ @ CurrentChatSettings[ $FrontEnd, "PreloadNotebookAssistant" ];
-        If[ $chatPreloadEnabled, scheduleChatPreloadStep @ $chatPreloadStepDelay ],
-    TrueQ @ $chatPreloadEnabled && $chatPreloadStep <= Length @ $chatPreloadSteps,
+    True,
         With[ { step = $chatPreloadSteps[[ $chatPreloadStep++ ]] },
             LogChatTiming[ Quiet @ catchAlways @ ReleaseHold @ Last @ step, "ChatPreload:" <> First @ step ]
         ];
@@ -3115,15 +3128,31 @@ chatPreloadStep[ ] := Which[
 
 chatPreloadStep // endDefinition;
 
+(* A plain front end read instead of CurrentChatSettings, which would load ServiceFramework` (about 0.35 s in a new
+   kernel). The setting is only read at $FrontEnd scope, where CurrentChatSettings stores it in TaggingRules: *)
+chatPreloadSettingQ // beginDefinition;
+
+chatPreloadSettingQ[ ] :=
+    TrueQ @ AbsoluteCurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings", "PreloadNotebookAssistant" } ];
+
+chatPreloadSettingQ // endDefinition;
+
 (* The parts of initializeWorkspaceChat that take the longest, so that the kernel is not busy for all of them at once.
    The last step is initializeWorkspaceChat itself, which then only has to do what is left and marks chat as
-   initialized. Steps that fail are tried again by the first chat, like in initializeWorkspaceChat. *)
+   initialized. Steps that fail are tried again by the first chat, like in initializeWorkspaceChat.
+
+   The LLM Kit info request is sent first. Asynchronous handlers don't run during a step, so its response is received
+   between steps, and initializeWorkspaceChat uses it instead of sending another request.
+
+   NOTE: if the user is not signed in, initializeWorkspaceChat might open a sign-in dialog (when getting the LLM Kit
+   service), as it would when the notebook assistant is opened; here that would be shortly after the kernel starts.
+   Not checked yet. If it happens, the setting could be ignored when cloudCredentialsQ[ ] is False. *)
 $chatPreloadSteps = {
-    "SemanticSearch"       -> Hold @ Needs[ "SemanticSearch`" -> None ],
-    "Embeddings"           -> Hold @ getEmbeddings @ { "Hello" },
-    "LLMKitService"        -> Hold @ $llmKitService,
-    "RelatedDocumentation" -> Hold @ initializeRelatedDocumentation @ None,
-    "InitializeChat"       -> Hold @ initializeWorkspaceChat[ ]
+    "StartLLMKitInfoRequest" -> Hold @ startLLMKitInfoRequest[ ],
+    "SemanticSearch"         -> Hold @ Needs[ "SemanticSearch`" -> None ],
+    "Embeddings"             -> Hold @ getEmbeddings @ { "Hello" },
+    "RelatedDocumentation"   -> Hold @ initializeRelatedDocumentation @ None,
+    "InitializeChat"         -> Hold @ initializeWorkspaceChat[ ]
 };
 
 (* ::**************************************************************************************************************:: *)

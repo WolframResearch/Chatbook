@@ -365,9 +365,12 @@ Chat initialization (`initializeWorkspaceChat` in `ChatModes/UI.wl`) loads the e
 With this setting, `scheduleChatPreload` (called when Chatbook is loaded) runs the same work ahead of time, as the steps of `$chatPreloadSteps`:
 
 - Each step is evaluated by a scheduled task, with a short pause between steps.
+- The first task reads the setting with a plain front end read (`chatPreloadSettingQ`), not with `CurrentChatSettings`, which would load `ServiceFramework` in a new kernel. If the setting is off, nothing else is scheduled.
 - A step only runs while the kernel is idle (`kernelIdleQ`). A scheduled task can fire inside another evaluation, so a step is postponed when it does.
-- While a step runs (up to about 3 seconds for the longest one), evaluations and dynamic updates wait for it.
+- While a step runs (usually 1-2 seconds, but about 7 seconds once after the vector database caches have been rebuilt), evaluations wait for it, and so do dynamic updates: unlike a main link evaluation, a scheduled task does not let preemptive evaluations through.
+- The first step sends the LLM Kit info request (`startLLMKitInfoRequest`). Its response is received between steps, and `initializeWorkspaceChat` uses it.
 - If the notebook assistant is opened before the steps are done, it runs the rest of the initialization itself, and the remaining steps are skipped.
+- Loading Chatbook again (e.g. a newer version) replaces the pending task, so only one chain of steps runs.
 - Nothing is done in the cloud, in kernels without a front end, or in the kernels that Chatbook starts for evaluating code.
 
 It is opt-in because every session then spends several seconds of kernel time and a few hundred MB of memory on it, also sessions that never use the notebook assistant.
