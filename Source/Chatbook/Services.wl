@@ -109,8 +109,10 @@ startLLMKitInfoRequest[ user_String, cloud_String ] /; ! AssociationQ @ $llmKitI
     $llmKitInfoRequest[ "Task" ] = ServiceSubmit[
         "LLMKit",
         "RawAccess",
+        (* Raw requests pass their handlers to URLSubmit, so the response arrives with "BodyReceived" (never with
+           "ResultReceived"). It is kept as bytes, since "Body" would decode it as ISO8859-1 instead of UTF-8: *)
         HandlerFunctions     -> <| "BodyReceived" -> llmKitInfoReceived |>,
-        HandlerFunctionsKeys -> { "Body" }
+        HandlerFunctionsKeys -> { "BodyByteArray" }
     ];
 );
 
@@ -125,7 +127,7 @@ $llmKitInfoRequest = None;
 (*llmKitInfoReceived*)
 llmKitInfoReceived // beginDefinition;
 
-llmKitInfoReceived[ KeyValuePattern[ "Body" -> body_ ] ] :=
+llmKitInfoReceived[ KeyValuePattern[ "BodyByteArray" -> body_ ] ] :=
     If[ AssociationQ @ $llmKitInfoRequest, $llmKitInfoRequest[ "Body" ] = body ];
 
 llmKitInfoReceived // endDefinition;
@@ -154,8 +156,8 @@ finishLLMKitInfoRequest[ request_Association ] :=
         $llmKitInfoRequest = None;
         TrueQ @ And[
             { request[ "User" ], request[ "Cloud" ] } === { $CloudUserID, $CloudBase },
-            StringQ @ body,
-            Wolfram`LLMFunctions`Common`UpdateLLMKitInfo @ body;
+            ByteArrayQ @ body,
+            Wolfram`LLMFunctions`Common`UpdateLLMKitInfo @ Quiet @ ByteArrayToString[ body, "UTF-8" ];
             AssociationQ @ Wolfram`LLMFunctions`Common`$LLMKitInfo
         ]
     ];

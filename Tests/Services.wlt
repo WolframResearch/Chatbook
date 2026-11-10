@@ -315,7 +315,8 @@ withLLMKitInfoTest[ eval_ ] := (
             $CloudBase      = "https://www.wolframcloud.com/",
             Wolfram`LLMFunctions`Common`$LLMKitInfo = None,
             Wolfram`Chatbook`Services`Private`$llmKitInfoRequest = None,
-            ServiceSubmit = Function[ sent++; None ],
+            ServiceSubmit = Function[ sent++; submitted = Association @ Cases[ { ## }, _Rule ]; None ],
+            submitted = <| |>,
             sent = 0,
             updates = 0
         },
@@ -326,6 +327,12 @@ withLLMKitInfoTest[ eval_ ] := (
     ]
 );
 
+(* Gives a response with this body to the handler that startLLMKitInfoRequest passed to ServiceSubmit, with only the
+   keys that it asked for, as URLSubmit does: *)
+sendLLMKitInfoResponse[ body_String ] := submitted[ HandlerFunctions ][ "BodyReceived" ][
+    KeyTake[ <| "BodyByteArray" -> StringToByteArray[ body, "UTF-8" ] |>, submitted[ HandlerFunctionsKeys ] ]
+];
+
 $testLLMKitInfoBody = "{\"success\": true, \"data\": {\"userHasSubscription\": true}}";
 
 (* The response of the request that was sent ahead of time is used, and no other request is sent: *)
@@ -334,7 +341,7 @@ VerificationTest[
         Wolfram`Chatbook`Common`startLLMKitInfoRequest[ ];
         Wolfram`Chatbook`Common`startLLMKitInfoRequest[ ];
         started = Wolfram`Chatbook`Services`Private`$llmKitInfoRequest;
-        Wolfram`Chatbook`Services`Private`llmKitInfoReceived @ <| "Body" -> $testLLMKitInfoBody |>;
+        sendLLMKitInfoResponse @ $testLLMKitInfoBody;
         info = Wolfram`Chatbook`Services`Private`getLLMKitInfo0[ ];
         { KeyDrop[ started, "Task" ], info, sent, updates, Wolfram`Chatbook`Services`Private`$llmKitInfoRequest }
     ],
@@ -345,7 +352,7 @@ VerificationTest[
         0,
         None
     },
-    TestID -> "LLMKitInfoRequest-ResponseUsed@@Tests/Services.wlt:332,1-349,2"
+    TestID -> "LLMKitInfoRequest-ResponseUsed@@Tests/Services.wlt:339,1-356,2"
 ]
 
 (* Without a usable response, getLLMKitInfo0 sends its own request as before: *)
@@ -357,12 +364,12 @@ VerificationTest[
         updates,
         (* A response that is not the LLM Kit info: *)
         Wolfram`Chatbook`Common`startLLMKitInfoRequest[ ];
-        Wolfram`Chatbook`Services`Private`llmKitInfoReceived @ <| "Body" -> "{\"success\": false}" |>;
+        sendLLMKitInfoResponse[ "{\"success\": false}" ];
         Wolfram`Chatbook`Services`Private`getLLMKitInfo0[ ];
         updates,
         (* A response for another user: *)
         Wolfram`Chatbook`Common`startLLMKitInfoRequest[ ];
-        Wolfram`Chatbook`Services`Private`llmKitInfoReceived @ <| "Body" -> $testLLMKitInfoBody |>;
+        sendLLMKitInfoResponse @ $testLLMKitInfoBody;
         Block[ { $CloudUserID = "other-user@example.com" }, Wolfram`Chatbook`Services`Private`getLLMKitInfo0[ ] ];
         updates,
         (* No request was sent ahead of time: *)
@@ -371,7 +378,18 @@ VerificationTest[
         sent
     },
     { 1, 2, 3, 4, 3 },
-    TestID -> "LLMKitInfoRequest-Fallback@@Tests/Services.wlt:352,1-375,2"
+    TestID -> "LLMKitInfoRequest-Fallback@@Tests/Services.wlt:359,1-382,2"
+]
+
+(* The response is decoded as UTF-8: *)
+VerificationTest[
+    withLLMKitInfoTest[
+        Wolfram`Chatbook`Common`startLLMKitInfoRequest[ ];
+        sendLLMKitInfoResponse[ "{\"success\": true, \"data\": {\"plan\": \"caf\[EAcute] \:2713\"}}" ];
+        { Wolfram`Chatbook`Services`Private`getLLMKitInfo0[ ], updates }
+    ],
+    { <| "plan" -> "caf\[EAcute] \:2713" |>, 0 },
+    TestID -> "LLMKitInfoRequest-UTF8@@Tests/Services.wlt:385,1-393,2"
 ]
 
 (* Nothing is sent when the user is not signed in: *)
@@ -380,7 +398,7 @@ VerificationTest[
         { Wolfram`Chatbook`Common`startLLMKitInfoRequest[ ], sent, Wolfram`Chatbook`Services`Private`$llmKitInfoRequest }
     ],
     { Null, 0, None },
-    TestID -> "LLMKitInfoRequest-NotSignedIn@@Tests/Services.wlt:378,1-384,2"
+    TestID -> "LLMKitInfoRequest-NotSignedIn@@Tests/Services.wlt:396,1-402,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
