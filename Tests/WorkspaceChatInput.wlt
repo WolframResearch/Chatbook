@@ -754,6 +754,44 @@ VerificationTest[
     TestID   -> "EvaluateWorkspaceChat-CurrentValue-Blank@@Tests/WorkspaceChatInput.wlt:738,1-755,2"
 ]
 
+(* A send that was queued behind a chat can run after "New Chat" replaced its input cell. The deleted cell gives $Failed,
+   which used to be sent as a chat. Nothing is sent, and the text that New Chat moved to the new input cell is kept: *)
+VerificationTest[
+    withTestInputCell[
+        { },
+        Internal`InheritedBlock[ { ChatCellEvaluate, Wolfram`Chatbook`ChatModes`Common`moveChatInputToBottom },
+            Unprotect @ ChatCellEvaluate;
+            Clear[ ChatCellEvaluate, Wolfram`Chatbook`ChatModes`Common`moveChatInputToBottom ];
+            Wolfram`Chatbook`ChatModes`Common`moveChatInputToBottom[ _ ] := ($testMoved = True;);
+            ChatCellEvaluate[ cell_, nbo_ ] := ($testEvaluated = { cell, nbo };);
+            Block[
+                {
+                    NotebookWrite       = ($testWritten = #2;) &,
+                    SelectionMove       = Null &,
+                    $WorkspaceChatInput = "Draft",
+                    $testInputCellValue = $Failed,
+                    $testWritten        = None,
+                    $testMoved          = False,
+                    $testEvaluated      = None
+                },
+                {
+                    Wolfram`Chatbook`Common`evaluateWorkspaceChat[
+                        $testNotebook,
+                        Dynamic @ CurrentValue[ $testInputCell, { TaggingRules, "ChatInputString" } ]
+                    ],
+                    $testWritten,
+                    $testMoved,
+                    $testEvaluated,
+                    $WorkspaceChatInput
+                }
+            ]
+        ]
+    ],
+    { Null, None, False, None, "Draft" },
+    SameTest -> MatchQ,
+    TestID   -> "EvaluateWorkspaceChat-DeletedInputCell-GH#1719@@Tests/WorkspaceChatInput.wlt:759,1-793,2"
+]
+
 VerificationTest[
     withTestInputCell[
         { $testInputCell },
@@ -808,7 +846,7 @@ VerificationTest[
         { CellObject[ "ChatbookTestWorkspaceChatMessage" ], NotebookObject[ "ChatbookTestWorkspaceChat" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "EvaluateWorkspaceChat-CurrentValue@@Tests/WorkspaceChatInput.wlt:757,1-812,2"
+    TestID   -> "EvaluateWorkspaceChat-CurrentValue@@Tests/WorkspaceChatInput.wlt:795,1-850,2"
 ]
 
 (* Submitting with the kernel symbol still works: *)
@@ -821,7 +859,7 @@ VerificationTest[
     ],
     { Null, "" },
     SameTest -> MatchQ,
-    TestID   -> "EvaluateWorkspaceChat-Symbol-Blank@@Tests/WorkspaceChatInput.wlt:815,1-825,2"
+    TestID   -> "EvaluateWorkspaceChat-Symbol-Blank@@Tests/WorkspaceChatInput.wlt:853,1-863,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

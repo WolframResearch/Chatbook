@@ -17,11 +17,17 @@ Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 evaluateWorkspaceChat // beginDefinition;
 
 evaluateWorkspaceChat[ nbo_NotebookObject, Dynamic[ input: _Symbol|_CurrentValue ] ] := Enclose[
-    Catch @ Module[ { text, uuid, cell, cellObject },
+    Catch @ Module[ { value, text, uuid, cell, cellObject },
+
+        value = input;
+
+        (* The input cell no longer exists, e.g. a send that was queued behind a chat runs after "New Chat" replaced the
+           input cell. Its text is in the new input cell, so nothing is sent or cleared (#1719): *)
+        If[ value === $Failed, Throw @ Null ];
 
         (* $WorkspaceChatInput is a kernel-side copy of the input field text, so it is cleared along with the input: *)
-        If[ ! validInputStringQ @ input, input = $WorkspaceChatInput = ""; Throw @ Null ];
-        text = makeBoxesInputMoreTextLike @ input;
+        If[ ! validInputStringQ @ value, input = $WorkspaceChatInput = ""; Throw @ Null ];
+        text = makeBoxesInputMoreTextLike @ value;
         uuid = ConfirmBy[ createUUID[ ], StringQ, "UUID" ];
 
         cell = Cell[
