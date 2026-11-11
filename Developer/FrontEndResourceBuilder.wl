@@ -146,9 +146,10 @@ Module[{lines, resources, newresources, st},
 			Message[WriteTextResource::nores, file, resourceLine];
 			Return[$Failed]
 		];
-	(* write all the lines back into the file *)
-	st = OpenWrite[file];
-	WriteString[st, StringRiffle[Flatten[newresources], {"", "\n", "\n"}]];
+	(* write all the lines back into the file. Text mode would write "\r\n" on Windows, and the line continuations
+	   ("\" at the end of a line) in the file don't parse before "\r\n", so write LF explicitly: *)
+	st = OpenWrite[file, BinaryFormat -> True];
+	WriteString[st, StringReplace[StringRiffle[Flatten[newresources], {"", "\n", "\n"}], "\r\n" -> "\n"]];
 	Close[st]
 ]
 
