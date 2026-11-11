@@ -92,7 +92,7 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "Definitions@@Tests/NotebookFocus.wlt:25,1-91,2"
+    TestID   -> "Definitions@@Tests/NotebookFocus.wlt:25,1-96,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -111,7 +111,7 @@ VerificationTest[
     },
     { { False, True, False, False, False, True }, { False, True, False, False, False, True } },
     SameTest -> MatchQ,
-    TestID   -> "IncludedNotebookQ-MatchesSourceNotebookObjectInformation@@Tests/NotebookFocus.wlt:98,1-110,2"
+    TestID   -> "IncludedNotebookQ-MatchesSourceNotebookObjectInformation@@Tests/NotebookFocus.wlt:103,1-115,2"
 ]
 
 (* Same check through the real notebookInformation code, with only the front end primitives stubbed: *)
@@ -144,14 +144,49 @@ VerificationTest[
     ],
     { { False, True, False, False, False, True }, { False, True, False, False, False, True } },
     SameTest -> MatchQ,
-    TestID   -> "IncludedNotebookQ-MatchesSourceNotebookObjectInformation-FrontEndStubs@@Tests/NotebookFocus.wlt:113,1-143,2"
+    TestID   -> "IncludedNotebookQ-MatchesSourceNotebookObjectInformation-FrontEndStubs@@Tests/NotebookFocus.wlt:118,1-148,2"
 ]
 
 VerificationTest[
     withFocusStubs @ Wolfram`Chatbook`ChatModes`Common`includedNotebookQ @ $closedNB,
     False,
     SameTest -> MatchQ,
-    TestID   -> "IncludedNotebookQ-ClosedNotebook@@Tests/NotebookFocus.wlt:145,1-150,2"
+    TestID   -> "IncludedNotebookQ-ClosedNotebook@@Tests/NotebookFocus.wlt:150,1-155,2"
+]
+
+(* A notebook that closes while notebooks are being scanned gives Missing instead of an internal failure, through the
+   real notebookInformation code. For a closed notebook, the front end gives $Failed from NotebookInformation and leaves
+   AbsoluteCurrentValue unevaluated: *)
+VerificationTest[
+    Module[ { notebooks, acv },
+        notebooks = { $userNB1, $closedNB };
+        acv[ nbos_List, spec_ ] := acv[ #, spec ] & /@ nbos;
+        acv[ nbo_NotebookObject, spec_ ] /; nbo === $closedNB := FrontEnd`AbsoluteCurrentValue[ nbo, spec ];
+        acv[ nbo_NotebookObject, Visible ] := True;
+        acv[ nbo_NotebookObject, WindowFrame ] := "Normal";
+        acv[ nbo_NotebookObject, { TaggingRules, "ChatNotebookSettings" } ] := Inherited;
+        acv[ $FrontEnd, { TaggingRules, "ChatNotebookSettings" } ] := { "Model" -> "DefaultModel" };
+        Block[
+            {
+                Notebooks            = notebooks &,
+                NotebookInformation  = If[ # === $closedNB, $Failed, { "WindowTitle" -> "Title" } ] &,
+                AbsoluteCurrentValue = acv,
+                SelectedNotebook     = $userNB1 &,
+                InputNotebook        = $userNB1 &
+            },
+            {
+                Wolfram`Chatbook`Common`notebookInformation @ notebooks,
+                (* Runs under catchTop, where a fall through in combineNotebookInfo is a failure, not a retry: *)
+                Lookup[ SourceNotebookObjectInformation[ ], "NotebookObject" ]
+            }
+        ]
+    ],
+    {
+        { KeyValuePattern[ "NotebookObject" -> $userNB1 ], Missing[ "NotebookClosed", $closedNB ] },
+        { $userNB1 }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookInformation-ClosedNotebook-FrontEndStubs-GH#1733@@Tests/NotebookFocus.wlt:160,1-190,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -167,7 +202,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "SetFocusWindowTitle-Unchanged@@Tests/NotebookFocus.wlt:155,1-166,2"
+    TestID   -> "SetFocusWindowTitle-Unchanged@@Tests/NotebookFocus.wlt:195,1-206,2"
 ]
 
 VerificationTest[
@@ -180,14 +215,14 @@ VerificationTest[
     ],
     { { $chatNB, { TaggingRules, "FocusWindowTitle" }, "Notebook B.nb" } },
     SameTest -> MatchQ,
-    TestID   -> "SetFocusWindowTitle-Changed@@Tests/NotebookFocus.wlt:168,1-179,2"
+    TestID   -> "SetFocusWindowTitle-Changed@@Tests/NotebookFocus.wlt:208,1-219,2"
 ]
 
 VerificationTest[
     withFocusStubs[ Wolfram`Chatbook`ChatModes`NotebookFocus`Private`setFocusWindowTitle[ $chatNB, None ]; $writes ],
     { { $chatNB, { TaggingRules, "FocusWindowTitle" }, None } },
     SameTest -> MatchQ,
-    TestID   -> "SetFocusWindowTitle-Unset@@Tests/NotebookFocus.wlt:181,1-186,2"
+    TestID   -> "SetFocusWindowTitle-Unset@@Tests/NotebookFocus.wlt:221,1-226,2"
 ]
 
 (* The current title is only read inside Refresh[ ..., None ], so the focus indicator's Dynamic doesn't depend on it: *)
@@ -213,7 +248,7 @@ VerificationTest[
         { "Notebook B.nb" }
     },
     SameTest -> MatchQ,
-    TestID   -> "SetFocusWindowTitle-UntrackedRead@@Tests/NotebookFocus.wlt:189,1-212,2"
+    TestID   -> "SetFocusWindowTitle-UntrackedRead@@Tests/NotebookFocus.wlt:229,1-252,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -236,7 +271,7 @@ VerificationTest[
         3
     },
     SameTest -> MatchQ,
-    TestID   -> "FocusedNotebookDisplay-WorkspaceChat-TitleWrittenOnce@@Tests/NotebookFocus.wlt:223,1-235,2"
+    TestID   -> "FocusedNotebookDisplay-WorkspaceChat-TitleWrittenOnce@@Tests/NotebookFocus.wlt:263,1-275,2"
 ]
 
 (* Switching notebooks updates the title: *)
@@ -253,7 +288,7 @@ VerificationTest[
     ],
     { "Notebook B.nb" },
     SameTest -> MatchQ,
-    TestID   -> "FocusedNotebookDisplay-WorkspaceChat-TitleChanged@@Tests/NotebookFocus.wlt:238,1-252,2"
+    TestID   -> "FocusedNotebookDisplay-WorkspaceChat-TitleChanged@@Tests/NotebookFocus.wlt:278,1-292,2"
 ]
 
 (* A notebook selected in the focus menu takes precedence over the current notebook: *)
@@ -268,7 +303,7 @@ VerificationTest[
     ],
     { "Notebook B.nb" },
     SameTest -> MatchQ,
-    TestID   -> "FocusedNotebookDisplay-WorkspaceChat-LockedNotebook@@Tests/NotebookFocus.wlt:255,1-267,2"
+    TestID   -> "FocusedNotebookDisplay-WorkspaceChat-LockedNotebook@@Tests/NotebookFocus.wlt:295,1-307,2"
 ]
 
 VerificationTest[
@@ -278,7 +313,7 @@ VerificationTest[
     ],
     { Spacer[ 0 ], { } },
     SameTest -> MatchQ,
-    TestID   -> "FocusedNotebookDisplay-WorkspaceChat-NoNotebooks@@Tests/NotebookFocus.wlt:269,1-277,2"
+    TestID   -> "FocusedNotebookDisplay-WorkspaceChat-NoNotebooks@@Tests/NotebookFocus.wlt:309,1-317,2"
 ]
 
 (* The Dynamic in the attached input cell only tracks its notebook variable in the kernel: *)
@@ -293,7 +328,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "FocusedNotebookDisplay-WorkspaceChat-TrackedSymbols@@Tests/NotebookFocus.wlt:280,1-292,2"
+    TestID   -> "FocusedNotebookDisplay-WorkspaceChat-TrackedSymbols@@Tests/NotebookFocus.wlt:320,1-332,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -331,7 +366,7 @@ VerificationTest[
         2
     ],
     SameTest -> MatchQ,
-    TestID   -> "FocusedNotebookDisplay-WorkspaceChat-LockedNotebookNotIncluded"
+    TestID   -> "FocusedNotebookDisplay-WorkspaceChat-LockedNotebookNotIncluded@@Tests/NotebookFocus.wlt:339,1-370,2"
 ]
 
 VerificationTest[
@@ -350,7 +385,7 @@ VerificationTest[
     ],
     { $userNB1, $userNB1, $userNB1, $userNB2, $userNB1 },
     SameTest -> MatchQ,
-    TestID   -> "GetFocusedNotebook-LockedNotebookNotIncluded"
+    TestID   -> "GetFocusedNotebook-LockedNotebookNotIncluded@@Tests/NotebookFocus.wlt:372,1-389,2"
 ]
 
 VerificationTest[
@@ -367,7 +402,7 @@ VerificationTest[
     ],
     { { $userNB1, 1, 1 }, { $userNB2, 1, 0 }, { $userNB1, 0, 1 } },
     SameTest -> MatchQ,
-    TestID   -> "GetFocusedNotebook-ResolvesNotebookInformationOnce"
+    TestID   -> "GetFocusedNotebook-ResolvesNotebookInformationOnce@@Tests/NotebookFocus.wlt:391,1-406,2"
 ]
 
 (* The context sent to the model never comes from an excluded or hidden locked notebook: *)
@@ -397,7 +432,7 @@ VerificationTest[
         { $userNB1, KeyValuePattern[ "NotebookObject" -> $userNB1 ], 0, 1 }
     },
     SameTest -> MatchQ,
-    TestID   -> "GetContextFromSelection-LockedNotebookNotIncluded"
+    TestID   -> "GetContextFromSelection-LockedNotebookNotIncluded@@Tests/NotebookFocus.wlt:409,1-436,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -413,7 +448,7 @@ VerificationTest[
     },
     { Pane[ _DynamicModule, Alignment -> { Center, Baseline }, ImageSize -> Scaled[ 1 ] ], 0, { } },
     SameTest -> MatchQ,
-    TestID   -> "FocusedNotebookDisplay-Sidebar-NoNotebookScan@@Tests/NotebookFocus.wlt:299,1-308,2"
+    TestID   -> "FocusedNotebookDisplay-Sidebar-NoNotebookScan@@Tests/NotebookFocus.wlt:443,1-452,2"
 ]
 
 (* Skipping the scan gives the same display as the full scan: *)
@@ -427,7 +462,7 @@ VerificationTest[
     ],
     { True, 1, { } },
     SameTest -> MatchQ,
-    TestID   -> "FocusedNotebookDisplay-Sidebar-SameDisplay@@Tests/NotebookFocus.wlt:311,1-322,2"
+    TestID   -> "FocusedNotebookDisplay-Sidebar-SameDisplay@@Tests/NotebookFocus.wlt:455,1-466,2"
 ]
 
 (* If the sidebar's own notebook is excluded, the display still depends on whether any other notebook is included: *)
@@ -438,7 +473,7 @@ VerificationTest[
     ],
     { Pane[ _DynamicModule, Alignment -> { Center, Baseline }, ImageSize -> Scaled[ 1 ] ], 1 },
     SameTest -> MatchQ,
-    TestID   -> "FocusedNotebookDisplay-Sidebar-OwnNotebookExcluded@@Tests/NotebookFocus.wlt:325,1-333,2"
+    TestID   -> "FocusedNotebookDisplay-Sidebar-OwnNotebookExcluded@@Tests/NotebookFocus.wlt:469,1-477,2"
 ]
 
 VerificationTest[
@@ -448,7 +483,7 @@ VerificationTest[
     ],
     { Spacer[ 0 ], 1 },
     SameTest -> MatchQ,
-    TestID   -> "FocusedNotebookDisplay-Sidebar-NoIncludedNotebooks@@Tests/NotebookFocus.wlt:335,1-343,2"
+    TestID   -> "FocusedNotebookDisplay-Sidebar-NoIncludedNotebooks@@Tests/NotebookFocus.wlt:479,1-487,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -466,7 +501,7 @@ VerificationTest[
     ] & /@ { None, $sidebarCell },
     { { HoldForm @ { TrackedSymbols :> { } } }, { HoldForm @ { TrackedSymbols :> { } } } },
     SameTest -> MatchQ,
-    TestID   -> "NotebookSources-TrackedSymbols@@Tests/NotebookFocus.wlt:351,1-361,2"
+    TestID   -> "NotebookSources-TrackedSymbols@@Tests/NotebookFocus.wlt:495,1-505,2"
 ]
 
 VerificationTest[
@@ -477,7 +512,7 @@ VerificationTest[
     ],
     { HoldForm @ { TrackedSymbols :> { } } },
     SameTest -> MatchQ,
-    TestID   -> "InclusionCheckbox-TrackedSymbols@@Tests/NotebookFocus.wlt:363,1-372,2"
+    TestID   -> "InclusionCheckbox-TrackedSymbols@@Tests/NotebookFocus.wlt:507,1-516,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
