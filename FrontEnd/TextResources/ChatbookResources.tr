@@ -9733,7 +9733,7 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
     Background->LightDarkSwitched[
       RGBColor[0.07058823529411765, 0.5568627450980392, 0.8196078431372549], 
       RGBColor[0.4980392156862745, 0.7803921568627451, 0.984313725490196]],
-    ExpressionUUID->"9552d50c-a166-e54a-a5f1-e4eaaa5206a1"], Cell[BoxData[
+    ExpressionUUID->"2a658bf2-58fc-fc49-86c3-8e59a4d3796c"], Cell[BoxData[
     DynamicModuleBox[{Typeset`sidebarDockedCell$$, Typeset`thisNotebook$$, 
      Typeset`sidebarCell$$}, 
      FrameBox[
@@ -10776,7 +10776,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
     Magnification->Dynamic[0.85 AbsoluteCurrentValue[
         FrontEnd`EvaluationNotebook[], Magnification]],
     CellTags->"SidebarDockedCell",ExpressionUUID->
-    "6512ea95-f631-6142-b9b1-a8e214fa74c8"], Cell[BoxData[
+    "459b63c7-e463-0c48-9929-09bea139a300"], Cell[BoxData[
     DynamicModuleBox[{Typeset`chatInputFieldCell$$, 
      Typeset`chatEvalCell$$ = {}, Typeset`nbo$$, Typeset`sidebarCell$$, 
      Typeset`fieldContent$$ = "", Typeset`returnKeyDownQ$$ = False, 
@@ -11239,7 +11239,7 @@ workspaceChatInitialized]],
       RGBColor[
       0.14901960784313725`, 0.20784313725490197`, 0.2549019607843137]],
     CellTags->"SidebarChatInputCell",ExpressionUUID->
-    "e2b1f37c-9135-7a4c-8424-de52c9ee65d8"]}],
+    "6d576a48-47d8-0445-9d49-02dfa4095eb6"]}],
   "NotebookSelectionSnapshotExclusionZone"]], \
 "NotebookAssistant`Sidebar`NotebookAssistantSidebarCell",
  Editable->True,
@@ -11255,8 +11255,8 @@ workspaceChatInitialized]],
    RGBColor[0.9333333333333333, 0.9764705882352941, 1.], 
    RGBColor[0.14901960784313725`, 0.20784313725490197`, 0.2549019607843137]],
  CellTags->
-  "NotebookAssistantSidebarCell",ExpressionUUID->"d9c6b23e-f342-344e-bc01-\
-afa8dd419162"],
+  "NotebookAssistantSidebarCell",ExpressionUUID->"0e1ea581-89c2-d843-b38f-\
+d771b8295ca9"],
 
 "SidebarIconHide" -> (GraphicsBox[{
    Thickness[0.125], 
@@ -11375,8 +11375,8 @@ ad5a-1ce3075a0f97"],
  LineIndent->0,
  Magnification->1.,
  CellTags->
-  "NotebookAssistantChatbarCell",ExpressionUUID->"10e717d9-185f-b144-9628-\
-6d0061cfd27c"],
+  "NotebookAssistantChatbarCell",ExpressionUUID->"a4b3aac9-7a4e-3a49-829e-\
+8e23cec0bd37"],
 
 "ChatbarSettingsIcon" -> (GraphicsBox[{
    Thickness[0.09090909090909091], 
@@ -11767,9 +11767,7 @@ vtqjhxcARmhTiQ==
    {LightDarkSwitched[
      RGBColor[0.07058823529411765, 0.5568627450980392, 0.8196078431372549], 
      RGBColor[0.4980392156862745, 0.7803921568627451, 0.984313725490196]], 
-    Thickness[0.08600404731876123], CapForm[
-    Wolfram`ChatbookFrontEndResourceBuilder`Private`Butt], 
-    JoinForm[{Wolfram`ChatbookFrontEndResourceBuilder`Private`Miter, 1.}], 
+    Thickness[0.08600404731876123], CapForm["Butt"], JoinForm[{"Miter", 1.}], 
     JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
      1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
      0}}}, CompressedData["
@@ -11833,9 +11831,8 @@ gcJ3OHIRzIeZB+PD7IPxuTTvCCHzhRkYhJDNg/kHZh+MP2F3mCwyHxY+Dpox
 X+3RwwsA1fdSkQ==
      "]]}, 
    {LightDarkSwitched[
-     GrayLevel[0.5373]], Thickness[0.08600345478355505], CapForm[
-    Wolfram`ChatbookFrontEndResourceBuilder`Private`Butt], 
-    JoinForm[{Wolfram`ChatbookFrontEndResourceBuilder`Private`Miter, 1.}], 
+     GrayLevel[0.5373]], Thickness[0.08600345478355505], CapForm["Butt"], 
+    JoinForm[{"Miter", 1.}], 
     JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
      1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
      0}}}, CompressedData["

@@ -127,6 +127,7 @@ $colorData = <|
     "Blue_96CFED_Auto"     -> LightDarkSwitched[ RGBColor[ "#96CFED" ] ],
     "Blue_97CFED_577C94"   -> LightDarkSwitched[ RGBColor[ "#97CFED" ], RGBColor[ "#577C94" ] ], (* hover: NA_ChatInputFieldFocusNotebookIconHover_2 *)
     "Blue_A1CDE4_607E91"   -> LightDarkSwitched[ RGBColor[ "#A1CDE4" ], RGBColor[ "#607E91" ] ], (* hover: NA_CloudToolbarButtonFrameHover *)
+    "Blue_A3C9F2_5F88B8"   -> LightDarkSwitched[ RGBColor[ "#A3C9F2" ], RGBColor[ "#5F88B8" ] ],
     "Blue_A3D5F0_3E9CD1"   -> LightDarkSwitched[ RGBColor[ "#A3D5F0" ], RGBColor[ "#3E9CD1" ] ], (* hover: ErrorMessageBlockedCloseButtonBackgroundHover, ErrorMessageBlockedLabelButtonFrameHover *)
     "Blue_B1D5E8_607D8F"   -> LightDarkSwitched[ RGBColor[ "#B1D5E8" ], RGBColor[ "#607D8F" ] ], (* hover: NA_BlueHueButtonFrameHover, NA_ChatbarMinimizedButtonFrameHover, NA_ChatCodeBlockTemplateButtonFrameHover *)
     "Blue_BFC8CC_7E8588"   -> LightDarkSwitched[ RGBColor[ "#BFC8CC" ], RGBColor[ "#7E8588" ] ],

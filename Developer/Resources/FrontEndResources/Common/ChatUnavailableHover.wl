@@ -94,8 +94,8 @@ Graphics[
 							CurveClosed -> {1}
 						]
 					},
-					CapForm @ Butt,
-					JoinForm @ {Miter, 1.},
+					CapForm @ "Butt",
+					JoinForm @ {"Miter", 1.},
 					Thickness @ 0.08600404731876123,
 					color @ "Blue_128ED1_7FC7FB"
 				],

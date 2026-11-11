@@ -28,7 +28,7 @@ Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
 
 $argumentDivider = "|";
 
-$frameStyle     = Directive[ AbsoluteThickness[ 1 ], LightDarkSwitched[ RGBColor[ "#a3c9f2" ], RGBColor[ "#5F88B8" ] ] ];
+$frameStyle     = Directive[ AbsoluteThickness[ 1 ], color @ "Blue_A3C9F2_5F88B8" ];
 $frameBaseStyle = { "NotebookAssistant`InlineReferenceText", FontSize -> 0.95*Inherited };
 
 $frameOptions = Sequence[
@@ -462,7 +462,7 @@ staticModifierBoxLabel[ { name_, args___ }, background_ ] :=
                     }
                 },
                 Dividers   -> { { False, { True }, False }, False },
-                FrameStyle -> LightDarkSwitched[ RGBColor[ "#a3c9f2" ], RGBColor[ "#5F88B8" ] ],
+                FrameStyle -> color @ "Blue_A3C9F2_5F88B8",
                 Spacings   -> 0.5,
                 Alignment  -> { Automatic, Baseline }
             ],
@@ -780,7 +780,7 @@ staticFunctionBoxLabel[ { name_, args___ }, background_ ] :=
                     }
                 },
                 Dividers   -> { { False, { True }, False }, False },
-                FrameStyle -> LightDarkSwitched[ RGBColor[ "#a3c9f2" ], RGBColor[ "#5F88B8" ] ],
+                FrameStyle -> color @ "Blue_A3C9F2_5F88B8",
                 Spacings   -> 0.5,
                 Alignment  -> { Automatic, Baseline }
             ],
