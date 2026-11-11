@@ -19,10 +19,12 @@ VerificationTest[
 (* ::Section::Closed:: *)
 (*Color Names*)
 VerificationTest[
-    $pacletDir = PacletObject[ "Wolfram/Chatbook" ][ "Location" ];
+    (* The repository, not the paclet being tested: a built paclet has no Developer directory, which has the
+       stylesheet and front end resource sources. *)
+    $repositoryDir = ParentDirectory @ DirectoryName @ $TestFileName;
     $colorNameCounts = Counts @ Flatten @ Map[
         StringCases[ ReadString @ #, "color" ~~ WhitespaceCharacter... ~~ ("@" | "[") ~~ WhitespaceCharacter... ~~ "\"" ~~ name: Except[ "\"" ].. ~~ "\"" :> name ] &,
-        Select[ FileNames[ "*.wl", FileNameJoin @ { $pacletDir, # } & /@ { "Source", "Developer" }, Infinity ], FileNameTake @ # =!= "ColorData.wl" & ]
+        Select[ FileNames[ "*.wl", FileNameJoin @ { $repositoryDir, # } & /@ { "Source", "Developer" }, Infinity ], FileNameTake @ # =!= "ColorData.wl" & ]
     ];
     $usedColorNames = Keys @ $colorNameCounts,
     { __String },
