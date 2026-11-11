@@ -66,7 +66,7 @@ wolframscript -f Scripts/BuildPaclet.wls --check=false --snippets=false --instal
 # Run tests (builds first if needed)
 wolframscript -f Scripts/TestPaclet.wls
 
-# Format/unformat source files
+# Format/unformat notebook files
 wolframscript -f Scripts/FormatFiles.wls
 wolframscript -f Scripts/UnformatFiles.wls
 

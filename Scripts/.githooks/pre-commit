@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-changed="$(git --no-pager diff --name-status --no-color --cached | awk '$1 != "D" && $2 ~ /\.(nb|wlt)/ { print $2}')"
+changed="$(git --no-pager diff --name-status --no-color --cached | awk '$1 != "D" && $2 ~ /\.nb$/ { print $2}')"
 
 echo "Changed files:"
 echo "$changed"
