@@ -5,21 +5,21 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName[ $TestFileName ], "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/CurrentChatSettings.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/CurrentChatSettings.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 VerificationTest[
     Context @ CurrentChatSettings,
     "Wolfram`Chatbook`",
     SameTest -> MatchQ,
-    TestID   -> "CurrentChatSettingsContext@@Tests/CurrentChatSettings.wlt:18,1-23,2"
+    TestID   -> "CurrentChatSettingsContext"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -29,14 +29,14 @@ VerificationTest[
     CurrentChatSettings[ ],
     KeyValuePattern[ (Rule|RuleDelayed)[ "Model", _ ] ],
     SameTest -> MatchQ,
-    TestID   -> "CurrentChatSettings@@Tests/CurrentChatSettings.wlt:28,1-33,2"
+    TestID   -> "CurrentChatSettings"
 ]
 
 VerificationTest[
     CurrentChatSettings[ "Model" ],
     KeyValuePattern @ { "Service" -> _String, "Name" -> _String | Automatic } | _String | Automatic,
     SameTest -> MatchQ,
-    TestID   -> "CurrentChatSettings@@Tests/CurrentChatSettings.wlt:35,1-40,2"
+    TestID   -> "CurrentChatSettings-Model"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -46,14 +46,14 @@ VerificationTest[
     UsingFrontEnd @ CurrentChatSettings[ $FrontEnd, "Model" ],
     KeyValuePattern @ { "Service" -> _String, "Name" -> _String | Automatic } | _String | Automatic,
     SameTest -> MatchQ,
-    TestID   -> "CurrentChatSettings@@Tests/CurrentChatSettings.wlt:45,1-50,2"
+    TestID   -> "CurrentChatSettings-FrontEnd"
 ]
 
 VerificationTest[
     UsingFrontEnd @ CurrentChatSettings[ $FrontEndSession, "Model" ],
     KeyValuePattern @ { "Service" -> _String, "Name" -> _String | Automatic } | _String | Automatic,
     SameTest -> MatchQ,
-    TestID   -> "CurrentChatSettings@@Tests/CurrentChatSettings.wlt:52,1-57,2"
+    TestID   -> "CurrentChatSettings-FrontEndSession"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -66,7 +66,7 @@ VerificationTest[
     ],
     "MyModelName",
     SameTest -> MatchQ,
-    TestID   -> "CurrentChatSettings-Notebooks@@Tests/CurrentChatSettings.wlt:62,1-70,2"
+    TestID   -> "CurrentChatSettings-Notebooks"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -89,7 +89,7 @@ VerificationTest[
         }
     ],
     SameTest -> MatchQ,
-    TestID   -> "CurrentChatSettings-ChatBlocks@@Tests/CurrentChatSettings.wlt:75,1-93,2"
+    TestID   -> "CurrentChatSettings-ChatBlocks"
 ]
 
 VerificationTest[
@@ -102,7 +102,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { "NotebookModel", "BlockModel", "BlockModel" },
     SameTest -> MatchQ,
-    TestID   -> "CurrentChatSettings-ChatBlocks@@Tests/CurrentChatSettings.wlt:95,1-106,2"
+    TestID   -> "CurrentChatSettings-ChatBlocks-NotebookModel"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -125,7 +125,7 @@ VerificationTest[
     ],
     Except[ _? FailureQ ],
     SameTest -> MatchQ,
-    TestID   -> "CurrentChatSettings-Regression#426@@Tests/CurrentChatSettings.wlt:115,1-129,2"
+    TestID   -> "CurrentChatSettings-Regression#426"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -138,7 +138,7 @@ VerificationTest[
     ],
     Except[ _? FailureQ ],
     SameTest -> MatchQ,
-    TestID   -> "CurrentChatSettings-Regression#592@@Tests/CurrentChatSettings.wlt:134,1-142,2"
+    TestID   -> "CurrentChatSettings-Regression#592"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -153,6 +153,6 @@ VerificationTest[
     |>,
     _Integer? Positive,
     SameTest -> MatchQ,
-    TestID   -> "AutoMaxContextTokens-OllamaAutomaticModel-GH#1750@@Tests/CurrentChatSettings.wlt:150,1-157,2"
+    TestID   -> "AutoMaxContextTokens-OllamaAutomaticModel-GH#1750"
 ]
 (* :!CodeAnalysis::EndBlock:: *)

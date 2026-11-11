@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/SendChat.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/SendChat.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -41,7 +41,7 @@ VerificationTest[
     ],
     { True, False, False, False },
     SameTest -> MatchQ,
-    TestID   -> "AsyncChatSubmitQ@@Tests/SendChat.wlt:30,1-45,2"
+    TestID   -> "AsyncChatSubmitQ"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -108,7 +108,7 @@ VerificationTest[
     |>,
     _Association,
     SameTest -> MatchQ,
-    TestID   -> "SendChat-Definitions@@Tests/SendChat.wlt:53,1-112,2"
+    TestID   -> "SendChat-Definitions"
 ]
 
 (* For asynchronous requests, the output cell's "Data" setting is written after the request is submitted: *)
@@ -125,7 +125,7 @@ VerificationTest[
         }
     |>,
     SameTest -> SameQ,
-    TestID   -> "SendChat-ChatOutputData-Async@@Tests/SendChat.wlt:115,1-129,2"
+    TestID   -> "SendChat-ChatOutputData-Async"
 ]
 
 (* A synchronous submit can finish the response before returning, so the data needs to be written beforehand: *)
@@ -142,7 +142,7 @@ VerificationTest[
         }
     |>,
     SameTest -> SameQ,
-    TestID   -> "SendChat-ChatOutputData-ForceSynchronous@@Tests/SendChat.wlt:132,1-146,2"
+    TestID   -> "SendChat-ChatOutputData-ForceSynchronous"
 ]
 
 (* A custom submit function might also be synchronous: *)
@@ -159,7 +159,7 @@ VerificationTest[
         }
     |>,
     SameTest -> SameQ,
-    TestID   -> "SendChat-ChatOutputData-CustomChatSubmit@@Tests/SendChat.wlt:149,1-163,2"
+    TestID   -> "SendChat-ChatOutputData-CustomChatSubmit"
 ]
 
 (* Cloud notebooks do not store the "Data" setting: *)
@@ -172,7 +172,7 @@ VerificationTest[
         { CellObject[ "TestOutputCell" ], "Task"      , "TestTask" }
     },
     SameTest -> SameQ,
-    TestID   -> "SendChat-ChatOutputData-Cloud@@Tests/SendChat.wlt:166,1-176,2"
+    TestID   -> "SendChat-ChatOutputData-Cloud"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -212,7 +212,7 @@ VerificationTest[
         { <| "Role" -> "User", "Content" -> "What color is this image?" |> }
     },
     SameTest -> SameQ,
-    TestID   -> "WriteChatOutputData-RemovesImages@@Tests/SendChat.wlt:184,1-216,2"
+    TestID   -> "WriteChatOutputData-RemovesImages"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -284,14 +284,14 @@ VerificationTest[
     |>,
     _Association,
     SameTest -> MatchQ,
-    TestID   -> "StopChat-ChatOutputData-Definitions@@Tests/SendChat.wlt:225,1-288,2"
+    TestID   -> "StopChat-ChatOutputData-Definitions"
 ]
 
 VerificationTest[
     stopChatTaggingRuleKeys @ <| Wolfram`Chatbook`Common`$defaultChatSettings, "Data" -> $stopChatData |>,
     { { "CellToStringData", "ChatData", "HasChatData" } },
     SameTest -> SameQ,
-    TestID   -> "StopChat-ChatOutputData@@Tests/SendChat.wlt:290,1-295,2"
+    TestID   -> "StopChat-ChatOutputData"
 ]
 
 (* The chat data ends with the response so far: *)
@@ -307,7 +307,7 @@ VerificationTest[
         }
     },
     SameTest -> SameQ,
-    TestID   -> "StopChat-ChatOutputData-Messages@@Tests/SendChat.wlt:298,1-311,2"
+    TestID   -> "StopChat-ChatOutputData-Messages"
 ]
 
 (* For asynchronous requests, a chat can be stopped after a response chunk arrives but before sendChat writes "Data" to
@@ -316,7 +316,7 @@ VerificationTest[
     stopChatTaggingRuleKeys @ Wolfram`Chatbook`Common`$defaultChatSettings,
     { { "CellToStringData" } },
     SameTest -> SameQ,
-    TestID   -> "StopChat-ChatOutputData-Not-Written-GH#1709@@Tests/SendChat.wlt:315,1-320,2"
+    TestID   -> "StopChat-ChatOutputData-Not-Written-GH#1709"
 ]
 
 (* The same goes for a regenerated chat, which still gets its new page: *)
@@ -324,7 +324,7 @@ VerificationTest[
     stopChatTaggingRuleKeys[ Wolfram`Chatbook`Common`$defaultChatSettings, $stopChatPageData ],
     { { "CellToStringData", "PageData" } },
     SameTest -> SameQ,
-    TestID   -> "StopChat-ChatOutputData-Not-Written-Paged-GH#1709@@Tests/SendChat.wlt:323,1-328,2"
+    TestID   -> "StopChat-ChatOutputData-Not-Written-Paged-GH#1709"
 ]
 
 (* A tool call that was stopped before it has a result doesn't show that it's still in progress: *)
@@ -343,7 +343,7 @@ VerificationTest[
     ],
     { False, True, True },
     SameTest -> SameQ,
-    TestID   -> "StopChat-Tool-Call-Cancelled-GH#575@@Tests/SendChat.wlt:331,1-347,2"
+    TestID   -> "StopChat-Tool-Call-Cancelled-GH#575"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -365,7 +365,7 @@ VerificationTest[
         ]
     ],
     { Null, Null, 0 },
-    TestID -> "InitializeChatSubmit@@Tests/SendChat.wlt:354,1-369,2"
+    TestID -> "InitializeChatSubmit"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

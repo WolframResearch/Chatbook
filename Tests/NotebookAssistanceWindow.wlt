@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/NotebookAssistanceWindow.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/NotebookAssistanceWindow.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -86,7 +86,7 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "Definitions@@Tests/NotebookAssistanceWindow.wlt:25,1-90,2"
+    TestID   -> "Definitions"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -101,7 +101,7 @@ VerificationTest[
     },
     { 1, { False } },
     SameTest -> MatchQ,
-    TestID   -> "DockedCell-AsynchronousInitialization@@Tests/NotebookAssistanceWindow.wlt:97,1-105,2"
+    TestID   -> "DockedCell-AsynchronousInitialization"
 ]
 
 (* First window open in a kernel session: the cursor is placed in the chat input field and the loading overlay is
@@ -123,7 +123,7 @@ VerificationTest[
         "Initialized" -> True
     |>,
     SameTest -> MatchQ,
-    TestID   -> "DockedCell-ColdOpen@@Tests/NotebookAssistanceWindow.wlt:109,1-127,2"
+    TestID   -> "DockedCell-ColdOpen"
 ]
 
 (* Chat is already initialized in this kernel session, so only the chat input field is attached: *)
@@ -141,7 +141,7 @@ VerificationTest[
         "Initialized" -> True
     |>,
     SameTest -> MatchQ,
-    TestID   -> "DockedCell-WarmOpen@@Tests/NotebookAssistanceWindow.wlt:130,1-145,2"
+    TestID   -> "DockedCell-WarmOpen"
 ]
 
 (* Nothing to do if the chat input field exists and chat is already initialized: *)
@@ -149,7 +149,7 @@ VerificationTest[
     runDockedCellInitialization[ { True, True, True } ],
     <| "Result" -> "Done", "Log" -> { }, "Initialized" -> True |>,
     SameTest -> MatchQ,
-    TestID   -> "DockedCell-AlreadyInitialized@@Tests/NotebookAssistanceWindow.wlt:148,1-153,2"
+    TestID   -> "DockedCell-AlreadyInitialized"
 ]
 
 (* After the kernel was quit, the existing window initializes chat again: *)
@@ -170,7 +170,7 @@ VerificationTest[
         "Initialized" -> True
     |>,
     SameTest -> MatchQ,
-    TestID   -> "DockedCell-KernelRestart@@Tests/NotebookAssistanceWindow.wlt:156,1-174,2"
+    TestID   -> "DockedCell-KernelRestart"
 ]
 
 (* The top stripe progress indicator is reset if chat initialization is aborted: *)
@@ -191,7 +191,7 @@ VerificationTest[
         "Initialized" -> False
     |>,
     SameTest -> MatchQ,
-    TestID   -> "DockedCell-WarmUpAborted@@Tests/NotebookAssistanceWindow.wlt:177,1-195,2"
+    TestID   -> "DockedCell-WarmUpAborted"
 ]
 
 (* The top stripe progress indicator is reset if chat initialization fails: *)
@@ -212,7 +212,7 @@ VerificationTest[
         "Initialized" -> False
     |>,
     SameTest -> MatchQ,
-    TestID   -> "DockedCell-WarmUpFailed@@Tests/NotebookAssistanceWindow.wlt:198,1-216,2"
+    TestID   -> "DockedCell-WarmUpFailed"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -237,7 +237,7 @@ VerificationTest[
     ],
     { { { "Queued" } }, { { "Queued" } } },
     SameTest -> MatchQ,
-    TestID   -> "ChatInput-QueuedSubmit@@Tests/NotebookAssistanceWindow.wlt:223,1-241,2"
+    TestID   -> "ChatInput-QueuedSubmit"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -293,7 +293,7 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "MovedNotice-Definitions@@Tests/NotebookAssistanceWindow.wlt:246,1-297,2"
+    TestID   -> "MovedNotice-Definitions"
 ]
 
 (* Only a chat that is in History counts as moved there: *)
@@ -323,7 +323,7 @@ VerificationTest[
     ],
     { False, False, True, False, False, False },
     SameTest -> MatchQ,
-    TestID   -> "MovedNotice-SavedChatOnly@@Tests/NotebookAssistanceWindow.wlt:300,1-327,2"
+    TestID   -> "MovedNotice-SavedChatOnly"
 ]
 
 (* A chat that wasn't saved (AutoSaveConversations is False) gets no notice: *)
@@ -341,7 +341,7 @@ VerificationTest[
     ],
     { { }, True },
     SameTest -> MatchQ,
-    TestID   -> "MovedNotice-NotSaved@@Tests/NotebookAssistanceWindow.wlt:330,1-345,2"
+    TestID   -> "MovedNotice-NotSaved"
 ]
 
 (* A saved chat gets the notice in the new window: *)
@@ -359,7 +359,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "MovedNotice-Saved@@Tests/NotebookAssistanceWindow.wlt:348,1-363,2"
+    TestID   -> "MovedNotice-Saved"
 ]
 
 (* The notice is a docked cell, so the loading overlay of the window's initialization doesn't remove it: *)
@@ -380,7 +380,7 @@ VerificationTest[
     ],
     { { "WorkspaceChatMovedToHistoryDockedCell" }, { "WorkspaceChatMovedToHistoryDockedCell" }, { } },
     SameTest -> MatchQ,
-    TestID   -> "MovedNotice-SurvivesLoadingOverlay@@Tests/NotebookAssistanceWindow.wlt:366,1-384,2"
+    TestID   -> "MovedNotice-SurvivesLoadingOverlay"
 ]
 
 (* The notice and the chat's title share the place below the top stripe, so there is at most one of them and the
@@ -416,7 +416,7 @@ VerificationTest[
         Cell[ "TOOLBAR" ]
     },
     SameTest -> MatchQ,
-    TestID   -> "MovedNotice-SharesTitlePlace@@Tests/NotebookAssistanceWindow.wlt:388,1-420,2"
+    TestID   -> "MovedNotice-SharesTitlePlace"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -435,7 +435,7 @@ VerificationTest[
     ],
     { Except[ _Failure ], Except[ _Failure ] },
     SameTest -> MatchQ,
-    TestID   -> "DefaultTypeIsSidebar@@Tests/NotebookAssistanceWindow.wlt:427,1-439,2"
+    TestID   -> "DefaultTypeIsSidebar"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -477,7 +477,7 @@ VerificationTest[
         { "Window" , "Notebook" }
     },
     SameTest -> MatchQ,
-    TestID   -> "ShowNotebookAssistance-DefaultTypes@@Tests/NotebookAssistanceWindow.wlt:447,1-481,2"
+    TestID   -> "ShowNotebookAssistance-DefaultTypes"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

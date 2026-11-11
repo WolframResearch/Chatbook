@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/TokenCount.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/TokenCount.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -89,7 +89,7 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "Definitions@@Tests/TokenCount.wlt:25,1-93,2"
+    TestID   -> "Definitions"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -117,7 +117,7 @@ VerificationTest[
     (* Only the distinct text contents are cached ("" and "[Cell Excised]" have the same content): *)
     ConstantArray[ { True, True, True, 7 }, Length @ $tokenizerNames ],
     SameTest -> MatchQ,
-    TestID   -> "CachedCountsMatchUncached@@Tests/TokenCount.wlt:102,1-121,2"
+    TestID   -> "CachedCountsMatchUncached"
 ]
 
 VerificationTest[
@@ -135,7 +135,7 @@ VerificationTest[
     ],
     ConstantArray[ { True, True, 0 }, 3 ],
     SameTest -> MatchQ,
-    TestID   -> "ImageContentNotCached@@Tests/TokenCount.wlt:123,1-139,2"
+    TestID   -> "ImageContentNotCached"
 ]
 
 VerificationTest[
@@ -155,7 +155,7 @@ VerificationTest[
     ],
     { a_Integer, b_Integer, a_, b_, b_, a_, 2 } /; a =!= b,
     SameTest -> MatchQ,
-    TestID   -> "SeparateTokenizers@@Tests/TokenCount.wlt:141,1-159,2"
+    TestID   -> "SeparateTokenizers"
 ]
 
 VerificationTest[
@@ -171,7 +171,7 @@ VerificationTest[
     ],
     { { { n_Integer, n_, n_ }, 3 }, { { n_, n_, n_ }, 1 } },
     SameTest -> MatchQ,
-    TestID   -> "CacheHitSkipsTokenizer@@Tests/TokenCount.wlt:161,1-175,2"
+    TestID   -> "CacheHitSkipsTokenizer"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -193,7 +193,7 @@ VerificationTest[
     ],
     { a_Integer, n_Integer, n_, n_, 1 } /; a =!= n,
     SameTest -> MatchQ,
-    TestID   -> "CustomTokenizerNotCached@@Tests/TokenCount.wlt:180,1-197,2"
+    TestID   -> "CustomTokenizerNotCached"
 ]
 
 VerificationTest[
@@ -206,7 +206,7 @@ VerificationTest[
     ],
     { { 1, 2, 3 }, 0 },
     SameTest -> MatchQ,
-    TestID   -> "NonDeterministicTokenizerNotCached@@Tests/TokenCount.wlt:199,1-210,2"
+    TestID   -> "NonDeterministicTokenizerNotCached"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -234,7 +234,7 @@ VerificationTest[
     ],
     { Join[ Range[ 10 ], Range[ 6, 10 ], Range[ 6, 10 ], Range[ 6, 10 ] ], True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "CacheSizeIsBounded@@Tests/TokenCount.wlt:215,1-238,2"
+    TestID   -> "CacheSizeIsBounded"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -276,7 +276,7 @@ VerificationTest[
     ],
     { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "BudgetSideEffects@@Tests/TokenCount.wlt:243,1-280,2"
+    TestID   -> "BudgetSideEffects"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -307,7 +307,7 @@ VerificationTest[
     ],
     { KeyValuePattern @ { "Prompt" -> _Integer, "Completion" -> _Integer, "Requests" -> 2 }, True, True },
     SameTest -> MatchQ,
-    TestID   -> "LogUsage@@Tests/TokenCount.wlt:285,1-311,2"
+    TestID   -> "LogUsage"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -330,7 +330,7 @@ VerificationTest[
     ],
     { { { n_Integer? Positive }, { n_ }, { n_ } }, { } },
     SameTest -> MatchQ,
-    TestID   -> "Estimate-NoNetEncoder@@Tests/TokenCount.wlt:318,1-334,2"
+    TestID   -> "Estimate-NoNetEncoder"
 ]
 
 (* The estimate must not be below the exact counts for typical content, and not far above them: *)
@@ -368,7 +368,7 @@ VerificationTest[
         }
     ],
     { True, True },
-    TestID -> "Estimate-NotBelowExactCounts@@Tests/TokenCount.wlt:337,1-372,2"
+    TestID -> "Estimate-NotBelowExactCounts"
 ]
 
 VerificationTest[
@@ -386,7 +386,7 @@ VerificationTest[
     },
     { 0, { __Integer? Positive }, True, n_ /; 19.9 <= n <= 20.1 },
     SameTest -> MatchQ,
-    TestID   -> "Estimate-EdgeCases@@Tests/TokenCount.wlt:374,1-390,2"
+    TestID   -> "Estimate-EdgeCases"
 ]
 
 (* Exact counts are still available, and the two kinds of counts are cached separately: *)
@@ -404,7 +404,7 @@ VerificationTest[
         }
     ],
     { True, True, True, True, True },
-    TestID -> "Estimate-ExactCounts@@Tests/TokenCount.wlt:393,1-408,2"
+    TestID -> "Estimate-ExactCounts"
 ]
 
 (* A message is left empty when the remaining budget is too small for any of it: *)
@@ -427,7 +427,7 @@ VerificationTest[
     ],
     { 0, 0, 0, n_Integer /; n > 100 },
     SameTest -> MatchQ,
-    TestID   -> "TinyBudget@@Tests/TokenCount.wlt:411,1-431,2"
+    TestID   -> "TinyBudget"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

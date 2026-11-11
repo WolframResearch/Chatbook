@@ -5,21 +5,21 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName[ $TestFileName ], "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/RelatedDocumentation.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/RelatedDocumentation.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 VerificationTest[
     Context @ RelatedDocumentation,
     "Wolfram`Chatbook`",
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentationContext@@Tests/RelatedDocumentation.wlt:18,1-23,2"
+    TestID   -> "RelatedDocumentationContext"
 ]
 
 $defaultTestOptions =
@@ -35,14 +35,14 @@ VerificationTest[
     urls = RelatedDocumentation[ "What's the biggest pokemon?" ],
     { URL[ _String ].. },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-URIs@@Tests/RelatedDocumentation.wlt:34,1-39,2"
+    TestID   -> "RelatedDocumentation-URIs"
 ]
 
 VerificationTest[
     FileNames[ All, ChatbookFilesDirectory[ "VectorDatabases" ], Infinity ],
     { Repeated[ _String, { 40, Infinity } ] },
     SameTest -> MatchQ,
-    TestID   -> "VectorDatabase-Files@@Tests/RelatedDocumentation.wlt:41,1-46,2"
+    TestID   -> "VectorDatabase-Files"
 ]
 
 VerificationTest[
@@ -58,42 +58,42 @@ VerificationTest[
     ],
     _Integer? (GreaterThan[ 5 ]),
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-URIs-Count@@Tests/RelatedDocumentation.wlt:48,1-62,2"
+    TestID   -> "RelatedDocumentation-URIs-Count"
 ]
 
 VerificationTest[
     snippets = RelatedDocumentation[ "What's the biggest pokemon?", "Snippets" ],
     { __String },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Snippets@@Tests/RelatedDocumentation.wlt:64,1-69,2"
+    TestID   -> "RelatedDocumentation-Snippets"
 ]
 
 VerificationTest[
     Total @ StringCount[ snippets, "Entity[\"Pokemon\"," ],
     _Integer? (GreaterThan[ 5 ]),
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Snippets-Count@@Tests/RelatedDocumentation.wlt:71,1-76,2"
+    TestID   -> "RelatedDocumentation-Snippets-Count"
 ]
 
 VerificationTest[
     urls = RelatedDocumentation[ "What's the biggest pokemon?", Automatic, 3, "Sources" -> { "Documentation" } ],
     { URL[ _String ], URL[ _String ], URL[ _String ] },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-URIs-Count@@Tests/RelatedDocumentation.wlt:78,1-83,2"
+    TestID   -> "RelatedDocumentation-URIs-Limit"
 ]
 
 VerificationTest[
     AllTrue[ First /@ urls, StringStartsQ[ "paclet:ref/" ] ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-URIs-Match@@Tests/RelatedDocumentation.wlt:85,1-90,2"
+    TestID   -> "RelatedDocumentation-URIs-Match"
 ]
 
 VerificationTest[
     RelatedDocumentation[ "What's the biggest pokemon?", "Snippets", 3 ],
     { _String, _String, _String },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Snippets-Count@@Tests/RelatedDocumentation.wlt:92,1-97,2"
+    TestID   -> "RelatedDocumentation-Snippets-Limit"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -108,14 +108,14 @@ VerificationTest[
     ],
     _String,
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Prompt@@Tests/RelatedDocumentation.wlt:102,1-112,2"
+    TestID   -> "RelatedDocumentation-Prompt"
 ]
 
 VerificationTest[
     StringCount[ prompt, "paclet:ref/Prime#" ],
     _Integer? Positive,
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Prompt-Count@@Tests/RelatedDocumentation.wlt:114,1-119,2"
+    TestID   -> "RelatedDocumentation-Prompt-Count"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -134,14 +134,14 @@ VerificationTest[
     ],
     _String,
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Prompt-Messages@@Tests/RelatedDocumentation.wlt:124,1-138,2"
+    TestID   -> "RelatedDocumentation-Prompt-Messages"
 ]
 
 VerificationTest[
     StringCount[ prompt, { "paclet:ref/Prime#", "paclet:ref/NextPrime#" } ],
     _Integer? (GreaterEqualThan[ 5 ]),
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Prompt-Messages-Count@@Tests/RelatedDocumentation.wlt:140,1-145,2"
+    TestID   -> "RelatedDocumentation-Prompt-Messages-Count"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -159,14 +159,14 @@ VerificationTest[
     ],
     _String,
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Prompt-Selection@@Tests/RelatedDocumentation.wlt:150,1-163,2"
+    TestID   -> "RelatedDocumentation-Prompt-Selection"
 ]
 
 VerificationTest[
     StringCount[ prompt, "paclet:ref/Prime#" ],
     _Integer? (GreaterEqualThan[ 2 ]),
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Prompt-Selection-Count@@Tests/RelatedDocumentation.wlt:165,1-170,2"
+    TestID   -> "RelatedDocumentation-Prompt-Selection-Count"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -176,7 +176,7 @@ VerificationTest[
     Take[ RelatedDocumentation[ { <| "Role" -> "User", "Content" -> "Hello" |> } ], UpTo[ 30 ] ][[ All, 1 ]],
     { __String? (StringFreeQ[ "$Username" ]) },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Regression-UserPrefix@@Tests/RelatedDocumentation.wlt:175,1-180,2"
+    TestID   -> "RelatedDocumentation-Regression-UserPrefix"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -196,7 +196,7 @@ VerificationTest[
         ___
     },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-VectorDatabaseTests-DataRepositoryURIs-1@@Tests/RelatedDocumentation.wlt:191,1-200,2"
+    TestID   -> "RelatedDocumentation-VectorDatabaseTests-DataRepositoryURIs-1"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -206,7 +206,7 @@ VerificationTest[
     RelatedDocumentation[ "What's the 123456789th prime?", "URIs", 5 ],
     { ___, URL[ _String? (StringStartsQ[ "paclet:ref/Prime#" ]) ], ___ },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-VectorDatabaseTests-DocumentationURIs-1@@Tests/RelatedDocumentation.wlt:205,1-210,2"
+    TestID   -> "RelatedDocumentation-VectorDatabaseTests-DocumentationURIs-1"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -223,7 +223,7 @@ VerificationTest[
     ],
     _String,
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-VectorDatabaseTests-EntityValues-1@@Tests/RelatedDocumentation.wlt:215,1-227,2"
+    TestID   -> "RelatedDocumentation-VectorDatabaseTests-EntityValues-1"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -237,7 +237,7 @@ VerificationTest[
         ___
     },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-VectorDatabaseTests-FunctionRepositoryURIs-1@@Tests/RelatedDocumentation.wlt:232,1-241,2"
+    TestID   -> "RelatedDocumentation-VectorDatabaseTests-FunctionRepositoryURIs-1"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -254,7 +254,7 @@ VerificationTest[
     ],
     _String,
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-VectorDatabaseTests-NeuralNetRepositoryURIs-1@@Tests/RelatedDocumentation.wlt:246,1-258,2"
+    TestID   -> "RelatedDocumentation-VectorDatabaseTests-NeuralNetRepositoryURIs-1"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -271,7 +271,7 @@ VerificationTest[
     ],
     _String,
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-VectorDatabaseTests-PacletRepositoryURIs-1@@Tests/RelatedDocumentation.wlt:263,1-275,2"
+    TestID   -> "RelatedDocumentation-VectorDatabaseTests-PacletRepositoryURIs-1"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -285,7 +285,7 @@ VerificationTest[
     res,
     _String? (StringContainsQ[ "Prime" ]),
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-SessionSubmit@@Tests/RelatedDocumentation.wlt:281,1-289,2"
+    TestID   -> "RelatedDocumentation-SessionSubmit"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -295,7 +295,7 @@ VerificationTest[
     $DefaultTools[ "DocumentationLookup" ][ <| "ids" -> "AstroGraphics" |> ],
     _String? (StringContainsQ[ "# AstroGraphics\n\nAstroGraphics[" ]),
     SameTest -> MatchQ,
-    TestID   -> "DocumentationLookup-Markdown@@Tests/RelatedDocumentation.wlt:294,1-299,2"
+    TestID   -> "DocumentationLookup-Markdown"
 ]
 
 VerificationTest[
@@ -305,14 +305,14 @@ VerificationTest[
     ],
     { _String? (StringStartsQ[ "# Plot\n" ]), _String? (StringStartsQ[ "# ListPlot\n" ]) },
     SameTest -> MatchQ,
-    TestID   -> "DocumentationLookup-Markdown-Multiple@@Tests/RelatedDocumentation.wlt:301,1-309,2"
+    TestID   -> "DocumentationLookup-Markdown-Multiple"
 ]
 
 VerificationTest[
     $DefaultTools[ "DocumentationLookup" ][ <| "ids" -> "Pi" |> ],
     _String? (StringContainsQ[ "Pi is \[Pi], with numerical value \[TildeEqual]3.14159" ]),
     SameTest -> MatchQ,
-    TestID   -> "DocumentationLookup-Markdown-UTF8-GH#1744@@Tests/RelatedDocumentation.wlt:311,1-316,2"
+    TestID   -> "DocumentationLookup-Markdown-UTF8-GH#1744"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -594,7 +594,7 @@ VerificationTest[
     },
     { "Computational\n5 Mock-1", "Computational\n5 Mock-1", 1 },
     SameTest -> MatchQ,
-    TestID   -> "FilterSnippetsCache-Repeat@@Tests/RelatedDocumentation.wlt:368,1-377,2"
+    TestID   -> "FilterSnippetsCache-Repeat"
 ]
 
 VerificationTest[
@@ -605,7 +605,7 @@ VerificationTest[
     ],
     1,
     SameTest -> MatchQ,
-    TestID   -> "FilterSnippetsCache-Repeat-Timing@@Tests/RelatedDocumentation.wlt:379,1-388,2"
+    TestID   -> "FilterSnippetsCache-Repeat-Timing"
 ]
 
 VerificationTest[
@@ -617,7 +617,7 @@ VerificationTest[
     },
     { "Computational\n5 Mock-1", "Computational\n5 Mock-2", "Computational\n5 Mock-2", 2 },
     SameTest -> MatchQ,
-    TestID   -> "FilterSnippetsCache-DifferentInstructions@@Tests/RelatedDocumentation.wlt:390,1-400,2"
+    TestID   -> "FilterSnippetsCache-DifferentInstructions"
 ]
 
 VerificationTest[
@@ -629,7 +629,7 @@ VerificationTest[
     },
     { "Computational\n5 Mock-1", "Computational\n5 Mock-2", "Computational\n5 Mock-2", 2 },
     SameTest -> MatchQ,
-    TestID   -> "FilterSnippetsCache-DifferentModel@@Tests/RelatedDocumentation.wlt:402,1-412,2"
+    TestID   -> "FilterSnippetsCache-DifferentModel"
 ]
 
 VerificationTest[
@@ -646,7 +646,7 @@ VerificationTest[
     ],
     { "Failed", "Computational\n5 Mock-2", "Computational\n5 Mock-2", 2 },
     SameTest -> MatchQ,
-    TestID   -> "FilterSnippetsCache-FailureNotCached@@Tests/RelatedDocumentation.wlt:414,1-429,2"
+    TestID   -> "FilterSnippetsCache-FailureNotCached"
 ]
 
 VerificationTest[
@@ -663,7 +663,7 @@ VerificationTest[
     ],
     { $Failed, "Computational\n5 Mock-2", "Computational\n5 Mock-2", 2 },
     SameTest -> MatchQ,
-    TestID   -> "FilterSnippetsCache-NonStringNotCached@@Tests/RelatedDocumentation.wlt:431,1-446,2"
+    TestID   -> "FilterSnippetsCache-NonStringNotCached"
 ]
 
 VerificationTest[
@@ -675,7 +675,7 @@ VerificationTest[
     ],
     { 64, "Computational\n5 Mock-70", "Computational\n5 Mock-71", 71 },
     SameTest -> MatchQ,
-    TestID   -> "FilterSnippetsCache-Bounded@@Tests/RelatedDocumentation.wlt:448,1-458,2"
+    TestID   -> "FilterSnippetsCache-Bounded"
 ]
 
 VerificationTest[
@@ -687,7 +687,7 @@ VerificationTest[
     ],
     2,
     SameTest -> MatchQ,
-    TestID   -> "FilterSnippetsCache-Disabled@@Tests/RelatedDocumentation.wlt:460,1-470,2"
+    TestID   -> "FilterSnippetsCache-Disabled"
 ]
 
 (* Hits still resolve the filtering configuration, so a non-LLMKit authentication still turns off LLMKit for the chat: *)
@@ -707,7 +707,7 @@ VerificationTest[
     ],
     { { "Computational\n5 Mock-1", False, 1 }, { "Computational\n5 Mock-1", False, 1 } },
     SameTest -> MatchQ,
-    TestID   -> "FilterSnippetsCache-AuthenticationSideEffect@@Tests/RelatedDocumentation.wlt:473,1-490,2"
+    TestID   -> "FilterSnippetsCache-AuthenticationSideEffect"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -722,7 +722,7 @@ VerificationTest[
     ],
     { key_Integer, key_Integer },
     SameTest -> MatchQ,
-    TestID   -> "LLMSynthesizeCacheKey-Stable@@Tests/RelatedDocumentation.wlt:495,1-505,2"
+    TestID   -> "LLMSynthesizeCacheKey-Stable"
 ]
 
 (* The same model through a different authentication path is a different request: *)
@@ -737,7 +737,7 @@ VerificationTest[
     ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "LLMSynthesizeCacheKey-Authentication@@Tests/RelatedDocumentation.wlt:508,1-520,2"
+    TestID   -> "LLMSynthesizeCacheKey-Authentication"
 ]
 
 VerificationTest[
@@ -751,7 +751,7 @@ VerificationTest[
     ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "LLMSynthesizeCacheKey-Service@@Tests/RelatedDocumentation.wlt:522,1-534,2"
+    TestID   -> "LLMSynthesizeCacheKey-Service"
 ]
 
 (* LLMKit requests are made for the signed-in user, so responses are not reused across cloud accounts: *)
@@ -768,7 +768,7 @@ VerificationTest[
     ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "LLMSynthesizeCacheKey-CloudUser@@Tests/RelatedDocumentation.wlt:537,1-551,2"
+    TestID   -> "LLMSynthesizeCacheKey-CloudUser"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -792,7 +792,7 @@ VerificationTest[
     ],
     { 1, 1, 1, True, True, _String? (StringStartsQ[ "IMPORTANT: " ]), { __String } },
     SameTest -> MatchQ,
-    TestID   -> "FilterSnippetsCache-RelatedDocumentation-Repeat@@Tests/RelatedDocumentation.wlt:556,1-575,2"
+    TestID   -> "FilterSnippetsCache-RelatedDocumentation-Repeat"
 ]
 
 (* Sources used for citations are still added when the response comes from the cache: *)
@@ -811,7 +811,7 @@ VerificationTest[
     ],
     { 1, True, _Association? (Length @ # > 0 &) },
     SameTest -> MatchQ,
-    TestID   -> "FilterSnippetsCache-RelatedDocumentation-Sources@@Tests/RelatedDocumentation.wlt:578,1-594,2"
+    TestID   -> "FilterSnippetsCache-RelatedDocumentation-Sources"
 ]
 
 VerificationTest[
@@ -839,7 +839,7 @@ VerificationTest[
     ],
     { 2, _String, _String },
     SameTest -> MatchQ,
-    TestID   -> "FilterSnippetsCache-RelatedDocumentation-DifferentTranscript@@Tests/RelatedDocumentation.wlt:596,1-622,2"
+    TestID   -> "FilterSnippetsCache-RelatedDocumentation-DifferentTranscript"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

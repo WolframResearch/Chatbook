@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/FormattingCaches.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/FormattingCaches.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -40,7 +40,7 @@ VerificationTest[
     $cacheBehavior = { { 1, 2, 3, 4, 3, 4, 3, 4, 3, 4 }, "Cached" },
     { { 1, 2, 3, 4, 3, 4, 3, 4, 3, 4 }, "Cached" },
     SameTest -> MatchQ,
-    TestID   -> "Caches-Definitions@@Tests/FormattingCaches.wlt:31,1-44,2"
+    TestID   -> "Caches-Definitions"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -58,7 +58,7 @@ VerificationTest[
     ],
     { { "A", "B", "C", "D", "E" }, <| "c" -> "C", "d" -> "D", "e" -> "E" |> },
     SameTest -> MatchQ,
-    TestID   -> "Caches-AddToCache@@Tests/FormattingCaches.wlt:51,1-62,2"
+    TestID   -> "Caches-AddToCache"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -75,7 +75,7 @@ VerificationTest[
     ],
     $cacheBehavior,
     SameTest -> MatchQ,
-    TestID   -> "Caches-CorrectedCode@@Tests/FormattingCaches.wlt:67,1-79,2"
+    TestID   -> "Caches-CorrectedCode"
 ]
 
 VerificationTest[
@@ -89,7 +89,7 @@ VerificationTest[
     ],
     $cacheBehavior,
     SameTest -> MatchQ,
-    TestID   -> "Caches-ExternalLanguage@@Tests/FormattingCaches.wlt:81,1-93,2"
+    TestID   -> "Caches-ExternalLanguage"
 ]
 
 (* A failed import is checked for a cloud URL, which needs a $CloudBase: *)
@@ -106,7 +106,7 @@ VerificationTest[
     ],
     $cacheBehavior,
     SameTest -> MatchQ,
-    TestID   -> "Caches-ImportedImage@@Tests/FormattingCaches.wlt:96,1-110,2"
+    TestID   -> "Caches-ImportedImage"
 ]
 
 VerificationTest[
@@ -120,7 +120,7 @@ VerificationTest[
     ],
     $cacheBehavior,
     SameTest -> MatchQ,
-    TestID   -> "Caches-ResizedImage@@Tests/FormattingCaches.wlt:112,1-124,2"
+    TestID   -> "Caches-ResizedImage"
 ]
 
 VerificationTest[
@@ -131,7 +131,7 @@ VerificationTest[
     ],
     $cacheBehavior,
     SameTest -> MatchQ,
-    TestID   -> "Caches-BoxCache@@Tests/FormattingCaches.wlt:126,1-135,2"
+    TestID   -> "Caches-BoxCache"
 ]
 
 VerificationTest[
@@ -151,7 +151,7 @@ VerificationTest[
     ],
     $cacheBehavior,
     SameTest -> MatchQ,
-    TestID   -> "Caches-Base64@@Tests/FormattingCaches.wlt:137,1-155,2"
+    TestID   -> "Caches-Base64"
 ]
 
 VerificationTest[
@@ -165,7 +165,7 @@ VerificationTest[
     ],
     $cacheBehavior,
     SameTest -> MatchQ,
-    TestID   -> "Caches-DecodedBase64@@Tests/FormattingCaches.wlt:157,1-169,2"
+    TestID   -> "Caches-DecodedBase64"
 ]
 
 VerificationTest[
@@ -179,7 +179,7 @@ VerificationTest[
     ],
     $cacheBehavior,
     SameTest -> MatchQ,
-    TestID   -> "Caches-EntityBoxes@@Tests/FormattingCaches.wlt:171,1-183,2"
+    TestID   -> "Caches-EntityBoxes"
 ]
 
 (* WolframAlpha is replaced here, so that the test doesn't need the internet: *)
@@ -196,7 +196,7 @@ VerificationTest[
     ],
     $cacheBehavior,
     SameTest -> MatchQ,
-    TestID   -> "Caches-FreeformBoxes@@Tests/FormattingCaches.wlt:186,1-200,2"
+    TestID   -> "Caches-FreeformBoxes"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

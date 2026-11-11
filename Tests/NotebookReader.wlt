@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/NotebookReader.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/NotebookReader.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -44,7 +44,7 @@ VerificationTest[
         ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "WorkspaceNotebookReader-Definition@@Tests/NotebookReader.wlt:27,1-48,2"
+    TestID   -> "WorkspaceNotebookReader-Definition"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -94,7 +94,7 @@ VerificationTest[
     ],
     { True, True, True, True, { "chat context", "chat selection", { "chat images" } } },
     SameTest -> MatchQ,
-    TestID   -> "SelectionScope-Workspace@@Tests/NotebookReader.wlt:55,1-98,2"
+    TestID   -> "SelectionScope-Workspace"
 ]
 
 (* Tool results stay in the conversation, so they should not include relative times that go stale: *)
@@ -115,7 +115,7 @@ VerificationTest[
     ],
     { True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "SelectionScope-NoRelativeTimes@@Tests/NotebookReader.wlt:101,1-119,2"
+    TestID   -> "SelectionScope-NoRelativeTimes"
 ]
 
 (* In the sidebar, the notebook is the one that contains the sidebar: *)
@@ -157,7 +157,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "SelectionScope-Sidebar@@Tests/NotebookReader.wlt:122,1-161,2"
+    TestID   -> "SelectionScope-Sidebar"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -196,7 +196,7 @@ VerificationTest[
     ],
     { True, True, True, True, True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "AllScope-Paging@@Tests/NotebookReader.wlt:166,1-200,2"
+    TestID   -> "AllScope-Paging"
 ]
 
 (* The result doesn't depend on how much of the chat's token budget is left, and doesn't use it up: *)
@@ -235,7 +235,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "IndependentOfChatTokenBudget@@Tests/NotebookReader.wlt:203,1-239,2"
+    TestID   -> "IndependentOfChatTokenBudget"
 ]
 
 (* When a page does not fit in the token budget, it ends early instead of silently skipping cells at its start: *)
@@ -266,7 +266,7 @@ VerificationTest[
     ],
     { True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "AllScope-TokenBudget@@Tests/NotebookReader.wlt:242,1-270,2"
+    TestID   -> "AllScope-TokenBudget"
 ]
 
 (* Invalid parameters fall back to the defaults: *)
@@ -280,7 +280,7 @@ VerificationTest[
         { 3, 1, 1, 1, 1 }
     },
     SameTest -> MatchQ,
-    TestID   -> "Parameters-Defaults@@Tests/NotebookReader.wlt:273,1-284,2"
+    TestID   -> "Parameters-Defaults"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -329,7 +329,7 @@ VerificationTest[
     ],
     { True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "SimpleToolMethod-NoArguments@@Tests/NotebookReader.wlt:293,1-333,2"
+    TestID   -> "SimpleToolMethod-NoArguments"
 ]
 
 (* NotebookReader results don't get the notice that the user does not see the tool output, since their images come
@@ -350,7 +350,7 @@ VerificationTest[
     ],
     { "![Image](attachment://content-abc12)", _String? (StringContainsQ[ "The user does not see the output" ]) },
     SameTest -> MatchQ,
-    TestID   -> "ToolResponse-NoMarkdownImageNotice@@Tests/NotebookReader.wlt:337,1-354,2"
+    TestID   -> "ToolResponse-NoMarkdownImageNotice"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -370,7 +370,7 @@ VerificationTest[
     ],
     _String? (StringContainsQ[ "no notebook to read" ]),
     SameTest -> MatchQ,
-    TestID   -> "NoNotebook@@Tests/NotebookReader.wlt:359,1-374,2"
+    TestID   -> "NoNotebook"
 ]
 
 VerificationTest[
@@ -384,7 +384,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "SelectionContextDisabled@@Tests/NotebookReader.wlt:376,1-388,2"
+    TestID   -> "SelectionContextDisabled"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
