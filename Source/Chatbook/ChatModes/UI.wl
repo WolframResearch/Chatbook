@@ -3074,11 +3074,13 @@ chatPreloadTasks // beginDefinition;
 chatPreloadTasks[ ] := Select[ Tasks[ ], ! FreeQ[ #[ "EvaluationExpression" ], chatPreloadStep ] & ];
 chatPreloadTasks // endDefinition;
 
-(* Not in the cloud, or in the kernels that Chatbook starts for evaluating code: *)
+(* Not in the cloud, in sandboxed kernels (e.g. the front end's "System" kernel, which the chat bar uses, and which
+   would otherwise run a second chain), or in the kernels that Chatbook starts for evaluating code: *)
 chatPreloadPossibleQ // beginDefinition;
 
 chatPreloadPossibleQ[ ] := TrueQ @ And[
     ! $CloudEvaluation,
+    ! TrueQ @ Developer`$ProtectedMode,
     ! TrueQ @ $mxFlag,
     ! TrueQ @ $workspaceChatInitialized,
     ! StringContainsQ[ ToString @ $CommandLine, "ChatbookSandbox" ]
@@ -3144,9 +3146,10 @@ chatPreloadSettingQ // endDefinition;
    The LLM Kit info request is sent first. Asynchronous handlers don't run during a step, so its response is received
    between steps, and initializeWorkspaceChat uses it instead of sending another request.
 
-   NOTE: if the user is not signed in, initializeWorkspaceChat might open a sign-in dialog (when getting the LLM Kit
-   service), as it would when the notebook assistant is opened; here that would be shortly after the kernel starts.
-   Not checked yet. If it happens, the setting could be ignored when cloudCredentialsQ[ ] is False. *)
+   NOTE: if the user is not signed in, initializeWorkspaceChat probably opens a sign-in dialog, as it would when the
+   notebook assistant is opened (getting the LLM Kit service calls UpdateLLMKitInfo, which LLMFunctions says opens the
+   CloudConnect dialog then); here that would be shortly after the kernel starts. Not reproduced. If it happens, the
+   setting could be ignored when cloudCredentialsQ[ ] is False. *)
 $chatPreloadSteps = {
     "StartLLMKitInfoRequest" -> Hold @ startLLMKitInfoRequest[ ],
     "SemanticSearch"         -> Hold @ Needs[ "SemanticSearch`" -> None ],
@@ -3159,7 +3162,7 @@ $chatPreloadSteps = {
 (* ::Subsubsection::Closed:: *)
 (*kernelIdleQ*)
 (* Whether the scheduled task that evaluates this is the outermost evaluation, i.e. it did not fire at a preemption
-   point of a main loop evaluation or a Dynamic: *)
+   point of another evaluation: *)
 kernelIdleQ // beginDefinition;
 
 kernelIdleQ[ ] := MatchQ[

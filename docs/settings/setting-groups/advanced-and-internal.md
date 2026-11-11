@@ -371,7 +371,7 @@ With this setting, `scheduleChatPreload` (called when Chatbook is loaded) runs t
 - The first step sends the LLM Kit info request (`startLLMKitInfoRequest`). Its response is received between steps, and `initializeWorkspaceChat` uses it.
 - If the notebook assistant is opened before the steps are done, it runs the rest of the initialization itself, and the remaining steps are skipped.
 - Loading Chatbook again (e.g. a newer version) replaces the pending task, so only one chain of steps runs.
-- Nothing is done in the cloud, in kernels without a front end, or in the kernels that Chatbook starts for evaluating code.
+- Nothing is done in the cloud, in kernels without a front end, in sandboxed kernels (`Developer`$ProtectedMode`, e.g. the front end's "System" kernel that the chat bar uses), or in the kernels that Chatbook starts for evaluating code.
 
 It is opt-in because every session then spends several seconds of kernel time and a few hundred MB of memory on it, also sessions that never use the notebook assistant.
 
