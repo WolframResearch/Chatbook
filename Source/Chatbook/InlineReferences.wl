@@ -1418,7 +1418,7 @@ personaTemplateBoxes[version: 1, input_, state_, uuid_, opts: OptionsPattern[]] 
 				ImageMargins -> {{1,1},{0,0}}]&,
 			{
 				{LightDarkSwitched[ RGBColor[0.824, 0.918, 0.961], RGBColor[ "#496372" ] ], LightDarkSwitched[ RGBColor[0.925, 0.976, 1.000], RGBColor[ "#577181" ] ], LightDarkSwitched[ RGBColor[0.765, 0.878, 0.925], RGBColor[ "#405A68" ] ]},
-				{LightDarkSwitched[ RGBColor[0.227, 0.553, 0.694], RGBColor[ "#5FBDE3" ] ], LightDarkSwitched[ RGBColor[0.455, 0.737, 0.863], RGBColor[ "#93EFFF" ] ], LightDarkSwitched[ RGBColor[0.196, 0.510, 0.647], RGBColor[ "#52B2D7" ] ]}
+				{LightDarkSwitched[ RGBColor[0.227, 0.553, 0.694], RGBColor[ "#5FBDE3" ] ], LightDarkSwitched[ RGBColor[0.455, 0.737, 0.863], RGBColor[ "#7DD9FF" ] ], LightDarkSwitched[ RGBColor[0.196, 0.510, 0.647], RGBColor[ "#52B2D7" ] ]}
 			}
 		],
 		setPersonaState[state, "Input", input]
