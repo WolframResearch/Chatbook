@@ -33,6 +33,27 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 
    After changing a value here, rebuild the stylesheets (Developer/StylesheetBuilder.wl, BuildStylesheets[ ])
    and the front end resources (Developer/FrontEndResourceBuilder.wl, WriteTextResource[ All ]) if they use it.
+
+   Adding or changing a color, step by step:
+       1. Look for an entry that already looks the same in both modes: compare the light values, then the dark values,
+          with ColorDistance[ a, b, DistanceFunction -> "CIEDE2000" ] (under 0.01, which is 1 on the usual 0-100 scale,
+          is the same color). Reuse it if one exists, even if its name came from a different part of the UI.
+       2. If the color is used in only one place, write LightDarkSwitched[ light, dark ] there instead of adding an
+          entry. Tests/ColorData.wlt checks that every entry here is used at least twice, and that every name used
+          in Source/ and Developer/ is defined here.
+       3. Otherwise add an entry, named by the rules above, in sorted order (grays from light to dark, then hue
+          families). Use RGBColor[ "#RRGGBB" ] or GrayLevel[ g ] values, and the two-argument LightDarkSwitched unless
+          the front end's automatic dark value is what you want ("..._Auto").
+       4. In a hover or pressed state, check the dark value against the default state's dark value: hover lighter,
+          pressed darker, as in light mode. Tests/ColorData.wlt checks this for the inline reference chips.
+
+   Where color can't be called:
+       - Inside held code that the front end evaluates (Dynamic, DynamicBox, DynamicWrapper's second argument,
+         RuleDelayed values, Button actions, Initialization): resolve it first with With, as above.
+       - In resource definitions under Developer/Resources that are box expressions (GraphicsBox, DynamicBox, ...),
+         since boxes aren't evaluated when the resources are built. Write them as Graphics (or other expressions)
+         instead, or use the literal value. Tests/ColorData.wlt doesn't check this; look for color[ in the built
+         FrontEnd/TextResources/ChatbookResources.tr after rebuilding.
 *)
 
 (* ::**************************************************************************************************************:: *)
