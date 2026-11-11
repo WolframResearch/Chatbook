@@ -24,6 +24,7 @@ VerificationTest[
 $testNotebook      = NotebookObject[ "ChatbookTestWorkspaceChat" ];
 $testInputCell     = CellObject[ "ChatbookTestWorkspaceChatInput" ];
 $testChatInputCell = CellObject[ "ChatbookTestWorkspaceChatMessage" ];
+$testChatOutput    = CellObject[ "ChatbookTestWorkspaceChatOutput" ];
 
 (* Evaluates eval with a stubbed front end: $testNotebook has the given attached input cells, and the input text of
    $testInputCell is stored in $testInputCellValue. Note: stubs use Clear rather than ClearAll, since ClearAll inside
@@ -817,6 +818,8 @@ VerificationTest[
                 {
                     NotebookWrite        = ($testWritten = #2;) &,
                     SelectionMove        = Null &,
+                    (* the chat was answered, so its input is kept: *)
+                    NextCell             = $testChatOutput &,
                     $WorkspaceChatInput  = "Stale",
                     $testInputCellValue  = "Hello",
                     $testWritten         = None,
@@ -860,6 +863,80 @@ VerificationTest[
     { Null, "" },
     SameTest -> MatchQ,
     TestID   -> "EvaluateWorkspaceChat-Symbol-Blank"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Stopped chats*)
+
+(* Sends "Hello" from the input cell of $testNotebook with a stubbed front end. While the chat runs, typed is typed in
+   the input field, then ChatCellEvaluate gives result. After the chat, the cell after the chat input is next (None for
+   no cell) and the window has the given cells. Gives the result, the text of the
+   input field, $WorkspaceChatInput, and a log of the calls that look at or change the window: *)
+sendTestWorkspaceChat[ result_, typed_, next_, cells_List ] := Module[ { log = { } },
+    withTestInputCell[
+        { $testInputCell },
+        Block[
+            {
+                ChatCellEvaluate = ($testInputCellValue = typed; result) &,
+                NextCell         = (AppendTo[ log, { "NextCell", # } ]; next) &,
+                NotebookDelete   = AppendTo[ log, { "NotebookDelete", # } ] &,
+                NotebookWrite    = Null &,
+                SelectionMove    = Null &,
+                Wolfram`Chatbook`Common`setCurrentValue                 = Null &,
+                Wolfram`Chatbook`ChatModes`Common`moveChatInputToBottom = Null &,
+                Wolfram`Chatbook`ChatModes`Common`moveChatInputToTop    = AppendTo[ log, { "moveChatInputToTop", # } ] &,
+                $WorkspaceChatInput = "Stale",
+                $testInputCellValue = "Hello"
+            },
+            Cells[ $testNotebook, CellTags -> _String ] := { $testChatInputCell };
+            Cells[ $testNotebook ] := cells;
+            {
+                Wolfram`Chatbook`Common`evaluateWorkspaceChat[
+                    $testNotebook,
+                    Dynamic @ CurrentValue[ $testInputCell, { TaggingRules, "ChatInputString" } ]
+                ],
+                $testInputCellValue,
+                $WorkspaceChatInput,
+                log
+            }
+        ]
+    ]
+];
+
+(* A chat that is stopped before its response arrives has no output cell. Its input is removed, so the next message
+   isn't also answering it, and its text is put back in the input field. The window is then empty, so the input field
+   moves back to the top, as for a new chat: *)
+VerificationTest[
+    sendTestWorkspaceChat[ Null, "", None, { } ],
+    {
+        Null,
+        "Hello",
+        "Hello",
+        {
+            { "NextCell", $testChatInputCell },
+            { "NotebookDelete", $testChatInputCell },
+            { "moveChatInputToTop", $testNotebook }
+        }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "EvaluateWorkspaceChat-StoppedChat-GH#1710"
+]
+
+(* Text typed while the chat ran is kept, and the input field stays at the bottom if there are earlier chats: *)
+VerificationTest[
+    sendTestWorkspaceChat[ Null, "New text", None, { CellObject[ "ChatbookTestWorkspaceChatEarlier" ] } ],
+    { Null, "New text", "", { { "NextCell", $testChatInputCell }, { "NotebookDelete", $testChatInputCell } } },
+    SameTest -> MatchQ,
+    TestID   -> "EvaluateWorkspaceChat-StoppedChat-KeepsNewInput-GH#1710"
+]
+
+(* A chat that got a response gives a ChatObject, so the front end isn't asked for the next cell: *)
+VerificationTest[
+    sendTestWorkspaceChat[ ChatObject[ ], "", None, { } ],
+    { _ChatObject, "", "", { } },
+    SameTest -> MatchQ,
+    TestID   -> "EvaluateWorkspaceChat-Answered-GH#1710"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

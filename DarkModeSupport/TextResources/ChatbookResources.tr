@@ -9673,8 +9673,8 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
     TaggingRules-><|"ProgressIndicator" -> False|>,
     Background->LightDarkSwitched[
       RGBColor[0.07058823529411765, 0.5568627450980392, 0.8196078431372549], 
-      RGBColor[0.4980392156862745, 0.7803921568627451, 0.984313725490196]], 
-    ExpressionUUID->"5245cc47-8da9-9747-b86f-01e5abba6062"], Cell[BoxData[
+      RGBColor[0.4980392156862745, 0.7803921568627451, 0.984313725490196]],
+    ExpressionUUID->"51799328-9925-430a-ba4e-6f21e53384e9"], Cell[BoxData[
     DynamicModuleBox[{Typeset`sidebarDockedCell$$, Typeset`thisNotebook$$, 
      Typeset`sidebarCell$$}, 
      FrameBox[
@@ -9697,16 +9697,12 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
                     RGBColor[0.4980392, 0.7803921, 0.9843137]]],
                     
                     ImageSizeCache->{
-                    13.132499999999999`, {1.8897624999999996`, 10.0484875}}], 
-                    
+                    13.132499999999999`, {1.967171875, 9.971078125}}], 
                     DynamicBox[ToBoxes[
                     FEPrivate`FrontEndResource[
                     "ChatbookStrings", "WorkspaceToolbarButtonLabelNew"], 
                     StandardForm],
-                    
-                    ImageSizeCache->{
-                    47.402998208999634`, {0.13799999713897737`, 
-                    8.118999831676483}}]}
+                    ImageSizeCache->{46.32421875, {0.140625, 7.9453125}}]}
                    },
                    AutoDelete->False,
                    BaseStyle->"NotebookAssistant`Sidebar`ToolbarButtonLabel",
@@ -9888,15 +9884,12 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                     RGBColor[0.4980392, 0.7803921, 0.9843137]]],
                     
                     ImageSizeCache->{
-                    10.497499999999999`, {1.1693874999999991`, 9.3281125}}], 
+                    10.497499999999999`, {1.2467968749999994`, 9.250703125}}], 
                     DynamicBox[ToBoxes[
                     FEPrivate`FrontEndResource[
                     "ChatbookStrings", "WorkspaceToolbarButtonLabelSources"], 
                     StandardForm],
-                    
-                    ImageSizeCache->{
-                    39.36449933052063, {0.13799999713897737`, 
-                    7.658999841213227}}]}
+                    ImageSizeCache->{38.47265625, {0.140625, 7.48828125}}]}
                    },
                    AutoDelete->False,
                    BaseStyle->"NotebookAssistant`Sidebar`ToolbarButtonLabel",
@@ -10060,15 +10053,14 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                     LightDarkSwitched[
                     RGBColor[0.0705882, 0.5568627, 0.8196078], 
                     RGBColor[0.4980392, 0.7803921, 0.9843137]]],
-                    ImageSizeCache->{9.5455, {0.6933875, 8.8521125}}], 
+                    
+                    ImageSizeCache->{
+                    9.5455, {0.7707968750000003, 8.774703125}}], 
                     DynamicBox[ToBoxes[
                     FEPrivate`FrontEndResource[
                     "ChatbookStrings", "WorkspaceToolbarButtonLabelHistory"], 
                     StandardForm],
-                    
-                    ImageSizeCache->{
-                    36.04099881649017, {2.3229999518394466`, 
-                    8.141999831199646}}]}
+                    ImageSizeCache->{35.2265625, {2.2734375, 7.96875}}]}
                    },
                    AutoDelete->False,
                    BaseStyle->"NotebookAssistant`Sidebar`ToolbarButtonLabel",
@@ -10120,6 +10112,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                    
                    GridBoxAlignment->{
                     "Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+                   
                    GridBoxItemSize->{
                     "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
                    GridBoxSpacings->{"Columns" -> {{0.3}}, "Rows" -> {{0}}}],
@@ -10229,7 +10222,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                    LightDarkSwitched[
                     RGBColor[0.0705882, 0.5568627, 0.8196078], 
                     RGBColor[0.4980392, 0.7803921, 0.9843137]]],
-                  ImageSizeCache->{9.5625, {1.26171875, 8.30078125}}],
+                  ImageSizeCache->{9.5625, {1.875, 7.6875}}],
                  DynamicBox[
                   ToBoxes[
                    FEPrivate`FrontEndResource[
@@ -10467,8 +10460,8 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                     RGBColor[0.4980392, 0.7803921, 0.9843137]]],
                   
                   ImageSizeCache->{
-                   7.6499999999999995`, {0.3054687500000002, 
-                    7.344531249999999}}],
+                   7.6499999999999995`, {0.9187500000000002, 
+                    6.731249999999999}}],
                  DynamicBox[
                   ToBoxes[
                    FEPrivate`FrontEndResource[
@@ -10613,8 +10606,8 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
     CellFrameMargins->0,
     Magnification->Dynamic[0.85 AbsoluteCurrentValue[
         FrontEnd`EvaluationNotebook[], Magnification]],
-    CellTags->"SidebarDockedCell", ExpressionUUID->
-    "7336611d-72d0-a14b-a24f-d3df6a1acbc2"], Cell[BoxData[
+    CellTags->"SidebarDockedCell",ExpressionUUID->
+    "dd932d0a-c9fe-4ece-85bb-45313c09c9bd"], Cell[BoxData[
     DynamicModuleBox[{Typeset`chatInputFieldCell$$, 
      Typeset`chatEvalCell$$ = {}, Typeset`nbo$$, Typeset`sidebarCell$$, 
      Typeset`fieldContent$$ = "", Typeset`returnKeyDownQ$$ = False, 
@@ -10681,8 +10674,8 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                     RGBColor[0.4980392, 0.7803921, 0.9843137]], 13],
                     
                     ImageSizeCache->{
-                    12.07353401223291, {2.0054687500000004`, 
-                    9.044531249999999}}],
+                    12.07353401223291, {2.6187500000000004`, 
+                    8.431249999999999}}],
                     Alignment->{Center, Center},
                     Background->None,
                     FrameMargins->0,
@@ -10959,7 +10952,8 @@ workspaceChatInitialized]],
                 Wolfram`Chatbook`ChatModes`UI`Private`initializeWorkspaceChat[\
 ]]; Wolfram`Chatbook`Common`evaluateSidebarChat[
                Typeset`nbo$$, Typeset`sidebarCell$$, Typeset`input$$, 
-                Dynamic[Typeset`chatEvalCell$$]]]; If[
+                Dynamic[Typeset`chatEvalCell$$], 
+                Dynamic[Typeset`fieldContent$$]]]; If[
               Wolfram`Chatbook`Common`cellTaggedQ[
               Typeset`chatInputFieldCell$$, "RegenerateChatOutput"], 
               Typeset`chatEvalCell$$ = 
@@ -10979,15 +10973,13 @@ workspaceChatInitialized]],
                 Typeset`chatEvalCell$$, Typeset`nbo$$]]],
             
             ImageSizeCache->{
-             976.9374999999999, {14.350793453089137`, 14.549206546910863`}},
+             976.9374999999999, {14.285937500000001`, 14.6140625}},
             SynchronousUpdating->False,
             TrackedSymbols:>{Typeset`returnKeyDownQ$$}], ""},
           {
            ItemBox[
             DynamicBox[ToBoxes[Typeset`focusArea$$, StandardForm],
-             
-             ImageSizeCache->{
-              4.700830332934856, {0.09140625363215804, 0.32849122399056796`}}],
+             ImageSizeCache->{9.515625, {0.75, 1.5}}],
             Alignment->Left,
             StripOnInput->False], "\[SpanFromLeft]"}
          },
@@ -11024,8 +11016,8 @@ workspaceChatInitialized]],
     Background->LightDarkSwitched[
       RGBColor[0.933333, 0.976471, 1.], 
       RGBColor[0.1490196, 0.2078431, 0.2549019]],
-    CellTags->"SidebarChatInputCell", ExpressionUUID->
-    "01059d55-6178-8940-83ed-de589a62cd2e"]}],
+    CellTags->"SidebarChatInputCell",ExpressionUUID->
+    "bbe12db5-8f81-4632-888e-c236e9b85891"]}],
   "NotebookSelectionSnapshotExclusionZone"]], \
 "NotebookAssistant`Sidebar`NotebookAssistantSidebarCell",
  Editable->True,
@@ -11041,8 +11033,8 @@ workspaceChatInitialized]],
    RGBColor[0.933333, 0.976471, 1.], 
    RGBColor[0.1490196, 0.2078431, 0.2549019]],
  CellTags->
-  "NotebookAssistantSidebarCell", \
-ExpressionUUID->"abfb007e-3701-fb43-bd25-6ebd9ce602dc"],
+  "NotebookAssistantSidebarCell",ExpressionUUID->"c798d07d-9385-4f7b-b77f-\
+dc6a7ff1b42f"],
 
 "SidebarIconHide" -> (GraphicsBox[{
    Thickness[0.125], 

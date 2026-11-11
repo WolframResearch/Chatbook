@@ -17,7 +17,7 @@ Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 evaluateWorkspaceChat // beginDefinition;
 
 evaluateWorkspaceChat[ nbo_NotebookObject, Dynamic[ input: _Symbol|_CurrentValue ] ] := Enclose[
-    Catch @ Module[ { value, text, uuid, cell, cellObject },
+    Catch @ Module[ { value, text, uuid, cell, cellObject, result },
 
         value = input;
 
@@ -45,12 +45,33 @@ evaluateWorkspaceChat[ nbo_NotebookObject, Dynamic[ input: _Symbol|_CurrentValue
         moveChatInputToBottom @ nbo;
         cellObject = ConfirmMatch[ First[ Cells[ nbo, CellTags -> uuid ], $Failed ], _CellObject, "CellObject" ];
         setCurrentValue[ cellObject, CellTags, { } ];
-        ConfirmMatch[ ChatCellEvaluate[ cellObject, nbo ], _ChatObject|Null, "ChatCellEvaluate" ]
+        result = ConfirmMatch[ ChatCellEvaluate[ cellObject, nbo ], _ChatObject|Null, "ChatCellEvaluate" ];
+
+        If[ unansweredChatInputQ[ cellObject, result ],
+            NotebookDelete @ cellObject;
+            (* The input cell may have been moved to the bottom of the window since the chat was sent: *)
+            restoreWorkspaceChatInput[ workspaceChatInput @ nbo, value ];
+            (* Like "New Chat", an empty window has the input cell at the top. Note: this replaces the input cell, so a
+               send that was queued behind this chat isn't sent, though its text is kept in the new input cell (#1719): *)
+            If[ Cells @ nbo === { }, moveChatInputToTop @ nbo ]
+        ];
+
+        result
     ],
     throwInternalFailure
 ];
 
 evaluateWorkspaceChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*restoreWorkspaceChatInput*)
+restoreWorkspaceChatInput // beginDefinition;
+
+restoreWorkspaceChatInput[ Dynamic[ input_ ], value_ ] :=
+    If[ ! validInputStringQ @ input, input = $WorkspaceChatInput = value ];
+
+restoreWorkspaceChatInput // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -91,9 +112,11 @@ appendCellToSidebarChat // endDefinition;
 (*evaluateSidebarChat*)
 evaluateSidebarChat // beginDefinition;
 
-evaluateSidebarChat[ nbo_NotebookObject, sidebarCell_CellObject, input_, Dynamic[ cellObject_ ] ] := Enclose[
+(* The input field is optional, since the sidebar input cell of a front end session that started with an older version
+   of Chatbook doesn't give it: *)
+evaluateSidebarChat[ nbo_NotebookObject, sidebarCell_CellObject, input_, Dynamic[ cellObject_ ], field_: None ] := Enclose[
     WithCleanup[
-        Module[ { text, uuid, cell },
+        Module[ { text, uuid, cell, result },
 
             text = makeBoxesInputMoreTextLike @ input;
             uuid = ConfirmBy[ createUUID[ ], StringQ, "UUID" ];
@@ -110,7 +133,14 @@ evaluateSidebarChat[ nbo_NotebookObject, sidebarCell_CellObject, input_, Dynamic
             ];
 
             cellObject = appendCellToSidebarChat[ nbo, sidebarCell, cell, uuid ];
-            ConfirmMatch[ ChatCellEvaluate[ cellObject, nbo ], _ChatObject|Null, "ChatCellEvaluate" ]
+            result = ConfirmMatch[ ChatCellEvaluate[ cellObject, nbo ], _ChatObject|Null, "ChatCellEvaluate" ];
+
+            If[ unansweredChatInputQ[ cellObject, result ],
+                NotebookDelete @ cellObject;
+                restoreSidebarChatInput[ field, input ]
+            ];
+
+            result
         ],
         With[ { selections = CurrentValue[ sidebarCell, { TaggingRules, "CurrentSelections" } ] },
             If[ AssociationQ @ selections, FE`Evaluate @ FEPrivate`ReleaseSelectionObjects @ selections ];
@@ -121,6 +151,14 @@ evaluateSidebarChat[ nbo_NotebookObject, sidebarCell_CellObject, input_, Dynamic
 ];
 
 evaluateSidebarChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*restoreSidebarChatInput*)
+restoreSidebarChatInput // beginDefinition;
+restoreSidebarChatInput[ Dynamic[ field_ ], input_ ] := If[ ! validInputStringQ @ field, field = input ];
+restoreSidebarChatInput[ None, _ ] := Null;
+restoreSidebarChatInput // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -171,6 +209,23 @@ makeBoxesInputMoreTextLike // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Misc Utilities*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*unansweredChatInputQ*)
+(* A chat that is stopped before its response arrives leaves no cell after its input, since StopChat removes the output
+   cell. Its input would stay in the chat history, and the next message's response would answer it too (#1710). A
+   regular ChatInput cell is left as it is, since it can be evaluated again or deleted. In the assistant window and the
+   sidebar, the input is removed, and its text is put back in the input field (unless something was typed there since
+   the chat was sent), where it can be edited and sent again.
+   A chat that got a response gives a ChatObject, so the front end is only asked for the next cell otherwise. A failed
+   request also gives Null, but it leaves an error cell (which isn't a chat output cell) after the input.
+   Note: appendCellToSidebarChat writes new sidebar chats after the last "SidebarTopCell", which an error cell isn't, so
+   after a failed request, later sidebar inputs are followed by the error cell and are kept even if stopped: *)
+unansweredChatInputQ // beginDefinition;
+unansweredChatInputQ[ _CellObject, _ChatObject ] := False;
+unansweredChatInputQ[ cell_CellObject, Null ] := ! MatchQ[ NextCell @ cell, _CellObject ];
+unansweredChatInputQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
