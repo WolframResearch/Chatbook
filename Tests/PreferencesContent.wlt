@@ -369,4 +369,112 @@ VerificationTest[
     TestID   -> "PersonaManagerPanel-RemovesUninstalledVisiblePersonas"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*AllowExternalLLMConnectivity*)
+(* Runs a test with a temporary persistence key, as in a kernel before 16.0 (managed is True for 16.0+), and restores
+   the kernel symbol afterwards: *)
+withAllowExternalLLMSandbox // Attributes = { HoldFirst };
+withAllowExternalLLMSandbox[ eval_ ] := withAllowExternalLLMSandbox[ eval, False ];
+withAllowExternalLLMSandbox[ eval_, managed_ ] :=
+    Module[ { key = "Wolfram/ChatbookTests/" <> CreateUUID[ ], attributes, values },
+        attributes = Attributes @ System`$AllowExternalLLMConnectivity;
+        values     = OwnValues @ System`$AllowExternalLLMConnectivity;
+        WithCleanup[
+            Block[
+                {
+                    Wolfram`Chatbook`PreferencesContent`Private`$allowExternalLLMConnectivityKey = key,
+                    Wolfram`Chatbook`Common`sufficientVersionQ
+                },
+                Wolfram`Chatbook`Common`sufficientVersionQ[ 16.0 ] = managed;
+                Wolfram`Chatbook`Common`sufficientVersionQ[ v_ ] := TrueQ[ $VersionNumber >= v ];
+                eval[ key ]
+            ],
+            Quiet @ DeleteObject @ PersistentObject[ key, "Local" ];
+            Unprotect @ System`$AllowExternalLLMConnectivity;
+            OwnValues @ System`$AllowExternalLLMConnectivity = values;
+            Attributes @ System`$AllowExternalLLMConnectivity = attributes
+        ]
+    ];
+
+VerificationTest[
+    withAllowExternalLLMSandbox @ Function[ key,
+        Unprotect @ System`$AllowExternalLLMConnectivity;
+        System`$AllowExternalLLMConnectivity =.;
+        Protect @ System`$AllowExternalLLMConnectivity;
+        {
+            Wolfram`Chatbook`PreferencesContent`Private`setAllowExternalLLMConnectivity[ False ],
+            System`$AllowExternalLLMConnectivity,
+            MemberQ[ Attributes @ System`$AllowExternalLLMConnectivity, Protected ],
+            PersistentSymbol[ key, "Local" ],
+            Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ[ ]
+        }
+    ],
+    { False, False, True, False, False },
+    SameTest -> MatchQ,
+    TestID   -> "SetAllowExternalLLMConnectivity-UpdatesKernelAndPersists"
+]
+
+VerificationTest[
+    withAllowExternalLLMSandbox @ Function[ key,
+        PersistentSymbol[ key, "Local" ] = False;
+        Unprotect @ System`$AllowExternalLLMConnectivity;
+        System`$AllowExternalLLMConnectivity =.;
+        Wolfram`Chatbook`Common`restoreAllowExternalLLMConnectivity[ ];
+        System`$AllowExternalLLMConnectivity
+    ],
+    False,
+    SameTest -> MatchQ,
+    TestID   -> "RestoreAllowExternalLLMConnectivity-AppliesSavedValue"
+]
+
+(* A value already set in the session (by the user or the front end) takes priority over the saved one: *)
+VerificationTest[
+    withAllowExternalLLMSandbox @ Function[ key,
+        PersistentSymbol[ key, "Local" ] = False;
+        Unprotect @ System`$AllowExternalLLMConnectivity;
+        System`$AllowExternalLLMConnectivity = True;
+        Wolfram`Chatbook`Common`restoreAllowExternalLLMConnectivity[ ];
+        System`$AllowExternalLLMConnectivity
+    ],
+    True,
+    SameTest -> MatchQ,
+    TestID   -> "RestoreAllowExternalLLMConnectivity-KeepsSessionValue"
+]
+
+(* Since 16.0 the front end's setting applies, even if an earlier version saved a different value: *)
+VerificationTest[
+    withAllowExternalLLMSandbox[
+        Function[ key,
+            PersistentSymbol[ key, "Local" ] = False;
+            Unprotect @ System`$AllowExternalLLMConnectivity;
+            System`$AllowExternalLLMConnectivity =.;
+            Wolfram`Chatbook`Common`restoreAllowExternalLLMConnectivity[ ];
+            OwnValues @ System`$AllowExternalLLMConnectivity
+        ],
+        True
+    ],
+    { },
+    SameTest -> MatchQ,
+    TestID   -> "RestoreAllowExternalLLMConnectivity-IgnoredWhenManaged"
+]
+
+(* Reading the front end option while building the content would make it rebuild whenever any $FrontEnd option changes: *)
+VerificationTest[
+    UsingFrontEnd @ Module[ { calls = { } },
+        Internal`InheritedBlock[ { MathLink`CallFrontEnd },
+            Unprotect @ MathLink`CallFrontEnd;
+            MathLink`CallFrontEnd[ args___ ] /; ! TrueQ @ $inCall := Block[ { $inCall = True },
+                AppendTo[ calls, HoldComplete @ args ];
+                MathLink`CallFrontEnd @ args
+            ];
+            ToBoxes @ Wolfram`Chatbook`Common`createPreferencesContent[ ]
+        ];
+        FreeQ[ calls, "AllowExternalLLMConnectivity" ]
+    ],
+    True,
+    SameTest -> MatchQ,
+    TestID   -> "CreatePreferencesContent-NoAllowExternalLLMConnectivityDependency"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)

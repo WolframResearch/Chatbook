@@ -112,8 +112,10 @@ createPreferencesContent[ ] := Enclose[
             ),
             SynchronousInitialization -> False,
             UnsavedVariables          :> { buildID, state },
+            (* tab is unset if the content is replaced before its asynchronous Initialization has run: *)
             Deinitialization          :> If[
-                tab =!= Replace[ CurrentChatSettings[ $FrontEnd, "CurrentPreferencesTab" ], $$unspecified -> "Services" ],
+                MatchQ[ tab, $$preferencesPage ] &&
+                    tab =!= Replace[ CurrentChatSettings[ $FrontEnd, "CurrentPreferencesTab" ], $$unspecified -> "Services" ],
                 CurrentChatSettings[ $FrontEnd, "CurrentPreferencesTab" ] = tab
             ]
 
@@ -149,15 +151,83 @@ allowAISettings // beginDefinition;
 allowAISettings[ ] :=
     highlightControl[
         prefsCheckbox[
-            Function[ CurrentValue[ $FrontEnd, "AllowExternalLLMConnectivity" ] = # ],
+            Function[ setAllowExternalLLMConnectivity @ TrueQ @ # ],
             tr[ "PreferencesContentAllowAILabel" ],
-            Hold @ TrueQ @ CurrentValue[ $FrontEnd, "AllowExternalLLMConnectivity" ]
+            Hold @ allowExternalLLMConnectivityQ[ ]
         ],
         None,
         "AllowAI"
     ];
 
 allowAISettings // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*AllowExternalLLMConnectivity*)
+(* System`$AllowExternalLLMConnectivity is what LLM services check. Since 16.0 the front end stores the setting as
+   CurrentValue[ $FrontEnd, "AllowExternalLLMConnectivity" ] and pushes it to its kernels after each evaluation.
+   Before 16.0 the symbol comes from a paclet (if it's installed) and there is no front end option, so the value is
+   kept in a PersistentSymbol and restored when Chatbook loads. *)
+$allowExternalLLMConnectivityKey = "Wolfram/Chatbook/AllowExternalLLMConnectivity";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*allowExternalLLMConnectivityQ*)
+(* Reads only the kernel symbol, so it can be used while building dynamic content without making it depend on front
+   end options: *)
+allowExternalLLMConnectivityQ // beginDefinition;
+allowExternalLLMConnectivityQ[ ] := System`$AllowExternalLLMConnectivity =!= False;
+allowExternalLLMConnectivityQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*setAllowExternalLLMConnectivity*)
+setAllowExternalLLMConnectivity // beginDefinition;
+
+setAllowExternalLLMConnectivity[ value: True|False ] := (
+    If[ sufficientVersionQ[ 16.0 ],
+        CurrentValue[ $FrontEnd, "AllowExternalLLMConnectivity" ] = value,
+        PersistentSymbol[ $allowExternalLLMConnectivityKey, "Local" ] = value
+    ];
+    (* The front end would also update the kernel, but only after this evaluation finishes: *)
+    setKernelAllowExternalLLMConnectivity @ value;
+    updateDynamics[ "Preferences" ];
+    value
+);
+
+setAllowExternalLLMConnectivity // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*setKernelAllowExternalLLMConnectivity*)
+setKernelAllowExternalLLMConnectivity // beginDefinition;
+
+setKernelAllowExternalLLMConnectivity[ value: True|False ] :=
+    With[ { protected = MemberQ[ Attributes @ System`$AllowExternalLLMConnectivity, Protected ] },
+        Unprotect @ System`$AllowExternalLLMConnectivity;
+        System`$AllowExternalLLMConnectivity = value;
+        If[ protected, Protect @ System`$AllowExternalLLMConnectivity ];
+        value
+    ];
+
+setKernelAllowExternalLLMConnectivity // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*restoreAllowExternalLLMConnectivity*)
+(* Called when Chatbook loads. Since 16.0 the front end sets the value, so this only applies to earlier versions, and
+   only if nothing (e.g. the user) has given the symbol a value already. *)
+restoreAllowExternalLLMConnectivity // beginDefinition;
+
+restoreAllowExternalLLMConnectivity[ ] :=
+    If[ ! sufficientVersionQ[ 16.0 ] && OwnValues @ System`$AllowExternalLLMConnectivity === { },
+        Replace[
+            PersistentSymbol[ $allowExternalLLMConnectivityKey, "Local" ],
+            value: True|False :> setKernelAllowExternalLLMConnectivity @ value
+        ]
+    ];
+
+restoreAllowExternalLLMConnectivity // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -304,8 +374,10 @@ localAIOnly[ ] := Which[
     ],
         { True, "Admin" },
 
-    (* if disabled via Preferences checkbox; the FrontEnd can't control this value until 16.0 *)
-    Not @ TrueQ @ Replace[ CurrentValue[ $FrontEnd, "AllowExternalLLMConnectivity" ], $Failed :> True ],
+    (* if disabled via Preferences checkbox. Don't read CurrentValue[ $FrontEnd, "AllowExternalLLMConnectivity" ] here:
+       this runs while building the preferences content, and that read makes the content rebuild whenever any
+       $FrontEnd option changes. *)
+    ! allowExternalLLMConnectivityQ[ ],
         { True, "User" },
 
     True,
