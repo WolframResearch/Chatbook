@@ -847,6 +847,37 @@ VerificationTest[
     TestID   -> "FastVectorSearch-DatabaseObjectFailed"
 ]
 
+(* VectorDatabaseSearch gives a failure (e.g. "ErrorManagerThrowNameError") if the index file can't be read. The
+   database is then skipped like one that can't be loaded, instead of failing the chat: *)
+VerificationTest[
+    Module[ { name, vector },
+        name   = "NeuralNetRepositoryURIs";
+        vector = Wolfram`Chatbook`Common`getEmbedding[ "Is there a neural net that can classify images?" ];
+        Internal`InheritedBlock[ { Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`standardVectorDatabaseSearch },
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`standardVectorDatabaseSearch[ db_, v_, n_ ] :=
+                Failure[ "ErrorManagerThrowNameError", <| "ErrorCode" -> -7 |> ];
+            Block[
+                {
+                    Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$cacheUSearchIndexes      = False,
+                    Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDBLoadFailures     = { },
+                    Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$saveUSearchVerifications = False
+                },
+                {
+                    Block[ { Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$allowDownload = False }, Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDatabaseSearch[ name, vectorDBInfo @ name, vector, 250 ] ],
+                    Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDBLoadFailures,
+                    Wolfram`Chatbook`Common`catchTop @ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`vectorDatabaseSearch[ name, vectorDBInfo @ name, vector, 250 ],
+                    Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDBLoadFailures,
+                    Wolfram`Chatbook`Common`catchTop @ Wolfram`Chatbook`PromptGenerators`Common`vectorDBSearch[ name, "neural net", "Values" ]
+                }
+            ]
+        ]
+    ],
+    { { }, { }, { }, { "NeuralNetRepositoryURIs" }, { } },
+    { Chatbook::VectorDatabaseLoadFailed },
+    SameTest -> MatchQ,
+    TestID   -> "FastVectorSearch-SearchFailed"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Value Stores*)

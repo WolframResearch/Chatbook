@@ -2019,13 +2019,26 @@ vectorDatabaseObject[ name_String, _Association ] :=
     With[ { db = catchQuiet @ loadVectorDatabase @ name },
         If[ MatchQ[ db, $$vectorDatabase ],
             $vectorDatabaseObjects[ name ] = db,
-            (* The warm-up (see initializeVectorDatabases) leaves this to the next search, which shows the message: *)
-            If[ TrueQ @ $allowDownload, clearVectorDBCaches @ name; vectorDBLoadFailed @ name ];
-            Throw[ { }, $vectorDatabaseObjectTag ]
+            skipVectorDatabaseSearch @ name
         ]
     ];
 
 vectorDatabaseObject // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*skipVectorDatabaseSearch*)
+(* Skips a database that can't be searched for the rest of the session (see vectorDBLoadFailed), and gives no results
+   for the current search (see vectorDatabaseSearch). The warm-up (see initializeVectorDatabases) leaves this to the next
+   search, which shows the message. *)
+skipVectorDatabaseSearch // beginDefinition;
+
+skipVectorDatabaseSearch[ name_String ] := (
+    If[ TrueQ @ $allowDownload, clearVectorDBCaches @ name; vectorDBLoadFailed @ name ];
+    Throw[ { }, $vectorDatabaseObjectTag ]
+);
+
+skipVectorDatabaseSearch // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2604,7 +2617,7 @@ vectorDatabaseSearch[ name_String, info_Association, vector_NumericArray, n_Inte
 
 (* No usable index handle: *)
 vectorDatabaseSearch[ name_, info_, vector_, n_, _Missing ] :=
-    standardVectorDatabaseSearch[ vectorDatabaseObject[ name, info ], vector, n ];
+    standardVectorDatabaseSearch[ name, info, vector, n ];
 
 (* The index handle has already been checked against VectorDatabaseSearch: *)
 vectorDatabaseSearch[ name_, info_, vector_, n_, index_Association ] /; usearchIndexVerifiedQ @ index :=
@@ -2612,14 +2625,14 @@ vectorDatabaseSearch[ name_, info_, vector_, n_, index_Association ] /; usearchI
         If[ MatchQ[ result, { ___Association } ],
             result,
             disableUSearchIndex[ name, result ];
-            standardVectorDatabaseSearch[ vectorDatabaseObject[ name, info ], vector, n ]
+            standardVectorDatabaseSearch[ name, info, vector, n ]
         ]
     ];
 
 (* First search with this database file, so make sure that the results are identical to VectorDatabaseSearch: *)
 vectorDatabaseSearch[ name_, info_, vector_, n_, index_Association ] :=
     Module[ { expected, result },
-        expected = standardVectorDatabaseSearch[ vectorDatabaseObject[ name, info ], vector, n ];
+        expected = standardVectorDatabaseSearch[ name, info, vector, n ];
         result   = usearchIndexSearch[ index, vector, n ];
         Which[
             result =!= expected,
@@ -2639,6 +2652,16 @@ vectorDatabaseSearch // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*standardVectorDatabaseSearch*)
 standardVectorDatabaseSearch // beginDefinition;
+
+(* SemanticSearch gives a failure if the index file can't be read (e.g. "ErrorManagerThrowNameError" from IndexView for
+   a corrupt or locked file that passed the checks in vectorDBDirectoryQ0), so the database is skipped instead: *)
+standardVectorDatabaseSearch[ name_String, info_Association, vector_, n_ ] :=
+    With[ { db = vectorDatabaseObject[ name, info ] },
+        Replace[
+            catchUSearch @ standardVectorDatabaseSearch[ db, vector, n ],
+            Except[ { ___Association } ] :> skipVectorDatabaseSearch @ name
+        ]
+    ];
 
 standardVectorDatabaseSearch[ db_, vector_, n_ ] :=
     inVectorDBDirectory @ VectorDatabaseSearch[ db, vector, { "Index", "Distance" }, MaxItems -> n ];
