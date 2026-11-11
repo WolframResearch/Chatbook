@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/ChatTitle.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/ChatTitle.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -36,7 +36,7 @@ VerificationTest[
         _String? (StringLength @ # === 34 &)
     },
     SameTest -> MatchQ,
-    TestID   -> "PostProcessChatTitle-Length@@Tests/ChatTitle.wlt:26,1-40,2"
+    TestID   -> "PostProcessChatTitle-Length"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

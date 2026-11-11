@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/SidebarChatInput.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/SidebarChatInput.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -62,7 +62,7 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "Definitions@@Tests/SidebarChatInput.wlt:25,1-66,2"
+    TestID   -> "Definitions"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -74,7 +74,7 @@ VerificationTest[
     Cases[ runSidebarSend[ ], { "evaluateSidebarChat", __ } ],
     { { "evaluateSidebarChat", $userNotebook, "Reply with exactly: OK2" } },
     SameTest -> MatchQ,
-    TestID   -> "SidebarSend-EvaluatesChat@@Tests/SidebarChatInput.wlt:73,1-78,2"
+    TestID   -> "SidebarSend-EvaluatesChat"
 ]
 
 (* Sending a sidebar message must not write the user's notebook options, e.g. WindowElements: *)
@@ -82,7 +82,7 @@ VerificationTest[
     FreeQ[ runSidebarSend[ ], { "setCurrentValue", $userNotebook, ___ } | { "SetOptions", $userNotebook, ___ } | WindowElements ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "SidebarSend-NoWindowElementsWrite@@Tests/SidebarChatInput.wlt:81,1-86,2"
+    TestID   -> "SidebarSend-NoWindowElementsWrite"
 ]
 
 (* The front end runs the pre-built copy of the sidebar cell from the text resources, so it must match the source: *)
@@ -97,7 +97,7 @@ VerificationTest[
     ],
     { { True, False }.. },
     SameTest -> MatchQ,
-    TestID   -> "SidebarSend-PrebuiltResource@@Tests/SidebarChatInput.wlt:89,1-101,2"
+    TestID   -> "SidebarSend-PrebuiltResource"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -119,7 +119,7 @@ VerificationTest[
         TrackedSymbols :> { Wolfram`Chatbook`$ChatEvaluationCell }
     ] ],
     SameTest -> MatchQ,
-    TestID   -> "SendButton-ScopedDynamic-robustness-4@@Tests/SidebarChatInput.wlt:108,1-123,2"
+    TestID   -> "SendButton-ScopedDynamic-robustness-4"
 ]
 
 (* The front end evaluates a kernel Dynamic in a DynamicModule with the module's variables, even if it doesn't use them.
@@ -141,7 +141,7 @@ VerificationTest[
     },
     { True, True, 1 },
     SameTest -> MatchQ,
-    TestID   -> "SendButton-InitializationGate-chatbar-8@@Tests/SidebarChatInput.wlt:129,1-145,2"
+    TestID   -> "SendButton-InitializationGate-chatbar-8"
 ]
 
 VerificationTest[
@@ -152,7 +152,7 @@ VerificationTest[
     },
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "SendButton-InitializationSetsFlag-chatbar-8@@Tests/SidebarChatInput.wlt:147,1-156,2"
+    TestID   -> "SendButton-InitializationSetsFlag-chatbar-8"
 ]
 
 VerificationTest[
@@ -165,7 +165,7 @@ VerificationTest[
     ],
     HoldComplete[ CompoundExpression[ _, Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChatIn", ParentCell[ EvaluationCell[ ] ] ] ] ],
     SameTest -> MatchQ,
-    TestID   -> "SendButton-ScopedStop-robustness-4@@Tests/SidebarChatInput.wlt:158,1-169,2"
+    TestID   -> "SendButton-ScopedStop-robustness-4"
 ]
 
 (* The front end draws the prebuilt sidebar cell, so it must match the source: *)
@@ -184,7 +184,7 @@ VerificationTest[
     ],
     { { True, True, True, False }.. },
     SameTest -> MatchQ,
-    TestID   -> "SendButton-PrebuiltResource@@Tests/SidebarChatInput.wlt:172,1-188,2"
+    TestID   -> "SendButton-PrebuiltResource"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

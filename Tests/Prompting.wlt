@@ -8,14 +8,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/Prompting.wlt:7,1-12,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/Prompting.wlt:14,1-19,2"
+    TestID   -> "LoadContext"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -30,7 +30,7 @@ VerificationTest[
     ],
     _String? (StringContainsQ[ #, "Placeholder[\"description\"]" ] &),
     SameTest -> MatchQ,
-    TestID   -> "BasePrompt-Placeholders-WolframLanguageStyle@@Tests/Prompting.wlt:26,1-34,2"
+    TestID   -> "BasePrompt-Placeholders-WolframLanguageStyle"
 ]
 
 VerificationTest[
@@ -40,7 +40,7 @@ VerificationTest[
     ],
     _String? (StringContainsQ[ #, "Placeholder[\"description\"]" ] &),
     SameTest -> MatchQ,
-    TestID   -> "BasePrompt-Placeholders-WolframLanguageClass@@Tests/Prompting.wlt:36,1-44,2"
+    TestID   -> "BasePrompt-Placeholders-WolframLanguageClass"
 ]
 
 (* It should not appear when no Wolfram Language prompting was requested: *)
@@ -48,7 +48,7 @@ VerificationTest[
     Wolfram`Chatbook`Common`withBasePromptBuilder @ Wolfram`Chatbook`Common`$basePrompt,
     _String? (StringFreeQ[ #, "Placeholder" ] &),
     SameTest -> MatchQ,
-    TestID   -> "BasePrompt-Placeholders-NotIncludedByDefault@@Tests/Prompting.wlt:47,1-52,2"
+    TestID   -> "BasePrompt-Placeholders-NotIncludedByDefault"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

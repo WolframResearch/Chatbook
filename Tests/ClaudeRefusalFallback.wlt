@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/ClaudeRefusalFallback.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/ClaudeRefusalFallback.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -34,7 +34,7 @@ VerificationTest[
     },
     { "Claude4", "ClaudeOpus47Plus", "Claude5", "Claude5", "Claude5", "Claude5", "Claude5", "Claude5" },
     SameTest -> SameQ,
-    TestID   -> "ChooseModelFamily-Claude@@Tests/ClaudeRefusalFallback.wlt:24,1-38,2"
+    TestID   -> "ChooseModelFamily-Claude"
 ]
 
 VerificationTest[
@@ -53,7 +53,7 @@ VerificationTest[
         ConstantArray[ { 1000000, 64000, True, Missing[ "NotSupported" ], "claude-opus-4-8" }, 3 ]
     ],
     SameTest -> MatchQ,
-    TestID   -> "AutoModelSettings-Claude@@Tests/ClaudeRefusalFallback.wlt:40,1-57,2"
+    TestID   -> "AutoModelSettings-Claude"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -131,7 +131,7 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "Refusal-Definitions@@Tests/ClaudeRefusalFallback.wlt:69,1-135,2"
+    TestID   -> "Refusal-Definitions"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -148,7 +148,7 @@ VerificationTest[
         <| "Result" -> "Answer", "Models" -> { "claude-fable-5-2", "claude-opus-4-8" }, "SameMessages" -> True |>
     },
     SameTest -> SameQ,
-    TestID   -> "Refusal-Cyber-Fallback@@Tests/ClaudeRefusalFallback.wlt:140,1-152,2"
+    TestID   -> "Refusal-Cyber-Fallback"
 ]
 
 (* Partial output from the refused model is discarded: *)
@@ -162,7 +162,7 @@ VerificationTest[
     ],
     <| "Result" -> "Answer", "Models" -> { "claude-opus-5-5", "claude-opus-4-8" }, "SameMessages" -> True |>,
     SameTest -> SameQ,
-    TestID   -> "Refusal-Discards-Partial-Output@@Tests/ClaudeRefusalFallback.wlt:155,1-166,2"
+    TestID   -> "Refusal-Discards-Partial-Output"
 ]
 
 (* A raw chunk can contain several events, or only part of an event: *)
@@ -185,7 +185,7 @@ VerificationTest[
     ],
     <| "Result" -> "Answer", "Models" -> { "claude-opus-5-5", "claude-opus-4-8" }, "SameMessages" -> True |>,
     SameTest -> SameQ,
-    TestID   -> "Refusal-Multiple-Events-In-Chunk@@Tests/ClaudeRefusalFallback.wlt:169,1-189,2"
+    TestID   -> "Refusal-Multiple-Events-In-Chunk"
 ]
 
 VerificationTest[
@@ -206,7 +206,7 @@ VerificationTest[
     ],
     <| "Result" -> "Answer", "Models" -> { "claude-opus-5-5", "claude-opus-4-8" }, "SameMessages" -> True |>,
     SameTest -> SameQ,
-    TestID   -> "Refusal-Event-Split-Across-Chunks@@Tests/ClaudeRefusalFallback.wlt:191,1-210,2"
+    TestID   -> "Refusal-Event-Split-Across-Chunks"
 ]
 
 (* A refusal after a tool call only discards the refused round, and the rest of the request stays on the fallback: *)
@@ -244,7 +244,7 @@ VerificationTest[
         "EndsAnswered" -> True
     |>,
     SameTest -> SameQ,
-    TestID   -> "Refusal-During-Tool-Loop@@Tests/ClaudeRefusalFallback.wlt:213,1-248,2"
+    TestID   -> "Refusal-During-Tool-Loop"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -260,7 +260,7 @@ VerificationTest[
         "SameMessages" -> True
     |>,
     SameTest -> SameQ,
-    TestID   -> "Refusal-Other-Category@@Tests/ClaudeRefusalFallback.wlt:255,1-264,2"
+    TestID   -> "Refusal-Other-Category"
 ]
 
 (* There's no fallback for the fallback model: *)
@@ -278,7 +278,7 @@ VerificationTest[
         "SameMessages" -> True
     |>,
     SameTest -> SameQ,
-    TestID   -> "Refusal-Fallback-Also-Refuses@@Tests/ClaudeRefusalFallback.wlt:267,1-282,2"
+    TestID   -> "Refusal-Fallback-Also-Refuses"
 ]
 
 (* The fallback can be disabled: *)
@@ -294,7 +294,7 @@ VerificationTest[
         "SameMessages" -> True
     |>,
     SameTest -> SameQ,
-    TestID   -> "Refusal-Fallback-Disabled@@Tests/ClaudeRefusalFallback.wlt:285,1-298,2"
+    TestID   -> "Refusal-Fallback-Disabled"
 ]
 
 (* Normal responses aren't affected: *)
@@ -302,7 +302,7 @@ VerificationTest[
     simulateChat[ "claude-opus-5-5", <| "claude-opus-5-5" -> { textChunk[ "Answer" ] } |> ],
     <| "Result" -> "Answer", "Models" -> { "claude-opus-5-5" }, "SameMessages" -> True |>,
     SameTest -> SameQ,
-    TestID   -> "Refusal-Normal-Response@@Tests/ClaudeRefusalFallback.wlt:301,1-306,2"
+    TestID   -> "Refusal-Normal-Response"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

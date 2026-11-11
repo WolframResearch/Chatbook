@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/WorkspaceChatInput.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/WorkspaceChatInput.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -87,7 +87,7 @@ VerificationTest[
     ],
     Cell[ BoxData[ _DynamicModuleBox ], "ChatInputField", ___, TaggingRules -> <| "ChatInputString" -> "Hello" |>, ___ ],
     SameTest -> MatchQ,
-    TestID   -> "AttachedInputCell-InitialText@@Tests/WorkspaceChatInput.wlt:83,1-91,2"
+    TestID   -> "AttachedInputCell-InitialText"
 ]
 
 (* Typing must not need the kernel, so nothing in the cell may refer to the kernel symbol: *)
@@ -95,7 +95,7 @@ VerificationTest[
     FreeQ[ $workspaceInputCell, HoldPattern @ $WorkspaceChatInput ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "AttachedInputCell-NoKernelSymbol@@Tests/WorkspaceChatInput.wlt:94,1-99,2"
+    TestID   -> "AttachedInputCell-NoKernelSymbol"
 ]
 
 (* The input field, the field hint, and both ways of submitting use the cell's TaggingRules through the same
@@ -133,7 +133,7 @@ VerificationTest[
     ],
     { { 1, 1, 2, 1 }, 1, True },
     SameTest -> MatchQ,
-    TestID   -> "AttachedInputCell-FrontEndStorage@@Tests/WorkspaceChatInput.wlt:103,1-137,2"
+    TestID   -> "AttachedInputCell-FrontEndStorage"
 ]
 
 VerificationTest[
@@ -146,7 +146,7 @@ VerificationTest[
     ],
     { <| "ChatInputString" -> RowBox @ { "Hello", " ", "there" } |> },
     SameTest -> MatchQ,
-    TestID   -> "AttachedInputCell-InitialBoxes@@Tests/WorkspaceChatInput.wlt:139,1-150,2"
+    TestID   -> "AttachedInputCell-InitialBoxes"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -156,7 +156,7 @@ VerificationTest[
     withTestInputCell[ { $testInputCell }, Wolfram`Chatbook`ChatModes`Common`workspaceChatInput @ $testNotebook ],
     Dynamic @ CurrentValue[ CellObject[ "ChatbookTestWorkspaceChatInput" ], { TaggingRules, "ChatInputString" } ],
     SameTest -> MatchQ,
-    TestID   -> "WorkspaceChatInput-AttachedCell@@Tests/WorkspaceChatInput.wlt:155,1-160,2"
+    TestID   -> "WorkspaceChatInput-AttachedCell"
 ]
 
 (* Before the input cell is attached, the text is kept in $WorkspaceChatInput, which the new cell starts with: *)
@@ -164,7 +164,7 @@ VerificationTest[
     withTestInputCell[ { }, Wolfram`Chatbook`ChatModes`Common`workspaceChatInput @ $testNotebook ],
     Dynamic @ $WorkspaceChatInput,
     SameTest -> MatchQ,
-    TestID   -> "WorkspaceChatInput-NoCell@@Tests/WorkspaceChatInput.wlt:163,1-168,2"
+    TestID   -> "WorkspaceChatInput-NoCell"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -180,7 +180,7 @@ VerificationTest[
     ],
     "Draft",
     SameTest -> MatchQ,
-    TestID   -> "SaveWorkspaceChatInput-String@@Tests/WorkspaceChatInput.wlt:173,1-184,2"
+    TestID   -> "SaveWorkspaceChatInput-String"
 ]
 
 VerificationTest[
@@ -193,7 +193,7 @@ VerificationTest[
     ],
     RowBox @ { "Draft", " ", "text" },
     SameTest -> MatchQ,
-    TestID   -> "SaveWorkspaceChatInput-Boxes@@Tests/WorkspaceChatInput.wlt:186,1-197,2"
+    TestID   -> "SaveWorkspaceChatInput-Boxes"
 ]
 
 (* An input cell without stored text (e.g. attached by an older version) leaves $WorkspaceChatInput unchanged: *)
@@ -207,7 +207,7 @@ VerificationTest[
     ],
     "Draft",
     SameTest -> MatchQ,
-    TestID   -> "SaveWorkspaceChatInput-NotStored@@Tests/WorkspaceChatInput.wlt:200,1-211,2"
+    TestID   -> "SaveWorkspaceChatInput-NotStored"
 ]
 
 VerificationTest[
@@ -220,7 +220,7 @@ VerificationTest[
     ],
     "Draft",
     SameTest -> MatchQ,
-    TestID   -> "SaveWorkspaceChatInput-NoCell@@Tests/WorkspaceChatInput.wlt:213,1-224,2"
+    TestID   -> "SaveWorkspaceChatInput-NoCell"
 ]
 
 (* A failed lookup is not copied, since new input cells would show it: *)
@@ -234,7 +234,7 @@ VerificationTest[
     ],
     "Draft",
     SameTest -> MatchQ,
-    TestID   -> "SaveWorkspaceChatInput-Failed@@Tests/WorkspaceChatInput.wlt:227,1-238,2"
+    TestID   -> "SaveWorkspaceChatInput-Failed"
 ]
 
 VerificationTest[
@@ -244,7 +244,7 @@ VerificationTest[
     ],
     "Draft",
     SameTest -> MatchQ,
-    TestID   -> "SaveWorkspaceChatInput-CellsFailed@@Tests/WorkspaceChatInput.wlt:240,1-248,2"
+    TestID   -> "SaveWorkspaceChatInput-CellsFailed"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -269,7 +269,7 @@ VerificationTest[
     ],
     { NotebookObject[ "ChatbookTestWorkspaceChat" ], "Hello", "Hello" },
     SameTest -> MatchQ,
-    TestID   -> "SetWindowInput-AttachedCell@@Tests/WorkspaceChatInput.wlt:255,1-273,2"
+    TestID   -> "SetWindowInput-AttachedCell"
 ]
 
 (* If the input cell is not attached yet (e.g. a new window), the attached cell starts with $WorkspaceChatInput: *)
@@ -293,7 +293,7 @@ VerificationTest[
     ],
     { "Hello", { <| "ChatInputString" -> "Hello" |> } },
     SameTest -> MatchQ,
-    TestID   -> "SetWindowInput-NoCell@@Tests/WorkspaceChatInput.wlt:276,1-297,2"
+    TestID   -> "SetWindowInput-NoCell"
 ]
 
 VerificationTest[
@@ -310,7 +310,7 @@ VerificationTest[
     ],
     { "Draft", "Draft" },
     SameTest -> MatchQ,
-    TestID   -> "SetWindowInput-NoInput@@Tests/WorkspaceChatInput.wlt:299,1-314,2"
+    TestID   -> "SetWindowInput-NoInput"
 ]
 
 (* Opening a window without input does not look up the input cell, which would need the front end: *)
@@ -332,7 +332,7 @@ VerificationTest[
     ],
     { NotebookObject[ "ChatbookTestWorkspaceChat" ], 0, "Draft" },
     SameTest -> MatchQ,
-    TestID   -> "SetWindowInput-NoInput-NoLookup@@Tests/WorkspaceChatInput.wlt:317,1-336,2"
+    TestID   -> "SetWindowInput-NoInput-NoLookup"
 ]
 
 (* "EvaluateInput" -> True submits the text of the input cell: *)
@@ -359,7 +359,7 @@ VerificationTest[
         "Hello"
     },
     SameTest -> MatchQ,
-    TestID   -> "SetWindowInput-Evaluate-AttachedCell@@Tests/WorkspaceChatInput.wlt:339,1-363,2"
+    TestID   -> "SetWindowInput-Evaluate-AttachedCell"
 ]
 
 VerificationTest[
@@ -381,7 +381,7 @@ VerificationTest[
     ],
     { NotebookObject[ "ChatbookTestWorkspaceChat" ], Hold @ $WorkspaceChatInput, "Hello" },
     SameTest -> MatchQ,
-    TestID   -> "SetWindowInput-Evaluate-NoCell@@Tests/WorkspaceChatInput.wlt:365,1-385,2"
+    TestID   -> "SetWindowInput-Evaluate-NoCell"
 ]
 
 (* "EvaluateInput" -> True without "Input" submits the unsent text of the input cell: *)
@@ -408,7 +408,7 @@ VerificationTest[
         "Draft"
     },
     SameTest -> MatchQ,
-    TestID   -> "SetWindowInput-Evaluate-NoInput@@Tests/WorkspaceChatInput.wlt:388,1-412,2"
+    TestID   -> "SetWindowInput-Evaluate-NoInput"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -444,7 +444,7 @@ VerificationTest[
         { <| "ChatInputString" -> "Draft" |> }
     },
     SameTest -> MatchQ,
-    TestID   -> "NewChatWindow-KeepsInput@@Tests/WorkspaceChatInput.wlt:419,1-448,2"
+    TestID   -> "NewChatWindow-KeepsInput"
 ]
 
 (* The "Input" option still replaces the unsent text: *)
@@ -464,7 +464,7 @@ VerificationTest[
     ],
     { NotebookObject[ "ChatbookTestWorkspaceChat" ], "Hello" },
     SameTest -> MatchQ,
-    TestID   -> "NewChatWindow-Input@@Tests/WorkspaceChatInput.wlt:451,1-468,2"
+    TestID   -> "NewChatWindow-Input"
 ]
 
 (* Without an open window there is nothing to keep: *)
@@ -486,7 +486,7 @@ VerificationTest[
     ],
     { NotebookObject[ "ChatbookTestWorkspaceChatNew" ], "Earlier" },
     SameTest -> MatchQ,
-    TestID   -> "NewChatWindow-NoWindow@@Tests/WorkspaceChatInput.wlt:471,1-490,2"
+    TestID   -> "NewChatWindow-NoWindow"
 ]
 
 (* Reusing the open window leaves $WorkspaceChatInput alone: *)
@@ -510,7 +510,7 @@ VerificationTest[
     ],
     { NotebookObject[ "ChatbookTestWorkspaceChat" ], None, "Earlier", "Draft" },
     SameTest -> MatchQ,
-    TestID   -> "NewChatWindow-ReuseWindow@@Tests/WorkspaceChatInput.wlt:493,1-514,2"
+    TestID   -> "NewChatWindow-ReuseWindow"
 ]
 
 (* The same with a source notebook, as given by the notebook toolbar button and the Window menu command: *)
@@ -542,7 +542,7 @@ VerificationTest[
         { <| "ChatInputString" -> "Draft" |> }
     },
     SameTest -> MatchQ,
-    TestID   -> "NewChatWindow-SourceNotebook-KeepsInput@@Tests/WorkspaceChatInput.wlt:517,1-546,2"
+    TestID   -> "NewChatWindow-SourceNotebook-KeepsInput"
 ]
 
 VerificationTest[
@@ -563,7 +563,7 @@ VerificationTest[
     ],
     { NotebookObject[ "ChatbookTestWorkspaceChatNew" ], "Earlier" },
     SameTest -> MatchQ,
-    TestID   -> "NewChatWindow-SourceNotebook-NoWindow@@Tests/WorkspaceChatInput.wlt:548,1-567,2"
+    TestID   -> "NewChatWindow-SourceNotebook-NoWindow"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -622,7 +622,7 @@ VerificationTest[
         { Cell[ ___, CellTags -> "Top", ___, TaggingRules -> <| "ChatInputString" -> "Draft" |>, ___ ], Top }
     },
     SameTest -> MatchQ,
-    TestID   -> "MoveChatInputToTop-KeepsInput@@Tests/WorkspaceChatInput.wlt:606,1-626,2"
+    TestID   -> "MoveChatInputToTop-KeepsInput"
 ]
 
 (* The first message moves the input cell to the bottom, which keeps any text typed after submitting: *)
@@ -645,7 +645,7 @@ VerificationTest[
         { Cell[ ___, CellTags -> "Bottom", ___, TaggingRules -> <| "ChatInputString" -> "Draft" |>, ___ ], Bottom }
     },
     SameTest -> MatchQ,
-    TestID   -> "MoveChatInputToBottom-KeepsInput@@Tests/WorkspaceChatInput.wlt:629,1-649,2"
+    TestID   -> "MoveChatInputToBottom-KeepsInput"
 ]
 
 (* Attaching the input cell at a new location (e.g. from the Initialization of the docked cell) keeps the text: *)
@@ -668,7 +668,7 @@ VerificationTest[
         { Cell[ ___, CellTags -> "Bottom", ___, TaggingRules -> <| "ChatInputString" -> "Draft" |>, ___ ], Bottom }
     },
     SameTest -> MatchQ,
-    TestID   -> "AttachWorkspaceChatInput-KeepsInput@@Tests/WorkspaceChatInput.wlt:652,1-672,2"
+    TestID   -> "AttachWorkspaceChatInput-KeepsInput"
 ]
 
 (* Loading a chat from history replaces the input cell, which keeps the unsent text: *)
@@ -727,7 +727,7 @@ VerificationTest[
         { Cell[ ___, CellTags -> "Bottom", ___, TaggingRules -> <| "ChatInputString" -> "Draft" |>, ___ ], Bottom }
     },
     SameTest -> MatchQ,
-    TestID   -> "LoadConversation-KeepsInput@@Tests/WorkspaceChatInput.wlt:675,1-731,2"
+    TestID   -> "LoadConversation-KeepsInput"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -751,7 +751,7 @@ VerificationTest[
     ],
     { Null, "", "" },
     SameTest -> MatchQ,
-    TestID   -> "EvaluateWorkspaceChat-CurrentValue-Blank@@Tests/WorkspaceChatInput.wlt:738,1-755,2"
+    TestID   -> "EvaluateWorkspaceChat-CurrentValue-Blank"
 ]
 
 (* A send that was queued behind a chat can run after "New Chat" replaced its input cell. The deleted cell gives $Failed,
@@ -789,7 +789,7 @@ VerificationTest[
     ],
     { Null, None, False, None, "Draft" },
     SameTest -> MatchQ,
-    TestID   -> "EvaluateWorkspaceChat-DeletedInputCell-GH#1719@@Tests/WorkspaceChatInput.wlt:759,1-793,2"
+    TestID   -> "EvaluateWorkspaceChat-DeletedInputCell-GH#1719"
 ]
 
 VerificationTest[
@@ -846,7 +846,7 @@ VerificationTest[
         { CellObject[ "ChatbookTestWorkspaceChatMessage" ], NotebookObject[ "ChatbookTestWorkspaceChat" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "EvaluateWorkspaceChat-CurrentValue@@Tests/WorkspaceChatInput.wlt:795,1-850,2"
+    TestID   -> "EvaluateWorkspaceChat-CurrentValue"
 ]
 
 (* Submitting with the kernel symbol still works: *)
@@ -859,7 +859,7 @@ VerificationTest[
     ],
     { Null, "" },
     SameTest -> MatchQ,
-    TestID   -> "EvaluateWorkspaceChat-Symbol-Blank@@Tests/WorkspaceChatInput.wlt:853,1-863,2"
+    TestID   -> "EvaluateWorkspaceChat-Symbol-Blank"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

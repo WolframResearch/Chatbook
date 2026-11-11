@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/Search.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/Search.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -130,7 +130,7 @@ VerificationTest[
     MatchQ[ setQueryVectors @ Table[ toQueryVector @ randomVector[ ], Length @ $queries ], { __NumericArray } ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "SearchCache-Definitions@@Tests/Search.wlt:24,1-134,2"
+    TestID   -> "SearchCache-Definitions"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -140,7 +140,7 @@ VerificationTest[
     addTestChats @ Table[ testChat[ $testApp, i ], { i, 60 } ],
     { Repeated[ _Success, { 60 } ] },
     SameTest -> MatchQ,
-    TestID   -> "SearchCache-AddChats@@Tests/Search.wlt:139,1-144,2"
+    TestID   -> "SearchCache-AddChats"
 ]
 
 VerificationTest[
@@ -151,7 +151,7 @@ VerificationTest[
     ],
     { __Success },
     SameTest -> MatchQ,
-    TestID   -> "SearchCache-AddDuplicateChats@@Tests/Search.wlt:146,1-155,2"
+    TestID   -> "SearchCache-AddDuplicateChats"
 ]
 
 VerificationTest[
@@ -168,35 +168,35 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "SearchCache-ExactMatchQueries@@Tests/Search.wlt:157,1-172,2"
+    TestID   -> "SearchCache-ExactMatchQueries"
 ]
 
 VerificationTest[
     SearchChats[ $testApp, "" ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "SearchCache-EmptyQuery@@Tests/Search.wlt:174,1-179,2"
+    TestID   -> "SearchCache-EmptyQuery"
 ]
 
 VerificationTest[
     SearchChats[ $testApp, First @ $queries ],
     { Repeated[ KeyValuePattern @ { "AppName" -> $testApp, "ConversationUUID" -> _String }, { 1, 10 } ] },
     SameTest -> MatchQ,
-    TestID   -> "SearchCache-ResultShape@@Tests/Search.wlt:181,1-186,2"
+    TestID   -> "SearchCache-ResultShape"
 ]
 
 VerificationTest[
     searchMismatches @ $testApp,
     { },
     SameTest -> MatchQ,
-    TestID   -> "SearchCache-MatchesReference@@Tests/Search.wlt:188,1-193,2"
+    TestID   -> "SearchCache-MatchesReference"
 ]
 
 VerificationTest[
     Wolfram`Chatbook`Search`Private`$chatSearchData[ $testApp, "Index" ] === Wolfram`Chatbook`Search`Private`$chatSearchIndex[ $testApp ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "SearchCache-CachedIndex@@Tests/Search.wlt:195,1-200,2"
+    TestID   -> "SearchCache-CachedIndex"
 ]
 
 VerificationTest[
@@ -204,7 +204,7 @@ VerificationTest[
     usedCacheQ @ SearchChats[ $testApp, First @ $queries ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "SearchCache-ReusedWhileIndexUnchanged@@Tests/Search.wlt:202,1-208,2"
+    TestID   -> "SearchCache-ReusedWhileIndexUnchanged"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -216,7 +216,7 @@ VerificationTest[
     { usedCacheQ @ SearchChats[ $testApp, First @ $queries ], searchMismatches @ $testApp },
     { False, { } },
     SameTest -> MatchQ,
-    TestID   -> "SearchCache-InvalidatedByAdd@@Tests/Search.wlt:213,1-220,2"
+    TestID   -> "SearchCache-InvalidatedByAdd"
 ]
 
 VerificationTest[
@@ -234,7 +234,7 @@ VerificationTest[
     ],
     { False, "test-chat-3", { } },
     SameTest -> MatchQ,
-    TestID   -> "SearchCache-InvalidatedByUpdate@@Tests/Search.wlt:222,1-238,2"
+    TestID   -> "SearchCache-InvalidatedByUpdate"
 ]
 
 VerificationTest[
@@ -247,7 +247,7 @@ VerificationTest[
     },
     { False, False, { } },
     SameTest -> MatchQ,
-    TestID   -> "SearchCache-InvalidatedByRemove@@Tests/Search.wlt:240,1-251,2"
+    TestID   -> "SearchCache-InvalidatedByRemove"
 ]
 
 VerificationTest[
@@ -266,7 +266,7 @@ VerificationTest[
     ],
     { False, True, { } },
     SameTest -> MatchQ,
-    TestID   -> "SearchCache-InvalidatedByLoad@@Tests/Search.wlt:253,1-270,2"
+    TestID   -> "SearchCache-InvalidatedByLoad"
 ]
 
 VerificationTest[
@@ -281,7 +281,7 @@ VerificationTest[
     },
     { { }, <| |>, { } },
     SameTest -> MatchQ,
-    TestID   -> "SearchCache-InvalidatedByRebuild@@Tests/Search.wlt:272,1-285,2"
+    TestID   -> "SearchCache-InvalidatedByRebuild"
 ]
 
 VerificationTest[
@@ -300,7 +300,7 @@ VerificationTest[
     ],
     { { Last @ $testApps }, { First @ $testApps }, { Last @ $testApps }, { }, { } },
     SameTest -> MatchQ,
-    TestID   -> "SearchCache-MultipleApps@@Tests/Search.wlt:287,1-304,2"
+    TestID   -> "SearchCache-MultipleApps"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -327,7 +327,7 @@ VerificationTest[
         ]
     ],
     SameTest -> MatchQ,
-    TestID   -> "HistorySearch-AsynchronousResults@@Tests/Search.wlt:312,1-331,2"
+    TestID   -> "HistorySearch-AsynchronousResults"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -338,7 +338,7 @@ VerificationTest[
     DirectoryQ @ ChatbookFilesDirectory[ { "Search", # }, "EnsureDirectory" -> False ] & /@ $testApps,
     { False, False },
     SameTest -> MatchQ,
-    TestID   -> "SearchCache-Cleanup@@Tests/Search.wlt:336,1-342,2"
+    TestID   -> "SearchCache-Cleanup"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
