@@ -36,7 +36,7 @@ VerificationTest[
     CurrentChatSettings[ "Model" ],
     KeyValuePattern @ { "Service" -> _String, "Name" -> _String | Automatic } | _String | Automatic,
     SameTest -> MatchQ,
-    TestID   -> "CurrentChatSettings"
+    TestID   -> "CurrentChatSettings-Model"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -46,14 +46,14 @@ VerificationTest[
     UsingFrontEnd @ CurrentChatSettings[ $FrontEnd, "Model" ],
     KeyValuePattern @ { "Service" -> _String, "Name" -> _String | Automatic } | _String | Automatic,
     SameTest -> MatchQ,
-    TestID   -> "CurrentChatSettings"
+    TestID   -> "CurrentChatSettings-FrontEnd"
 ]
 
 VerificationTest[
     UsingFrontEnd @ CurrentChatSettings[ $FrontEndSession, "Model" ],
     KeyValuePattern @ { "Service" -> _String, "Name" -> _String | Automatic } | _String | Automatic,
     SameTest -> MatchQ,
-    TestID   -> "CurrentChatSettings"
+    TestID   -> "CurrentChatSettings-FrontEndSession"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -102,7 +102,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | { "NotebookModel", "BlockModel", "BlockModel" },
     SameTest -> MatchQ,
-    TestID   -> "CurrentChatSettings-ChatBlocks"
+    TestID   -> "CurrentChatSettings-ChatBlocks-NotebookModel"
 ]
 
 (* ::**************************************************************************************************************:: *)

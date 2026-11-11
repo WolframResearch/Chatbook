@@ -79,7 +79,7 @@ VerificationTest[
     urls = RelatedDocumentation[ "What's the biggest pokemon?", Automatic, 3, "Sources" -> { "Documentation" } ],
     { URL[ _String ], URL[ _String ], URL[ _String ] },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-URIs-Count"
+    TestID   -> "RelatedDocumentation-URIs-Limit"
 ]
 
 VerificationTest[
@@ -93,7 +93,7 @@ VerificationTest[
     RelatedDocumentation[ "What's the biggest pokemon?", "Snippets", 3 ],
     { _String, _String, _String },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Snippets-Count"
+    TestID   -> "RelatedDocumentation-Snippets-Limit"
 ]
 
 (* ::**************************************************************************************************************:: *)
