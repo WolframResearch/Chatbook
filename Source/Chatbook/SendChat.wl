@@ -1191,6 +1191,25 @@ chatSubmitFunction // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*initializeChatSubmit*)
+(* LLMServiceInformation[ f, service ] evaluates f::llmunkser on every call (LLMServices uses Rule, not RuleDelayed, for
+   the message template), and the kernel's first lookup of that undefined message name takes about 0.04 s. Calling it
+   here moves that one-time cost out of the first request. Only the submit function matters, not the service. Nothing
+   is sent. This can be removed once LLMServices no longer evaluates the message name eagerly. *)
+initializeChatSubmit // beginDefinition;
+
+initializeChatSubmit[ settings: KeyValuePattern[ "Model" -> KeyValuePattern[ "Service" -> service_String ] ] ] := (
+    Needs[ "LLMServices`" -> None ];
+    LLMServices`LLMServiceInformation[ chatSubmitFunction @ settings, service ];
+    Null
+);
+
+initializeChatSubmit[ _ ] := Null;
+
+initializeChatSubmit // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*makeLLMConfiguration*)
 makeLLMConfiguration // beginDefinition;
 makeLLMConfiguration[ as_Association ] := (patchServices @ as; makeLLMConfiguration0 @ as);
