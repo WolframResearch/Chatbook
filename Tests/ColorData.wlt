@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/ColorData.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/ColorData.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -27,7 +27,7 @@ VerificationTest[
     $usedColorNames = Keys @ $colorNameCounts,
     { __String },
     SameTest -> MatchQ,
-    TestID   -> "UsedColorNames@@Tests/ColorData.wlt:21,1-31,2"
+    TestID   -> "UsedColorNames"
 ]
 
 (* Every name used in the sources and resource definitions is defined: *)
@@ -35,7 +35,7 @@ VerificationTest[
     Select[ $usedColorNames, ! MatchQ[ Wolfram`Chatbook`Common`color @ #, _LightDarkSwitched ] & ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "UsedColorNamesDefined@@Tests/ColorData.wlt:34,1-39,2"
+    TestID   -> "UsedColorNamesDefined"
 ]
 
 (* The palette stays minimal: every defined color is used in more than one place (single uses are written as literals): *)
@@ -43,7 +43,7 @@ VerificationTest[
     Select[ Keys @ Wolfram`Chatbook`ColorData`Private`$colorData, Lookup[ $colorNameCounts, #, 0 ] < 2 & ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "DefinedColorNamesUsedMoreThanOnce@@Tests/ColorData.wlt:42,1-47,2"
+    TestID   -> "DefinedColorNamesUsedMoreThanOnce"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -59,7 +59,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "FocusedNotebookDisplayResolvedColors@@Tests/ColorData.wlt:55,1-63,2"
+    TestID   -> "FocusedNotebookDisplayResolvedColors"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -107,5 +107,5 @@ VerificationTest[
     ],
     { 2, 8, { } },
     SameTest -> MatchQ,
-    TestID   -> "InlineReferenceHoverLighterInDarkMode@@Tests/ColorData.wlt:70,1-111,2"
+    TestID   -> "InlineReferenceHoverLighterInDarkMode"
 ]
