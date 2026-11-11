@@ -18,7 +18,7 @@ When `True` (default), the LLM response is processed to convert Markdown element
 - Block quotes
 - Tables
 
-Also includes the `"Formatting"` base prompt component in the system prompt, which instructs the LLM that its output will be parsed as Markdown.
+Also includes the `"Formatting"` base prompt component in the system prompt, which instructs the LLM that its output will be parsed as Markdown. When `False`, the `"CodeFolding"` component is left out as well (see [Automatic Exclusions](prompting.md#automatic-exclusions)).
 
 When `False`, output is displayed as plain text.
 

@@ -848,6 +848,10 @@ resolveAutoSettings[ settings0_Association ] := Enclose[
             $openToolCallBoxes       = resolved[ "OpenToolCallBoxes" ];
             $experimentalFeatures    = resolved[ "ExperimentalFeatures" ];
             $excludedBasePrompts     = DeleteDuplicates @ Select[ resolved[ "ExcludedBasePrompts" ], StringQ ];
+            (* Folded code is only displayed as intended when the response is formatted in a notebook: *)
+            If[ TrueQ @ $headlessChat || ! TrueQ @ resolved[ "AutoFormat" ],
+                AppendTo[ $excludedBasePrompts, "CodeFolding" ]
+            ];
             $disabledBasePrompts     = Complement[ $disabledBasePrompts, Flatten @ { resolved[ "EnabledBasePrompts" ] } ];
             $endToken                = resolved[ "EndToken" ];
             $serviceCaller           = resolved[ "ServiceCaller" ];
