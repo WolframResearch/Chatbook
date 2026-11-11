@@ -878,12 +878,82 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*Folded Code*)
+
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::PrivateContextSymbol:: *)
+
+(* The chat tool evaluates code with sandboxEvaluate instead of WolframLanguageToolEvaluate: *)
+VerificationTest[
+    chatToolEvaluate[ code_String, method_String: "Session" ] :=
+        Block[
+            {
+                Wolfram`Chatbook`Sandbox`Private`$evaluatorMethod  = method,
+                Wolfram`Chatbook`Sandbox`Private`$returnFullResult = True,
+                $Line                                              = $Line
+            },
+            Wolfram`Chatbook`Common`sandboxEvaluate[ <| "code" -> code |> ][ "Result" ]
+        ];
+    ,
+    Null,
+    SameTest -> MatchQ,
+    TestID   -> "Parsing-FoldedCode-Definitions@@Tests/WolframLanguageToolEvaluate.wlt:887,1-901,2"
+]
+
+(* Code that the AI folded with IconizedObject is evaluated as if it were written normally, like the front end does for
+   iconized input: *)
+VerificationTest[
+    chatToolEvaluate[ "{1, IconizedObject[Sequence[2, 3], \"more\"], Total[IconizedObject[{4, 5}]]}" ],
+    HoldCompleteForm @ { 1, 2, 3, 9 },
+    SameTest -> MatchQ,
+    TestID   -> "Parsing-FoldedCode@@Tests/WolframLanguageToolEvaluate.wlt:905,1-910,2"
+]
+
+(* Folded statements are evaluated in order with the rest of the input: *)
+VerificationTest[
+    chatToolEvaluate[ "Module[{a, b}, IconizedObject[a = 2; b = 3, \"setup\"]; a^b]" ],
+    HoldCompleteForm[ 8 ],
+    SameTest -> MatchQ,
+    TestID   -> "Parsing-FoldedCode-Statements@@Tests/WolframLanguageToolEvaluate.wlt:913,1-918,2"
+]
+
+(* A string as the last argument is the label, and the other arguments are the code, with or without Sequence: *)
+VerificationTest[
+    chatToolEvaluate[
+        "{IconizedObject[1, 2], IconizedObject[3, 4, \"label\"], IconizedObject[\"a\"], IconizedObject[\"b\", \"label\"]}"
+    ],
+    HoldCompleteForm @ { 1, 2, 3, 4, "a", "b" },
+    SameTest -> MatchQ,
+    TestID   -> "Parsing-FoldedCode-MissingSequence@@Tests/WolframLanguageToolEvaluate.wlt:921,1-928,2"
+]
+
+(* Nested folds are unwrapped too, and nothing is evaluated early: *)
+VerificationTest[
+    chatToolEvaluate[ "Hold[IconizedObject[{IconizedObject[1 + 1, \"inner\"]}, \"outer\"]]" ],
+    HoldCompleteForm @ Hold @ { 1 + 1 },
+    SameTest -> MatchQ,
+    TestID   -> "Parsing-FoldedCode-Held@@Tests/WolframLanguageToolEvaluate.wlt:931,1-936,2"
+]
+
+(* Other callers of WolframLanguageToolEvaluate (e.g. the MCP server) haven't been told to fold code, so an
+   IconizedObject in their code is evaluated as it was written: *)
+VerificationTest[
+    WolframLanguageToolEvaluate[ "Head[IconizedObject[{1, 2, 3}, \"data\"]]", "Result", Method -> "Session" ],
+    HoldCompleteForm[ IconizedObject ],
+    SameTest -> MatchQ,
+    TestID   -> "Parsing-FoldedCode-NotUnwrapped@@Tests/WolframLanguageToolEvaluate.wlt:940,1-945,2"
+]
+
+(* :!CodeAnalysis::EndBlock:: *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*Undefined Symbols*)
 VerificationTest[
     WolframLanguageToolEvaluate[ "UndefinedTestFunction1[1]", "String", Method -> "Session", Line -> 1 ],
     _String? (StringStartsQ[ "Symbol::undefined: Warning: Global symbol UndefinedTestFunction1 is undefined." ]),
     SameTest -> MatchQ,
-    TestID   -> "Parsing-UndefinedSymbols@@Tests/WolframLanguageToolEvaluate.wlt:882,1-887,2"
+    TestID   -> "Parsing-UndefinedSymbols@@Tests/WolframLanguageToolEvaluate.wlt:952,1-957,2"
 ]
 
 VerificationTest[
@@ -895,7 +965,7 @@ VerificationTest[
     ],
     _String? (StringContainsQ[ "Global symbols {UndefinedTestFunction2, UndefinedTestFunction3} are undefined." ]),
     SameTest -> MatchQ,
-    TestID   -> "Parsing-UndefinedSymbols-NoDuplicates@@Tests/WolframLanguageToolEvaluate.wlt:889,1-899,2"
+    TestID   -> "Parsing-UndefinedSymbols-NoDuplicates@@Tests/WolframLanguageToolEvaluate.wlt:959,1-969,2"
 ]
 
 (* Symbols that are defined in the same input are not undefined: *)
@@ -903,14 +973,14 @@ VerificationTest[
     WolframLanguageToolEvaluate[ "DefinedTestFunction1[x_] := x + 1; DefinedTestFunction1[1]", All, Method -> "Session", Line -> 1 ],
     KeyValuePattern @ { "String" -> "Out[1]= 2", "Result" -> HoldCompleteForm[ 2 ] },
     SameTest -> MatchQ,
-    TestID   -> "Parsing-UndefinedSymbols-DefinedInInput@@Tests/WolframLanguageToolEvaluate.wlt:902,1-907,2"
+    TestID   -> "Parsing-UndefinedSymbols-DefinedInInput@@Tests/WolframLanguageToolEvaluate.wlt:972,1-977,2"
 ]
 
 VerificationTest[
     WolframLanguageToolEvaluate[ "Module[{LocalTestSymbol = 1}, LocalTestSymbol + 1]", "String", Method -> "Session", Line -> 1 ],
     "Out[1]= 2",
     SameTest -> MatchQ,
-    TestID   -> "Parsing-UndefinedSymbols-Localized@@Tests/WolframLanguageToolEvaluate.wlt:909,1-914,2"
+    TestID   -> "Parsing-UndefinedSymbols-Localized@@Tests/WolframLanguageToolEvaluate.wlt:979,1-984,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -922,35 +992,35 @@ VerificationTest[
     WolframLanguageToolEvaluate[ "autoCorrectList = {1, 2, 3\nTotal[autoCorrectList]", All, Method -> "Session", Line -> 1 ],
     KeyValuePattern @ { "String" -> "Out[1]= {1, 2, 3}\n\nOut[2]= 6", "Result" -> HoldCompleteForm[ 6 ] },
     SameTest -> MatchQ,
-    TestID   -> "AutoCorrectingInput-ClosersEndOfLine@@Tests/WolframLanguageToolEvaluate.wlt:921,1-926,2"
+    TestID   -> "AutoCorrectingInput-ClosersEndOfLine@@Tests/WolframLanguageToolEvaluate.wlt:991,1-996,2"
 ]
 
 VerificationTest[
     WolframLanguageToolEvaluate[ "Total[{1, 2, 3", "Result", Method -> "Session" ],
     HoldCompleteForm[ 6 ],
     SameTest -> MatchQ,
-    TestID   -> "AutoCorrectingInput-MissingClosers@@Tests/WolframLanguageToolEvaluate.wlt:928,1-933,2"
+    TestID   -> "AutoCorrectingInput-MissingClosers@@Tests/WolframLanguageToolEvaluate.wlt:998,1-1003,2"
 ]
 
 VerificationTest[
     WolframLanguageToolEvaluate[ "Total[{1, 2, 3]", "Result", Method -> "Session" ],
     HoldCompleteForm[ 6 ],
     SameTest -> MatchQ,
-    TestID   -> "AutoCorrectingInput-MismatchedBrackets@@Tests/WolframLanguageToolEvaluate.wlt:935,1-940,2"
+    TestID   -> "AutoCorrectingInput-MismatchedBrackets@@Tests/WolframLanguageToolEvaluate.wlt:1005,1-1010,2"
 ]
 
 VerificationTest[
     WolframLanguageToolEvaluate[ "StringLength['hello'", "Result", Method -> "Session" ],
     HoldCompleteForm[ 5 ],
     SameTest -> MatchQ,
-    TestID   -> "AutoCorrectingInput-SingleQuotes@@Tests/WolframLanguageToolEvaluate.wlt:942,1-947,2"
+    TestID   -> "AutoCorrectingInput-SingleQuotes@@Tests/WolframLanguageToolEvaluate.wlt:1012,1-1017,2"
 ]
 
 VerificationTest[
     WolframLanguageToolEvaluate[ "// add the numbers\n1 + 1", "Result", Method -> "Session" ],
     HoldCompleteForm[ 2 ],
     SameTest -> MatchQ,
-    TestID   -> "AutoCorrectingInput-LineComments@@Tests/WolframLanguageToolEvaluate.wlt:949,1-954,2"
+    TestID   -> "AutoCorrectingInput-LineComments@@Tests/WolframLanguageToolEvaluate.wlt:1019,1-1024,2"
 ]
 
 (* Input with a syntax error that can't be fixed is not partially evaluated: *)
@@ -961,14 +1031,14 @@ VerificationTest[
         "Result" -> HoldCompleteForm @ $Failed
     },
     SameTest -> MatchQ,
-    TestID   -> "AutoCorrectingInput-SyntaxError@@Tests/WolframLanguageToolEvaluate.wlt:957,1-965,2"
+    TestID   -> "AutoCorrectingInput-SyntaxError@@Tests/WolframLanguageToolEvaluate.wlt:1027,1-1035,2"
 ]
 
 VerificationTest[
     StringEndsQ[ as[ "String" ], "\n\nOut[1]= $Failed" ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "AutoCorrectingInput-SyntaxError-NotEvaluated@@Tests/WolframLanguageToolEvaluate.wlt:967,1-972,2"
+    TestID   -> "AutoCorrectingInput-SyntaxError-NotEvaluated@@Tests/WolframLanguageToolEvaluate.wlt:1037,1-1042,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -983,7 +1053,7 @@ VerificationTest[
     ],
     True|False,
     SameTest -> MatchQ,
-    TestID   -> "LocalEvaluator-Available@@Tests/WolframLanguageToolEvaluate.wlt:979,1-987,2"
+    TestID   -> "LocalEvaluator-Available@@Tests/WolframLanguageToolEvaluate.wlt:1049,1-1057,2"
 ]
 
 If[ $localEvaluatorAvailable,
@@ -991,7 +1061,7 @@ If[ $localEvaluatorAvailable,
         WolframLanguageToolEvaluate[ "1 + 1\n2 + 2", "String", Method -> "Local" ],
         _String? (StringMatchQ[ "Out[" ~~ DigitCharacter.. ~~ "]= 2\n\nOut[" ~~ DigitCharacter.. ~~ "]= 4" ]),
         SameTest -> MatchQ,
-        TestID   -> "LocalEvaluator-MultipleInputs@@Tests/WolframLanguageToolEvaluate.wlt:990,5-995,6"
+        TestID   -> "LocalEvaluator-MultipleInputs@@Tests/WolframLanguageToolEvaluate.wlt:1060,5-1065,6"
     ]
 ]
 
@@ -1004,7 +1074,7 @@ If[ $localEvaluatorAvailable,
             "General::messages: "
         ]),
         SameTest -> MatchQ,
-        TestID   -> "LocalEvaluator-PrintsAndMessages@@Tests/WolframLanguageToolEvaluate.wlt:999,5-1008,6"
+        TestID   -> "LocalEvaluator-PrintsAndMessages@@Tests/WolframLanguageToolEvaluate.wlt:1069,5-1078,6"
     ]
 ]
 
@@ -1013,7 +1083,17 @@ If[ $localEvaluatorAvailable,
         WolframLanguageToolEvaluate[ "5\n% + 1", "Result", Method -> "Local" ],
         HoldCompleteForm[ 6 ],
         SameTest -> MatchQ,
-        TestID   -> "LocalEvaluator-PreviousOutput@@Tests/WolframLanguageToolEvaluate.wlt:1012,5-1017,6"
+        TestID   -> "LocalEvaluator-PreviousOutput@@Tests/WolframLanguageToolEvaluate.wlt:1082,5-1087,6"
+    ]
+]
+
+(* Folded code is unwrapped in the evaluator kernel, which doesn't have Chatbook's definitions: *)
+If[ $localEvaluatorAvailable,
+    VerificationTest[
+        chatToolEvaluate[ "{1, IconizedObject[Sequence[2, 3], \"more\"]}", "Local" ],
+        HoldCompleteForm @ { 1, 2, 3 },
+        SameTest -> MatchQ,
+        TestID   -> "LocalEvaluator-FoldedCode@@Tests/WolframLanguageToolEvaluate.wlt:1092,5-1097,6"
     ]
 ]
 
@@ -1022,7 +1102,7 @@ If[ $localEvaluatorAvailable,
         WolframLanguageToolEvaluate[ "Length @ Range[10^6]", "Result", Method -> "Local", "MemoryConstraint" -> 10^6 ],
         HoldCompleteForm @ Failure[ "MemoryConstraintExceeded", _ ],
         SameTest -> MatchQ,
-        TestID   -> "LocalEvaluator-MemoryConstraint@@Tests/WolframLanguageToolEvaluate.wlt:1021,5-1026,6"
+        TestID   -> "LocalEvaluator-MemoryConstraint@@Tests/WolframLanguageToolEvaluate.wlt:1101,5-1106,6"
     ]
 ]
 
@@ -1032,7 +1112,7 @@ If[ $localEvaluatorAvailable,
         WolframLanguageToolEvaluate[ "Length @ Range[10^6]", "Result", Method -> "Local" ],
         HoldCompleteForm[ 1000000 ],
         SameTest -> MatchQ,
-        TestID   -> "LocalEvaluator-MemoryConstraint-Recovered@@Tests/WolframLanguageToolEvaluate.wlt:1031,5-1036,6"
+        TestID   -> "LocalEvaluator-MemoryConstraint-Recovered@@Tests/WolframLanguageToolEvaluate.wlt:1111,5-1116,6"
     ]
 ]
 
@@ -1041,7 +1121,7 @@ If[ $localEvaluatorAvailable,
         WolframLanguageToolEvaluate[ "localHistoryTest = 1\nInString[$Line - 1]", "Result", Method -> "Local" ],
         HoldCompleteForm[ "localHistoryTest = 1" ],
         SameTest -> MatchQ,
-        TestID   -> "LocalEvaluator-InputHistory@@Tests/WolframLanguageToolEvaluate.wlt:1040,5-1045,6"
+        TestID   -> "LocalEvaluator-InputHistory@@Tests/WolframLanguageToolEvaluate.wlt:1120,5-1125,6"
     ]
 ]
 
@@ -1058,7 +1138,7 @@ TestAddTwo[3]",
         ],
         HoldCompleteForm[ 5 ],
         SameTest -> MatchQ,
-        TestID   -> "LocalEvaluator-Package@@Tests/WolframLanguageToolEvaluate.wlt:1049,5-1062,6"
+        TestID   -> "LocalEvaluator-Package@@Tests/WolframLanguageToolEvaluate.wlt:1129,5-1142,6"
     ]
 ]
 
@@ -1067,7 +1147,7 @@ If[ $localEvaluatorAvailable,
         as = WolframLanguageToolEvaluate[ "1\n2", { "String", "Line" }, Method -> "Local" ],
         KeyValuePattern @ { "Line" -> _Integer },
         SameTest -> MatchQ,
-        TestID   -> "LocalEvaluator-LineNumbers@@Tests/WolframLanguageToolEvaluate.wlt:1066,5-1071,6"
+        TestID   -> "LocalEvaluator-LineNumbers@@Tests/WolframLanguageToolEvaluate.wlt:1146,5-1151,6"
     ]
 ]
 
@@ -1076,7 +1156,7 @@ If[ $localEvaluatorAvailable,
         StringEndsQ[ as[ "String" ], "Out[" <> ToString[ as[ "Line" ] - 1 ] <> "]= 2" ],
         True,
         SameTest -> MatchQ,
-        TestID   -> "LocalEvaluator-LineNumbers-LastOutput@@Tests/WolframLanguageToolEvaluate.wlt:1075,5-1080,6"
+        TestID   -> "LocalEvaluator-LineNumbers-LastOutput@@Tests/WolframLanguageToolEvaluate.wlt:1155,5-1160,6"
     ]
 ]
 
@@ -1086,7 +1166,7 @@ If[ $localEvaluatorAvailable,
         WolframLanguageToolEvaluate[ HoldComplete @ WithCleanup[ Null, $Line-- ], "Line", Method -> "Local" ],
         as[ "Line" ],
         SameTest -> MatchQ,
-        TestID   -> "LocalEvaluator-LineNumbers-Modified@@Tests/WolframLanguageToolEvaluate.wlt:1085,5-1090,6"
+        TestID   -> "LocalEvaluator-LineNumbers-Modified@@Tests/WolframLanguageToolEvaluate.wlt:1165,5-1170,6"
     ]
 ]
 
@@ -1095,7 +1175,7 @@ If[ $localEvaluatorAvailable,
         WolframLanguageToolEvaluate[ "3", "String", Method -> "Local" ],
         "Out[" <> ToString @ as[ "Line" ] <> "]= 3",
         SameTest -> MatchQ,
-        TestID   -> "LocalEvaluator-LineNumbers-NextOutput@@Tests/WolframLanguageToolEvaluate.wlt:1094,5-1099,6"
+        TestID   -> "LocalEvaluator-LineNumbers-NextOutput@@Tests/WolframLanguageToolEvaluate.wlt:1174,5-1179,6"
     ]
 ]
 
@@ -1105,7 +1185,7 @@ If[ $localEvaluatorAvailable,
         WolframLanguageToolEvaluate[ "1\n2", { "String", "Line" }, Method -> "Local", Line -> 50 ],
         <| "String" -> "Out[50]= 1\n\nOut[51]= 2", "Line" -> 52 |>,
         SameTest -> MatchQ,
-        TestID   -> "LocalEvaluator-LineNumbers-Option@@Tests/WolframLanguageToolEvaluate.wlt:1104,5-1109,6"
+        TestID   -> "LocalEvaluator-LineNumbers-Option@@Tests/WolframLanguageToolEvaluate.wlt:1184,5-1189,6"
     ]
 ]
 
@@ -1114,7 +1194,7 @@ If[ $localEvaluatorAvailable,
         WolframLanguageToolEvaluate[ "3", "String", Method -> "Local" ],
         "Out[52]= 3",
         SameTest -> MatchQ,
-        TestID   -> "LocalEvaluator-LineNumbers-Option-Continued@@Tests/WolframLanguageToolEvaluate.wlt:1113,5-1118,6"
+        TestID   -> "LocalEvaluator-LineNumbers-Option-Continued@@Tests/WolframLanguageToolEvaluate.wlt:1193,5-1198,6"
     ]
 ]
 
@@ -1125,7 +1205,7 @@ If[ $localEvaluatorAvailable,
         WolframLanguageToolEvaluate[ "% + 1", "Result", Method -> "Local" ],
         HoldCompleteForm[ 10 ],
         SameTest -> MatchQ,
-        TestID   -> "LocalEvaluator-HeldInput@@Tests/WolframLanguageToolEvaluate.wlt:1123,5-1129,6"
+        TestID   -> "LocalEvaluator-HeldInput@@Tests/WolframLanguageToolEvaluate.wlt:1203,5-1209,6"
     ]
 ]
 
@@ -1135,7 +1215,7 @@ If[ $localEvaluatorAvailable,
         line = WolframLanguageToolEvaluate[ "7", "Line", Method -> "Local" ],
         _Integer,
         SameTest -> MatchQ,
-        TestID   -> "LocalEvaluator-LineNumbers-None-Setup@@Tests/WolframLanguageToolEvaluate.wlt:1134,5-1139,6"
+        TestID   -> "LocalEvaluator-LineNumbers-None-Setup@@Tests/WolframLanguageToolEvaluate.wlt:1214,5-1219,6"
     ]
 ]
 
@@ -1144,7 +1224,7 @@ If[ $localEvaluatorAvailable,
         WolframLanguageToolEvaluate[ HoldComplete[ 8 ], { "String", "Line" }, Method -> "Local", Line -> None ],
         <| "String" -> "8", "Line" -> line |>,
         SameTest -> MatchQ,
-        TestID   -> "LocalEvaluator-LineNumbers-None@@Tests/WolframLanguageToolEvaluate.wlt:1143,5-1148,6"
+        TestID   -> "LocalEvaluator-LineNumbers-None@@Tests/WolframLanguageToolEvaluate.wlt:1223,5-1228,6"
     ]
 ]
 
@@ -1153,7 +1233,7 @@ If[ $localEvaluatorAvailable,
         WolframLanguageToolEvaluate[ "%", "String", Method -> "Local" ],
         "Out[" <> ToString @ line <> "]= 7",
         SameTest -> MatchQ,
-        TestID   -> "LocalEvaluator-LineNumbers-None-NoHistory@@Tests/WolframLanguageToolEvaluate.wlt:1152,5-1157,6"
+        TestID   -> "LocalEvaluator-LineNumbers-None-NoHistory@@Tests/WolframLanguageToolEvaluate.wlt:1232,5-1237,6"
     ]
 ]
 
@@ -1172,7 +1252,7 @@ If[ $localEvaluatorAvailable,
         ],
         HoldCompleteForm @ { _String, { __String } },
         SameTest -> MatchQ,
-        TestID   -> "LocalEvaluator-Context-Set-GH#249@@Tests/WolframLanguageToolEvaluate.wlt:1162,5-1176,6"
+        TestID   -> "LocalEvaluator-Context-Set-GH#249@@Tests/WolframLanguageToolEvaluate.wlt:1242,5-1256,6"
     ]
 ]
 
@@ -1181,7 +1261,7 @@ If[ $localEvaluatorAvailable,
         WolframLanguageToolEvaluate[ "sessionTestSymbol = 1;\nContext[sessionTestSymbol]", "Result", Method -> "Local" ],
         HoldCompleteForm[ "ChatbookTestSession`" ],
         SameTest -> MatchQ,
-        TestID   -> "LocalEvaluator-Context-GH#249@@Tests/WolframLanguageToolEvaluate.wlt:1180,5-1185,6"
+        TestID   -> "LocalEvaluator-Context-GH#249@@Tests/WolframLanguageToolEvaluate.wlt:1260,5-1265,6"
     ]
 ]
 
@@ -1190,7 +1270,7 @@ If[ $localEvaluatorAvailable,
         Names[ "Global`sessionTestSymbol" ],
         { },
         SameTest -> MatchQ,
-        TestID   -> "LocalEvaluator-Context-NoLocalSymbol-GH#249@@Tests/WolframLanguageToolEvaluate.wlt:1189,5-1194,6"
+        TestID   -> "LocalEvaluator-Context-NoLocalSymbol-GH#249@@Tests/WolframLanguageToolEvaluate.wlt:1269,5-1274,6"
     ]
 ]
 
@@ -1207,6 +1287,6 @@ If[ $localEvaluatorAvailable,
         ],
         HoldCompleteForm[ { __String } ],
         SameTest -> MatchQ,
-        TestID   -> "LocalEvaluator-Context-Restore-GH#249@@Tests/WolframLanguageToolEvaluate.wlt:1198,5-1211,6"
+        TestID   -> "LocalEvaluator-Context-Restore-GH#249@@Tests/WolframLanguageToolEvaluate.wlt:1278,5-1291,6"
     ]
 ]

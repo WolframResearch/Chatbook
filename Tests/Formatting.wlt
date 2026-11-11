@@ -737,6 +737,164 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Code Folding*)
+VerificationTest[
+    (* The code and the label of each fold in formatted boxes: *)
+    foldedCode[ boxes_ ] := Cases[
+        boxes,
+        InterpretationBox[
+            DynamicModuleBox[ _, TemplateBox[ { _, label_, ___ }, "IconizedObject", ___ ], ___ ],
+            code_,
+            ___,
+            BaseStyle -> "FoldedCode",
+            ___
+        ] :> { HoldComplete @ code, label },
+        Infinity
+    ];
+
+    $optionsLabel = StyleBox[ "\"options\"", "IconizedCustomName", ___ ];
+    ,
+    Null,
+    SameTest -> MatchQ,
+    TestID   -> "CodeFolding-Definitions@@Tests/Formatting.wlt:741,1-760,2"
+]
+
+(* Code that's folded with IconizedObject is displayed like an iconized selection in a notebook, with the code as its
+   interpretation: *)
+VerificationTest[
+    foldedCode @ StringToBoxes[
+        "Plot[Sin[x], {x, 0, 10}, IconizedObject[Sequence[PlotStyle -> Red, Filling -> Axis], \"options\"]]",
+        "WL"
+    ],
+    { { HoldComplete @ Sequence[ PlotStyle -> Red, Filling -> Axis ], $optionsLabel } },
+    SameTest -> MatchQ,
+    TestID   -> "CodeFolding-Boxes@@Tests/Formatting.wlt:764,1-772,2"
+]
+
+(* The label is optional: *)
+VerificationTest[
+    foldedCode @ StringToBoxes[ "Total[IconizedObject[Range[100]]]", "WL" ],
+    { { HoldComplete @ Range[ 100 ], Except[ _StyleBox ] } },
+    SameTest -> MatchQ,
+    TestID   -> "CodeFolding-No-Label@@Tests/Formatting.wlt:775,1-780,2"
+]
+
+(* Several arguments are folded together if they weren't wrapped in Sequence, where a string as the last argument is
+   the label: *)
+VerificationTest[
+    foldedCode @ StringToBoxes[
+        "Plot[Sin[x], {x, 0, 10}, IconizedObject[PlotStyle -> Red, Filling -> Axis, \"options\"], IconizedObject[Frame -> True, Axes -> False]]",
+        "WL"
+    ],
+    {
+        { HoldComplete @ Sequence[ PlotStyle -> Red, Filling -> Axis ], $optionsLabel },
+        { HoldComplete @ Sequence[ Frame -> True, Axes -> False ], Except[ _StyleBox ] }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "CodeFolding-Missing-Sequence@@Tests/Formatting.wlt:784,1-795,2"
+]
+
+(* The formatted code evaluates the same as the code that was folded, including folds inside of folds and code that's
+   spread over several lines: *)
+VerificationTest[
+    ToExpression[
+        StringToBoxes[
+            "{\n    1,\n    IconizedObject[\n        Sequence[2, 3],\n        \"more\"\n    ],\n    IconizedObject[4, 5],\n    IconizedObject[{IconizedObject[6, \"inner\"]}, \"outer\"]\n}",
+            "WL"
+        ],
+        StandardForm
+    ],
+    { 1, 2, 3, 4, 5, { 6 } },
+    SameTest -> MatchQ,
+    TestID   -> "CodeFolding-Evaluation@@Tests/Formatting.wlt:799,1-810,2"
+]
+
+(* Without anything to fold, the code is left as it is: *)
+VerificationTest[
+    StringToBoxes[ "f[IconizedObject[]]", "WL" ],
+    RowBox @ { "f", "[", RowBox @ { "IconizedObject", "[", "]" }, "]" },
+    SameTest -> MatchQ,
+    TestID   -> "CodeFolding-No-Arguments-Unchanged@@Tests/Formatting.wlt:813,1-818,2"
+]
+
+(* Code with embedded boxes is not folded: *)
+VerificationTest[
+    foldedCode @ StringToBoxes[ "{IconizedObject[\\!\\(x\\^2\\), \"math\"], IconizedObject[x^2, \"math\"]}", "WL" ],
+    { { HoldComplete[ _^2 ], _ } },
+    SameTest -> MatchQ,
+    TestID   -> "CodeFolding-Embedded-Boxes-Unchanged@@Tests/Formatting.wlt:821,1-826,2"
+]
+
+(* The full formatting path folds code in finished chat output: *)
+VerificationTest[
+    foldedCode @ FormatChatOutput[
+        "```wl\nPlot[Sin[x], {x, 0, 10}, IconizedObject[Sequence[PlotStyle -> Red, Filling -> Axis], \"options\"]]\n```\n"
+    ],
+    { { HoldComplete @ Sequence[ PlotStyle -> Red, Filling -> Axis ], $optionsLabel } },
+    SameTest -> MatchQ,
+    TestID   -> "CodeFolding-Formatted-Output@@Tests/Formatting.wlt:829,1-836,2"
+]
+
+(* While streaming, everything from the start of a fold is hidden behind an icon, since finding where the fold ends
+   would need the code to be parsed: *)
+VerificationTest[
+    Table[
+        Cases[
+            FormatChatOutput[ "```wl\nPlot[Sin[x], {x, 0, 10}, " <> rest, <| "Status" -> "Streaming" |> ],
+            s_String /; StringStartsQ[ s, "Plot[Sin[x], {x, 0, 10}, " ] :> {
+                StringContainsQ[ s, "TemplateBox" ~~ __ ~~ "\"IconizedObject\"" ],
+                StringFreeQ[ s, "IconizedObject[" | "PlotStyle" | "more" ]
+            },
+            Infinity
+        ],
+        {
+            rest,
+            {
+                "IconizedObject",
+                "IconizedObject[Sequence[PlotStyle -> Red, Fill",
+                "IconizedObject[Sequence[PlotStyle -> Red, Filling -> Axis], \"options\"]];\nmore"
+            }
+        }
+    ],
+    { { { True, True } }, { { True, True } }, { { True, True } } },
+    SameTest -> MatchQ,
+    TestID   -> "CodeFolding-Streaming@@Tests/Formatting.wlt:840,1-862,2"
+]
+
+(* Serializing the formatted boxes back to text for the LLM gives the folded code in full: *)
+VerificationTest[
+    CellToString @ Cell[
+        BoxData @ StringToBoxes[
+            "Plot[Sin[x], {x, 0, 10}, IconizedObject[Sequence[PlotStyle -> Red, Filling -> Axis], \"options\"]]",
+            "WL"
+        ],
+        "Input"
+    ],
+    "```wl\nPlot[Sin[x], {x, 0, 10}, IconizedObject[Sequence[PlotStyle -> Red, Filling -> Axis], \"options\"]]\n```",
+    SameTest -> MatchQ,
+    TestID   -> "CodeFolding-Serialization-RoundTrip@@Tests/Formatting.wlt:865,1-876,2"
+]
+
+VerificationTest[
+    CellToString @ Cell[
+        BoxData @ StringToBoxes[ "{IconizedObject[Range[100]], IconizedObject[1, 2]}", "WL" ],
+        "Input"
+    ],
+    "```wl\n{IconizedObject[Range[100]], IconizedObject[Sequence[1, 2]]}\n```",
+    SameTest -> MatchQ,
+    TestID   -> "CodeFolding-Serialization-RoundTrip-No-Label@@Tests/Formatting.wlt:878,1-886,2"
+]
+
+(* Other iconized expressions can be large, so they are still only summarized: *)
+VerificationTest[
+    CellToString @ Cell[ BoxData @ ToBoxes @ Iconize[ Range[ 100 ], "data" ], "Input" ],
+    "```wl\nIconizedObject[\[LeftGuillemet]data\[RightGuillemet]]\n```",
+    SameTest -> MatchQ,
+    TestID   -> "CodeFolding-Serialization-Other-Iconized-Objects@@Tests/Formatting.wlt:889,1-894,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Color Swatches*)
 
 (* Color constructors with literal numeric arguments get their StandardForm typesetting, so they display as interactive
@@ -745,7 +903,7 @@ VerificationTest[
     StringToBoxes[ "RGBColor[1, 0, 0]", "WL" ],
     TemplateBox[ KeyValuePattern[ "color" -> RGBColor[ 1, 0, 0 ] ], "RGBColorSwatchTemplate", ___ ],
     SameTest -> MatchQ,
-    TestID   -> "ColorSwatch-RGBColor@@Tests/Formatting.wlt:744,1-749,2"
+    TestID   -> "ColorSwatch-RGBColor@@Tests/Formatting.wlt:902,1-907,2"
 ]
 
 (* Every supported color model is converted: *)
@@ -768,7 +926,7 @@ VerificationTest[
         { "XYZColorSwatchTemplate"      , XYZColor[ 0.5, 0.5, 0.5 ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "ColorSwatch-All-Color-Models@@Tests/Formatting.wlt:752,1-772,2"
+    TestID   -> "ColorSwatch-All-Color-Models@@Tests/Formatting.wlt:910,1-930,2"
 ]
 
 (* LightDarkSwitched and ThemeColor typeset to their own template boxes rather than a "...ColorSwatchTemplate": *)
@@ -783,7 +941,7 @@ VerificationTest[
         { "LightDarkSwitched1", KeyValuePattern[ "light" -> RGBColor[ 1, 0, 0 ] ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "ColorSwatch-LightDarkSwitched@@Tests/Formatting.wlt:775,1-787,2"
+    TestID   -> "ColorSwatch-LightDarkSwitched@@Tests/Formatting.wlt:933,1-945,2"
 ]
 
 VerificationTest[
@@ -797,7 +955,7 @@ VerificationTest[
         { "ThemeColorBlended", KeyValuePattern @ { "frac1" -> 0.3, "name1" -> "Foreground", "frac2" -> 0.7, "name2" -> "Background" } }
     },
     SameTest -> MatchQ,
-    TestID   -> "ColorSwatch-ThemeColor@@Tests/Formatting.wlt:789,1-801,2"
+    TestID   -> "ColorSwatch-ThemeColor@@Tests/Formatting.wlt:947,1-959,2"
 ]
 
 (* Swatches are substituted in place inside larger expressions: *)
@@ -818,7 +976,7 @@ VerificationTest[
         "]"
     },
     SameTest -> MatchQ,
-    TestID   -> "ColorSwatch-Nested-In-Expression@@Tests/Formatting.wlt:804,1-822,2"
+    TestID   -> "ColorSwatch-Nested-In-Expression@@Tests/Formatting.wlt:962,1-980,2"
 ]
 
 (* Arguments that are not literal numbers (symbols, patterns, unevaluated expressions) do not typeset as swatches in the
@@ -827,7 +985,7 @@ VerificationTest[
     StringToBoxes[ "{RGBColor[Red, Green, Blue], Hue[N[1/3]], RGBColor[1, 0], Cases[expr, RGBColor[r_, g_, b_]]}", "WL" ],
     boxes_ /; FreeQ[ boxes, _TemplateBox ],
     SameTest -> MatchQ,
-    TestID   -> "ColorSwatch-Non-Numeric-Arguments-Unchanged@@Tests/Formatting.wlt:826,1-831,2"
+    TestID   -> "ColorSwatch-Non-Numeric-Arguments-Unchanged@@Tests/Formatting.wlt:984,1-989,2"
 ]
 
 (* When a color is not converted, special boxes inside its arguments are still formatted: *)
@@ -835,7 +993,7 @@ VerificationTest[
     StringToBoxes[ "RGBColor[Placeholder[\"red\"], 0, 0]", "WL" ],
     RowBox @ { "RGBColor", "[", RowBox @ { TagBox[ FrameBox[ "\"red\"" ], "Placeholder" ], ",", "0", ",", "0" }, "]" },
     SameTest -> MatchQ,
-    TestID   -> "ColorSwatch-Inner-Special-Boxes-Still-Formatted@@Tests/Formatting.wlt:834,1-839,2"
+    TestID   -> "ColorSwatch-Inner-Special-Boxes-Still-Formatted@@Tests/Formatting.wlt:992,1-997,2"
 ]
 
 (* The full formatting path renders swatches in finished chat output, both in code and in sandbox output rows: *)
@@ -850,7 +1008,7 @@ VerificationTest[
         { "Output"  , TemplateBox[ KeyValuePattern[ "color" -> RGBColor[ 1, 0, 0 ] ], "RGBColorSwatchTemplate", ___ ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "ColorSwatch-Formatted-Output@@Tests/Formatting.wlt:842,1-854,2"
+    TestID   -> "ColorSwatch-Formatted-Output@@Tests/Formatting.wlt:1000,1-1012,2"
 ]
 
 (* Serializing the formatted boxes back to text for the LLM recovers the original code: *)
@@ -861,7 +1019,7 @@ VerificationTest[
     ],
     "```wl\n{RGBColor[1, 0, 0], Hue[0.3], GrayLevel[0.5]}\n```",
     SameTest -> MatchQ,
-    TestID   -> "ColorSwatch-Serialization-RoundTrip@@Tests/Formatting.wlt:857,1-865,2"
+    TestID   -> "ColorSwatch-Serialization-RoundTrip@@Tests/Formatting.wlt:1015,1-1023,2"
 ]
 
 (* LightDarkSwitched and ThemeColor, including their one-argument and blended variants, round-trip as well: *)
@@ -875,7 +1033,7 @@ VerificationTest[
     ],
     "```wl\n{LightDarkSwitched[RGBColor[1, 0, 0], RGBColor[0, 1, 0]], LightDarkSwitched[RGBColor[1, 0, 0]], ThemeColor[\"Background\"], ThemeColor[{0.3 -> \"Foreground\", 0.7 -> \"Background\"}]}\n```",
     SameTest -> MatchQ,
-    TestID   -> "ColorSwatch-Serialization-RoundTrip-LightDarkSwitched-ThemeColor@@Tests/Formatting.wlt:868,1-879,2"
+    TestID   -> "ColorSwatch-Serialization-RoundTrip-LightDarkSwitched-ThemeColor@@Tests/Formatting.wlt:1026,1-1037,2"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -897,7 +1055,7 @@ VerificationTest[
         "ThemeColor[{0.3 -> \"Foreground\", 0.7 -> \"Background\"}]"
     },
     SameTest -> MatchQ,
-    TestID   -> "ColorSwatch-Serialization-Precomputed-Rules@@Tests/Formatting.wlt:886,1-901,2"
+    TestID   -> "ColorSwatch-Serialization-Precomputed-Rules@@Tests/Formatting.wlt:1044,1-1059,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
@@ -917,7 +1075,7 @@ VerificationTest[
     ],
     <| |>,
     SameTest -> MatchQ,
-    TestID   -> "Manipulate-Boxes-Are-Not-Cached@@Tests/Formatting.wlt:911,1-921,2"
+    TestID   -> "Manipulate-Boxes-Are-Not-Cached@@Tests/Formatting.wlt:1069,1-1079,2"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -930,7 +1088,7 @@ VerificationTest[
     Wolfram`Chatbook`Formatting`Private`activeToolProgressIndicator[ ],
     RawBoxes @ TagBox[ _, "ChatbookActiveToolProgress" ],
     SameTest -> MatchQ,
-    TestID   -> "ActiveToolProgressIndicator-Tagged@@Tests/Formatting.wlt:929,1-934,2"
+    TestID   -> "ActiveToolProgressIndicator-Tagged@@Tests/Formatting.wlt:1087,1-1092,2"
 ]
 
 VerificationTest[
@@ -943,7 +1101,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "DynamicProgressIndicator-OrdinaryText@@Tests/Formatting.wlt:936,1-947,2"
+    TestID   -> "DynamicProgressIndicator-OrdinaryText@@Tests/Formatting.wlt:1094,1-1105,2"
 ]
 
 VerificationTest[
@@ -959,7 +1117,7 @@ VerificationTest[
     ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "DynamicProgressIndicator-ActiveTool@@Tests/Formatting.wlt:949,1-963,2"
+    TestID   -> "DynamicProgressIndicator-ActiveTool@@Tests/Formatting.wlt:1107,1-1121,2"
 ]
 
 VerificationTest[
@@ -972,7 +1130,7 @@ VerificationTest[
     ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "DynamicProgressIndicator-EmptyContent@@Tests/Formatting.wlt:965,1-976,2"
+    TestID   -> "DynamicProgressIndicator-EmptyContent@@Tests/Formatting.wlt:1123,1-1134,2"
 ]
 
 VerificationTest[
@@ -997,7 +1155,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "DynamicProgressIndicator-MethodAware@@Tests/Formatting.wlt:978,1-1001,2"
+    TestID   -> "DynamicProgressIndicator-MethodAware@@Tests/Formatting.wlt:1136,1-1159,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
@@ -1012,7 +1170,7 @@ VerificationTest[
     ],
     { _Cell },
     SameTest -> MatchQ,
-    TestID   -> "Markdown-ToolCall-Before-Escaped-CodeBlock@@Tests/Formatting.wlt:1005,1-1016,2"
+    TestID   -> "Markdown-ToolCall-Before-Escaped-CodeBlock@@Tests/Formatting.wlt:1163,1-1174,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1051,7 +1209,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "Markdown-Line-Endings-Same-As-LF@@Tests/Formatting.wlt:1024,1-1055,2"
+    TestID   -> "Markdown-Line-Endings-Same-As-LF@@Tests/Formatting.wlt:1182,1-1213,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1087,7 +1245,7 @@ VerificationTest[
     ],
     { _RawBoxes, 1, $Failed, _RawBoxes, 2 },
     SameTest -> MatchQ,
-    TestID   -> "TeX-Reentrant-Conversion-Skipped-Not-Cached-GH#1796@@Tests/Formatting.wlt:1065,1-1091,2"
+    TestID   -> "TeX-Reentrant-Conversion-Skipped-Not-Cached-GH#1796@@Tests/Formatting.wlt:1223,1-1249,2"
 ]
 
 VerificationTest[
@@ -1109,7 +1267,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "TeX-Reentrant-Conversion-Uses-Cache-GH#1796@@Tests/Formatting.wlt:1093,1-1113,2"
+    TestID   -> "TeX-Reentrant-Conversion-Uses-Cache-GH#1796@@Tests/Formatting.wlt:1251,1-1271,2"
 ]
 
 (* The guard is released when a conversion fails or is interrupted: *)
@@ -1127,7 +1285,7 @@ VerificationTest[
     ],
     _RawBoxes,
     SameTest -> MatchQ,
-    TestID   -> "TeX-Conversion-Guard-Released-After-Throw-GH#1796@@Tests/Formatting.wlt:1116,1-1131,2"
+    TestID   -> "TeX-Conversion-Guard-Released-After-Throw-GH#1796@@Tests/Formatting.wlt:1274,1-1289,2"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

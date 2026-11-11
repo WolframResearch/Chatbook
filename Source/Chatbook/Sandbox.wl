@@ -55,6 +55,11 @@ $propagateMessages         = False;
 $segmentLine               = Missing[ "NotAvailable" ];
 $requestedLine             = Automatic;
 
+(* Code that the AI folded with IconizedObject (see "CodeFolding" in Prompting.wl) is unwrapped before it's evaluated.
+   This applies to the evaluator tool, but not to `WolframLanguageToolEvaluate`: its callers (e.g. the MCP server)
+   haven't been told to fold code, so their code is evaluated as it was written. *)
+$unwrapFoldedCode = True;
+
 (* Tests for expressions that lose their initialized status when sending over a link: *)
 $initializationTests = Join[
 
@@ -230,6 +235,7 @@ wolframLanguageToolEvaluate[ code_, property_, opts_Association ] := Enclose[
     Block[
         {
             $returnFullResult         = True,
+            $unwrapFoldedCode         = False,
             $appendRetryNotice        = getOption[ "AppendRetryNotice"    , opts ],
             $appendURIInstructions    = getOption[ "AppendURIInstructions", opts ],
             $evaluatorMethod          = getOption[ "Method"               , opts ],
@@ -3189,6 +3195,7 @@ noSandboxKernelFailure // endDefinition;
 
    Each program:
     - parses its input string using the evaluator's current $Context, $ContextPath, etc.
+    - unwraps code that was folded with IconizedObject (for the evaluator tool)
     - replaces macro placeholders with their expanded expressions
     - warns about undefined symbols
     - evaluates the input with time and memory constraints
@@ -3218,7 +3225,8 @@ makeSegmentProgram[ segment_Association, opts_Association ] := Enclose[
                 memFail   = ConfirmMatch[ memoryConstraintFailure[ ], _Function, "MemoryFailure" ],
                 evaluate  = ConfirmMatch[ segmentEvaluation[ ], _Function, "Evaluation" ],
                 undefined = $undefinedSymbolWarnings,
-                initQ     = $initializationTest
+                initQ     = $initializationTest,
+                unwrap    = TrueQ @ $unwrapFoldedCode
             },
             HoldComplete @ Module[
                 { segmentLine, segmentHeld, segmentSuppressed, segmentStop, segmentMemory, segmentResult },
@@ -3240,6 +3248,18 @@ makeSegmentProgram[ segment_Association, opts_Association ] := Enclose[
                     segmentHeld = If[ StringQ @ input, ToExpression[ input, InputForm, HoldComplete ], input ];
 
                     If[ MatchQ[ segmentHeld, _HoldComplete ],
+
+                        (* Folded code (see $unwrapFoldedCode) is evaluated as if it were written normally. A string
+                           as the last argument is its label. This applies to every IconizedObject in the input, so
+                           code that's about IconizedObject itself (e.g. a pattern) is changed too. Macros are still
+                           placeholder strings here, so one that's the last of several arguments is taken for the
+                           label: *)
+                        If[ unwrap,
+                            segmentHeld = segmentHeld //. {
+                                HoldPattern @ IconizedObject[ folded__, _String ] :> folded,
+                                HoldPattern @ IconizedObject[ folded__ ] :> folded
+                            }
+                        ];
 
                         (* Replace macro placeholders with their expanded expressions without evaluating them: *)
                         If[ keys =!= { },

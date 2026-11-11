@@ -2292,6 +2292,28 @@ outputSizeLimitString // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Iconized Expressions*)
+
+(* Code that the AI folded (see formatIconizedObjectBoxes) is given in full, unlike other iconized expressions: *)
+boxToString[ InterpretationBox[
+    DynamicModuleBox[ _, TemplateBox[ { _, label_, ___ }, "IconizedObject", ___ ], ___ ],
+    code_,
+    ___,
+    BaseStyle -> "FoldedCode",
+    ___
+] ] := StringJoin[
+    "IconizedObject[",
+    inputFormString @ Unevaluated @ code,
+    Replace[
+        label,
+        {
+            StyleBox[ name_, "IconizedCustomName", ___ ] :>
+                ", " <> Block[ { $showStringCharacters = True }, boxToString @ name ],
+            _ :> ""
+        }
+    ],
+    "]"
+];
+
 boxToString[
     InterpretationBox[ DynamicModuleBox[ { ___ }, iconized: TemplateBox[ _, "IconizedObject", ___ ] ], expr_, ___ ]
 ] := serializeIconizedObject[ iconized, HoldComplete @ expr ];

@@ -47,7 +47,11 @@ Part of `$modelInheritedLists` (along with `"BasePrompt"`), which enables specia
 ### Model-Specific Overrides
 
 - **GPT-5.2**: `{ParentList, "EscapedCharacters"}` (because it has improved Unicode handling)
-- The `$defaultConfigSettings` in `LLMUtilities.wl` sets this to `{"Notebooks", "NotebooksPreamble"}` for LLM configuration generation (not the regular chat notebook flow).
+- The `$defaultConfigSettings` in `LLMUtilities.wl` sets this to `{"Notebooks", "NotebooksPreamble", "CodeFolding"}` for LLM configuration generation (not the regular chat notebook flow).
+
+### Automatic Exclusions
+
+`"CodeFolding"` (the instructions for folding code with `IconizedObject`, a dependency of `"WolframLanguageStyle"`) is added to `$excludedBasePrompts` in `resolveAutoSettings` when the response is not formatted in a notebook: for headless chats such as `AgentEvaluate`, and when `"AutoFormat"` is `False`. Folded code relies on the notebook formatting to be displayed as an icon and to be evaluated like the code inside.
 
 ### Integration Points
 
