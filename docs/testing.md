@@ -60,7 +60,6 @@ The first test defines some helper functions and ensures that the paclet is load
 
 - Every test should have a `TestID` specification
 - If the test corresponds to a GitHub issue, you should include the issue number in the test ID, e.g. `"AnAppropriateTestID-GH#123"`
-- Do not add a `@@path/to/file.wlt:l,c` location suffix to test IDs. CI adds these when it runs the tests, so test failures reported there still point to the right lines.
 
 ## Running Tests with the TestReport MCP Tool
 
