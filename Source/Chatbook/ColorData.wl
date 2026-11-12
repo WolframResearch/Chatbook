@@ -47,6 +47,9 @@ Needs[ "Wolfram`Chatbook`Common`" ];
        4. In a hover or pressed state, check the dark value against the default state's dark value: hover lighter,
           pressed darker, as in light mode. Tests/ColorData.wlt checks this for the inline reference chips.
 
+   Always call color with a literal string, color @ "Name" or color[ "Name" ], not with a variable or through Map
+   (color /@ { ... }): Tests/ColorData.wlt finds the names that are used by searching the sources for those two forms.
+
    Where color can't be called:
        - Inside held code that the front end evaluates (Dynamic, DynamicBox, DynamicWrapper's second argument,
          RuleDelayed values, Button actions, Initialization): resolve it first with With, as above.

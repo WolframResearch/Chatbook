@@ -49,21 +49,9 @@ color = Wolfram`Chatbook`Common`color;
 (*Load Resources*)
 
 
-(* CapForm and JoinForm take strings ("Butt", "Miter", ...). Bare symbols in a resource source would otherwise be
-   created in this builder's context and written into the text resource file. *)
-quoteFormNames[ expr_ ] := ReplaceAll[
-    expr,
-    {
-        CapForm[ s_Symbol ] /; Context @ Unevaluated @ s =!= "System`" :> CapForm @ SymbolName @ Unevaluated @ s,
-        JoinForm[ s_Symbol ] /; Context @ Unevaluated @ s =!= "System`" :> JoinForm @ SymbolName @ Unevaluated @ s,
-        JoinForm[ { s_Symbol, rest___ } ] /; Context @ Unevaluated @ s =!= "System`" :> JoinForm @ { SymbolName @ Unevaluated @ s, rest }
-    }
-];
-
-
 $resourceFiles = FileNames[ "*.wl", { $sourceDirectory, $sourceDirectory2 }, Infinity ];
 $resourceNames = FileBaseName /@ $resourceFiles;
-$ChatbookResources = AssociationThread[ $resourceNames, quoteFormNames @* Import /@ $resourceFiles ];
+$ChatbookResources = AssociationThread[ $resourceNames, Import /@ $resourceFiles ];
 
 
 (* ::Section::Closed:: *)

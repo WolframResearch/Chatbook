@@ -1818,9 +1818,9 @@ functionTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsP
 					Replace[
 						Replace[params, Except[_List] :> {}],
 						{
-							">" :> RawBoxes @ TemplateBox[{}, "InlineReferenceIconRight"],
-							"^" :> RawBoxes @ TemplateBox[{}, "InlineReferenceIconPrevious"],
-							"^^" :> RawBoxes @ TemplateBox[{}, "InlineReferenceIconHistory"],
+							">" :> chatbookIcon @ "InlineReferenceIconRight",
+							"^" :> chatbookIcon @ "InlineReferenceIconPrevious",
+							"^^" :> chatbookIcon @ "InlineReferenceIconHistory",
 							else_ :> Style[else, FontSize -> Inherited * 0.9]
 						},
 						{1}

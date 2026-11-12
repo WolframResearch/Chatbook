@@ -15,6 +15,9 @@ VerificationTest[
     TestID   -> "LoadContext"
 ]
 
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::PrivateContextSymbol:: *)
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Color Names*)
@@ -154,3 +157,5 @@ VerificationTest[
     SameTest -> MatchQ,
     TestID   -> "InlineReferenceHoverLighterInDarkMode"
 ]
+
+(* :!CodeAnalysis::EndBlock:: *)
