@@ -978,7 +978,7 @@ compressUntilViewed // endDefinition;
 
 (* TODO: move this to the stylesheet *)
 $statelessProgressIndicator =
-    With[ { clock := Clock[ 10, 1.5 ], col = color @ "StatelessProgressIndicator" },
+    With[ { clock := Clock[ 10, 1.5 ], col = color @ "Gray75_54" },
         RawBoxes @ GraphicsBox[
             {
                 col,

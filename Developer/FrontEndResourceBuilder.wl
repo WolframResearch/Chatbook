@@ -33,7 +33,6 @@ $pacletDirectory      = DirectoryName[ $inputFileName, 2 ];
 $sourceDirectory      = FileNameJoin @ { $pacletDirectory, "Developer", "Resources", "FrontEndResources" };
 $sourceDirectory2     = FileNameJoin @ { $pacletDirectory, "Developer", "Resources", "Icons" };
 $resourceLocation     = FileNameJoin @ { $pacletDirectory, "FrontEnd", "TextResources", "ChatbookResources.tr" };
-$resourceLocationDark = FileNameJoin @ { $pacletDirectory, "DarkModeSupport", "TextResources", "ChatbookResources.tr" };
 
 
 (* ::Subsection::Closed:: *)
@@ -94,14 +93,6 @@ WriteTextResource[ All ] :=
     ];
 
 
-WriteTextResource[ All, "Dark" ] :=
-	Block[ { $resourceLocation = $resourceLocationDark },
-		WriteTextResource[ All ]
-	] /; BoxForm`sufficientVersionQ[14.3]
-
-WriteTextResource[ All, "Dark" ] := WriteTextResource[ All ]
-
-
 WriteTextResource[name_String, opts:OptionsPattern[]] := WriteTextResource[name -> FEResource[name], opts]
 
 
@@ -143,9 +134,10 @@ Module[{lines, resources, newresources, st},
 			Message[WriteTextResource::nores, file, resourceLine];
 			Return[$Failed]
 		];
-	(* write all the lines back into the file *)
-	st = OpenWrite[file];
-	WriteString[st, StringRiffle[Flatten[newresources], {"", "\n", "\n"}]];
+	(* write all the lines back into the file. Text mode would write "\r\n" on Windows, and the line continuations
+	   ("\" at the end of a line) in the file don't parse before "\r\n", so write LF explicitly: *)
+	st = OpenWrite[file, BinaryFormat -> True];
+	WriteString[st, StringReplace[StringRiffle[Flatten[newresources], {"", "\n", "\n"}], "\r\n" -> "\n"]];
 	Close[st]
 ]
 
@@ -175,7 +167,7 @@ extracted from tr files.
 
 changeKeyValueInString[str_String, key_String -> value_] :=
 	Module[{keypos, valueLength, pre, post},
-		keypos = StringPosition[str, "\"" <> key <> "\"" ~~ (WhitespaceCharacter...) ~~ "->"];
+		keypos = StringPosition[str, StartOfLine ~~ "\"" <> key <> "\"" ~~ (WhitespaceCharacter...) ~~ "->"];
 		If[MatchQ[keypos, {{_,_}}],
 			keypos = First[keypos],
 			Message[WriteTextResource::badkey, key];
@@ -248,7 +240,7 @@ replaceInMiddle[str_String, key_ -> value_, {start_, stop_}] :=
 (* create a new entry *)
 addKeyValueInString[str_String, key_String -> value_, newEntry_, newEntryPrefix_] :=
 	Module[{keypos, nextKey, nextKeyPos},
-		keypos = StringPosition[str, "\"" <> key <> "\"" ~~ (WhitespaceCharacter...) ~~ "->"];
+		keypos = StringPosition[str, StartOfLine ~~ "\"" <> key <> "\"" ~~ (WhitespaceCharacter...) ~~ "->"];
 		keypos = If[MatchQ[keypos, {{_, _}}], First[First[keypos]], None];
 		If[keypos === None,
 			Which[

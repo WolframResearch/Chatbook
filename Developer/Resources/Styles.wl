@@ -120,7 +120,7 @@ Cell[
     StyleData[ "FramedChatCell", StyleDefinitions -> StyleData[ "NotebookAssistant`Text" ] ],
     AutoQuoteCharacters      -> { },
     CellFrame                -> 1.75,
-    CellFrameColor           -> color @ "FramedChatCellFrame",
+    CellFrameColor           -> color @ "Blue_ECF0F5_48505F",
     CellFrameMargins         -> { { 12, 25 }, { 8, 8 } },
     CellFrameRoundingRadius  -> 8,
     PasteAutoQuoteCharacters -> { },
@@ -137,7 +137,7 @@ Cell[
 
 Cell[
     StyleData[ "ChatInput", StyleDefinitions -> StyleData[ "FramedChatCell" ] ],
-    CellFrameColor        -> color @ "ChatInputFrame",
+    CellFrameColor        -> color @ "Blue_B1D5E8_607D8F",
     CellFrameLabelMargins -> -32,
     CellGroupingRules     -> "InputGrouping",
     CellMargins           -> { { 66, 32 }, { 1, 8 } },
@@ -153,7 +153,7 @@ Cell[
             Cell[
                 BoxData[
                     DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatButton" ][ #1, { 24, 24 }, 12, 18 ] ]&[
-                        color @ "ChatInputFrame"
+                        color @ "Blue_B1D5E8_607D8F"
                     ]
                 ],
                 Background -> None
@@ -286,12 +286,12 @@ Cell[
 
 Cell[
     StyleData[ "ChatOutput", StyleDefinitions -> StyleData[ "FramedChatCell" ] ],
-    Background           -> color @ "ChatOutputBackground",
+    Background           -> color @ "Blue_F9FDFF_1D1F21",
     CellAutoOverwrite    -> True,
     CellDingbat          -> TemplateBox[ { }, "ChatOutputCellDingbat" ],
     CellDingbatMargin    -> 6.5, (* the ChatInput dingbat is a button with frame margins so nudge over the output *)
     CellElementSpacings  -> { "CellMinHeight" -> 0, "ClosedCellHeight" -> 0 },
-    CellFrameColor       -> color @ "ChatOutputFrame",
+    CellFrameColor       -> color @ "Blue_EBF3F7_37424A",
     CellGroupingRules    -> "OutputGrouping",
     CellMargins          -> { { 66, 25 }, { 12, 5 } },
     CodeAssistOptions    -> { "AutoDetectHyperlinks" -> False },
@@ -312,7 +312,7 @@ Cell[
                     ImageSize -> Automatic ],
                 "ChatFeedback" ] |>
     |>,
-    menuInitializer[ "ChatOutput", color @ "ChatOutputMenuButtonBackgroundHover" ]
+    menuInitializer[ "ChatOutput", LightDarkSwitched[ RGBColor[ "#ECF0F5" ], RGBColor[ "#282C35" ] ] ]
 ]
 
 
@@ -334,9 +334,9 @@ Cell[
 
 Cell[
     StyleData[ "AssistantOutput", StyleDefinitions -> StyleData[ "ChatOutput" ] ],
-    Background     -> color @ "AssistantOutputBackground",
-    CellFrameColor -> color @ "AssistantOutputFrame",
-    assistantMenuInitializer[ "AssistantOutput", color @ "AssistantOutputMenuButtonBackgroundHover" ]
+    Background     -> LightDarkSwitched[ RGBColor[ "#EDF2F7" ], RGBColor[ "#3F4856" ] ],
+    CellFrameColor -> color @ "Blue_D0DEEC_4F5C6F",
+    assistantMenuInitializer[ "AssistantOutput", color @ "Blue_D0DEEC_4F5C6F" ]
 ]
 
 
@@ -347,9 +347,9 @@ Cell[
 
 Cell[
     StyleData[ "AssistantOutputWarning", StyleDefinitions -> StyleData[ "AssistantOutput" ] ],
-    Background     -> color @ "AssistantOutputWarningBackground",
-    CellFrameColor -> color @ "AssistantOutputWarningFrame",
-    assistantMenuInitializer[ "AssistantOutput", color @ "AssistantOutputWarningMenuButtonBackgroundHover" ]
+    Background     -> LightDarkSwitched[ RGBColor[ "#FDFAF4" ], RGBColor[ "#4B4A2E" ] ],
+    CellFrameColor -> color @ "Orange_F1E7DE_5D5442",
+    assistantMenuInitializer[ "AssistantOutput", color @ "Orange_F1E7DE_5D5442" ]
 ]
 
 
@@ -360,9 +360,9 @@ Cell[
 
 Cell[
     StyleData[ "AssistantOutputError", StyleDefinitions -> StyleData[ "AssistantOutput" ] ],
-    Background     -> color @ "AssistantOutputErrorBackground",
-    CellFrameColor -> color @ "AssistantOutputErrorFrame",
-    assistantMenuInitializer[ "AssistantOutput", color @ "AssistantOutputErrorMenuButtonBackgroundHover" ]
+    Background     -> LightDarkSwitched[ RGBColor[ "#FDF4F4" ], RGBColor[ "#733126" ] ],
+    CellFrameColor -> color @ "Red_F1DEDE_804840",
+    assistantMenuInitializer[ "AssistantOutput", color @ "Red_F1DEDE_804840" ]
 ]
 
 
@@ -382,7 +382,7 @@ Cell[
     StyleData[ "ChatBlockDivider" ],
     MenuSortingValue    -> 1546,
     CellFrame           -> { { 0, 0 }, { 0, 8 } },
-    CellFrameColor      -> color @ "ChatBlockDividerFrame",
+    CellFrameColor      -> color @ "Gray75_54",
     CellFrameLabels     -> { { TemplateBox[ { }, "ChatDelimiterCellDingbat" ], None }, { None, None } },
     CellFrameMargins    -> 4,
     CellGroupingRules   -> { "SectionGrouping", 30 },
@@ -390,7 +390,7 @@ Cell[
     CellTrayWidgets     -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     CounterAssignments  -> { { "ChatInputCount", 0 } },
     CounterIncrements   -> "Section",
-    FontColor           -> color @ "ChatBlockDividerFont",
+    FontColor           -> color @ "Gray20_94",
     FontFamily          -> "Source Sans Pro",
     FontSize            -> 28,
     FontWeight          -> "DemiBold",
@@ -411,7 +411,7 @@ Cell[
 Cell[
     StyleData[ "ChatDelimiter" ],
     MenuSortingValue    -> 1547,
-    Background          -> color @ "ChatDelimiterBackground",
+    Background          -> LightDarkSwitched[ GrayLevel[ 0.95 ], GrayLevel[ 0.2438 ] ],
     CellElementSpacings -> { "CellMinHeight" -> 6 },
     CellFrameLabels     -> { { TemplateBox[ { }, "ChatDelimiterCellDingbat" ], None }, { None, None } },
     CellFrameMargins    -> { { 20, 20 }, { 2, 2 } },
@@ -501,7 +501,7 @@ Cell[
 Cell[
     StyleData[ "ChatPreformatted" ],
     AutoQuoteCharacters      -> { },
-    Background               -> color @ "ChatPreformattedBackground",
+    Background               -> color @ "Gray100_26",
     CellFrame                -> None,
     CellMargins              -> { { 66, 10 }, { 8, 8 } },
     CodeAssistOptions        -> { "AutoDetectHyperlinks" -> False },
@@ -537,9 +537,9 @@ Cell[
 
 With[
     {
-        frameColor = color @ "ChatCodeBlockTemplateFrame",
-        bg1        = color @ "ChatCodeBlockTemplateBackgroundTop",
-        bg2        = color @ "ChatCodeBlockTemplateBackgroundBottom"
+        frameColor = color @ "Gray93_32",
+        bg1        = color @ "Gray100_10",
+        bg2        = color @ "Blue_FCFDFF_232A32"
     },
 
 Cell[
@@ -580,9 +580,9 @@ Cell[
 
 With[
     {
-        frameColor = color @ "ChatCodeBlockTemplateFrame",
-        bg1        = color @ "ChatCodeBlockTemplateBackgroundTop",
-        bg2        = color @ "ChatCodeBlockTemplateBackgroundBottom"
+        frameColor = color @ "Gray93_32",
+        bg1        = color @ "Gray100_10",
+        bg2        = color @ "Blue_FCFDFF_232A32"
     },
 
 Cell[
@@ -627,8 +627,8 @@ Cell[
 
 With[
     {
-        frameColor = color @ "ChatCodeInlineTemplateFrame",
-        bg1 =        color @ "ChatCodeInlineTemplateBackground"
+        frameColor = color @ "Gray93_32",
+        bg1 =        color @ "Gray100_26"
     },
 
 Cell[
@@ -659,8 +659,8 @@ Cell[
     FontFamily -> "Source Sans Pro",
     FontColor  -> With[
         {
-            hover   = color @ "LinkFontHover",
-            default = color @ "LinkFont" },
+            hover   = LightDarkSwitched[ RGBColor[ "#DA6525" ], RGBColor[ "#FAA685" ] ],
+            default = color @ "Blue_0549A6_48AAF2" },
         Dynamic @ If[ CurrentValue[ "MouseOver" ], hover, default ] ]
 ]
 
@@ -670,7 +670,7 @@ Cell[
 (*TextRefLink*)
 
 
-With[ { fc = color @ "LinkFont" },
+With[ { fc = color @ "Blue_0549A6_48AAF2" },
 
 Cell[
     StyleData[ "TextRefLink" ],
@@ -732,7 +732,7 @@ Cell[
 
 With[
     {
-        frameColor = color @ "ChatOutputMenuButtonFrameHover"
+        frameColor = LightDarkSwitched[ GrayLevel[ 1, 0 ], GrayLevel[ 0.2192, 0 ] ]
     },
 
 Cell[
@@ -781,7 +781,7 @@ Cell[
 
 With[
     {
-        delimiterColor = color @ "ChatMenuItemDelimiter"
+        delimiterColor = color @ "Gray90_35"
     },
 
 Cell[
@@ -824,10 +824,10 @@ Cell[
 
 With[
     {
-        frameHover   = color @ "ChatMenuItemFrameHover",
-        frameDefault = color @ "ChatMenuItemFrame",
-        bgHover      = color @ "ChatMenuItemBackgroundHover",
-        bgDefault    = color @ "ChatMenuItemBackground"
+        frameHover   = color @ "Gray80_47",
+        frameDefault = color @ "Gray98_19",
+        bgHover      = color @ "Gray100_26",
+        bgDefault    = color @ "Gray98_19"
     },
 
 Cell[
@@ -878,7 +878,7 @@ Cell[
 
 With[
     {
-        bg = color @ "ChatMenuSectionBackground"
+        bg = LightDarkSwitched[ GrayLevel[ 0.937 ], GrayLevel[ 0.2314 ] ]
     },
 
 Cell[
@@ -940,7 +940,7 @@ Cell[
 
 Cell[
     StyleData[ "ChatMenuLabel" ],
-    FontColor       -> color @ "ChatMenuLabelFont",
+    FontColor       -> color @ "Gray20_94",
     FontFamily      -> "Source Sans Pro",
     FontSize        -> 13,
     FontWeight      -> Plain,
@@ -957,7 +957,7 @@ Cell[
 Cell[
     StyleData[ "ChatMenuSectionLabel", StyleDefinitions -> StyleData[ "ChatMenuLabel" ] ],
     FontSize  -> 13,
-    FontColor -> color @ "ChatMenuSectionLabelFont"
+    FontColor -> color @ "Gray35_86"
 ]
 
 
@@ -1112,9 +1112,9 @@ Cell[
             FrameBox[
                 #,
                 BaseStyle      -> { "Text", Editable -> False, Selectable -> False },
-                Background     -> color @ "UserMessageBoxBackground",
+                Background     -> color @ "Gray100_10",
                 FrameMargins   -> { { 8, 15 }, { 8, 8 } },
-                FrameStyle     -> color @ "UserMessageBoxFrame",
+                FrameStyle     -> color @ "Blue_D4F0FF_344858",
                 RoundingRadius -> 10,
                 StripOnInput   -> False
             ],
@@ -1299,12 +1299,12 @@ Cell[
 (* TODO: unclear if this style is serialized into pre-14.1 chatbooks, so hang on to it, but exclude from CoreExtensions. *)
 Cell[
     StyleData[ "InlineReferenceText", StyleDefinitions -> StyleData[ "NotebookAssistant`Text" ] ],
-    FontColor -> color @ "InlineReferenceTextFont" (* only shows up in 14.1 *)
+    FontColor -> color @ "Gray20_94" (* only shows up in 14.1 *)
 ]
 
 Cell[
     StyleData[ "NotebookAssistant`InlineReferenceText", StyleDefinitions -> StyleData[ "NotebookAssistant`Text" ] ],
-    FontColor -> color @ "NotebookAssistant`InlineReferenceTextFont"
+    FontColor -> color @ "Gray20_94"
 ]
 
 
@@ -1368,7 +1368,7 @@ Cell[
 
 With[
     {
-        fontColor = color @ "ChatCounterLabelFont"
+        fontColor = LightDarkSwitched[ RGBColor[ "#8DB5EC" ], RGBColor[ "#769FDA" ] ]
     },
 
 Cell[
@@ -1394,8 +1394,8 @@ Cell[
 
 With[
     {
-        bg         = color @ "DiscardedMaterialOpenerBackground",
-        frameColor = color @ "DiscardedMaterialOpenerFrame"
+        bg         = color @ "Blue_F2F7FC_2D3646",
+        frameColor = color @ "Blue_E8EEF3_4A545F"
     },
 
 Cell[
@@ -1555,8 +1555,8 @@ Cell[
 
 With[
     {
-        font1      = color @ "ThinkingOpenerFont",
-        font1hover = color @ "ThinkingOpenerFontHover"
+        font1      = color @ "Gray47_78",
+        font1hover = color @ "Gray39_83"
     },
 Cell[
     StyleData[ "ThinkingOpener" ],
@@ -1722,8 +1722,8 @@ Cell[
 
 With[
     {
-        font1      = color @ "ThinkingOpenerFont",
-        font1hover = color @ "ThinkingOpenerFontHover"
+        font1      = color @ "Gray47_78",
+        font1hover = color @ "Gray39_83"
     },
 
 Cell[
@@ -1883,7 +1883,7 @@ Cell[
 ]
 
 
-With[ { font1 = color[ "ThinkingOpenerFont" ] },
+With[ { font1 = color[ "Gray47_78" ] },
     Cell[
         StyleData[ "EmptyThoughts" ],
         TemplateBoxOptions -> {
@@ -1923,9 +1923,9 @@ With[ { font1 = color[ "ThinkingOpenerFont" ] },
 
 With[
     {
-        font    = color @ "ThinkingContentFont",
-        divider = color @ "ThinkingContentDivider",
-        bg      = color @ "ThinkingContentBackground"
+        font    = color @ "Gray35_86",
+        divider = color @ "Gray82_46",
+        bg      = color @ "Gray100_26"
     },
 
 Cell[

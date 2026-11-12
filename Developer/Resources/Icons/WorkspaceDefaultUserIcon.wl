@@ -24,7 +24,7 @@ Graphics[
      }
     ]
    },
-   FaceForm @ color @ "WorkspaceDefaultUserIconBackground_1"
+   FaceForm @ LightDarkSwitched[ RGBColor[ "#D6EBF6" ], RGBColor[ "#253C54" ] ]
   ],
   Style[
    {
@@ -79,7 +79,7 @@ Graphics[
      }
     ]
    },
-   FaceForm @ color @ "WorkspaceDefaultUserIconEdge"
+   FaceForm @ color @ "Blue_66ADD2_659FE1"
   ],
   Style[
    {
@@ -142,8 +142,8 @@ Graphics[
    EdgeForm @ CapForm[ "Round" ],
    EdgeForm @ JoinForm[ "Round" ],
    EdgeForm @ Thickness[ 0.05625 ],
-   EdgeForm @ color @ "WorkspaceDefaultUserIconEdge",
-   FaceForm @ color @ "WorkspaceDefaultUserIconBackground_2"
+   EdgeForm @ color @ "Blue_66ADD2_659FE1",
+   FaceForm @ color @ "Gray100_10"
   ]
  },
  ImageSize -> { Automatic, 20 }

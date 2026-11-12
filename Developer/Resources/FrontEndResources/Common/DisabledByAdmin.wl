@@ -113,7 +113,7 @@ Graphics[
 							}
 						]
 					},
-					FaceForm @ LightDarkSwitched @ RGBColor[1., 1., 1., 1.]
+					FaceForm @ color @ "Gray100_10"
 				],
 				Style[
 					{
@@ -304,7 +304,7 @@ Graphics[
 							}
 						]
 					},
-					FaceForm @ LightDarkSwitched @ RGBColor[1., 1., 1., 1.]
+					FaceForm @ color @ "Gray100_10"
 				]
 			}
 		}

@@ -11,7 +11,7 @@ Begin[ "Wolfram`ChatbookStylesheetBuilder`Private`" ];
 (*Path setup*)
 
 
-workspacePath = $darkFloatStyleSheetTarget (* 15.0+ stylesheet *)
+workspacePath = $floatStyleSheetTarget
 corePath      = FileNameJoin[ { $InstallationDirectory, "SystemFiles", "FrontEnd", "StyleSheets", "Core.nb" } ]
 
 ssName = "WorkspaceChat.nb";

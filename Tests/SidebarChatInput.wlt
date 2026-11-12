@@ -111,15 +111,14 @@ VerificationTest[
 
 (* The front end runs the pre-built copy of the sidebar cell from the text resources, so it must match the source: *)
 VerificationTest[
-    Module[ { files },
-        files = FileNameJoin @ { PacletObject[ "Wolfram/Chatbook" ][ "Location" ], #, "TextResources", "ChatbookResources.tr" } & /@
-            { "FrontEnd", "DarkModeSupport" };
+    Module[ { file },
+        file = FileNameJoin @ { PacletObject[ "Wolfram/Chatbook" ][ "Location" ], "FrontEnd", "TextResources", "ChatbookResources.tr" };
         {
-            StringContainsQ[ ReadString @ #, "ChatModes`UI`Private`clearSidebarOverlayMenus[" ],
-            StringContainsQ[ ReadString @ #, "ChatModes`UI`Private`clearOverlayMenus[" ]
-        } & /@ Select[ files, FileExistsQ ]
+            StringContainsQ[ ReadString @ file, "ChatModes`UI`Private`clearSidebarOverlayMenus[" ],
+            StringContainsQ[ ReadString @ file, "ChatModes`UI`Private`clearOverlayMenus[" ]
+        }
     ],
-    { { True, False }.. },
+    { True, False },
     SameTest -> MatchQ,
     TestID   -> "SidebarSend-PrebuiltResource"
 ]
@@ -133,15 +132,14 @@ VerificationTest[
 ]
 
 VerificationTest[
-    Module[ { files },
-        files = FileNameJoin @ { PacletObject[ "Wolfram/Chatbook" ][ "Location" ], #, "TextResources", "ChatbookResources.tr" } & /@
-            { "FrontEnd", "DarkModeSupport" };
+    Module[ { file },
+        file = FileNameJoin @ { PacletObject[ "Wolfram/Chatbook" ][ "Location" ], "FrontEnd", "TextResources", "ChatbookResources.tr" };
         StringContainsQ[
-            StringDelete[ ReadString @ #, WhitespaceCharacter ],
+            StringDelete[ ReadString @ file, WhitespaceCharacter ],
             "Wolfram`Chatbook`Common`evaluateSidebarChat[Typeset`nbo$$,Typeset`sidebarCell$$,Typeset`input$$,Dynamic[Typeset`chatEvalCell$$],Dynamic[Typeset`fieldContent$$]]"
-        ] & /@ Select[ files, FileExistsQ ]
+        ]
     ],
-    { True.. },
+    True,
     SameTest -> MatchQ,
     TestID   -> "SidebarSend-PrebuiltResource-InputField-GH#1710"
 ]
@@ -267,19 +265,18 @@ VerificationTest[
 
 (* The front end draws the prebuilt sidebar cell, so it must match the source: *)
 VerificationTest[
-    Module[ { files },
-        files = FileNameJoin @ { PacletObject[ "Wolfram/Chatbook" ][ "Location" ], #, "TextResources", "ChatbookResources.tr" } & /@
-            { "FrontEnd", "DarkModeSupport" };
-        With[ { s = StringDelete[ ReadString @ #, WhitespaceCharacter ] },
+    Module[ { file },
+        file = FileNameJoin @ { PacletObject[ "Wolfram/Chatbook" ][ "Location" ], "FrontEnd", "TextResources", "ChatbookResources.tr" };
+        With[ { s = StringDelete[ ReadString @ file, WhitespaceCharacter ] },
             {
                 StringContainsQ[ s, "Wolfram`Chatbook`Common`chatEvaluatingInQ[ParentCell[EvaluationCell[]]]" ],
                 StringContainsQ[ s, "\"StopChatIn\",ParentCell[EvaluationCell[]]" ],
                 StringContainsQ[ s, "FEPrivate`SameQ[Typeset`initializedQ$$,True]" ],
                 StringContainsQ[ s, "$ChatEvaluationCell===Typeset`chatEvalCell$$" ]
             }
-        ] & /@ Select[ files, FileExistsQ ]
+        ]
     ],
-    { { True, True, True, False }.. },
+    { True, True, True, False },
     SameTest -> MatchQ,
     TestID   -> "SendButton-PrebuiltResource"
 ]

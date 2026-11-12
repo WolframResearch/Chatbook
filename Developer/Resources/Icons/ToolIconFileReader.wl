@@ -85,7 +85,7 @@ RawBoxes[
 														}
 												]
 											},
-										FaceForm @ color @ "ToolIconFileReader_3"
+										FaceForm @ color @ "Gray100_23"
 									],
 									Style[
 										{
@@ -151,7 +151,7 @@ RawBoxes[
 												]
 											},
 
-			FaceForm @ color @ "ToolIconFileReader_1"
+			FaceForm @ color @ "Blue_536266_B4CED3"
 									],
 									Style[
 										{
@@ -164,7 +164,7 @@ RawBoxes[
 										CapForm @ "Butt", JoinForm @ "Round",
 			Thickness @ 0.05357142857142857,
 
-			color @ "ToolIconFileReader_2"
+			color @ "Teal_8CA5AA_91ABB0"
 									],
 									Style[
 										{
@@ -177,7 +177,7 @@ RawBoxes[
 										CapForm @ "Butt", JoinForm @ "Round",
 			Thickness @ 0.05357142857142857,
 
-			color @ "ToolIconFileReader_2"
+			color @ "Teal_8CA5AA_91ABB0"
 									],
 									Style[
 										{
@@ -190,7 +190,7 @@ RawBoxes[
 										CapForm @ "Butt", JoinForm @ "Round",
 			Thickness @ 0.05357142857142857,
 
-			color @ "ToolIconFileReader_2"
+			color @ "Teal_8CA5AA_91ABB0"
 									],
 									Style[
 										{
@@ -216,7 +216,7 @@ RawBoxes[
 														}
 												]
 											},
-										FaceForm @ color @ "ToolIconFileReader_3"
+										FaceForm @ color @ "Gray100_23"
 									],
 									Style[
 										{
@@ -245,7 +245,7 @@ RawBoxes[
 											},
 										CapForm @ "Butt", JoinForm @ "Bevel",
 			Thickness @ 0.05357142857142857,
-			color @ "ToolIconFileReader_1"
+			color @ "Blue_536266_B4CED3"
 									]
 								}
 						}

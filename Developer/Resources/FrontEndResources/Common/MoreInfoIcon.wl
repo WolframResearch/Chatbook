@@ -27,7 +27,7 @@ PaneSelector[
       {
        JoinForm @ { "Miter", 3.25 },
        Thickness[ 0.045818 ],
-       color @ "IconsMoreInfo_1"
+       color @ "Gray63_68"
       },
       StripOnInput -> False
      ],
@@ -72,7 +72,7 @@ PaneSelector[
         }
        ]
       },
-      { FaceForm @ color @ "IconsMoreInfo_1" },
+      { FaceForm @ color @ "Gray63_68" },
       StripOnInput -> False
      ]
     },
@@ -103,7 +103,7 @@ PaneSelector[
         CurveClosed -> { 1 }
        ]
       },
-      { JoinForm @ { "Miter", 3.25 }, Thickness[ 0.045818 ], color @ "IconsMoreInfo_2" },
+      { JoinForm @ { "Miter", 3.25 }, Thickness[ 0.045818 ], color @ "Gray50_79" },
       StripOnInput -> False
      ],
      Style[
@@ -124,7 +124,7 @@ PaneSelector[
         CompressedData[ "\n1:eJxTTMoPSmVmYGBgBGJJIGYC4oSnF5RuVyo58OlumvteXcIBxj//Pfjx0tky\nDp8u+SYJzFB0kGQJ49MtUnBYIKV/V4UNRis5GHKskYl6AlOnDNUHM0cFaq4I\nnD/niMKGogx+OB+oO8X6Phtcf/+hrxox/Qxw80HKftZ9sYfZ/7BKZJ37w1f2\nMPfB+DD3w/h+SQIRlluE4foh9vDBzYfQHHD7izMmvq2xZ4K7r9CW6/rigr/2\nMPfD+DD/wfgw/8P0w8IHZj4s/GD2w8IX5j708AcA2Xetpg==\n               " ]
        ]
       },
-      { FaceForm @ color @ "IconsMoreInfo_2" },
+      { FaceForm @ color @ "Gray50_79" },
       StripOnInput -> False
      ],
      Style[
@@ -168,7 +168,7 @@ PaneSelector[
         }
        ]
       },
-      { FaceForm @ color @ "IconsMoreInfo_3" },
+      { FaceForm @ color @ "Gray100_10" },
       StripOnInput -> False
      ]
     },

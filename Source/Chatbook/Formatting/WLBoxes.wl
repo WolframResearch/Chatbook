@@ -296,13 +296,13 @@ formatNLInputFast[ q_String ] := OverlayBox[
         FrameBox[
             StyleBox[ q, ShowStringCharacters -> False, FontWeight -> Plain ],
             BaseStyle      -> { "CalculateInput", LineBreakWithin -> False },
-            FrameStyle     -> color @ "NA_ChatOutputFreeFormFrame",
+            FrameStyle     -> color @ "Gray85_41",
             RoundingRadius -> 3,
             ImageMargins   -> { { 5, 0 }, { 0, 0 } },
             FrameMargins   -> { { 6, 3 }, { 3, 3 } },
             StripOnInput   -> False
         ],
-        Append[ $freeformPromptBox, Background -> color @ "NA_ChatOutputFreeFormBackground" ]
+        Append[ $freeformPromptBox, Background -> color @ "Gray100_28" ]
     },
     Alignment -> { Left, Baseline }
 ];

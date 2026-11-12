@@ -201,11 +201,15 @@ VerificationTest[
 (* ::Section::Closed:: *)
 (*Kernel Startup Failures*)
 
+(* A command line for a process that never connects to the link. On Windows, LinkLaunch asks the user to pick a
+   program when the executable doesn't exist, so use a command that exits immediately instead: *)
+$neverConnectsCommandLine = If[ $OperatingSystem === "Windows", "cmd.exe /c exit", "/nonexistent/WolframKernel -wstp" ];
+
 (* A process that never connects to the link blocks LinkWrite indefinitely: *)
 VerificationTest[
     Block[
         {
-            Wolfram`Chatbook`Common`$sandboxKernelCommandLine = "/nonexistent/WolframKernel -wstp",
+            Wolfram`Chatbook`Common`$sandboxKernelCommandLine = $neverConnectsCommandLine,
             Wolfram`Chatbook`Sandbox`Private`$sandboxPingTimeout = 1
         },
         Quiet @ Wolfram`Chatbook`Sandbox`Private`startSandboxKernel[ ]
@@ -248,7 +252,7 @@ VerificationTest[
 VerificationTest[
     Block[
         {
-            Wolfram`Chatbook`Common`$sandboxKernelCommandLine = "/nonexistent/WolframKernel -wstp",
+            Wolfram`Chatbook`Common`$sandboxKernelCommandLine = $neverConnectsCommandLine,
             Wolfram`Chatbook`Sandbox`Private`$sandboxPingTimeout = 1
         },
         Quiet @ Wolfram`Chatbook`WolframLanguageToolEvaluate[ "1 + 1", All, "Method" -> "Local" ]
