@@ -259,11 +259,12 @@ VerificationTest[
             computed = Join[ computed, strings ];
             Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`cacheEmbedding[ #, vector @ # ] & /@ strings
         );
-        Module[ { batches, results, single },
+        Module[ { batches, results, single, size },
             batches = Partition[ Table[ "string " <> ToString @ i, { i, 24 } ], 3 ];
             results = Wolfram`Chatbook`Common`getEmbeddings /@ batches;
             (* A call with more strings than the cache size still gives every embedding: *)
             single = Wolfram`Chatbook`Common`getEmbeddings @ Table[ "long " <> ToString @ i, { i, 15 } ];
+            size   = Length @ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$embeddingCache;
             {
                 results === Map[ expected, batches, { 2 } ],
                 single === expected /@ Table[ "long " <> ToString @ i, { i, 15 } ],
@@ -271,7 +272,8 @@ VerificationTest[
                 (* Cached embeddings are not recomputed: *)
                 Wolfram`Chatbook`Common`getEmbeddings @ { "long 15", "long 14" } === expected /@ { "long 15", "long 14" },
                 Length @ computed,
-                Length @ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$embeddingCache <= 10 + 15
+                (* The cache stays within its size after the call with 15 new strings: *)
+                size <= 10
             }
         ]
     ],
@@ -304,6 +306,48 @@ VerificationTest[
     True,
     SameTest -> MatchQ,
     TestID   -> "EmbeddingCache-PreemptiveTrim"
+]
+
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$embeddingCache        = <| |>,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$maxEmbeddingCacheSize = 10,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$cacheEmbeddings       = True,
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getAndCacheEmbeddings,
+            Wolfram`Chatbook`Common`$noSemanticSearch = False,
+            vector, computed = { }, sizes = { }, messages = { }
+        },
+        vector = Function[ s, N @ Join[ { StringLength @ s, Mod[ Hash @ s, 101 ] }, ConstantArray[ 1, 382 ] ] ];
+        Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`getAndCacheEmbeddings[ strings_List ] := (
+            computed = Join[ computed, strings ];
+            Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`cacheEmbedding[ #, vector @ # ] & /@ strings
+        );
+        (* Each exchange embeds two new strings for retrieval, then the save embeds every message pair and the title: *)
+        Do[
+            messages = Join[
+                messages,
+                {
+                    <| "Role" -> "User"     , "Content" -> "Question " <> ToString @ i |>,
+                    <| "Role" -> "Assistant", "Content" -> "Answer "   <> ToString @ i |>
+                }
+            ];
+            Wolfram`Chatbook`Common`getEmbeddings @ { "Conversation " <> ToString @ i, "Last message " <> ToString @ i };
+            Wolfram`Chatbook`Storage`Private`createMessageVectors[ <| "ConversationTitle" -> "Title" |>, messages, <| |> ];
+            AppendTo[ sizes, Length @ Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$embeddingCache ],
+            { i, 7 }
+        ];
+        {
+            (* No string is embedded twice, since the 7 pairs and the title fit in the cache with the newest strings: *)
+            DuplicateFreeQ @ computed,
+            (* 14 retrieval strings, 7 pairs and the title: *)
+            Length @ computed,
+            Max @ sizes
+        }
+    ],
+    { True, 22, 10 },
+    SameTest -> MatchQ,
+    TestID   -> "EmbeddingCache-LeastRecentlyUsed-GH#1738"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
