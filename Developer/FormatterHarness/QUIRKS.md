@@ -950,11 +950,11 @@ Each item was reproduced against main (375156fb). **[not encoded]** means no tes
 - **Observed:** {"Display", math, "here"} and {"Formula:", math, "Done"}, which shows "Displayx²here" on one line.
 - **Expected:** Spacing kept, as for $$x^2$$ ({"Display \n", math, "\nhere"}). FormattingMath.wlt already notes this as a known issue.
 
-### Inline code unescapes every markdown escape, which breaks WL code and named characters [not encoded]
+### Inline code unescapes \*, \_, \# and \| [not encoded]
 
-- **Repro:** FormatChatOutput["Type `\\[Alpha]` for alpha"]; FormatChatOutput["Use `StringReplace[s, \"\\\\\" -> \"/\"]` here"]; FormatChatOutput["Use `\\*` here"]; FormatChatOutput["Use `\\\\` here"]
-- **Observed:** The code shows "[Alpha]", "*", "\". The WL example becomes InlineWL StringReplace[s, "\" -> "/"], a broken string because the escaped backslash was unescaped.
-- **Expected:** CommonMark keeps backslashes in code spans: `\[Alpha]` and `"\\"` should show as written. Unescaping \$ and \` is intentional (the existing `\$Failed` test) and stays encoded.
+- **Repro:** FormatChatOutput["Use `\\*` here"]
+- **Observed:** The code shows "*". Since #1794, \\, \[ and \] in inline code keep their backslash, so `\[Alpha]` and `StringReplace[s, "\\" -> "/"]` show as written (Escapes-Inline-Code-Backslashes-Kept-GH#1794).
+- **Expected:** CommonMark keeps backslashes in code spans. These four can only be kept once serialization stops escaping them in inline code (see "Inline code content is markdown-escaped when serialized"). Unescaping \$ and \` is intentional (the existing `\$Failed` test) and stays encoded.
 
 ### A backslash before the closing backtick of a code span escapes the backtick (new) [not encoded]
 

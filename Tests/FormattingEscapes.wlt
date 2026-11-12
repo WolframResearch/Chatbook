@@ -26,7 +26,8 @@ VerificationTest[
    backslash. When the response contains any of these escapes, reformatTextData0 replaces them with private-use
    placeholders before HTML entities are decoded, and the text is then split with the normal rules. The parts that keep
    their raw text (code blocks, tool calls, think tags and speech input) get their escapes back (restoreRawText), and in
-   the output of every other part the placeholders become the plain characters (or TeX escapes in math).
+   the output of every other part the placeholders become the plain characters (or TeX escapes in math). Inline code
+   keeps the backslash of \\, \[ and \] ($codeUnescapeRules).
    Whitespace-delimited \[...\] is display math, which is only possible when the text has escapes.
    Many tests below compare a document that contains an escaped dollar sign "\$" with the same document using a plain
    "$" (both display "$"), since the two should give the same visible result. *)
@@ -523,8 +524,66 @@ VerificationTest[
     TestID   -> "Escapes-Inline-Code-Other-Backslashes"
 ]
 
-(* Inline code that is almost certainly Wolfram Language code is shown as syntax-colored input, with its escapes
-   unescaped first, the same as without escapes: *)
+(* Inline code keeps the backslash of \\, \[ and \], since code spans have no escapes in CommonMark, also when \\ comes
+   before a $. This includes inline code in table cells: *)
+VerificationTest[
+    {
+        FormatMarkdown[ "Use `\\[Alpha]` and `a\\\\b` and `\\[x\\]` and `a\\\\$b` here" ],
+        Cases[ FormatMarkdown[ "| a |\n|---|\n| `\\[Alpha]` |" ], Cell[ "\\[Alpha]", ___ ], Infinity ]
+    },
+    {
+        {
+            "Use ", escInlineCode[ "\\[Alpha]" ],
+            " and ", escInlineCode[ "a\\\\b" ],
+            " and ", escInlineCode[ "\\[x\\]" ],
+            " and ", escInlineCode[ "a\\\\$b" ],
+            " here"
+        },
+        { Cell[ "\\[Alpha]", Background -> None ] }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Escapes-Inline-Code-Backslashes-Kept-GH#1794"
+]
+
+(* The same for inline code that is shown as Wolfram Language input, where a lost backslash would also end a string
+   early (e.g. "\\" -> "/"): *)
+VerificationTest[
+    FormatMarkdown /@ { "Use `RegularExpression[\"\\\\d+\"]` here", "Use `StringReplace[s, \"\\\\\" -> \"/\"]` here" },
+    {
+        {
+            "Use ",
+            Cell[ BoxData @ RowBox @ { "RegularExpression", "[", "\"\\\\d+\"", "]" }, "InlineWL", ___ ],
+            " here"
+        },
+        {
+            "Use ",
+            Cell[
+                BoxData @ RowBox @ {
+                    "StringReplace",
+                    "[",
+                    RowBox @ { "s", ",", RowBox @ { "\"\\\\\"", "->", "\"/\"" } },
+                    "]"
+                },
+                "InlineWL",
+                ___
+            ],
+            " here"
+        }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Escapes-Inline-WL-Code-Backslashes-Kept-GH#1794"
+]
+
+(* Serialized inline code (which is what is copied, and what the model sees in later messages) keeps its backslashes: *)
+VerificationTest[
+    MarkdownRoundTrip[ "Use `\"C:\\\\Users\\\\me\"` and `\\[Alpha]` here" ],
+    "Use ``\"C:\\\\Users\\\\me\"`` and ``\\[Alpha]`` here",
+    SameTest -> MatchQ,
+    TestID   -> "Escapes-RoundTrip-Inline-Code-Backslashes-GH#1794"
+]
+
+(* Inline code that is almost certainly Wolfram Language code is shown as syntax-colored input, with an escaped dollar
+   sign unescaped first, the same as without escapes: *)
 VerificationTest[
     escPair[ "Use `Plot[{$}x, {x, 0, 1}]` here" ],
     {
