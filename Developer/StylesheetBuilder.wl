@@ -816,7 +816,9 @@ BuildStylesheets[ other___ ] := Failure[
 ];
 
 
-$validStylesheetNames = { "Chatbook", "CoreExtensions", "WorkspaceChat" };
+(* CoreExtensions reads the sidebar styles from the built WorkspaceChat.nb (Resources/SidebarStyles.wl), so it has
+   to be built after it: *)
+$validStylesheetNames = { "Chatbook", "WorkspaceChat", "CoreExtensions" };
 
 (* ::Section::Closed:: *)
 (*BuildChatbookStylesheet*)
