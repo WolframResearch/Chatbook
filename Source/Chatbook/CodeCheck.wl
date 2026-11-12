@@ -525,7 +525,19 @@ fixBrackets[target_][code_String, pat : $$FatalGroupMissingCloserORANDFatalUnexp
 	]
 )
 
+(* CodeParser catches the time limit abort and calls Abort[] again (libraryFunctionWrapper), which TimeConstrained
+   does not catch. A plain abort after the time limit is that timeout; an earlier one (e.g. a user abort) is passed on.
+   This is decided after CheckAbort returns, not in its handler: the abort of an outer TimeConstrained keeps going after
+   CheckAbort, but calling Abort[] in the handler would replace it with a plain abort the outer one does not catch. *)
 iterateBracketFixes[code_, pattern_, extraiter_ : 1] :=
+	With[{start = AbsoluteTime[]},
+		Replace[
+			CheckAbort[timedBracketFixes[code, pattern, extraiter], $bracketFixAborted],
+			$bracketFixAborted :> If[AbsoluteTime[] - start >= $MaxIterateTimeBracketsFix, Missing["Time limit exceeded"], Abort[]]
+		]
+	]
+
+timedBracketFixes[code_, pattern_, extraiter_] :=
  Catch[
 	TimeConstrained[
 		Block[	{$fixed = <||>}
