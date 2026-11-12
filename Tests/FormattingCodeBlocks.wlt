@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/FormattingCodeBlocks.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/FormattingCodeBlocks.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -146,7 +146,7 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Definitions@@Tests/FormattingCodeBlocks.wlt:28,1-150,2"
+    TestID   -> "CodeBlocks-Definitions"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -163,7 +163,7 @@ VerificationTest[
     FormatMarkdown[ "```wl\n1+1\n```" ],
     { cbBlock[ cbWL @ RowBox @ { "1", "+", "1" }, "Wolfram" ] },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-WL-Finished@@Tests/FormattingCodeBlocks.wlt:162,1-167,2"
+    TestID   -> "CodeBlocks-WL-Finished"
 ]
 
 (* While streaming, the code is shown as a plain string in a "ChatCodeActive" cell (no front end parsing). The streaming
@@ -173,7 +173,7 @@ VerificationTest[
     FormatMarkdown[ "```wl\n1+1\n```", "Streaming" ],
     { cbBlock[ Cell[ BoxData[ "1+1" ], "ChatCodeActive" ], _ ] },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-WL-Streaming@@Tests/FormattingCodeBlocks.wlt:172,1-177,2"
+    TestID   -> "CodeBlocks-WL-Streaming"
 ]
 
 (* All of these tags mean Wolfram Language. They're matched case-insensitively, as a whole, after trimming trailing
@@ -196,7 +196,7 @@ VerificationTest[
     },
     ConstantArray[ { "Wolfram", "ChatCode" }, 13 ],
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-WL-Language-Tags@@Tests/FormattingCodeBlocks.wlt:181,1-200,2"
+    TestID   -> "CodeBlocks-WL-Language-Tags"
 ]
 
 (* The same tags are recognized while streaming: *)
@@ -204,7 +204,7 @@ VerificationTest[
     Last @ cbSummary[ "```" <> # <> "\nx = 1\n```", "Streaming" ] & /@ { "wl", "wolfram", "Mathematica", "Wolfram Language", "wl   " },
     ConstantArray[ "ChatCodeActive", 5 ],
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-WL-Language-Tags-Streaming@@Tests/FormattingCodeBlocks.wlt:203,1-208,2"
+    TestID   -> "CodeBlocks-WL-Language-Tags-Streaming"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -216,7 +216,7 @@ VerificationTest[
     FormatMarkdown[ "```\nbar baz\n```" ],
     { cbBlock[ cbPreformatted[ "bar baz", "" ], "" ] },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-No-Language@@Tests/FormattingCodeBlocks.wlt:215,1-220,2"
+    TestID   -> "CodeBlocks-No-Language"
 ]
 
 (* An unknown language keeps its tag, as the template's language and in the tagging rules that serialization reads: *)
@@ -224,7 +224,7 @@ VerificationTest[
     FormatMarkdown[ "```foo\nbar baz\n```" ],
     { cbBlock[ cbPreformatted[ "bar baz", "foo" ], "foo" ] },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Unknown-Language@@Tests/FormattingCodeBlocks.wlt:223,1-228,2"
+    TestID   -> "CodeBlocks-Unknown-Language"
 ]
 
 (* While streaming, every non-Wolfram Language block (including external languages) is a plain "ChatPreformatted"
@@ -241,7 +241,7 @@ VerificationTest[
         { cbBlock[ Cell[ "print(1)", "ChatPreformatted", ___ ], _ ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Other-Languages-Streaming@@Tests/FormattingCodeBlocks.wlt:232,1-245,2"
+    TestID   -> "CodeBlocks-Other-Languages-Streaming"
 ]
 
 (* Spaces before or after the language tag are ignored: *)
@@ -249,7 +249,7 @@ VerificationTest[
     FormatMarkdown /@ { "```python   \nprint(1)\n```", "``` python\nprint(1)\n```" },
     ConstantArray[ { cbBlock[ cbExternal[ "print(1)", "Python" ], "Python" ] }, 2 ],
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Info-String-Spaces@@Tests/FormattingCodeBlocks.wlt:248,1-253,2"
+    TestID   -> "CodeBlocks-Info-String-Spaces"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -267,7 +267,7 @@ VerificationTest[
         { "Before\n", cbBlock[ cbExternal[ "x", "Python" ], "Python" ], "\nAfter" }
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Surrounding-Text@@Tests/FormattingCodeBlocks.wlt:260,1-271,2"
+    TestID   -> "CodeBlocks-Surrounding-Text"
 ]
 
 (* Streaming gives the same separators: *)
@@ -275,7 +275,7 @@ VerificationTest[
     NormalizeTextData @ FormatMarkdown[ "Before\n\n```python\nx\n```\n\nAfter", "Streaming" ],
     { "Before\n", cbBlock[ Cell[ "x", "ChatPreformatted", ___ ], _ ], "\nAfter" },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Surrounding-Text-Streaming@@Tests/FormattingCodeBlocks.wlt:274,1-279,2"
+    TestID   -> "CodeBlocks-Surrounding-Text-Streaming"
 ]
 
 (* Additional blank lines around a block are kept, minus one on each side: *)
@@ -283,7 +283,7 @@ VerificationTest[
     NormalizeTextData @ FormatMarkdown[ "Before\n\n\n\n```python\nx\n```\n\n\n\nAfter" ],
     { "Before\n\n\n", cbBlock[ cbExternal[ "x", "Python" ], "Python" ], "\n\n\nAfter" },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Extra-Blank-Lines@@Tests/FormattingCodeBlocks.wlt:282,1-287,2"
+    TestID   -> "CodeBlocks-Extra-Blank-Lines"
 ]
 
 (* Fences don't have to start or end a line: *)
@@ -297,7 +297,7 @@ VerificationTest[
         { cbBlock[ cbExternal[ "x = 1", "Python" ], "Python" ], "Next text" }
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Mid-Line-Fences@@Tests/FormattingCodeBlocks.wlt:290,1-301,2"
+    TestID   -> "CodeBlocks-Mid-Line-Fences"
 ]
 
 (* Consecutive blocks: *)
@@ -305,7 +305,7 @@ VerificationTest[
     FormatMarkdown[ "```python\nx = 1\n```\n```wl\ny\n```" ],
     { cbBlock[ cbExternal[ "x = 1", "Python" ], "Python" ], "\n", cbBlock[ cbWL[ "y" ], "Wolfram" ] },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Consecutive-Blocks@@Tests/FormattingCodeBlocks.wlt:304,1-309,2"
+    TestID   -> "CodeBlocks-Consecutive-Blocks"
 ]
 
 (* Triple backticks without a line break after the opening fence are inline code, not a code block: *)
@@ -321,7 +321,7 @@ VerificationTest[
         2
     ],
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Fence-Without-Line-Break@@Tests/FormattingCodeBlocks.wlt:312,1-325,2"
+    TestID   -> "CodeBlocks-Fence-Without-Line-Break"
 ]
 
 (* A fence of six backticks works like three: the extra backticks are removed from the language tag, and the rest of
@@ -338,7 +338,7 @@ VerificationTest[
         "```Python\nx\n```"
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Six-Backtick-Fence@@Tests/FormattingCodeBlocks.wlt:329,1-342,2"
+    TestID   -> "CodeBlocks-Six-Backtick-Fence"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -354,7 +354,7 @@ VerificationTest[
         { cbBlock[ cbExternal[ "print(1)", "Python" ], "Python" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Unterminated-Finished@@Tests/FormattingCodeBlocks.wlt:350,1-358,2"
+    TestID   -> "CodeBlocks-Unterminated-Finished"
 ]
 
 (* While streaming, the partial block is shown as it arrives: *)
@@ -365,7 +365,7 @@ VerificationTest[
         { "Here:\n", cbBlock[ Cell[ "print(1)", "ChatPreformatted", ___ ], _ ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Unterminated-Streaming@@Tests/FormattingCodeBlocks.wlt:361,1-369,2"
+    TestID   -> "CodeBlocks-Unterminated-Streaming"
 ]
 
 (* An opening fence on its own is not shown: *)
@@ -373,7 +373,7 @@ VerificationTest[
     { FormatMarkdown[ "```" ], FormatMarkdown[ "Here:\n\n```", "Streaming" ] },
     { { }, { "Here:" } },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Opening-Fence-Only@@Tests/FormattingCodeBlocks.wlt:372,1-377,2"
+    TestID   -> "CodeBlocks-Opening-Fence-Only"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -385,7 +385,7 @@ VerificationTest[
     { cbCode[ "```python\nx = `a` + ``b``\n```" ], cbCode[ "```python\nx = `a` + ``b``\n```", "Streaming" ] },
     { "x = `a` + ``b``", "x = `a` + ``b``" },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Nested-Backticks@@Tests/FormattingCodeBlocks.wlt:384,1-389,2"
+    TestID   -> "CodeBlocks-Nested-Backticks"
 ]
 
 (* Markdown inside a block is not formatted: *)
@@ -393,7 +393,7 @@ VerificationTest[
     FormatMarkdown[ "```markdown\n# Heading\n* item\n**bold**\n```" ],
     { cbBlock[ cbPreformatted[ "# Heading\n* item\n**bold**", "markdown" ], "markdown" ] },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Markdown-Not-Formatted@@Tests/FormattingCodeBlocks.wlt:392,1-397,2"
+    TestID   -> "CodeBlocks-Markdown-Not-Formatted"
 ]
 
 (* The exception is an untagged block that contains nothing but a markdown table, which is shown as a table (models
@@ -402,7 +402,7 @@ VerificationTest[
     FormatMarkdown[ "```\n| a | b |\n|---|---|\n| 1 | 2 |\n```" ],
     { Cell[ t_ /; ! FreeQ[ t, "\"a\"" ] && ! FreeQ[ t, "\"2\"" ], "TextTableForm", ___ ] },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Table-Only-Block@@Tests/FormattingCodeBlocks.wlt:401,1-406,2"
+    TestID   -> "CodeBlocks-Table-Only-Block"
 ]
 
 (* Code that contains "TOOLCALL:" is not matched by the code block rule (tool call results can contain code blocks, so
@@ -413,7 +413,7 @@ VerificationTest[
     ],
     { { }, { _Cell } },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-ToolCall-Not-A-Code-Block@@Tests/FormattingCodeBlocks.wlt:410,1-417,2"
+    TestID   -> "CodeBlocks-ToolCall-Not-A-Code-Block"
 ]
 
 (* Unicode is kept as is: *)
@@ -427,7 +427,7 @@ VerificationTest[
         RowBox @ { "\"\[Alpha]\[Beta]\"", " ", "<>", " ", "\"x\"" }
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Unicode@@Tests/FormattingCodeBlocks.wlt:420,1-431,2"
+    TestID   -> "CodeBlocks-Unicode"
 ]
 
 (* "\r\n" line endings become "\n", including the ones inside the code (the front end would draw "\r\n" as a single
@@ -436,7 +436,7 @@ VerificationTest[
     FormatMarkdown[ "```python\r\nprint(1)\r\nprint(2)\r\n```" ],
     { cbBlock[ cbExternal[ "print(1)\nprint(2)", "Python" ], "Python" ] },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-CRLF-Line-Endings@@Tests/FormattingCodeBlocks.wlt:435,1-440,2"
+    TestID   -> "CodeBlocks-CRLF-Line-Endings"
 ]
 
 (* An empty block in an external language is an empty code cell: *)
@@ -444,7 +444,7 @@ VerificationTest[
     FormatMarkdown[ "```python\n\n```" ],
     { cbBlock[ cbExternal[ "", "Python" ], "Python" ] },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Empty-External-Block@@Tests/FormattingCodeBlocks.wlt:443,1-448,2"
+    TestID   -> "CodeBlocks-Empty-External-Block"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -462,7 +462,7 @@ VerificationTest[
         { Cell[ _, "InlineSection", ___ ], "\n", cbBlock[ cbExternal[ "x = 1", "Python" ], "Python" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Next-To-Headings@@Tests/FormattingCodeBlocks.wlt:455,1-466,2"
+    TestID   -> "CodeBlocks-Next-To-Headings"
 ]
 
 (* Blocks between bullet items, with and without indentation. Indented code is unindented (see stripCodePadding below),
@@ -489,7 +489,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Between-Bullets@@Tests/FormattingCodeBlocks.wlt:470,1-493,2"
+    TestID   -> "CodeBlocks-Between-Bullets"
 ]
 
 (* A block indented under a numbered list item (numbered lists are plain text): *)
@@ -497,7 +497,7 @@ VerificationTest[
     NormalizeTextData @ FormatMarkdown[ "1. Step\n   ```python\n   x = 1\n   y = 2\n   ```\n2. Next" ],
     { "1. Step\n   ", cbBlock[ cbExternal[ "x = 1\ny = 2", "Python" ], "Python" ], "\n2. Next" },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Numbered-List-Item@@Tests/FormattingCodeBlocks.wlt:496,1-501,2"
+    TestID   -> "CodeBlocks-Numbered-List-Item"
 ]
 
 (* Code blocks in text with escaped markdown characters keep their raw text, so they look the same as without
@@ -512,7 +512,7 @@ VerificationTest[
         { "Some *escaped* text\n", cbBlock[ cbWL @ RowBox @ { "x", "=", "1" }, "Wolfram" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Escaped-Markdown-Path@@Tests/FormattingCodeBlocks.wlt:505,1-516,2"
+    TestID   -> "CodeBlocks-Escaped-Markdown-Path"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -542,7 +542,7 @@ VerificationTest[
         { "Octave", "Octave" }, { "Ruby", "Ruby" }
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-External-Language-Aliases@@Tests/FormattingCodeBlocks.wlt:524,1-546,2"
+    TestID   -> "CodeBlocks-External-Language-Aliases"
 ]
 
 (* Aliases only match the whole tag, so similar names are other languages: *)
@@ -556,7 +556,7 @@ VerificationTest[
         { "txt"    , "ChatPreformatted" }
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Aliases-Match-Whole-Tag@@Tests/FormattingCodeBlocks.wlt:549,1-560,2"
+    TestID   -> "CodeBlocks-Aliases-Match-Whole-Tag"
 ]
 
 (* Blank lines at the start and whitespace at the end of the code are removed (the shared indentation is removed too,
@@ -565,7 +565,7 @@ VerificationTest[
     { cbCode[ "```python\n\n\n  x = 1\n  y = 2\n\n\n```" ], cbCode[ "```python\n\n\n  x = 1\n  y = 2\n\n\n```", "Streaming" ] },
     { "x = 1\ny = 2", "x = 1\ny = 2" },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Code-Whitespace-Trimmed@@Tests/FormattingCodeBlocks.wlt:564,1-569,2"
+    TestID   -> "CodeBlocks-Code-Whitespace-Trimmed"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -589,7 +589,7 @@ VerificationTest[
     ],
     { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Image-Only-Block@@Tests/FormattingCodeBlocks.wlt:581,1-593,2"
+    TestID   -> "CodeBlocks-Image-Only-Block"
 ]
 
 (* An image with other text in the block stays code: *)
@@ -597,7 +597,7 @@ VerificationTest[
     cbCode[ "```\nSee " <> $cbImageMarkdown <> "\n```" ],
     "See " <> $cbImageMarkdown,
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Image-With-Text-Is-Code@@Tests/FormattingCodeBlocks.wlt:596,1-601,2"
+    TestID   -> "CodeBlocks-Image-With-Text-Is-Code"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -610,7 +610,7 @@ VerificationTest[
     FormatMarkdown[ "```" <> # <> "\nhello\n```" ] & /@ { "text", "TEXT", "plaintext", "PlainText" },
     ConstantArray[ { cbBlock[ cbPreformatted[ "hello", "Plaintext" ], "Plaintext" ] }, 4 ],
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Plaintext-Languages@@Tests/FormattingCodeBlocks.wlt:609,1-614,2"
+    TestID   -> "CodeBlocks-Plaintext-Languages"
 ]
 
 (* Plain text blocks unescape double backslashes, since models escape them in text but not in code. Other markdown
@@ -624,7 +624,7 @@ VerificationTest[
     },
     { "a \\* b \\ c", "a \\* b \\ c", "a \\* b \\\\ c", "a \\* b \\\\ c" },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Plaintext-Unescapes-Backslashes@@Tests/FormattingCodeBlocks.wlt:618,1-628,2"
+    TestID   -> "CodeBlocks-Plaintext-Unescapes-Backslashes"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -651,14 +651,14 @@ VerificationTest[
         "    a\n  b"
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Strip-Padding@@Tests/FormattingCodeBlocks.wlt:636,1-655,2"
+    TestID   -> "CodeBlocks-Strip-Padding"
 ]
 
 VerificationTest[
     cbBoxes[ "```wl\n  x = 1;\n  y\n```" ],
     RowBox @ { RowBox @ { RowBox @ { "x", "=", "1" }, ";" }, "\[IndentingNewLine]", "y" },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Strip-Padding-WL@@Tests/FormattingCodeBlocks.wlt:657,1-662,2"
+    TestID   -> "CodeBlocks-Strip-Padding-WL"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -682,7 +682,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Static-Cache-Same-Output@@Tests/FormattingCodeBlocks.wlt:671,1-686,2"
+    TestID   -> "CodeBlocks-Static-Cache-Same-Output"
 ]
 
 (* Formatting the same blocks again uses the cached values as they are (here replaced by a marker string): *)
@@ -698,7 +698,7 @@ VerificationTest[
     ],
     { "CACHED\nCACHED" },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Static-Cache-Hit@@Tests/FormattingCodeBlocks.wlt:689,1-702,2"
+    TestID   -> "CodeBlocks-Static-Cache-Hit"
 ]
 
 (* The cache is not used for streaming or when the flag is not set: *)
@@ -719,7 +719,7 @@ VerificationTest[
     },
     { <| |>, <| |> },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Static-Cache-Not-Used@@Tests/FormattingCodeBlocks.wlt:705,1-723,2"
+    TestID   -> "CodeBlocks-Static-Cache-Not-Used"
 ]
 
 (* A block cached outside the sidebar is not reused in the sidebar, since the template differs: *)
@@ -734,7 +734,7 @@ VerificationTest[
     ],
     { cbSidebarBlock[ cbExternal[ "x = 1", "Python" ], "Python" ] },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Static-Cache-Sidebar@@Tests/FormattingCodeBlocks.wlt:726,1-738,2"
+    TestID   -> "CodeBlocks-Static-Cache-Sidebar"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -750,7 +750,7 @@ VerificationTest[
         { cbLabel[ "Out[1]=" ], Cell[ BoxData[ "2" ], "Output" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Transcript-In-Out@@Tests/FormattingCodeBlocks.wlt:746,1-754,2"
+    TestID   -> "CodeBlocks-Transcript-In-Out"
 ]
 
 (* Outputs are parsed as Wolfram Language too: *)
@@ -761,7 +761,7 @@ VerificationTest[
         { cbLabel[ "Out[1]=" ], Cell[ BoxData @ RowBox @ { "{", RowBox @ { "3", ",", "1" }, "}" }, "Output" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Transcript-Output-Boxes@@Tests/FormattingCodeBlocks.wlt:757,1-765,2"
+    TestID   -> "CodeBlocks-Transcript-Output-Boxes"
 ]
 
 (* Several inputs, labels without a space after them, indented labels, and "Out[n]:=": *)
@@ -792,7 +792,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Transcript-Label-Variants@@Tests/FormattingCodeBlocks.wlt:768,1-796,2"
+    TestID   -> "CodeBlocks-Transcript-Label-Variants"
 ]
 
 (* "In[n]=" (without the colon) is an input label too: *)
@@ -803,7 +803,7 @@ VerificationTest[
         { cbLabel[ "Out[1]=" ], Cell[ BoxData[ "x" ], "Output" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Transcript-In-Label-Without-Colon@@Tests/FormattingCodeBlocks.wlt:799,1-807,2"
+    TestID   -> "CodeBlocks-Transcript-In-Label-Without-Colon"
 ]
 
 (* A single In label still gives a one-row grid. (parseCellGroupBlock has a branch meant to show this as a plain code
@@ -812,14 +812,14 @@ VerificationTest[
     FormatMarkdown[ "```wl\nIn[1]:= 1+1\n```" ],
     cbTranscript @ { { cbLabel[ "In[1]:=" ], cbBlock[ cbWL @ RowBox @ { "1", "+", "1" }, "Wolfram" ] } },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Transcript-Single-In-Label@@Tests/FormattingCodeBlocks.wlt:811,1-816,2"
+    TestID   -> "CodeBlocks-Transcript-Single-In-Label"
 ]
 
 VerificationTest[
     FormatMarkdown[ "```wl\nOut[1]= 2\n```" ],
     cbTranscript @ { { cbLabel[ "Out[1]=" ], Cell[ BoxData[ "2" ], "Output" ] } },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Transcript-Single-Out-Label@@Tests/FormattingCodeBlocks.wlt:818,1-823,2"
+    TestID   -> "CodeBlocks-Transcript-Single-Out-Label"
 ]
 
 (* Messages (sym::tag: text) are shown as message templates without a label: *)
@@ -838,7 +838,7 @@ VerificationTest[
         { cbLabel[ "Out[1]=" ], Cell[ BoxData[ "ComplexInfinity" ], "Output" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Transcript-Message@@Tests/FormattingCodeBlocks.wlt:826,1-842,2"
+    TestID   -> "CodeBlocks-Transcript-Message"
 ]
 
 (* A message on its own is a transcript too: *)
@@ -848,7 +848,7 @@ VerificationTest[
         { "", TemplateBox[ { "Power", "infy", "Infinite expression 1/0 encountered.", 2, 0, 0, 0, "Local" }, "MessageTemplate", ___ ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Transcript-Message-Only@@Tests/FormattingCodeBlocks.wlt:845,1-852,2"
+    TestID   -> "CodeBlocks-Transcript-Message-Only"
 ]
 
 (* Echo output (">>") gets a guillemet label and the "Echo" style: *)
@@ -860,7 +860,7 @@ VerificationTest[
         { cbLabel[ "Out[1]=" ], Cell[ BoxData[ "5" ], "Output" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Transcript-Echo@@Tests/FormattingCodeBlocks.wlt:855,1-864,2"
+    TestID   -> "CodeBlocks-Transcript-Echo"
 ]
 
 (* EchoTiming output (a watch icon) gets the "EchoTiming" style: *)
@@ -872,7 +872,7 @@ VerificationTest[
         { cbLabel[ "Out[1]=" ], Cell[ BoxData[ "5" ], "Output" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Transcript-EchoTiming@@Tests/FormattingCodeBlocks.wlt:867,1-876,2"
+    TestID   -> "CodeBlocks-Transcript-EchoTiming"
 ]
 
 (* Printed output ("During evaluation of In[n]:=") gets the "Print" style without a label, also without an input. (The
@@ -890,7 +890,7 @@ VerificationTest[
         cbTranscript @ { { "", Cell[ BoxData[ "5" ], "Print" ] } }
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Transcript-Print@@Tests/FormattingCodeBlocks.wlt:880,1-894,2"
+    TestID   -> "CodeBlocks-Transcript-Print"
 ]
 
 (* Text before the first label is a plain text code block row without a label: *)
@@ -902,7 +902,7 @@ VerificationTest[
         { cbLabel[ "Out[1]=" ], Cell[ BoxData[ "x" ], "Output" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Transcript-Leading-Text@@Tests/FormattingCodeBlocks.wlt:897,1-906,2"
+    TestID   -> "CodeBlocks-Transcript-Leading-Text"
 ]
 
 (* Labels are not parsed while streaming or in other languages: *)
@@ -918,7 +918,7 @@ VerificationTest[
         { cbBlock[ cbPreformatted[ "In[1]:= 1+1\nOut[1]= 2", "" ], "" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Transcript-Not-Parsed@@Tests/FormattingCodeBlocks.wlt:909,1-922,2"
+    TestID   -> "CodeBlocks-Transcript-Not-Parsed"
 ]
 
 (* Serializing a transcript keeps its labels, code, messages and outputs in order. (The current serialization is a
@@ -931,7 +931,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Transcript-Serialization-Content@@Tests/FormattingCodeBlocks.wlt:926,1-935,2"
+    TestID   -> "CodeBlocks-Transcript-Serialization-Content"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -959,7 +959,7 @@ VerificationTest[
         { cbSidebarBlock[ Cell[ "x", "ChatPreformatted", ___ ], _ ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Sidebar-Template@@Tests/FormattingCodeBlocks.wlt:944,1-963,2"
+    TestID   -> "CodeBlocks-Sidebar-Template"
 ]
 
 (* The sidebar template serializes the same way: *)
@@ -967,7 +967,7 @@ VerificationTest[
     Block[ { $SidebarChat = True }, { MarkdownRoundTrip[ "```wl\n1+1\n```" ], MarkdownRoundTrip[ "```python\nx\n```" ] } ],
     { "```wl\n1 + 1\n```", "```Python\nx\n```" },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Sidebar-Serialization@@Tests/FormattingCodeBlocks.wlt:966,1-971,2"
+    TestID   -> "CodeBlocks-Sidebar-Serialization"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -990,7 +990,7 @@ VerificationTest[
         RowBox @ { RowBox @ { RowBox @ { "firstSymbol", "=", "1" }, ";" }, "\[IndentingNewLine]", RowBox @ { "firstSymbol", "+", "1" } }
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-AutoCorrect@@Tests/FormattingCodeBlocks.wlt:983,1-994,2"
+    TestID   -> "CodeBlocks-AutoCorrect"
 ]
 
 (* The corrected code is what gets serialized: *)
@@ -998,7 +998,7 @@ VerificationTest[
     MarkdownRoundTrip[ "```wl\nf[{{3}}}\n```" ],
     "```wl\nf[{{3}}]\n```",
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-AutoCorrect-Serialization@@Tests/FormattingCodeBlocks.wlt:997,1-1002,2"
+    TestID   -> "CodeBlocks-AutoCorrect-Serialization"
 ]
 
 (* Code is not corrected while streaming: *)
@@ -1006,7 +1006,7 @@ VerificationTest[
     FormatMarkdown[ "```wl\nf[{{3}}}\n```", "Streaming" ],
     { cbBlock[ Cell[ BoxData[ "f[{{3}}}" ], "ChatCodeActive" ], _ ] },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-AutoCorrect-Not-Streaming@@Tests/FormattingCodeBlocks.wlt:1005,1-1010,2"
+    TestID   -> "CodeBlocks-AutoCorrect-Not-Streaming"
 ]
 
 (* A trailing "/" line (a partial tool command) is removed from finished code: *)
@@ -1014,7 +1014,7 @@ VerificationTest[
     cbBoxes[ "```wl\nx = 1\n/\n```" ],
     RowBox @ { "x", "=", "1" },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Trailing-Slash-Removed@@Tests/FormattingCodeBlocks.wlt:1013,1-1018,2"
+    TestID   -> "CodeBlocks-Trailing-Slash-Removed"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1037,7 +1037,7 @@ VerificationTest[
         TagBox[ FrameBox[ "\"x\"" ], "Placeholder" ]
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-StringToBoxes-WL-Versus-Plain@@Tests/FormattingCodeBlocks.wlt:1026,1-1041,2"
+    TestID   -> "CodeBlocks-StringToBoxes-WL-Versus-Plain"
 ]
 
 (* A string literal stays a single string box: *)
@@ -1050,7 +1050,7 @@ VerificationTest[
     },
     { "\"hello world\"", "\"x\"", "\"1+1\"", "\"hello world\"" },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-StringToBoxes-Quoted-String@@Tests/FormattingCodeBlocks.wlt:1044,1-1054,2"
+    TestID   -> "CodeBlocks-StringToBoxes-Quoted-String"
 ]
 
 (* Invalid code is parsed as far as possible, and empty code is an empty string: *)
@@ -1058,7 +1058,7 @@ VerificationTest[
     { StringToBoxes[ "f[x" ], StringToBoxes[ "" ], StringToBoxes[ "", "WL" ] },
     { RowBox @ { "f", "[", "x" }, "", "" },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-StringToBoxes-Invalid-Code@@Tests/FormattingCodeBlocks.wlt:1057,1-1062,2"
+    TestID   -> "CodeBlocks-StringToBoxes-Invalid-Code"
 ]
 
 VerificationTest[
@@ -1066,7 +1066,7 @@ VerificationTest[
     _Failure,
     { StringToBoxes::InvalidArguments },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-StringToBoxes-Invalid-Argument@@Tests/FormattingCodeBlocks.wlt:1064,1-1070,2"
+    TestID   -> "CodeBlocks-StringToBoxes-Invalid-Argument"
 ]
 
 (* While streaming, both forms give the string unchanged, except that StringToBoxes[s] shows inlined expression URIs as
@@ -1081,7 +1081,7 @@ VerificationTest[
     ],
     { "x = 1 + 2", "x = 1 + 2", "Show[\[LeftSkeleton]\[Ellipsis]\[RightSkeleton]]" },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-StringToBoxes-Streaming@@Tests/FormattingCodeBlocks.wlt:1074,1-1085,2"
+    TestID   -> "CodeBlocks-StringToBoxes-Streaming"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1119,7 +1119,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Box-Spacing-Infix-Operators@@Tests/FormattingCodeBlocks.wlt:1092,1-1123,2"
+    TestID   -> "CodeBlocks-Box-Spacing-Infix-Operators"
 ]
 
 (* Spaces after commas are removed too, but spaces around other operators are kept: *)
@@ -1130,7 +1130,7 @@ VerificationTest[
         RowBox @ { "\"a\"", " ", "<>", " ", "\"b\"" }
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Box-Spacing-Commas@@Tests/FormattingCodeBlocks.wlt:1126,1-1134,2"
+    TestID   -> "CodeBlocks-Box-Spacing-Commas"
 ]
 
 (* Line breaks become indenting newlines: *)
@@ -1147,7 +1147,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Box-Spacing-Newlines@@Tests/FormattingCodeBlocks.wlt:1137,1-1151,2"
+    TestID   -> "CodeBlocks-Box-Spacing-Newlines"
 ]
 
 (* Comments are left untouched: *)
@@ -1158,7 +1158,7 @@ VerificationTest[
         RowBox @ { "x", "=", "1", " ", RowBox @ { "(*", " ", RowBox @ { "a", " ", "+", " ", "b" }, " ", "*)" } }
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Box-Spacing-Comments@@Tests/FormattingCodeBlocks.wlt:1154,1-1162,2"
+    TestID   -> "CodeBlocks-Box-Spacing-Comments"
 ]
 
 (* In the cloud, operators are replaced by the characters the desktop front end would display for them: *)
@@ -1177,7 +1177,7 @@ VerificationTest[
         RowBox @ { "g", " ", "\[Function]", " ", "h" }
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Box-Spacing-Cloud-Operators@@Tests/FormattingCodeBlocks.wlt:1165,1-1181,2"
+    TestID   -> "CodeBlocks-Box-Spacing-Cloud-Operators"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1202,7 +1202,7 @@ VerificationTest[
         "```wl\nTotal[{1, 2, 3}]\n```"
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Inlined-Expressions@@Tests/FormattingCodeBlocks.wlt:1189,1-1206,2"
+    TestID   -> "CodeBlocks-Inlined-Expressions"
 ]
 
 (* Import and Get of an expression URI or key are shown as the expression too: *)
@@ -1221,7 +1221,7 @@ VerificationTest[
         "```wl\nTotal[{1, 2, 3}]\n```"
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Inlined-Expressions-Import-Get@@Tests/FormattingCodeBlocks.wlt:1209,1-1225,2"
+    TestID   -> "CodeBlocks-Inlined-Expressions-Import-Get"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1241,7 +1241,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-FreeformPrompt-Streaming@@Tests/FormattingCodeBlocks.wlt:1237,1-1245,2"
+    TestID   -> "CodeBlocks-FreeformPrompt-Streaming"
 ]
 
 (* A query that has not finished streaming in yet is shown the same way: *)
@@ -1249,7 +1249,7 @@ VerificationTest[
     cbOffline @ cbStreamingShowsQ[ "```wl\n\[FreeformPrompt][\"population of fr", { "OverlayBox", "population of fr" } ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-FreeformPrompt-Streaming-Partial@@Tests/FormattingCodeBlocks.wlt:1248,1-1253,2"
+    TestID   -> "CodeBlocks-FreeformPrompt-Streaming-Partial"
 ]
 
 (* An unterminated query in finished code also gets the input box without asking Wolfram|Alpha: *)
@@ -1262,7 +1262,7 @@ VerificationTest[
     ],
     { True },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-FreeformPrompt-Unterminated-Finished@@Tests/FormattingCodeBlocks.wlt:1256,1-1266,2"
+    TestID   -> "CodeBlocks-FreeformPrompt-Unterminated-Finished"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1278,7 +1278,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-ResourceFunction-Streaming@@Tests/FormattingCodeBlocks.wlt:1274,1-1282,2"
+    TestID   -> "CodeBlocks-ResourceFunction-Streaming"
 ]
 
 (* A partial name is shown the same way: *)
@@ -1286,7 +1286,7 @@ VerificationTest[
     cbOffline @ cbStreamingShowsQ[ "```wl\nResourceFunction[\"BirdS", { "FunctionResourceBox", "BirdS" } ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-ResourceFunction-Streaming-Partial@@Tests/FormattingCodeBlocks.wlt:1285,1-1290,2"
+    TestID   -> "CodeBlocks-ResourceFunction-Streaming-Partial"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1309,7 +1309,7 @@ VerificationTest[
         "```wl\nPacletSymbol[\"Wolfram/Chatbook\", \"FormatChatOutput\"]\n```"
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-PacletSymbol-Repository@@Tests/FormattingCodeBlocks.wlt:1298,1-1313,2"
+    TestID   -> "CodeBlocks-PacletSymbol-Repository"
 ]
 
 (* Other paclet names, and arguments that are not strings, keep the ordinary typesetting: *)
@@ -1325,7 +1325,7 @@ VerificationTest[
         "```wl\nPacletSymbol[\"Chatbook\", \"Foo\"]\n```"
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-PacletSymbol-Plain@@Tests/FormattingCodeBlocks.wlt:1316,1-1329,2"
+    TestID   -> "CodeBlocks-PacletSymbol-Plain"
 ]
 
 (* While streaming, the repository formatting is embedded in the code string: *)
@@ -1336,7 +1336,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-PacletSymbol-Streaming@@Tests/FormattingCodeBlocks.wlt:1332,1-1340,2"
+    TestID   -> "CodeBlocks-PacletSymbol-Streaming"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1357,7 +1357,7 @@ VerificationTest[
         "```wl\nDateObject[{2025, 2, 14}, \"Day\"]\n```"
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-DateObject@@Tests/FormattingCodeBlocks.wlt:1348,1-1361,2"
+    TestID   -> "CodeBlocks-DateObject"
 ]
 
 (* Other arguments are left as code, as is a literal date that doesn't evaluate to a date (here an unknown
@@ -1376,7 +1376,7 @@ VerificationTest[
         { cbBlock[ Cell[ BoxData[ "DateObject[{2024, 1, 15}, \"Day\"]" ], "ChatCodeActive" ], _ ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-DateObject-Unchanged@@Tests/FormattingCodeBlocks.wlt:1365,1-1380,2"
+    TestID   -> "CodeBlocks-DateObject-Unchanged"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1414,7 +1414,7 @@ VerificationTest[
         "```wl\nEntity[\"ChatbookCodeBlocksTestThing\", \"a\"]\n```"
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Entity-Local-Store@@Tests/FormattingCodeBlocks.wlt:1389,1-1418,2"
+    TestID   -> "CodeBlocks-Entity-Local-Store"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1427,7 +1427,7 @@ VerificationTest[
     MarkdownRoundTrip /@ { "```wl\n1+1\n```", "```mathematica\nf[x_] := x^2\n```", "```Wolfram Language\n\"a string\"\n```" },
     { "```wl\n1 + 1\n```", "```wl\nf[x_] := x ^ 2\n```", "```wl\n\"a string\"\n```" },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Serialization-WL@@Tests/FormattingCodeBlocks.wlt:1426,1-1431,2"
+    TestID   -> "CodeBlocks-Serialization-WL"
 ]
 
 (* Multi-line code keeps its lines. (Continuation lines currently get a tab from the indenting newlines, which is not
@@ -1439,7 +1439,7 @@ VerificationTest[
     },
     { "```wl\nx = {1, 2, 3};\nTotal[x]\n```", "```wl\n(* comment *)\nx = 1\n```" },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Serialization-WL-Multiline@@Tests/FormattingCodeBlocks.wlt:1435,1-1443,2"
+    TestID   -> "CodeBlocks-Serialization-WL-Multiline"
 ]
 
 (* External language blocks serialize with the normalized language name: *)
@@ -1459,7 +1459,7 @@ VerificationTest[
         "```SQL\nSELECT 1\n```"
     },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Serialization-External@@Tests/FormattingCodeBlocks.wlt:1446,1-1463,2"
+    TestID   -> "CodeBlocks-Serialization-External"
 ]
 
 (* Other blocks serialize with their language tag (none if there was none). Plain text blocks are tagged "Plaintext"
@@ -1468,7 +1468,7 @@ VerificationTest[
     MarkdownRoundTrip /@ { "```foo\nbar baz\n```", "```\nbar baz\n```", "```zsh\necho hi\n```", "```text\nhello \\\\ world\n```" },
     { "```foo\nbar baz\n```", "```\nbar baz\n```", "```zsh\necho hi\n```", "```Plaintext\nhello \\ world\n```" },
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Serialization-Other@@Tests/FormattingCodeBlocks.wlt:1467,1-1472,2"
+    TestID   -> "CodeBlocks-Serialization-Other"
 ]
 
 (* Serialized code has the trimming and unindenting applied: *)
@@ -1476,7 +1476,7 @@ VerificationTest[
     MarkdownRoundTrip[ "```python\n\n  a\n    b\n\n```" ],
     "```Python\na\n  b\n```",
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Serialization-Stripped-Code@@Tests/FormattingCodeBlocks.wlt:1475,1-1480,2"
+    TestID   -> "CodeBlocks-Serialization-Stripped-Code"
 ]
 
 (* Text around a block keeps its blank lines: *)
@@ -1484,7 +1484,7 @@ VerificationTest[
     cbNormalizeString @ MarkdownRoundTrip[ "Before\n\n```wl\n1+1\n```\n\nAfter" ],
     "Before\n\n```wl\n1 + 1\n```\n\nAfter",
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Serialization-Surrounding-Text@@Tests/FormattingCodeBlocks.wlt:1483,1-1488,2"
+    TestID   -> "CodeBlocks-Serialization-Surrounding-Text"
 ]
 
 (* An image-only block serializes as the image: *)
@@ -1492,7 +1492,7 @@ VerificationTest[
     MarkdownRoundTrip[ "```\n" <> $cbImageMarkdown <> "\n```" ],
     "![alt](" <> $cbImageFile <> ")",
     SameTest -> MatchQ,
-    TestID   -> "CodeBlocks-Serialization-Image-Only-Block@@Tests/FormattingCodeBlocks.wlt:1491,1-1496,2"
+    TestID   -> "CodeBlocks-Serialization-Image-Only-Block"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/SaveChat.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/SaveChat.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -177,7 +177,7 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "Definitions@@Tests/SaveChat.wlt:24,1-181,2"
+    TestID   -> "Definitions"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -195,7 +195,7 @@ VerificationTest[
     ],
     { "Untitled Chat", 1, "Untitled Chat" },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-DoesNotWaitForTitle@@Tests/SaveChat.wlt:190,1-199,2"
+    TestID   -> "AutoSave-DoesNotWaitForTitle"
 ]
 
 VerificationTest[
@@ -213,7 +213,7 @@ VerificationTest[
     ],
     { expectedTitleState[ "Title A", 2 ], "Title A", 1 },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-TitleCallback@@Tests/SaveChat.wlt:201,1-217,2"
+    TestID   -> "AutoSave-TitleCallback"
 ]
 
 VerificationTest[
@@ -227,7 +227,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-TitleCallbackUpdatesHistory@@Tests/SaveChat.wlt:219,1-231,2"
+    TestID   -> "AutoSave-TitleCallbackUpdatesHistory"
 ]
 
 VerificationTest[
@@ -242,7 +242,7 @@ VerificationTest[
     ],
     { "Title A", 1, expectedTitleState[ "Title A", 2 ] },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-CachedTitle@@Tests/SaveChat.wlt:233,1-246,2"
+    TestID   -> "AutoSave-CachedTitle"
 ]
 
 VerificationTest[
@@ -258,7 +258,7 @@ VerificationTest[
     ],
     { "Title A", 2, expectedTitleState[ "Title B", 4 ] },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-PreviousTitleUntilReady@@Tests/SaveChat.wlt:248,1-262,2"
+    TestID   -> "AutoSave-PreviousTitleUntilReady"
 ]
 
 VerificationTest[
@@ -274,7 +274,7 @@ VerificationTest[
     ],
     { expectedTitleState[ "Title B", 4 ], 2 },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-LateCallback@@Tests/SaveChat.wlt:264,1-278,2"
+    TestID   -> "AutoSave-LateCallback"
 ]
 
 VerificationTest[
@@ -291,7 +291,7 @@ VerificationTest[
     ],
     { "Untitled Chat", expectedTitleState[ "Title B", 4 ] },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-SupersededCallback@@Tests/SaveChat.wlt:280,1-295,2"
+    TestID   -> "AutoSave-SupersededCallback"
 ]
 
 VerificationTest[
@@ -307,7 +307,7 @@ VerificationTest[
     ],
     { 1, expectedTitleState[ "Title C", 12 ] },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-CallbackKeepsNewerMessages@@Tests/SaveChat.wlt:297,1-311,2"
+    TestID   -> "AutoSave-CallbackKeepsNewerMessages"
 ]
 
 VerificationTest[
@@ -325,7 +325,7 @@ VerificationTest[
     ],
     { "Untitled Chat", expectedTitleState[ "Immediate Title", 2 ], <| |> },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-CallbackDuringSave@@Tests/SaveChat.wlt:313,1-329,2"
+    TestID   -> "AutoSave-CallbackDuringSave"
 ]
 
 VerificationTest[
@@ -343,7 +343,7 @@ VerificationTest[
     ],
     { <| _Integer -> "Title D" |>, "Untitled Chat", expectedTitleState[ "Title D", 2 ] },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-DeferredTitles@@Tests/SaveChat.wlt:331,1-347,2"
+    TestID   -> "AutoSave-DeferredTitles"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -368,22 +368,22 @@ VerificationTest[
     ],
     { 2, { 0.7, 1.0 }, { False, False }, expectedTitleState[ "Title E", 2 ] },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-RetryAfterFailure@@Tests/SaveChat.wlt:352,1-372,2"
+    TestID   -> "AutoSave-RetryAfterFailure"
 ]
 
 VerificationTest[
     withMockTitles @ Module[ { uuid, title },
         uuid = CreateUUID[ ];
         (* Too long for the first attempt (MaxLength 50), but not for the retry (MaxLength 60): *)
-        title = "Comparing Interpolation Methods for Irregularly Scattered Measurement Data";
+        title = "Comparing Interpolation Methods for Scattered Measurements";
         SaveChat[ titleTestMessages[ 1 ], titleTestSettings @ uuid, "AutoSaveOnly" -> True ];
         respondTitle[ 1, title ];
         respondTitle[ 2, title ];
         { Length @ $mockTitleCallbacks, savedTitleState @ uuid }
     ],
-    { 2, expectedTitleState[ "Comparing Interpolation Methods for Irregularly Scattered Measurement Data", 2 ] },
+    { 2, expectedTitleState[ "Comparing Interpolation Methods for Scattered Measurements", 2 ] },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-RetryMaxLength@@Tests/SaveChat.wlt:374,1-387,2"
+    TestID   -> "AutoSave-RetryMaxLength"
 ]
 
 VerificationTest[
@@ -411,7 +411,7 @@ VerificationTest[
     ],
     { "NotThrown", 3, expectedTitleState[ "Untitled Chat", 4 ], 4 },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-FailureFallback@@Tests/SaveChat.wlt:389,1-415,2"
+    TestID   -> "AutoSave-FailureFallback"
 ]
 
 VerificationTest[
@@ -443,7 +443,7 @@ VerificationTest[
     ],
     { "NotThrown", Except[ "Removed" ], 2, expectedTitleState[ "Title H", 2 ], <| |> },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-APIErrorResponse@@Tests/SaveChat.wlt:417,1-447,2"
+    TestID   -> "AutoSave-APIErrorResponse"
 ]
 
 VerificationTest[
@@ -457,7 +457,7 @@ VerificationTest[
     ],
     { 2, expectedTitleState[ "Title H", 2 ], <| |> },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-UnexpectedResponse@@Tests/SaveChat.wlt:449,1-461,2"
+    TestID   -> "AutoSave-UnexpectedResponse"
 ]
 
 VerificationTest[
@@ -479,7 +479,7 @@ VerificationTest[
     ],
     { "NotThrown", Except[ "Removed" ], 1, expectedTitleState[ "Untitled Chat", 2 ] },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-RetrySubmitFailure@@Tests/SaveChat.wlt:463,1-483,2"
+    TestID   -> "AutoSave-RetrySubmitFailure"
 ]
 
 VerificationTest[
@@ -494,7 +494,7 @@ VerificationTest[
     ],
     { "NotThrown", expectedTitleState[ "Untitled Chat", 2 ] },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-CallbackInternalFailure@@Tests/SaveChat.wlt:485,1-498,2"
+    TestID   -> "AutoSave-CallbackInternalFailure"
 ]
 
 VerificationTest[
@@ -507,7 +507,7 @@ VerificationTest[
     ],
     Missing[ "NotSaved" ],
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-DeletedChat@@Tests/SaveChat.wlt:500,1-511,2"
+    TestID   -> "AutoSave-DeletedChat"
 ]
 
 VerificationTest[
@@ -522,7 +522,7 @@ VerificationTest[
     ],
     expectedTitleState[ "Custom Title", 2 ],
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-TitleChangedInMeantime@@Tests/SaveChat.wlt:513,1-526,2"
+    TestID   -> "AutoSave-TitleChangedInMeantime"
 ]
 
 VerificationTest[
@@ -539,7 +539,7 @@ VerificationTest[
     ],
     { "Custom Title", "Untitled Chat" },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-TitleChangedDuringSave@@Tests/SaveChat.wlt:528,1-543,2"
+    TestID   -> "AutoSave-TitleChangedDuringSave"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -555,7 +555,7 @@ VerificationTest[
     ],
     { "Timed Title", "Timed Title" },
     SameTest -> MatchQ,
-    TestID   -> "ExplicitSave-WaitsForTitle@@Tests/SaveChat.wlt:548,1-559,2"
+    TestID   -> "ExplicitSave-WaitsForTitle"
 ]
 
 VerificationTest[
@@ -575,7 +575,7 @@ VerificationTest[
     ],
     { "Timed Title", "Timed Title" },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-NoFrontEnd@@Tests/SaveChat.wlt:561,1-579,2"
+    TestID   -> "AutoSave-NoFrontEnd"
 ]
 
 VerificationTest[
@@ -593,7 +593,7 @@ VerificationTest[
     ],
     { True, False, False, False },
     SameTest -> MatchQ,
-    TestID   -> "AutoSave-BackgroundTitleQ@@Tests/SaveChat.wlt:581,1-597,2"
+    TestID   -> "AutoSave-BackgroundTitleQ"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -648,7 +648,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "PopOutFromHistory-DropsWindowSettings@@Tests/SaveChat.wlt:602,1-652,2"
+    TestID   -> "PopOutFromHistory-DropsWindowSettings"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -679,7 +679,7 @@ VerificationTest[
     ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "OpenSidebarAsWindow-Definitions@@Tests/SaveChat.wlt:657,1-683,2"
+    TestID   -> "OpenSidebarAsWindow-Definitions"
 ]
 
 VerificationTest[
@@ -702,7 +702,7 @@ VerificationTest[
     ],
     { True, False, True, True },
     SameTest -> MatchQ,
-    TestID   -> "OpenSidebarAsWindow-KeepsConversationUUID@@Tests/SaveChat.wlt:685,1-706,2"
+    TestID   -> "OpenSidebarAsWindow-KeepsConversationUUID"
 ]
 
 VerificationTest[
@@ -735,7 +735,7 @@ VerificationTest[
     ],
     { True, False, True, { "SIDEBAR-FIRST", "SIDEBAR-FIRST reply" } },
     SameTest -> MatchQ,
-    TestID   -> "OpenSidebarAsWindow-ReplacesExistingWindow@@Tests/SaveChat.wlt:708,1-739,2"
+    TestID   -> "OpenSidebarAsWindow-ReplacesExistingWindow"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -764,7 +764,7 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadFromHistory-Definitions@@Tests/SaveChat.wlt:744,1-768,2"
+    TestID   -> "LoadFromHistory-Definitions"
 ]
 
 (* An unreadable data.wxf (corrupt, or locked by another process) does not delete the chat: *)
@@ -783,7 +783,7 @@ VerificationTest[
     ],
     { Missing[ "Corrupt" ], True, True },
     SameTest -> MatchQ,
-    TestID   -> "LoadChat-CorruptDataKeepsChat@@Tests/SaveChat.wlt:771,1-787,2"
+    TestID   -> "LoadChat-CorruptDataKeepsChat"
 ]
 
 (* A chat folder without data.wxf can't be recovered, so it is removed: *)
@@ -797,7 +797,7 @@ VerificationTest[
     ],
     { Missing[ "NotFound" ], False },
     SameTest -> MatchQ,
-    TestID   -> "LoadChat-MissingDataRemovesChat@@Tests/SaveChat.wlt:790,1-801,2"
+    TestID   -> "LoadChat-MissingDataRemovesChat"
 ]
 
 (* Loading a History row whose chat is gone restores the scrollbar, shows History again and writes no error cell: *)
@@ -817,7 +817,7 @@ VerificationTest[
     ],
     { Null, { "History" }, { }, True },
     SameTest -> MatchQ,
-    TestID   -> "LoadFromHistory-StaleRow@@Tests/SaveChat.wlt:804,1-821,2"
+    TestID   -> "LoadFromHistory-StaleRow"
 ]
 
 (* Same for a chat whose data can't be read, which is kept: *)
@@ -845,7 +845,7 @@ VerificationTest[
     ],
     { Null, { "History" }, { }, True, True },
     SameTest -> MatchQ,
-    TestID   -> "LoadFromHistory-CorruptChat@@Tests/SaveChat.wlt:824,1-849,2"
+    TestID   -> "LoadFromHistory-CorruptChat"
 ]
 
 (* The scrollbar is also restored when loading fails unexpectedly: *)
@@ -867,7 +867,7 @@ VerificationTest[
     { Failure, True, { } },
     { General::ChatbookInternal },
     SameTest -> MatchQ,
-    TestID   -> "LoadFromHistory-InternalFailure@@Tests/SaveChat.wlt:852,1-871,2"
+    TestID   -> "LoadFromHistory-InternalFailure"
 ]
 
 (* Popping out a History row whose chat is gone opens no notebook, shows History again and writes no error cell: *)
@@ -895,7 +895,7 @@ VerificationTest[
     ],
     { Missing[ "NotFound" ], Null, { }, { "History" }, { }, True },
     SameTest -> MatchQ,
-    TestID   -> "PopOutFromHistory-StaleRow@@Tests/SaveChat.wlt:874,1-899,2"
+    TestID   -> "PopOutFromHistory-StaleRow"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -930,7 +930,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "HistoryRefresh-DefaultViewTracksSavedChats@@Tests/SaveChat.wlt:906,1-934,2"
+    TestID   -> "HistoryRefresh-DefaultViewTracksSavedChats"
 ]
 
 (* Deleting and saving chats update the trigger, and re-reading lists the current chats: *)
@@ -972,7 +972,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "HistoryRefresh-ReadsCurrentChats@@Tests/SaveChat.wlt:937,1-976,2"
+    TestID   -> "HistoryRefresh-ReadsCurrentChats"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -983,7 +983,7 @@ VerificationTest[
     DirectoryQ @ ChatbookFilesDirectory[ { "SavedChats", $titleTestApp }, "EnsureDirectory" -> False ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "Cleanup@@Tests/SaveChat.wlt:981,1-987,2"
+    TestID   -> "Cleanup"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

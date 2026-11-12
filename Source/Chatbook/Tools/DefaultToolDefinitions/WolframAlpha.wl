@@ -71,8 +71,8 @@ $maximumWAPodByteCount := toolOptionValue[ "WolframAlpha", "MaxPodByteCount" ];
 $plaintextOnly         := toolOptionValue[ "WolframAlpha", "PlaintextOnly"   ];
 $allowReinterpret      := toolOptionValue[ "WolframAlpha", "Reinterpret"     ];
 
-$moreDetailsPlusIcon  := RawBoxes @ TemplateBox[ { color @ "WolframAlphaTool_Blue" }, "DiscardedMaterialOpenerIcon" ];
-$moreDetailsMinusIcon := RawBoxes @ TemplateBox[ { color @ "WolframAlphaTool_Blue" }, "DiscardedMaterialCloserIcon" ];
+$moreDetailsPlusIcon  := RawBoxes @ TemplateBox[ { color @ "Blue_678E9C_98C7D6" }, "DiscardedMaterialOpenerIcon" ];
+$moreDetailsMinusIcon := RawBoxes @ TemplateBox[ { color @ "Blue_678E9C_98C7D6" }, "DiscardedMaterialCloserIcon" ];
 
 $stringResult := ! TrueQ @ $ChatNotebookEvaluation || TrueQ @ $headlessChat || TrueQ @ $plaintextOnly;
 
@@ -406,7 +406,7 @@ formatPod[ content_List ] := Framed[
     Column[ formatPodItem /@ content, Alignment -> Left ],
     Background     -> None,
     FrameMargins   -> 5,
-    FrameStyle     -> color @ "WolframAlphaToolPodFrame",
+    FrameStyle     -> LightDarkSwitched[ GrayLevel[ 0.8 ], GrayLevel[ 0.3137 ] ],
     ImageSize      -> { Scaled[ 1 ], Automatic },
     ImageMargins   -> If[ $CloudEvaluation, { { 0, 25 }, { 0, 0 } }, 0 ],
     RoundingRadius -> 3
@@ -423,7 +423,7 @@ formatPodItem[ key_ -> value_ ] :=
     formatPodItem[ key, value ];
 
 formatPodItem[ { _, "Title" }, title_String ] :=
-    Style[ StringTrim[ title, ":" ] <> ":", "Text", FontColor -> color @ "WolframAlphaTool_Blue", FontSize -> 12 ];
+    Style[ StringTrim[ title, ":" ] <> ":", "Text", FontColor -> color @ "Blue_678E9C_98C7D6", FontSize -> 12 ];
 
 formatPodItem[ { _, "Cell" }, cell_ ] /; ByteCount @ cell > $maximumWAPodByteCount :=
     Pane[
@@ -486,11 +486,11 @@ podShowMoreDetailsButton[ Dynamic[ expand_ ] ] := Button[
             Style[
                 Row @ { $moreDetailsPlusIcon, " Show more details" },
                 "Text",
-                FontColor -> color @ "WolframAlphaTool_Blue",
+                FontColor -> color @ "Blue_678E9C_98C7D6",
                 FontSize  -> 12
             ],
             FrameMargins   -> { { 6, 6 }, { 2, 2 } },
-            FrameStyle     -> color @ "WolframAlphaTool_Blue",
+            FrameStyle     -> color @ "Blue_678E9C_98C7D6",
             RoundingRadius -> 3
         ],
         "LinkHand"
@@ -513,11 +513,11 @@ podHideMoreDetailsButton[ Dynamic[ expand_ ] ] := Button[
             Style[
                 Row @ { $moreDetailsMinusIcon, " Hide more details" },
                 "Text",
-                FontColor -> color @ "WolframAlphaTool_Blue",
+                FontColor -> color @ "Blue_678E9C_98C7D6",
                 FontSize  -> 12
             ],
             FrameMargins   -> { { 6, 6 }, { 2, 2 } },
-            FrameStyle     -> color @ "WolframAlphaTool_Blue",
+            FrameStyle     -> color @ "Blue_678E9C_98C7D6",
             RoundingRadius -> 3
         ],
         "LinkHand"

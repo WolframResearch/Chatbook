@@ -2,6 +2,8 @@
 (* ::Package:: *)
 
 (*
+    Saves notebook (.nb) files in a readable format so they produce cleaner diffs.
+
     To configure this script to run automatically before each commit, run the
     following in the repository directory:
     ```
@@ -102,13 +104,13 @@ getFiles[ root_, ignore_, files: { ___String } ] :=
     Select[ files, FileExistsQ ];
 
 getFiles[ root_, ignore_, _ ] :=
-    Select[ FileNames[ { "*.nb", "*.wlt" }, root, Infinity ],
+    Select[ FileNames[ "*.nb", root, Infinity ],
             Not @* StringMatchQ[ ignore~~___ ]
     ];
 
 getNotebookArgs[ ] := getNotebookArgs @ getArg[ "files", None ];
 getNotebookArgs[ nbs_String ] := getNotebookArgs @ StringSplit[ nbs, "\n" ];
-getNotebookArgs[ files: { __String } ] := Select[ files, FileExistsQ ];
+getNotebookArgs[ files: { __String } ] := Select[ files, notebookFileQ @ # && FileExistsQ @ # & ];
 getNotebookArgs[ ___ ] := Missing[ "NotFound" ];
 
 (* ::**************************************************************************************************************:: *)
@@ -137,17 +139,10 @@ makeUnreadable[ file_ ] := enclose[
 notebookFileQ[ file_String ] := StringEndsQ[ file, ".nb", IgnoreCase -> True ];
 notebookFileQ[ ___ ] := False;
 
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*testFileQ*)
-testFileQ[ file_String ] := StringEndsQ[ file, ".wlt", IgnoreCase -> True ];
-testFileQ[ ___ ] := False;
-
 (******************************************************************************)
 (* ::Subsection::Closed:: *)
 (*makeReadable*)
 makeReadable[ file_? notebookFileQ ] := makeReadable[ file, cicd`FormatNotebooks @ file ];
-makeReadable[ file_? testFileQ ] := makeReadable[ file, cicd`AnnotateTestIDs @ file ];
 
 makeReadable[ file_, Missing[ "Skipped", ___ ] ] :=
     print[ "Skipped: ", StringDelete[ file, StartOfString~~$root ] ];

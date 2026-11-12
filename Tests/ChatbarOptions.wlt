@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/ChatbarOptions.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/ChatbarOptions.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -27,7 +27,7 @@ VerificationTest[
     $setterBoxes = ToBoxes @ Wolfram`Chatbook`ChatModes`UI`Private`chatbarStateSetterBar @ $setterNotebook,
     _DynamicModuleBox,
     SameTest -> MatchQ,
-    TestID   -> "ChatbarStateSetterBar-Boxes@@Tests/ChatbarOptions.wlt:24,1-31,2"
+    TestID   -> "ChatbarStateSetterBar-Boxes"
 ]
 
 (* Nothing in the menu runs on display; the state is only applied by the click actions: *)
@@ -39,7 +39,7 @@ VerificationTest[
     },
     { True, True, "Full" },
     SameTest -> MatchQ,
-    TestID   -> "ChatbarStateSetterBar-NoDisplayActions@@Tests/ChatbarOptions.wlt:34,1-43,2"
+    TestID   -> "ChatbarStateSetterBar-NoDisplayActions"
 ]
 
 (* Displaying the options menu must not change the global chat bar preferences: *)
@@ -66,7 +66,7 @@ VerificationTest[
     ],
     { True, False, True },
     SameTest -> MatchQ,
-    TestID   -> "ChatbarStateSetterBar-NoWriteOnDisplay@@Tests/ChatbarOptions.wlt:46,1-70,2"
+    TestID   -> "ChatbarStateSetterBar-NoWriteOnDisplay"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/FormattingInline.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/FormattingInline.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -110,7 +110,7 @@ VerificationTest[
     ];,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "Inline-Definitions@@Tests/FormattingInline.wlt:30,1-114,2"
+    TestID   -> "Inline-Definitions"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -134,7 +134,7 @@ VerificationTest[
         " text"
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Emphasis-Asterisks@@Tests/FormattingInline.wlt:125,1-138,2"
+    TestID   -> "Inline-Emphasis-Asterisks"
 ]
 
 (* Asterisk emphasis also works inside words (as in CommonMark), for bold as well as italic: *)
@@ -150,7 +150,7 @@ VerificationTest[
         { "2", StyleBox[ "3", FontSlant -> Italic ], "4" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Emphasis-Intraword-Asterisks@@Tests/FormattingInline.wlt:141,1-154,2"
+    TestID   -> "Inline-Emphasis-Intraword-Asterisks"
 ]
 
 (* Multi-word emphasis and emphasis that is the whole response: *)
@@ -168,7 +168,7 @@ VerificationTest[
         { StyleBox[ "Note", FontWeight -> Bold ], ": Use ", refLinkCell[ "Plot" ], "." }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Emphasis-Multiple-Words@@Tests/FormattingInline.wlt:157,1-172,2"
+    TestID   -> "Inline-Emphasis-Multiple-Words"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -181,7 +181,7 @@ VerificationTest[
     formatted /@ { "__bold__text", "text__bold__", "_a_b", "a_b_ c", "___a___b", "snake_case_name and x_1" },
     { { "__bold__text" }, { "text__bold__" }, { "_a_b" }, { "a_b_ c" }, { "___a___b" }, { "snake_case_name and x_1" } },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Emphasis-Underscore-Word-Boundaries@@Tests/FormattingInline.wlt:180,1-185,2"
+    TestID   -> "Inline-Emphasis-Underscore-Word-Boundaries"
 ]
 
 (* Punctuation next to the underscores is a word boundary, so emphasis is applied: *)
@@ -199,7 +199,7 @@ VerificationTest[
         "."
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Emphasis-Underscore-Punctuation-Boundaries@@Tests/FormattingInline.wlt:188,1-203,2"
+    TestID   -> "Inline-Emphasis-Underscore-Punctuation-Boundaries"
 ]
 
 (* Python-style dunder names that are not in backticks become bold, as they do in CommonMark: *)
@@ -207,7 +207,7 @@ VerificationTest[
     formatted[ "file_name.txt and __main__.py and __init__" ],
     { "file_name.txt and ", StyleBox[ "main", FontWeight -> Bold ], ".py and ", StyleBox[ "init", FontWeight -> Bold ] },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Emphasis-Dunder-Names@@Tests/FormattingInline.wlt:206,1-211,2"
+    TestID   -> "Inline-Emphasis-Dunder-Names"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -227,7 +227,7 @@ VerificationTest[
         { "~a~ single" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Emphasis-Strikethrough@@Tests/FormattingInline.wlt:218,1-231,2"
+    TestID   -> "Inline-Emphasis-Strikethrough"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -239,7 +239,7 @@ VerificationTest[
     formatted /@ { "**unclosed bold", "*unclosed italic", "~~unclosed", "__", "x * y", "a*b" },
     { { "**unclosed bold" }, { "*unclosed italic" }, { "~~unclosed" }, { "__" }, { "x * y" }, { "a*b" } },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Emphasis-Unmatched-Markers@@Tests/FormattingInline.wlt:238,1-243,2"
+    TestID   -> "Inline-Emphasis-Unmatched-Markers"
 ]
 
 (* Emphasis never spans a line break (CommonMark allows it to span a single line break). Each rule explicitly requires
@@ -260,7 +260,7 @@ VerificationTest[
         { "***both\nacross*** lines" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Emphasis-Not-Across-Lines@@Tests/FormattingInline.wlt:247,1-264,2"
+    TestID   -> "Inline-Emphasis-Not-Across-Lines"
 ]
 
 (* Emphasis on either side of a line break is formatted separately, and the line break is kept (a "\r\n" as "\n"): *)
@@ -278,7 +278,7 @@ VerificationTest[
         { "Text\n\n", StyleBox[ "Bold paragraph", FontWeight -> Bold ], "\n\nMore" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Emphasis-Line-Breaks-Between@@Tests/FormattingInline.wlt:267,1-282,2"
+    TestID   -> "Inline-Emphasis-Line-Breaks-Between"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -307,7 +307,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Emphasis-Nested-Combined-Styles@@Tests/FormattingInline.wlt:289,1-311,2"
+    TestID   -> "Inline-Emphasis-Nested-Combined-Styles"
 ]
 
 (* Nesting the same style twice gives that style once (styleBox uses DeleteDuplicates): *)
@@ -320,7 +320,7 @@ VerificationTest[
         { StyleBox[ "a", FontWeight -> Bold ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Emphasis-Nested-Same-Style-Deduplicated@@Tests/FormattingInline.wlt:314,1-324,2"
+    TestID   -> "Inline-Emphasis-Nested-Same-Style-Deduplicated"
 ]
 
 (* Adjacent emphasis spans stay separate: *)
@@ -349,7 +349,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Emphasis-Adjacent@@Tests/FormattingInline.wlt:327,1-353,2"
+    TestID   -> "Inline-Emphasis-Adjacent"
 ]
 
 (* Non-ASCII text in emphasis and inline code: *)
@@ -366,7 +366,7 @@ VerificationTest[
         StyleBox[ "\:2764", FontWeight -> Bold ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Emphasis-Unicode@@Tests/FormattingInline.wlt:356,1-370,2"
+    TestID   -> "Inline-Emphasis-Unicode"
 ]
 
 (* Emphasis is applied at any position in a long line: *)
@@ -374,7 +374,7 @@ VerificationTest[
     formatted[ "Very long " <> StringRepeat[ "word ", 200 ] <> "**bold** end" ],
     { "Very long " <> StringRepeat[ "word ", 200 ], StyleBox[ "bold", FontWeight -> Bold ], " end" },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Emphasis-Long-Line@@Tests/FormattingInline.wlt:373,1-378,2"
+    TestID   -> "Inline-Emphasis-Long-Line"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -392,7 +392,7 @@ VerificationTest[
         { StyleBox[ hyperlinkButton[ "ex", "https://example.com" ], FontWeight -> Bold ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Emphasis-Around-Hyperlink@@Tests/FormattingInline.wlt:385,1-396,2"
+    TestID   -> "Inline-Emphasis-Around-Hyperlink"
 ]
 
 (* Emphasis around a documentation link is dropped and only the link is shown (styleBox has a special case for
@@ -401,7 +401,7 @@ VerificationTest[
     formatted[ "**[Plot](paclet:ref/Plot)**" ],
     { refLinkCell[ "Plot" ] },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Emphasis-Around-Ref-Link-Dropped@@Tests/FormattingInline.wlt:400,1-405,2"
+    TestID   -> "Inline-Emphasis-Around-Ref-Link-Dropped"
 ]
 
 (* In list items the whole item text goes through formatTextString, so emphasis around inline code is applied to the
@@ -421,7 +421,7 @@ VerificationTest[
         { refLinkCell[ "Plot" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Emphasis-Around-Inline-Code-In-List-Item@@Tests/FormattingInline.wlt:409,1-425,2"
+    TestID   -> "Inline-Emphasis-Around-Inline-Code-In-List-Item"
 ]
 
 (* The streaming display does not parse the code, but keeps the emphasis: *)
@@ -429,7 +429,7 @@ VerificationTest[
     bulletItemContent[ "- **`Plot[x]`**", "Streaming" ],
     { inlineWLCell[ "Plot[x]", FontWeight -> Bold ] },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Emphasis-Around-Inline-Code-In-List-Item-Streaming@@Tests/FormattingInline.wlt:428,1-433,2"
+    TestID   -> "Inline-Emphasis-Around-Inline-Code-In-List-Item-Streaming"
 ]
 
 (* Emphasis, inline code and links give the same output while streaming as when finished: *)
@@ -456,7 +456,7 @@ VerificationTest[
         2
     ],
     SameTest -> MatchQ,
-    TestID   -> "Inline-Emphasis-Streaming-Same-As-Finished@@Tests/FormattingInline.wlt:436,1-460,2"
+    TestID   -> "Inline-Emphasis-Streaming-Same-As-Finished"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -474,7 +474,7 @@ VerificationTest[
         { StyleBox[ "multiple words here", FontSlant -> Italic ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-TeX-Text-Commands@@Tests/FormattingInline.wlt:467,1-478,2"
+    TestID   -> "Inline-TeX-Text-Commands"
 ]
 
 (* Unlike markdown emphasis, the TeX commands can span a line break. They can be nested inside markdown emphasis (and
@@ -495,7 +495,7 @@ VerificationTest[
         { StyleBox[ "a", FontWeight -> Bold ], StyleBox[ "b", FontWeight -> Bold ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-TeX-Text-Commands-Line-Break-And-Nesting@@Tests/FormattingInline.wlt:482,1-499,2"
+    TestID   -> "Inline-TeX-Text-Commands-Line-Break-And-Nesting"
 ]
 
 (* The commands are not formatted when the argument contains braces, is empty, or is not closed: *)
@@ -503,7 +503,7 @@ VerificationTest[
     formatted /@ { "\\textit{a{b}c}", "\\textit{unclosed", "\\textbf{x} \\textit{}" },
     { { "\\textit{a{b}c}" }, { "\\textit{unclosed" }, { StyleBox[ "x", FontWeight -> Bold ], " \\textit{}" } },
     SameTest -> MatchQ,
-    TestID   -> "Inline-TeX-Text-Commands-Not-Formatted@@Tests/FormattingInline.wlt:502,1-507,2"
+    TestID   -> "Inline-TeX-Text-Commands-Not-Formatted"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -520,7 +520,7 @@ VerificationTest[
     formatted[ "Use `Plot`, `ListPlot3D`, and `$Version`." ],
     { "Use ", refLinkCell[ "Plot" ], ", ", refLinkCell[ "ListPlot3D" ], ", and ", refLinkCell[ "$Version" ], "." },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Code-System-Symbol@@Tests/FormattingInline.wlt:519,1-524,2"
+    TestID   -> "Inline-Code-System-Symbol"
 ]
 
 (* A context-qualified System name keeps its context in the label, but links to the plain name: *)
@@ -528,7 +528,7 @@ VerificationTest[
     formatted[ "Use `System`Plot` or ``System`Plot``" ],
     { "Use ", refLinkCell[ "System`Plot", "Plot" ], " or ", refLinkCell[ "System`Plot", "Plot" ] },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Code-Context-Qualified-System-Symbol@@Tests/FormattingInline.wlt:527,1-532,2"
+    TestID   -> "Inline-Code-Context-Qualified-System-Symbol"
 ]
 
 (* Inline code at the start or end of the text, and next to punctuation: *)
@@ -548,7 +548,7 @@ VerificationTest[
         { refLinkCell[ "Plot" ], "/", refLinkCell[ "ListPlot" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Code-System-Symbol-Positions@@Tests/FormattingInline.wlt:535,1-552,2"
+    TestID   -> "Inline-Code-System-Symbol-Positions"
 ]
 
 (* A paragraph break after inline code is kept when other text comes between them. (Directly after the code, it
@@ -557,7 +557,7 @@ VerificationTest[
     { formatted[ "Use `Plot`.\n\nNext" ], formatted[ "Use **bold**\n\nNext" ] },
     { { "Use ", refLinkCell[ "Plot" ], ".\n\nNext" }, { "Use ", StyleBox[ "bold", FontWeight -> Bold ], "\n\nNext" } },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Code-Paragraph-Break@@Tests/FormattingInline.wlt:556,1-561,2"
+    TestID   -> "Inline-Code-Paragraph-Break"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -582,7 +582,7 @@ VerificationTest[
         { "Use ", codeTemplateCell[ "Global`x" ], " here" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Code-Not-System-Symbol@@Tests/FormattingInline.wlt:569,1-586,2"
+    TestID   -> "Inline-Code-Not-System-Symbol"
 ]
 
 (* All-lowercase code is shown in the "TI" (italic variable) style instead of as code: *)
@@ -590,7 +590,7 @@ VerificationTest[
     formatted[ "Use `x`, `integrate`, and `\[Alpha]`" ],
     { "Use ", StyleBox[ "x", "TI" ], ", ", StyleBox[ "integrate", "TI" ], ", and ", StyleBox[ "\[Alpha]", "TI" ] },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Code-Lowercase@@Tests/FormattingInline.wlt:589,1-594,2"
+    TestID   -> "Inline-Code-Lowercase"
 ]
 
 (* Code with any character that isn't a lowercase letter (including underscores and spaces) is verbatim code.
@@ -619,7 +619,7 @@ VerificationTest[
         { "Use ", codeTemplateCell[ "Plot@x" ], " here" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Code-Verbatim@@Tests/FormattingInline.wlt:598,1-623,2"
+    TestID   -> "Inline-Code-Verbatim"
 ]
 
 (* Code with "*" is never a System symbol, even though NameQ treats "*" as a wildcard (nameQ excludes it): *)
@@ -637,7 +637,7 @@ VerificationTest[
         " here"
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Code-Wildcard-Names@@Tests/FormattingInline.wlt:626,1-641,2"
+    TestID   -> "Inline-Code-Wildcard-Names"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -663,7 +663,7 @@ VerificationTest[
         " here"
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Code-WL@@Tests/FormattingInline.wlt:649,1-667,2"
+    TestID   -> "Inline-Code-WL"
 ]
 
 (* While streaming, the code is not parsed: *)
@@ -679,7 +679,7 @@ VerificationTest[
         " here"
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Code-WL-Streaming@@Tests/FormattingInline.wlt:670,1-683,2"
+    TestID   -> "Inline-Code-WL-Streaming"
 ]
 
 (* Whitespace around a rule operator is optional, but the argument list must follow the name directly: *)
@@ -687,7 +687,7 @@ VerificationTest[
     formatted[ "Use `Rule->1` and `Plot [x]` here" ],
     { "Use ", inlineWLCell @ RowBox @ { "Rule", "->", "1" }, " and ", codeTemplateCell[ "Plot [x]" ], " here" },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Code-WL-Spacing@@Tests/FormattingInline.wlt:686,1-691,2"
+    TestID   -> "Inline-Code-WL-Spacing"
 ]
 
 (* Inline code that is a quoted string is shown as a WL string: *)
@@ -695,7 +695,7 @@ VerificationTest[
     { formatted[ "Use `\"a string\"` here" ], formatted[ "Use `\"a string\"` here", "Streaming" ] },
     ConstantArray[ { "Use ", inlineWLCell[ "\"a string\"" ], " here" }, 2 ],
     SameTest -> MatchQ,
-    TestID   -> "Inline-Code-WL-String-Literal@@Tests/FormattingInline.wlt:694,1-699,2"
+    TestID   -> "Inline-Code-WL-String-Literal"
 ]
 
 (* Inline code that contains \[FreeformPrompt] is WL code. A leading \[FreeformPrompt] is kept as a plain character,
@@ -722,7 +722,7 @@ VerificationTest[
         { "Use ", inlineWLCell[ "\[FreeformPrompt]" ], " here" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Code-FreeformPrompt@@Tests/FormattingInline.wlt:703,1-726,2"
+    TestID   -> "Inline-Code-FreeformPrompt"
 ]
 
 (* While streaming, the code is not parsed, so a \[FreeformPrompt] that is not leading stays a plain character: *)
@@ -736,7 +736,7 @@ VerificationTest[
         { "Use ", inlineWLCell[ "x \[FreeformPrompt] y" ], " here" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Code-FreeformPrompt-Streaming@@Tests/FormattingInline.wlt:729,1-740,2"
+    TestID   -> "Inline-Code-FreeformPrompt-Streaming"
 ]
 
 (* ResourceFunction code is shown with the resource function box. Only the streaming display is tested here, since
@@ -749,7 +749,7 @@ VerificationTest[
         " here"
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Code-ResourceFunction-Streaming@@Tests/FormattingInline.wlt:744,1-753,2"
+    TestID   -> "Inline-Code-ResourceFunction-Streaming"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -769,7 +769,7 @@ VerificationTest[
         { "Use ", refLinkCell[ "Plot" ], " here" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Code-Double-Backticks@@Tests/FormattingInline.wlt:760,1-773,2"
+    TestID   -> "Inline-Code-Double-Backticks"
 ]
 
 (* Single backticks around a context name or a fully qualified symbol name include the context marks (the
@@ -782,7 +782,7 @@ VerificationTest[
         { "Use ", codeTemplateCell[ "Wolfram`Chatbook`FormatChatOutput" ], " here" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Code-Context-Names@@Tests/FormattingInline.wlt:777,1-786,2"
+    TestID   -> "Inline-Code-Context-Names"
 ]
 
 (* Triple backticks on a single line are inline code (autoCorrect rewrites them to double backticks): *)
@@ -790,7 +790,7 @@ VerificationTest[
     { formatted[ "Use ```inline triple``` here" ], formatted[ "Use ```Plot``` here" ] },
     { { "Use ", codeTemplateCell[ "inline triple" ], " here" }, { "Use ", refLinkCell[ "Plot" ], " here" } },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Code-Triple-Backticks-Single-Line@@Tests/FormattingInline.wlt:789,1-794,2"
+    TestID   -> "Inline-Code-Triple-Backticks-Single-Line"
 ]
 
 (* Unlike CommonMark, an escaped backtick inside single backticks is part of the code: *)
@@ -798,7 +798,7 @@ VerificationTest[
     formatted[ "Use `a\\`b` and `\\$x` here" ],
     { "Use ", codeTemplateCell[ "a`b" ], " and ", codeTemplateCell[ "$x" ], " here" },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Code-Escaped-Backtick@@Tests/FormattingInline.wlt:797,1-802,2"
+    TestID   -> "Inline-Code-Escaped-Backtick"
 ]
 
 (* Backticks that are not closed on the same line, and empty backticks, are shown as is: *)
@@ -806,7 +806,7 @@ VerificationTest[
     formatted /@ { "Use `unclosed here", "Use `multi\nline` here", "Use `` here", "Use ``co" },
     { { "Use `unclosed here" }, { "Use `multi\nline` here" }, { "Use `` here" }, { "Use ``co" } },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Code-Not-Code@@Tests/FormattingInline.wlt:805,1-810,2"
+    TestID   -> "Inline-Code-Not-Code"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -830,7 +830,7 @@ VerificationTest[
         { inlineWLCell @ RowBox @ { "Pi", "->", "3.14" } }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-WL-Response@@Tests/FormattingInline.wlt:818,1-834,2"
+    TestID   -> "Inline-WL-Response"
 ]
 
 VerificationTest[
@@ -841,7 +841,7 @@ VerificationTest[
         { inlineWLCell[ "Pi -> 3.14" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-WL-Response-Streaming@@Tests/FormattingInline.wlt:836,1-845,2"
+    TestID   -> "Inline-WL-Response-Streaming"
 ]
 
 (* Text that only starts with WL code, a bare System name, or code that doesn't start with a System symbol stays
@@ -857,7 +857,7 @@ VerificationTest[
         { "\"a string\"" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-WL-Response-Not-Code@@Tests/FormattingInline.wlt:849,1-861,2"
+    TestID   -> "Inline-WL-Response-Not-Code"
 ]
 
 (* A response that starts with \[FreeformPrompt] is WL code too: *)
@@ -865,7 +865,7 @@ VerificationTest[
     formatted[ "\[FreeformPrompt] population of France" ],
     { inlineWLCell @ RowBox @ { "\[FreeformPrompt]", " ", "population", " ", "of", " ", "France" } },
     SameTest -> MatchQ,
-    TestID   -> "Inline-WL-Response-FreeformPrompt@@Tests/FormattingInline.wlt:864,1-869,2"
+    TestID   -> "Inline-WL-Response-FreeformPrompt"
 ]
 
 (* The same applies to the text of a list item or heading, and to emphasized text: *)
@@ -888,7 +888,7 @@ VerificationTest[
         { inlineWLCell[ RowBox @ { "Plot", "[", "x", "]" }, FontWeight -> Bold ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-WL-Response-In-Blocks@@Tests/FormattingInline.wlt:872,1-892,2"
+    TestID   -> "Inline-WL-Response-In-Blocks"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -918,7 +918,7 @@ VerificationTest[
         { "Link: ", hyperlinkButton[ "ex", "/relative/path" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Hyperlink-URL@@Tests/FormattingInline.wlt:903,1-922,2"
+    TestID   -> "Inline-Hyperlink-URL"
 ]
 
 (* Several links, links next to punctuation, and links directly followed by text: *)
@@ -934,7 +934,7 @@ VerificationTest[
         { hyperlinkButton[ "link", "https://example.com" ], "text" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Hyperlink-Multiple-And-Punctuation@@Tests/FormattingInline.wlt:925,1-938,2"
+    TestID   -> "Inline-Hyperlink-Multiple-And-Punctuation"
 ]
 
 (* Emphasis in the label is formatted inside the button: *)
@@ -945,7 +945,7 @@ VerificationTest[
         { hyperlinkButton[ StyleBox[ "bold label", FontWeight -> Bold ], "https://example.com" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Hyperlink-Formatted-Label@@Tests/FormattingInline.wlt:941,1-949,2"
+    TestID   -> "Inline-Hyperlink-Formatted-Label"
 ]
 
 (* Labels can contain brackets: *)
@@ -956,7 +956,7 @@ VerificationTest[
         { "See ", hyperlinkButton[ "f[x]", "https://example.com" ], " now" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Hyperlink-Bracketed-Label@@Tests/FormattingInline.wlt:952,1-960,2"
+    TestID   -> "Inline-Hyperlink-Bracketed-Label"
 ]
 
 (* Escapes are removed from the label and the URL: *)
@@ -967,7 +967,7 @@ VerificationTest[
         { hyperlinkButton[ "x", "https://example.com/a_b" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Hyperlink-Escaped-Characters@@Tests/FormattingInline.wlt:963,1-971,2"
+    TestID   -> "Inline-Hyperlink-Escaped-Characters"
 ]
 
 (* Underscores in a URL are not emphasis, in links or bare URLs: *)
@@ -986,7 +986,7 @@ VerificationTest[
         { "See https://example.com/some_page_name here" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Hyperlink-Underscores-In-URL@@Tests/FormattingInline.wlt:974,1-990,2"
+    TestID   -> "Inline-Hyperlink-Underscores-In-URL"
 ]
 
 (* Bare URLs are not turned into links: *)
@@ -994,7 +994,7 @@ VerificationTest[
     formatted[ "See https://example.com now" ],
     { "See https://example.com now" },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Hyperlink-Bare-URL@@Tests/FormattingInline.wlt:993,1-998,2"
+    TestID   -> "Inline-Hyperlink-Bare-URL"
 ]
 
 (* Not links: an empty URL, a space between label and URL, and an unterminated link (e.g. while streaming): *)
@@ -1012,7 +1012,7 @@ VerificationTest[
         { "See [link](paclet:ref/Pl" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Hyperlink-Not-Links@@Tests/FormattingInline.wlt:1001,1-1016,2"
+    TestID   -> "Inline-Hyperlink-Not-Links"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1053,7 +1053,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Hyperlink-Paclet@@Tests/FormattingInline.wlt:1023,1-1057,2"
+    TestID   -> "Inline-Hyperlink-Paclet"
 ]
 
 (* Whitespace and backticks around the label are trimmed. This also happens in list items, where the label is not
@@ -1072,7 +1072,7 @@ VerificationTest[
         { refLinkCell[ "code", "Plot" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Hyperlink-Paclet-Label-Trimmed@@Tests/FormattingInline.wlt:1061,1-1076,2"
+    TestID   -> "Inline-Hyperlink-Paclet-Label-Trimmed"
 ]
 
 (* Escaped backticks in the label are literal characters, so they are kept: *)
@@ -1080,7 +1080,7 @@ VerificationTest[
     formatted[ "See [\\`Plot\\`](paclet:ref/Plot) now" ],
     { "See ", refLinkCell[ "`Plot`", "Plot" ], " now" },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Hyperlink-Paclet-Escaped-Backticks@@Tests/FormattingInline.wlt:1079,1-1084,2"
+    TestID   -> "Inline-Hyperlink-Paclet-Escaped-Backticks"
 ]
 
 (* Text directly after a documentation link is not part of it: *)
@@ -1091,7 +1091,7 @@ VerificationTest[
         { "See ", refLinkCell[ "Plot" ], ", ", refLinkCell[ "ListPlot" ], "." }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Hyperlink-Paclet-Adjacent-Text@@Tests/FormattingInline.wlt:1087,1-1095,2"
+    TestID   -> "Inline-Hyperlink-Paclet-Adjacent-Text"
 ]
 
 (* A fragment (e.g. a snippet URI) stays in the paclet: URI, which the documentation center resolves, and comes after
@@ -1156,7 +1156,7 @@ VerificationTest[
         { "See ", refLinkCell[ "Plot" ], " now" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Link-Backticked-Label@@Tests/FormattingInline.wlt:1103,1-1116,2"
+    TestID   -> "Inline-Link-Backticked-Label"
 ]
 
 (* That rewrite only happens at the paragraph level. In a list item the label is formatted as inline code inside the
@@ -1165,7 +1165,7 @@ VerificationTest[
     bulletItemContent[ "- [`code`](https://example.com)" ],
     { hyperlinkButton[ StyleBox[ "code", "TI" ], "https://example.com" ] },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Link-Backticked-Label-In-List-Item@@Tests/FormattingInline.wlt:1120,1-1125,2"
+    TestID   -> "Inline-Link-Backticked-Label-In-List-Item"
 ]
 
 (* A label that formats to a single cell is put in the button as is, e.g. verbatim inline code in a list item, or a
@@ -1182,7 +1182,7 @@ VerificationTest[
         { "See ", hyperlinkButton[ inlineWLCell[ "Plot[x]" ], "https://example.com" ], " now" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Link-Cell-Label@@Tests/FormattingInline.wlt:1129,1-1142,2"
+    TestID   -> "Inline-Link-Cell-Label"
 ]
 
 (* A link whose label is ResourceFunction code is shown as the resource function box, with or without backticks around
@@ -1202,7 +1202,7 @@ VerificationTest[
         2
     ],
     SameTest -> MatchQ,
-    TestID   -> "Inline-Link-ResourceFunction-Streaming@@Tests/FormattingInline.wlt:1147,1-1162,2"
+    TestID   -> "Inline-Link-ResourceFunction-Streaming"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1224,7 +1224,7 @@ VerificationTest[
         " here"
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-FreeformPrompt-Text@@Tests/FormattingInline.wlt:1169,1-1184,2"
+    TestID   -> "Inline-FreeformPrompt-Text"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1245,7 +1245,7 @@ VerificationTest[
         hyperlinkButton[ "ex", "https://example.com" ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-In-List-Item@@Tests/FormattingInline.wlt:1191,1-1205,2"
+    TestID   -> "Inline-In-List-Item"
 ]
 
 (* List item text skips the inline code rules of the first pass, so formatTextString's own inline code rules handle
@@ -1263,7 +1263,7 @@ VerificationTest[
         StyleBox[ "old", FontVariations -> { "StrikeThrough" -> True } ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-In-List-Item-Code@@Tests/FormattingInline.wlt:1209,1-1223,2"
+    TestID   -> "Inline-In-List-Item-Code"
 ]
 
 (* ... in headings: *)
@@ -1277,7 +1277,7 @@ VerificationTest[
         { "InlineSection", { hyperlinkButton[ "Link", "https://example.com" ], " heading" } }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-In-Heading@@Tests/FormattingInline.wlt:1226,1-1237,2"
+    TestID   -> "Inline-In-Heading"
 ]
 
 (* ... and in block quotes: *)
@@ -1295,7 +1295,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-In-Block-Quote@@Tests/FormattingInline.wlt:1240,1-1255,2"
+    TestID   -> "Inline-In-Block-Quote"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1316,7 +1316,7 @@ VerificationTest[
         { "Escaped `not code` and ", StyleBox[ "code", "TI" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Escaped-Markers@@Tests/FormattingInline.wlt:1263,1-1276,2"
+    TestID   -> "Inline-Escaped-Markers"
 ]
 
 (* An escape anywhere in the text doesn't change how the other inline constructs are formatted: *)
@@ -1333,7 +1333,7 @@ VerificationTest[
         StyleBox[ "it", FontSlant -> Italic ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Escaped-With-Formatting@@Tests/FormattingInline.wlt:1279,1-1293,2"
+    TestID   -> "Inline-Escaped-With-Formatting"
 ]
 
 (* A literal backslash that doesn't escape anything is kept: *)
@@ -1341,7 +1341,7 @@ VerificationTest[
     formatted[ "Text with \\\\ backslash and *italic*" ],
     { "Text with \\ backslash and ", StyleBox[ "italic", FontSlant -> Italic ] },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Escaped-Backslash@@Tests/FormattingInline.wlt:1296,1-1301,2"
+    TestID   -> "Inline-Escaped-Backslash"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1360,7 +1360,7 @@ VerificationTest[
         { "Use ", refLinkCell[ "Plot" ], " and `Lis" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Streaming-Unterminated@@Tests/FormattingInline.wlt:1309,1-1320,2"
+    TestID   -> "Inline-Streaming-Unterminated"
 ]
 
 (* A fence that has been started but has no language or code yet is not shown (formatTextString removes it): *)
@@ -1368,7 +1368,7 @@ VerificationTest[
     { formatted[ "Text\n```" ], formatted[ "Text\n```", "Streaming" ], formatted[ "```" ] },
     { { "Text" }, { "Text" }, { } },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Streaming-Dangling-Fence@@Tests/FormattingInline.wlt:1323,1-1328,2"
+    TestID   -> "Inline-Streaming-Dangling-Fence"
 ]
 
 (* The same rule hides a stray extra fence after a code block, which is left over as a text fragment of its own: *)
@@ -1376,7 +1376,7 @@ VerificationTest[
     { formatted[ "```wl\n1+1\n```\n```" ], formatted[ "```wl\n1+1\n```\n```", "Streaming" ] },
     { { Cell[ _, "ChatCodeBlock", ___ ] }, { Cell[ _, "ChatCodeBlock", ___ ] } },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Stray-Fence-After-Code-Block@@Tests/FormattingInline.wlt:1331,1-1336,2"
+    TestID   -> "Inline-Stray-Fence-After-Code-Block"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1410,7 +1410,7 @@ VerificationTest[
         "Text\n\n**Bold paragraph**\n\nMore"
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-RoundTrip-Emphasis@@Tests/FormattingInline.wlt:1347,1-1370,2"
+    TestID   -> "Inline-RoundTrip-Emphasis"
 ]
 
 (* Underscores and TeX text commands serialize as asterisks, and combined styles serialize in a fixed order: *)
@@ -1434,7 +1434,7 @@ VerificationTest[
         "*~~a~~*"
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-RoundTrip-Emphasis-Normalized@@Tests/FormattingInline.wlt:1373,1-1394,2"
+    TestID   -> "Inline-RoundTrip-Emphasis-Normalized"
 ]
 
 (* Markers that were shown literally are escaped when serialized (except tildes): *)
@@ -1442,7 +1442,7 @@ VerificationTest[
     MarkdownRoundTrip /@ { "**unclosed bold", "*unclosed italic", "x * y", "Use `unclosed here", "~~unclosed" },
     { "\\*\\*unclosed bold", "\\*unclosed italic", "x \\* y", "Use \\`unclosed here", "~~unclosed" },
     SameTest -> MatchQ,
-    TestID   -> "Inline-RoundTrip-Literal-Markers-Escaped@@Tests/FormattingInline.wlt:1397,1-1402,2"
+    TestID   -> "Inline-RoundTrip-Literal-Markers-Escaped"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1476,7 +1476,7 @@ VerificationTest[
         "``Plot[x, {x, 0, 1}]``"
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-RoundTrip-Inline-Code@@Tests/FormattingInline.wlt:1409,1-1436,2"
+    TestID   -> "Inline-RoundTrip-Inline-Code"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1507,7 +1507,7 @@ VerificationTest[
         "See [Plot](paclet:ref/Plot) now"
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-RoundTrip-Hyperlinks@@Tests/FormattingInline.wlt:1444,1-1467,2"
+    TestID   -> "Inline-RoundTrip-Hyperlinks"
 ]
 
 (* The \[FreeformPrompt] link serializes as a markdown link to its guide page: *)
@@ -1515,7 +1515,7 @@ VerificationTest[
     MarkdownRoundTrip[ "Ask \[FreeformPrompt] here" ],
     "Ask [\[FreeformPrompt]](paclet:guide/KnowledgeRepresentationAndAccess#203374175) here",
     SameTest -> MatchQ,
-    TestID   -> "Inline-RoundTrip-FreeformPrompt@@Tests/FormattingInline.wlt:1470,1-1475,2"
+    TestID   -> "Inline-RoundTrip-FreeformPrompt"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1539,7 +1539,7 @@ VerificationTest[
         "> Quote with [Plot](paclet:ref/Plot) and **bold** and *it*"
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-RoundTrip-Blocks@@Tests/FormattingInline.wlt:1482,1-1499,2"
+    TestID   -> "Inline-RoundTrip-Blocks"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1570,7 +1570,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "Inline-RoundTrip-Reformat-Stable@@Tests/FormattingInline.wlt:1507,1-1530,2"
+    TestID   -> "Inline-RoundTrip-Reformat-Stable"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1595,14 +1595,14 @@ VerificationTest[
         { "InlineSection", { "Use ", codeTemplateCell[ "foo bar" ], " here" } }
     },
     SameTest -> MatchQ,
-    TestID   -> "Inline-Code-Four-Backticks@@Tests/FormattingInline.wlt:1538,1-1555,2"
+    TestID   -> "Inline-Code-Four-Backticks"
 ]
 
 VerificationTest[
     MarkdownRoundTrip /@ { "Use ````foo bar```` here", "- Use ````foo bar```` here" },
     { "Use ``foo bar`` here", "* Use ``foo bar`` here" },
     SameTest -> MatchQ,
-    TestID   -> "Inline-RoundTrip-Four-Backticks@@Tests/FormattingInline.wlt:1557,1-1562,2"
+    TestID   -> "Inline-RoundTrip-Four-Backticks"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

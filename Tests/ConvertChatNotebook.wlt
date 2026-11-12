@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/ConvertChatNotebook.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/ConvertChatNotebook.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -83,7 +83,7 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "Definitions@@Tests/ConvertChatNotebook.wlt:24,1-87,2"
+    TestID   -> "Definitions"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -96,7 +96,7 @@ VerificationTest[
         $$keptOutput
     },
     SameTest -> MatchQ,
-    TestID   -> "WorkspaceStringInput@@Tests/ConvertChatNotebook.wlt:92,1-100,2"
+    TestID   -> "WorkspaceStringInput"
 ]
 
 VerificationTest[
@@ -109,7 +109,7 @@ VerificationTest[
         $$keptOutput
     },
     SameTest -> MatchQ,
-    TestID   -> "WorkspaceTextDataInput@@Tests/ConvertChatNotebook.wlt:102,1-113,2"
+    TestID   -> "WorkspaceTextDataInput"
 ]
 
 VerificationTest[
@@ -118,14 +118,14 @@ VerificationTest[
     },
     { Cell[ "Say OK", "ChatInput", CellDingbat -> _ ] },
     SameTest -> MatchQ,
-    TestID   -> "WorkspaceLegacyRawStringInput@@Tests/ConvertChatNotebook.wlt:115,1-122,2"
+    TestID   -> "WorkspaceLegacyRawStringInput"
 ]
 
 VerificationTest[
     convertCells @ { workspaceInput @ Cell @ BoxData @ GraphicsBox @ DiskBox @ { 0, 0 } },
     { Cell[ TextData[ Cell[ BoxData @ GraphicsBox @ DiskBox @ { 0, 0 } ] ], "ChatInput", CellDingbat -> _ ] },
     SameTest -> MatchQ,
-    TestID   -> "WorkspaceBoxInput@@Tests/ConvertChatNotebook.wlt:124,1-129,2"
+    TestID   -> "WorkspaceBoxInput"
 ]
 
 VerificationTest[
@@ -138,14 +138,14 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "WorkspaceInputNoNestedCell@@Tests/ConvertChatNotebook.wlt:131,1-142,2"
+    TestID   -> "WorkspaceInputNoNestedCell"
 ]
 
 VerificationTest[
     convertCells @ { workspaceOutput[ "OK" ] },
     { Cell[ _, "ChatOutput", Except[ CellTags -> _ ]... ] },
     SameTest -> MatchQ,
-    TestID   -> "WorkspaceOutputDropsCellTags@@Tests/ConvertChatNotebook.wlt:144,1-149,2"
+    TestID   -> "WorkspaceOutputDropsCellTags"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -158,7 +158,7 @@ VerificationTest[
         $$keptOutput
     },
     SameTest -> MatchQ,
-    TestID   -> "SidebarStringInput@@Tests/ConvertChatNotebook.wlt:154,1-162,2"
+    TestID   -> "SidebarStringInput"
 ]
 
 VerificationTest[
@@ -168,7 +168,7 @@ VerificationTest[
         $$keptOutput
     },
     SameTest -> MatchQ,
-    TestID   -> "SidebarTextDataInput@@Tests/ConvertChatNotebook.wlt:164,1-172,2"
+    TestID   -> "SidebarTextDataInput"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

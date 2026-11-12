@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/Sandbox.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/Sandbox.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -30,7 +30,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "DefaultWritePaths-AgentTools-GH#1595@@Tests/Sandbox.wlt:26,1-34,2"
+    TestID   -> "DefaultWritePaths-AgentTools-GH#1595"
 ]
 
 VerificationTest[
@@ -40,7 +40,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "MakeWritePaths-Automatic-AgentTools-GH#1595@@Tests/Sandbox.wlt:36,1-44,2"
+    TestID   -> "MakeWritePaths-Automatic-AgentTools-GH#1595"
 ]
 
 (* Session files are read back via Get, which relies on read access to all of ApplicationData. *)
@@ -55,7 +55,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "DefaultReadPaths-ApplicationData-GH#1595@@Tests/Sandbox.wlt:48,1-59,2"
+    TestID   -> "DefaultReadPaths-ApplicationData-GH#1595"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -68,14 +68,14 @@ VerificationTest[
     ],
     { "a = 1;", "b", "c;", "f[x_] :=\n    x + 1" },
     SameTest -> MatchQ,
-    TestID   -> "InputSegments-Split@@Tests/Sandbox.wlt:64,1-72,2"
+    TestID   -> "InputSegments-Split"
 ]
 
 VerificationTest[
     Lookup[ Wolfram`Chatbook`Sandbox`Private`toSandboxSegments[ "(* comment *)" ][ "Segments" ], "Input" ],
     { HoldComplete[ Null ] },
     SameTest -> MatchQ,
-    TestID   -> "InputSegments-OnlyComments@@Tests/Sandbox.wlt:74,1-79,2"
+    TestID   -> "InputSegments-OnlyComments"
 ]
 
 (* Input with an unfixable syntax error is kept together so the evaluator can report it: *)
@@ -83,7 +83,7 @@ VerificationTest[
     Lookup[ Wolfram`Chatbook`Sandbox`Private`toSandboxSegments[ "1 + 1\n2 + " ][ "Segments" ], "Input" ],
     { "1 + 1\n2 + " },
     SameTest -> MatchQ,
-    TestID   -> "InputSegments-SyntaxError@@Tests/Sandbox.wlt:82,1-87,2"
+    TestID   -> "InputSegments-SyntaxError"
 ]
 
 (* Splitting input does not create any symbols: *)
@@ -92,7 +92,7 @@ VerificationTest[
     Names[ "*`segmentTestSymbol*" ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "InputSegments-NoSymbols@@Tests/Sandbox.wlt:90,1-96,2"
+    TestID   -> "InputSegments-NoSymbols"
 ]
 
 VerificationTest[
@@ -107,7 +107,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "InputSegments-Macros@@Tests/Sandbox.wlt:98,1-111,2"
+    TestID   -> "InputSegments-Macros"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -117,95 +117,99 @@ VerificationTest[
     First @ Wolfram`Chatbook`Sandbox`Private`repairSandboxCode[ "Dimensions[{{1,2},{3,4},{5,6}}" ],
     "Dimensions[{{1,2},{3,4},{5,6}}]",
     SameTest -> MatchQ,
-    TestID   -> "Repairs-MissingClosers@@Tests/Sandbox.wlt:116,1-121,2"
+    TestID   -> "Repairs-MissingClosers"
 ]
 
 VerificationTest[
     First @ Wolfram`Chatbook`Sandbox`Private`repairSandboxCode[ "Plot[Sin[x], {x, 0, Pi" ],
     "Plot[Sin[x], {x, 0, Pi}]",
     SameTest -> MatchQ,
-    TestID   -> "Repairs-MissingMixedClosers@@Tests/Sandbox.wlt:123,1-128,2"
+    TestID   -> "Repairs-MissingMixedClosers"
 ]
 
 VerificationTest[
     First @ Wolfram`Chatbook`Sandbox`Private`repairSandboxCode[ "x = {1, 2, 3\nTotal[x]" ],
     "x = {1, 2, 3}\nTotal[x]",
     SameTest -> MatchQ,
-    TestID   -> "Repairs-MissingClosersEndOfLine@@Tests/Sandbox.wlt:130,1-135,2"
+    TestID   -> "Repairs-MissingClosersEndOfLine"
 ]
 
 VerificationTest[
     First @ Wolfram`Chatbook`Sandbox`Private`repairSandboxCode[ "Table[i^2,\n  {i, 10}\nTotal[%]" ],
     "Table[i^2,\n  {i, 10}]\nTotal[%]",
     SameTest -> MatchQ,
-    TestID   -> "Repairs-MissingClosersMultiline@@Tests/Sandbox.wlt:137,1-142,2"
+    TestID   -> "Repairs-MissingClosersMultiline"
 ]
 
 VerificationTest[
     First @ Wolfram`Chatbook`Sandbox`Private`repairSandboxCode[ "Module[{a = 1},\n  a + 1" ],
     "Module[{a = 1},\n  a + 1]",
     SameTest -> MatchQ,
-    TestID   -> "Repairs-MissingClosersEnd@@Tests/Sandbox.wlt:144,1-149,2"
+    TestID   -> "Repairs-MissingClosersEnd"
 ]
 
 VerificationTest[
     First @ Wolfram`Chatbook`Sandbox`Private`repairSandboxCode[ "<|\"a\" -> 1" ],
     "<|\"a\" -> 1|>",
     SameTest -> MatchQ,
-    TestID   -> "Repairs-MissingAssociationCloser@@Tests/Sandbox.wlt:151,1-156,2"
+    TestID   -> "Repairs-MissingAssociationCloser"
 ]
 
 VerificationTest[
     First @ Wolfram`Chatbook`Sandbox`Private`repairSandboxCode[ "{\"]\", 1" ],
     "{\"]\", 1}",
     SameTest -> MatchQ,
-    TestID   -> "Repairs-ClosersInStrings@@Tests/Sandbox.wlt:158,1-163,2"
+    TestID   -> "Repairs-ClosersInStrings"
 ]
 
 VerificationTest[
     First @ Wolfram`Chatbook`Sandbox`Private`repairSandboxCode[ "f[{1,2]" ],
     "f[{1,2}]",
     SameTest -> MatchQ,
-    TestID   -> "Repairs-MismatchedClosers@@Tests/Sandbox.wlt:165,1-170,2"
+    TestID   -> "Repairs-MismatchedClosers"
 ]
 
 VerificationTest[
     First @ Wolfram`Chatbook`Sandbox`Private`repairSandboxCode[ "Print['hi'" ],
     "Print[\"hi\"]",
     SameTest -> MatchQ,
-    TestID   -> "Repairs-SingleQuotes@@Tests/Sandbox.wlt:172,1-177,2"
+    TestID   -> "Repairs-SingleQuotes"
 ]
 
 VerificationTest[
     First @ Wolfram`Chatbook`Sandbox`Private`repairSandboxCode[ "// a comment\nx = 1" ],
     "(*a comment*)\nx = 1",
     SameTest -> MatchQ,
-    TestID   -> "Repairs-LineComments@@Tests/Sandbox.wlt:179,1-184,2"
+    TestID   -> "Repairs-LineComments"
 ]
 
 VerificationTest[
     First @ Wolfram`Chatbook`Sandbox`Private`repairSandboxCode[ "f[1,]" ],
     "f[1,]",
     SameTest -> MatchQ,
-    TestID   -> "Repairs-ImplicitNull@@Tests/Sandbox.wlt:186,1-191,2"
+    TestID   -> "Repairs-ImplicitNull"
 ]
 
 VerificationTest[
     First @ Wolfram`Chatbook`Sandbox`Private`repairSandboxCode[ "1 +" ],
     "1 +",
     SameTest -> MatchQ,
-    TestID   -> "Repairs-Unfixable@@Tests/Sandbox.wlt:193,1-198,2"
+    TestID   -> "Repairs-Unfixable"
 ]
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Kernel Startup Failures*)
 
+(* A command line for a process that never connects to the link. On Windows, LinkLaunch asks the user to pick a
+   program when the executable doesn't exist, so use a command that exits immediately instead: *)
+$neverConnectsCommandLine = If[ $OperatingSystem === "Windows", "cmd.exe /c exit", "/nonexistent/WolframKernel -wstp" ];
+
 (* A process that never connects to the link blocks LinkWrite indefinitely: *)
 VerificationTest[
     Block[
         {
-            Wolfram`Chatbook`Common`$sandboxKernelCommandLine = "/nonexistent/WolframKernel -wstp",
+            Wolfram`Chatbook`Common`$sandboxKernelCommandLine = $neverConnectsCommandLine,
             Wolfram`Chatbook`Sandbox`Private`$sandboxPingTimeout = 1
         },
         Quiet @ Wolfram`Chatbook`Sandbox`Private`startSandboxKernel[ ]
@@ -213,7 +217,7 @@ VerificationTest[
     Failure[ "NoSandboxKernel", _ ],
     SameTest       -> MatchQ,
     TimeConstraint -> 30,
-    TestID         -> "StartSandboxKernel-NeverConnects-GH#855@@Tests/Sandbox.wlt:205,1-217,2"
+    TestID         -> "StartSandboxKernel-NeverConnects-GH#855"
 ]
 
 (* A kernel that exits after connecting closes the link, so there's no need to wait for the time limit: *)
@@ -230,7 +234,7 @@ VerificationTest[
     ],
     { _? (LessThan[ 60 ]), Failure[ "NoSandboxKernel", _ ] },
     SameTest -> MatchQ,
-    TestID   -> "StartSandboxKernel-KernelExits-GH#855@@Tests/Sandbox.wlt:220,1-234,2"
+    TestID   -> "StartSandboxKernel-KernelExits-GH#855"
 ]
 
 (* A kernel that does not respond in time: *)
@@ -241,14 +245,14 @@ VerificationTest[
     ],
     Failure[ "NoSandboxKernel", _ ],
     SameTest -> MatchQ,
-    TestID   -> "StartSandboxKernel-TimedOut-GH#855@@Tests/Sandbox.wlt:237,1-245,2"
+    TestID   -> "StartSandboxKernel-TimedOut-GH#855"
 ]
 
 (* The evaluator reports the failure to the model as its result, instead of throwing an internal failure: *)
 VerificationTest[
     Block[
         {
-            Wolfram`Chatbook`Common`$sandboxKernelCommandLine = "/nonexistent/WolframKernel -wstp",
+            Wolfram`Chatbook`Common`$sandboxKernelCommandLine = $neverConnectsCommandLine,
             Wolfram`Chatbook`Sandbox`Private`$sandboxPingTimeout = 1
         },
         Quiet @ Wolfram`Chatbook`WolframLanguageToolEvaluate[ "1 + 1", All, "Method" -> "Local" ]
@@ -259,7 +263,7 @@ VerificationTest[
     },
     SameTest       -> MatchQ,
     TimeConstraint -> 30,
-    TestID         -> "ToolResult-NoSandboxKernel-GH#855@@Tests/Sandbox.wlt:248,1-263,2"
+    TestID         -> "ToolResult-NoSandboxKernel-GH#855"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

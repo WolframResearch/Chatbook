@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/PreferencesContent.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/PreferencesContent.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -65,7 +65,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "ResetChatPreferences-Notebooks-PreservesOtherTabs@@Tests/PreferencesContent.wlt:28,1-69,2"
+    TestID   -> "ResetChatPreferences-Notebooks-PreservesOtherTabs"
 ]
 
 VerificationTest[
@@ -88,7 +88,7 @@ VerificationTest[
     ],
     { True, { } },
     SameTest -> MatchQ,
-    TestID   -> "ResetChatPreferences-Notebooks-NoDefaultsWritten@@Tests/PreferencesContent.wlt:71,1-92,2"
+    TestID   -> "ResetChatPreferences-Notebooks-NoDefaultsWritten"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -127,7 +127,7 @@ VerificationTest[
     ],
     { True, "LLMKit", "" },
     SameTest -> MatchQ,
-    TestID   -> "ResetChatPreferences-Services-RebuildsPanel@@Tests/PreferencesContent.wlt:97,1-131,2"
+    TestID   -> "ResetChatPreferences-Services-RebuildsPanel"
 ]
 
 VerificationTest[
@@ -138,7 +138,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "CreatePreferencesContent-UniqueBoxesPerRebuild@@Tests/PreferencesContent.wlt:133,1-142,2"
+    TestID   -> "CreatePreferencesContent-UniqueBoxesPerRebuild"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -167,7 +167,7 @@ VerificationTest[
     ],
     { "Notebooks", "Cloud", "Services", "Cloud", "Personas", "Tools" },
     SameTest -> MatchQ,
-    TestID   -> "ResetChatPreferences-RefreshesCloudPreferences@@Tests/PreferencesContent.wlt:149,1-171,2"
+    TestID   -> "ResetChatPreferences-RefreshesCloudPreferences"
 ]
 
 VerificationTest[
@@ -207,7 +207,7 @@ VerificationTest[
         "VisiblePersonas"   -> { "Birdnardo" }
     |>,
     SameTest -> MatchQ,
-    TestID   -> "UnsetChatSettingsKeys-Cloud@@Tests/PreferencesContent.wlt:173,1-211,2"
+    TestID   -> "UnsetChatSettingsKeys-Cloud"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -238,7 +238,7 @@ VerificationTest[
         { Wolfram`Chatbook`Common`$corePersonaNames, Wolfram`Chatbook`Common`$corePersonaNames }
     },
     SameTest -> MatchQ,
-    TestID   -> "ResetChatPreferences-Personas-UnsetsKeys@@Tests/PreferencesContent.wlt:216,1-242,2"
+    TestID   -> "ResetChatPreferences-Personas-UnsetsKeys"
 ]
 
 VerificationTest[
@@ -274,7 +274,7 @@ VerificationTest[
         { Wolfram`Chatbook`Common`$corePersonaNames, Wolfram`Chatbook`Common`$corePersonaNames, 0.3 }
     },
     SameTest -> MatchQ,
-    TestID   -> "ResetChatPreferences-Personas-Cloud@@Tests/PreferencesContent.wlt:244,1-278,2"
+    TestID   -> "ResetChatPreferences-Personas-Cloud"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -296,7 +296,7 @@ VerificationTest[
     ],
     { Wolfram`Chatbook`Common`$corePersonaNames, { } },
     SameTest -> MatchQ,
-    TestID   -> "FilterPersonas-ReadingWritesNothing@@Tests/PreferencesContent.wlt:283,1-300,2"
+    TestID   -> "FilterPersonas-ReadingWritesNothing"
 ]
 
 VerificationTest[
@@ -313,7 +313,7 @@ VerificationTest[
     ],
     { "Wolfie", "Birdnardo", "PlainChat" },
     SameTest -> MatchQ,
-    TestID   -> "FilterPersonas-VisibleAndFavoritesOrder@@Tests/PreferencesContent.wlt:302,1-317,2"
+    TestID   -> "FilterPersonas-VisibleAndFavoritesOrder"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -343,7 +343,7 @@ VerificationTest[
     ],
     { True, { } },
     SameTest -> MatchQ,
-    TestID   -> "PersonaManagerPanel-ViewingWritesNothing@@Tests/PreferencesContent.wlt:322,1-347,2"
+    TestID   -> "PersonaManagerPanel-ViewingWritesNothing"
 ]
 
 VerificationTest[
@@ -366,7 +366,7 @@ VerificationTest[
     ],
     { False, { "RawModel", "PlainChat" } },
     SameTest -> MatchQ,
-    TestID   -> "PersonaManagerPanel-RemovesUninstalledVisiblePersonas@@Tests/PreferencesContent.wlt:349,1-370,2"
+    TestID   -> "PersonaManagerPanel-RemovesUninstalledVisiblePersonas"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

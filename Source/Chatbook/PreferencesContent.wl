@@ -76,7 +76,7 @@ createPreferencesContent[ ] := Enclose[
                 Alignment  -> Left,
                 BaseStyle  -> "defaultGrid",  (* Defined in the SystemDialog stylesheet *)
                 AutoDelete -> False,
-                FrameStyle -> { AbsoluteThickness[ 1 ], color @ "PreferencesContentFrame" },
+                FrameStyle -> { AbsoluteThickness[ 1 ], color @ "Gray90_33" },
                 Dividers   -> { False, { 4 -> True } },
                 Spacings   -> { 0, 0.7 }
             ],
@@ -205,8 +205,8 @@ Framed[
                                 tr @ "PreferencesContentAIDisabledLearnMore",
                                 FontColor ->
                                     Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
-                                        color @ "PreferencesContentLLMSignInButtonFontHover",
-                                        color @ "PreferencesContentLLMSignInButtonFont"
+                                        color @ "Blue_55B1D8_5BA6C8",
+                                        color @ "Blue_008AC5_3FB9F9"
                                     ],
                                 FontSize  -> 13,
                                 FontSlant -> Italic
@@ -226,7 +226,7 @@ Framed[
         Spacings  -> { 1.0, 0 }
     ],
     Alignment      -> { Left, Top },
-    Background     -> LightDarkSwitched @ GrayLevel[ 1 ],
+    Background     -> color @ "Gray100_10",
     FrameMargins   -> 14,
     FrameStyle     -> LightDarkSwitched @ RGBColor["#EBEBEB"],
     ImageMargins   -> { { 0, 0 }, { 10, 0 } },
@@ -344,7 +344,7 @@ Attributes[ notebookSettingsPanel ] = { HoldAll };
 notebookSettingsPanel[ dmPrefCache_, default_, service_, model_, state_, serviceSelector_, modelNameSelector_ ] :=
     DynamicModule[
         (* Display a progress indicator until content is loaded via initialization: *)
-        { display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ] },
+        { display = ProgressIndicator[ Appearance -> { "Percolate", color @ "Gray85_39" } ] },
         Dynamic @ display,
         (* createNotebookSettingsPanel is called to initialize the content of the panel: *)
         Initialization :> (display = disabledAIOverlay[
@@ -518,7 +518,7 @@ makePersonaSelector0[ Dynamic[ dmPrefCache_ ], personas: { (_String -> _).. } ] 
                 Function[ dmPrefCache[ "LLMEvaluator" ] = CurrentChatSettings[ $FrontEnd, "LLMEvaluator" ] = # ],
                 personas,
                 Hold @ Lookup[ dmPrefCache, "LLMEvaluator" ],
-                MenuStyle -> { "controlText", FontColor -> color @ "PreferencesContentFont_2" }
+                MenuStyle -> { "controlText", FontColor -> color @ "Gray0_100" }
             ]
         },
         "Notebooks",
@@ -963,7 +963,7 @@ makeInstructionsContent[ Dynamic[ dmPrefCache_ ] ] :=
                             BaseStyle        -> {
                                 "controlText",
                                 AutoSpacing -> False,
-                                FontColor   -> color @ "PreferencesContentFont_2",
+                                FontColor   -> color @ "Gray0_100",
                                 FontSize    -> 13
                             }
                         ],
@@ -1150,7 +1150,7 @@ makeMultimodalMenu[ Dynamic[ dmPrefCache_ ] ] := highlightControl[
     Grid[
         {
             {
-                Style[ tr[ "PreferencesContentEnableMultimodalLabel" ], "leadinText", FontColor -> color @ "PreferencesContentFont_2" ],
+                Style[ tr[ "PreferencesContentEnableMultimodalLabel" ], "leadinText", FontColor -> color @ "Gray0_100" ],
                 prefsPopupMenu[
                     Function[ dmPrefCache[ "Multimodal" ] = CurrentChatSettings[ $FrontEnd, "Multimodal" ] = # ],
                     {
@@ -1159,7 +1159,7 @@ makeMultimodalMenu[ Dynamic[ dmPrefCache_ ] ] := highlightControl[
                         False     -> tr[ "EnabledNever"   ]
                     },
                     Hold @ Replace[ Lookup[ dmPrefCache, "Multimodal" ], Except[ Automatic|True|False ] -> Automatic ],
-                    MenuStyle -> { "controlText", FontColor -> color @ "PreferencesContentFont_2" }
+                    MenuStyle -> { "controlText", FontColor -> color @ "Gray0_100" }
                 ]
             }
         },
@@ -1181,7 +1181,7 @@ makeToolsEnabledMenu[ Dynamic[ dmPrefCache_ ] ] := highlightControl[
     Grid[
         {
             {
-                Style[ tr[ "PreferencesContentEnableTools" ], "leadinText", FontColor -> color @ "PreferencesContentFont_2" ],
+                Style[ tr[ "PreferencesContentEnableTools" ], "leadinText", FontColor -> color @ "Gray0_100" ],
                 prefsPopupMenu[
                     Function[ dmPrefCache[ "ToolsEnabled" ] = CurrentChatSettings[ $FrontEnd, "ToolsEnabled" ] = # ],
                     {
@@ -1190,7 +1190,7 @@ makeToolsEnabledMenu[ Dynamic[ dmPrefCache_ ] ] := highlightControl[
                         False     -> tr[ "EnabledNever"   ]
                     },
                     Hold @ Replace[ Lookup[ dmPrefCache, "ToolsEnabled" ], Except[ Automatic|True|False ] -> Automatic ],
-                    MenuStyle -> { "controlText", FontColor -> color @ "PreferencesContentFont_2" }
+                    MenuStyle -> { "controlText", FontColor -> color @ "Gray0_100" }
                 ]
             }
         },
@@ -1214,7 +1214,7 @@ makeToolCallFrequencySelector[ Dynamic[ dmPrefCache_ ] ] := highlightControl[
         Grid[
             {
                 {
-                    Style[ tr[ "PreferencesContentToolCallFrequency" ], "leadinText", FontColor -> color @ "PreferencesContentFont_2" ],
+                    Style[ tr[ "PreferencesContentToolCallFrequency" ], "leadinText", FontColor -> color @ "Gray0_100" ],
                     PopupMenu[
                         Dynamic[
                             type,
@@ -1233,7 +1233,7 @@ makeToolCallFrequencySelector[ Dynamic[ dmPrefCache_ ] ] := highlightControl[
                             Automatic -> tr[ "Automatic" ],
                             "Custom"  -> tr[ "Custom"    ]
                         },
-                        MenuStyle -> { "controlText", FontColor -> color @ "PreferencesContentFont_2" }
+                        MenuStyle -> { "controlText", FontColor -> color @ "Gray0_100" }
                     ],
                     PaneSelector[
                         {
@@ -1378,16 +1378,16 @@ servicesSettingsPanel0[ dmPrefCache_, default_, service_, model_, state_, servic
                         Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "FEBitmaps", "ProductSelectorInfo" ][ #2, 14 ] ] ],
                         Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "FEBitmaps", "ProductSelectorInfo" ][ #3, 14 ] ] ]
                     ]&[
-                        color @ "PreferencesContentServicesNAInfoIcon",
-                        color @ "PreferencesContentServicesNAInfoIconHover",
-                        color @ "PreferencesContentServicesNAInfoIconPressed"
+                        color @ "Gray54_71",
+                        LightDarkSwitched[ GrayLevel[ 0.692 ], GrayLevel[ 0.5671 ] ],
+                        color @ "Gray35_86"
                     ],
                     Pane[ tr[ "PreferencesContentLLMKitLearnMoreTooltip" ], ImageSize -> UpTo[ 274 ] ],
                     TooltipStyle -> {
-                        Background       -> color @ "PreferencesContentServicesNAInfoTooltipBackground",
-                        CellFrameColor   -> color @ "PreferencesContentServicesNAInfoTooltipFrame",
+                        Background       -> color @ "Gray94_20",
+                        CellFrameColor   -> LightDarkSwitched[ GrayLevel[ 0.8196 ], GrayLevel[ 0.4265 ] ],
                         CellFrameMargins -> 5,
-                        FontColor        -> color @ "PreferencesContentFont_1",
+                        FontColor        -> color @ "Gray20_94",
                         FontFamily       -> "Roboto",
                         FontSize         -> 11 } ],
                 Wolfram`LLMFunctions`Common`OpenLLMKitURL @ "Learn",
@@ -1460,11 +1460,11 @@ Module[ { retryButton, subscribeButton, username, signInButton, manageButton, up
                         Grid[
                             { {
                                 RawBoxes[ DynamicBox[ FEPrivate`FrontEndResource[ "FEBitmaps", "GenericUserIcon" ][ # ] ] ]&[
-                                    color @ "PreferencesContentFont_1"
+                                    color @ "Gray20_94"
                                 ],
                                 If[ $CloudEvaluation, Dynamic[ $CloudAccountName ], Dynamic[ FrontEnd`CurrentValue["WolframCloudFullUserName"] ] ] } },
                             Alignment -> { Left, Baseline },
-                            BaseStyle -> { FontColor -> color @ "PreferencesContentFont_1", FontSize -> 14 },
+                            BaseStyle -> { FontColor -> color @ "Gray20_94", FontSize -> 14 },
                             BaselinePosition -> { 1, 2 } ] },
                 Dynamic[ $CloudUserID =!= None ],
                 BaselinePosition -> Baseline,
@@ -1476,8 +1476,8 @@ Module[ { retryButton, subscribeButton, username, signInButton, manageButton, up
                     tr[ "PreferencesContentLLMKitSignInButton" ],
                     FontColor ->
                         Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
-                            color @ "PreferencesContentLLMSignInButtonFontHover",
-                            color @ "PreferencesContentLLMSignInButtonFont"
+                            color @ "Blue_55B1D8_5BA6C8",
+                            color @ "Blue_008AC5_3FB9F9"
                         ]
                 ],
                 CloudConnect[ ];
@@ -1494,8 +1494,8 @@ Module[ { retryButton, subscribeButton, username, signInButton, manageButton, up
                     tr[ "Retry" ],
                     FontColor ->
                         Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
-                            color @ "PreferencesContentLLMSignInButtonFontHover",
-                            color @ "PreferencesContentLLMSignInButtonFont"
+                            color @ "Blue_55B1D8_5BA6C8",
+                            color @ "Blue_008AC5_3FB9F9"
                         ]
                 ],
                 Typeset`cachedUserData = getServiceData[ ],
@@ -1510,8 +1510,8 @@ Module[ { retryButton, subscribeButton, username, signInButton, manageButton, up
                 Style[
                     tr[ "PreferencesContentLLMKitEnabledManage" ],
                     FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
-                        color @ "PreferencesContentFont_1",
-                        color @ "PreferencesContentFont_3" ])
+                        color @ "Gray20_94",
+                        color @ "Gray54_71" ])
                 ],
                 If[ AssociationQ @ Typeset`cachedUserData, SystemOpen @ Lookup[ Typeset`cachedUserData, "manageSubscriptionUrl", "https://account.wolfram.com/products" ], Beep[ ] ],
                 Appearance -> "Suppressed",
@@ -1530,8 +1530,8 @@ Module[ { retryButton, subscribeButton, username, signInButton, manageButton, up
                         }
                     ],
                     FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
-                        color @ "PreferencesContentFont_1",
-                        color @ "PreferencesContentFont_3" ])
+                        color @ "Gray20_94",
+                        color @ "Gray54_71" ])
                 ],
                 If[ AssociationQ @ Typeset`cachedUserData, SystemOpen @ Lookup[ Typeset`cachedUserData, "upgradeUrl", "https://account.wolfram.com/manage/plan" ], Beep[ ] ],
                 Appearance -> "Suppressed",
@@ -1547,8 +1547,8 @@ Module[ { retryButton, subscribeButton, username, signInButton, manageButton, up
                         "`SubscriptionLevelResearch`" :> ToString[ Style[ "Research", FontWeight -> "Bold" ], StandardForm ]
                     ],
                     FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
-                        color @ "PreferencesContentFont_1",
-                        color @ "PreferencesContentFont_3" ])
+                        color @ "Gray20_94",
+                        color @ "Gray54_71" ])
                 ],
                 If[ AssociationQ @ Typeset`cachedUserData, SystemOpen @ Lookup[ Typeset`cachedUserData, "upgradeUrl", "https://account.wolfram.com/manage/plan" ], Beep[ ] ],
                 Appearance -> "Suppressed",
@@ -1566,7 +1566,7 @@ Module[ { retryButton, subscribeButton, username, signInButton, manageButton, up
                                 "Loading" ->
                                     DynamicWrapper[
                                         (* Display a progress indicator until LLMKit user data is set via initialization *)
-                                        ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ]
+                                        ProgressIndicator[ Appearance -> { "Percolate", color @ "Gray85_39" } ]
                                         ,
                                         If[ Typeset`cachedUserData === None || FailureQ @ Typeset`cachedUserData, Typeset`cachedUserData = getServiceData[ ] ]
                                         ,
@@ -1579,7 +1579,7 @@ Module[ { retryButton, subscribeButton, username, signInButton, manageButton, up
                                             { retryButton }
                                         },
                                         Alignment        -> { Left, Baseline },
-                                        BaseStyle        -> { "DialogText", FontColor -> color @ "PreferencesContentFont_3", LineIndent -> 0, LinebreakAdjustments -> { 1, 10, 1, 0, 10 } },
+                                        BaseStyle        -> { "DialogText", FontColor -> color @ "Gray54_71", LineIndent -> 0, LinebreakAdjustments -> { 1, 10, 1, 0, 10 } },
                                         BaselinePosition -> { 1, 1 }
                                     ],
                                 "NotCloudConnected" ->
@@ -1589,7 +1589,7 @@ Module[ { retryButton, subscribeButton, username, signInButton, manageButton, up
                                             { subscribeButton, tr[ "PreferencesContentLLMKitSignInOr" ], signInButton }
                                         },
                                         Alignment        -> { Left, Baseline },
-                                        BaseStyle        -> { "DialogText", FontColor -> color @ "PreferencesContentFont_3", LineIndent -> 0, LinebreakAdjustments -> { 1, 10, 1, 0, 10 } },
+                                        BaseStyle        -> { "DialogText", FontColor -> color @ "Gray54_71", LineIndent -> 0, LinebreakAdjustments -> { 1, 10, 1, 0, 10 } },
                                         BaselinePosition -> { 1, 1 }
                                     ],
                                 "CloudConnectedButNotSubscribed" ->
@@ -1599,17 +1599,17 @@ Module[ { retryButton, subscribeButton, username, signInButton, manageButton, up
                                             { subscribeButton }
                                         },
                                         Alignment        -> { Left, Baseline },
-                                        BaseStyle        -> { "DialogText", FontColor -> color @ "PreferencesContentFont_3", LineIndent -> 0, LinebreakAdjustments -> { 1, 10, 1, 0, 10 } },
+                                        BaseStyle        -> { "DialogText", FontColor -> color @ "Gray54_71", LineIndent -> 0, LinebreakAdjustments -> { 1, 10, 1, 0, 10 } },
                                         BaselinePosition -> { 1, 1 }
                                     ],
                                 "CloudConnectedAndSubscribed" ->
-                                    DynamicModule[ { Typeset`display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ] },
-                                        With[ { mb = manageButton, urb = upgradeToResearchButton, uprb = upgradeToProOrResearchButton },
+                                    DynamicModule[ { Typeset`display = ProgressIndicator[ Appearance -> { "Percolate", color @ "Gray85_39" } ] },
+                                        With[ { mb = manageButton, urb = upgradeToResearchButton, uprb = upgradeToProOrResearchButton, progressColor = color @ "Gray85_39", titleColor = color @ "Gray20_94", fontColor = color @ "Gray54_71" },
                                             DynamicWrapper[
                                                 Dynamic @ Typeset`display
                                                 ,
                                                 If[ Typeset`subscriptionLevel === None,
-                                                    Typeset`display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ];
+                                                    Typeset`display = ProgressIndicator[ Appearance -> { "Percolate", progressColor } ];
                                                     Typeset`subscriptionLevel = Lookup[ Typeset`cachedUserData, "accessLevel", "Basic" ];
                                                     Typeset`display =
                                                         Grid[
@@ -1618,7 +1618,7 @@ Module[ { retryButton, subscribeButton, username, signInButton, manageButton, up
                                                                     chatbookExpression[ "CheckmarkGreen" ],
                                                                     Style[
                                                                         StringReplace[ FrontEndResource[ "ChatbookStrings", "PreferencesContentLLMKitEnabledTitle" ], "`SubscriptionLevel`" :> Typeset`subscriptionLevel ],
-                                                                        FontColor -> color @ "PreferencesContentFont_1" ] },
+                                                                        FontColor -> titleColor ] },
                                                                 {
                                                                     "",
                                                                     Switch[ Sort @ Flatten @ Lookup[ Typeset`cachedUserData, "upgradeOptions", { }, Lookup[ #, "level", { } ]& ],
@@ -1630,7 +1630,7 @@ Module[ { retryButton, subscribeButton, username, signInButton, manageButton, up
                                                                 }
                                                             },
                                                             Alignment        -> { Left, Baseline },
-                                                            BaseStyle        -> { "DialogTextCommon", FontColor -> color @ "PreferencesContentFont_3", LineIndent -> 0, LinebreakAdjustments -> { 1, 10, 1, 0, 10 } },
+                                                            BaseStyle        -> { "DialogTextCommon", FontColor -> fontColor, LineIndent -> 0, LinebreakAdjustments -> { 1, 10, 1, 0, 10 } },
                                                             BaselinePosition -> { 1, 2 },
                                                             Spacings         -> { 0.25, 0.5 }
                                                         ];
@@ -1661,9 +1661,9 @@ Module[ { retryButton, subscribeButton, username, signInButton, manageButton, up
                 ItemSize  -> { { Automatic, Fit, Automatic } },
                 Spacings  -> { Automatic, 0.7 }
             ],
-            Background     -> color @ "PreferencesContentBackground",
+            Background     -> color @ "Gray100_10",
             FrameMargins   -> { { 15, 15 }, { 15, 10 } },
-            FrameStyle     -> color @ "PreferencesContentServicesLLMKitFrame",
+            FrameStyle     -> LightDarkSwitched[ GrayLevel[ 0.898 ], GrayLevel[ 0.2666 ] ],
             ImageSize      -> Scaled[ 1 ],
             RoundingRadius -> 3 ]
     ]
@@ -1678,7 +1678,8 @@ makeLLMPanel // endDefinition;
 makeServiceGrid // beginDefinition;
 
 makeServiceGrid[ Dynamic[ dmPrefCache_ ] ] :=
-DynamicModule[ { display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ] },
+With[ { background = color @ "Gray100_10", divider = LightDarkSwitched[ GrayLevel[ 0.898 ], GrayLevel[ 0.2039 ] ] },
+DynamicModule[ { display = ProgressIndicator[ Appearance -> { "Percolate", color @ "Gray85_39" } ] },
     Framed[
         Pane[
             Dynamic @ display,
@@ -1687,9 +1688,9 @@ DynamicModule[ { display = ProgressIndicator[ Appearance -> { "Percolate", color
             Scrollbars -> { False, Automatic },
             ImageSize -> { Scaled[ 1 ], UpTo[ 150 ] }
         ],
-        Background -> color @ "PreferencesContentBackground",
+        Background -> background,
         FrameMargins -> 0,
-        FrameStyle -> color @ "PreferencesContentFrame",
+        FrameStyle -> color @ "Gray90_33",
         ImageSize -> Scaled[ 1 ],
         RoundingRadius -> 3
     ],
@@ -1697,14 +1698,15 @@ DynamicModule[ { display = ProgressIndicator[ Appearance -> { "Percolate", color
         Grid[
             KeyValueMap[ makeServiceGridRow[ Dynamic @ dmPrefCache, #1, #2 ]&, DeleteCases[ $availableServices, KeyValuePattern[ "Hidden" -> True ] ] ],
             Alignment  -> { Left, Baseline },
-            Background -> { { }, { { color @ "PreferencesContentBackground" } } },
+            Background -> { { }, { { background } } },
             ItemSize   -> { { Automatic, Automatic, Scaled[ 0.3 ], Fit, Automatic }, Automatic },
             Dividers   -> { { }, { False, { True }, False } },
-            FrameStyle -> color @ "PreferencesContentDirectServiceConnectionsDelimiter",
+            FrameStyle -> divider,
             Spacings   -> { Automatic, 0.7 }
         ]
     ),
     SynchronousInitialization -> False
+]
 ]
 
 makeServiceGrid // endDefinition;
@@ -1727,7 +1729,7 @@ makeServiceAuthenticationDisplay // beginDefinition;
 
 makeServiceAuthenticationDisplay[ Dynamic[ dmPrefCache_ ], service_String, icon_ ] :=
     DynamicModule[ { display },
-        display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ];
+        display = ProgressIndicator[ Appearance -> { "Percolate", color @ "Gray85_39" } ];
         Dynamic[ display, TrackedSymbols :> { display } ],
         Initialization :> createServiceAuthenticationDisplay[ Dynamic @ dmPrefCache, service, icon, Dynamic[ display ] ],
         SynchronousInitialization -> False
@@ -1755,9 +1757,9 @@ createServiceAuthenticationDisplay[ Dynamic[ dmPrefCache_ ], service_, icon_, Dy
                 {
                     Spacer[ 5 ],
                     If[ type === "None",
-                        Overlay[ { icon, Graphics[ Background -> color @ "PreferencesContentServicesIconFade_1", ImageSize -> { 21, 21 } ] } ],
+                        Overlay[ { icon, Graphics[ Background -> LightDarkSwitched[ GrayLevel[ 1, 0.5 ], GrayLevel[ 0.098, 0.5 ] ], ImageSize -> { 21, 21 } ] } ],
                         icon ],
-                    Style[ service, FontColor -> color @ "PreferencesContentServicesIconFade_2", FontOpacity -> If[ type === "None", 0.5, 1 ] ],
+                    Style[ service, FontColor -> color @ "Gray0_100", FontOpacity -> If[ type === "None", 0.5, 1 ] ],
                     Pane[ "", ImageSize -> Scaled[ 1. ] ],
                     connectOrDisconnectButton[ Dynamic @ dmPrefCache, service, type, icon, Dynamic @ display ]
                 }
@@ -1779,7 +1781,7 @@ connectOrDisconnectButton // beginDefinition;
 connectOrDisconnectButton[ Dynamic[ dmPrefCache_ ], service_String, "None", icon_, Dynamic[ display_ ] ] :=
     Button[
         tr[ "ConnectButton" ],
-        display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ];
+        display = ProgressIndicator[ Appearance -> { "Percolate", color @ "Gray85_39" } ];
         clearConnectionCache[ service, False ];
         Quiet[
             Wolfram`LLMFunctions`APIs`Common`ConnectToService @ service
@@ -1791,7 +1793,7 @@ connectOrDisconnectButton[ Dynamic[ dmPrefCache_ ], service_String, "None", icon
 connectOrDisconnectButton[ Dynamic[ dmPrefCache_ ], service_String, "SystemCredential"|"Environment"|"ServiceConnect", icon_, Dynamic[ display_ ] ] :=
     Button[
         tr[ "DisconnectButton" ],
-        display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ];
+        display = ProgressIndicator[ Appearance -> { "Percolate", color @ "Gray85_39" } ];
         disconnectService[ Dynamic @ dmPrefCache, service ];
         createServiceAuthenticationDisplay[ Dynamic @ dmPrefCache, service, icon, Dynamic @ display ],
         Method -> "Queued"
@@ -1810,7 +1812,7 @@ personaSettingsPanel // beginDefinition;
 
 personaSettingsPanel[ Dynamic[ dmPrefCache_ ] ] :=
     DynamicModule[
-        { display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ] },
+        { display = ProgressIndicator[ Appearance -> { "Percolate", color @ "Gray85_39" } ] },
         Dynamic @ display,
         Initialization            :> (display = disabledAIOverlay[ CreatePersonaManagerPanel[ ], localAIOnly[ ] ]),
         SynchronousInitialization -> False,
@@ -1831,7 +1833,7 @@ toolSettingsPanel // beginDefinition;
 (* CreateLLMToolManagerPanel manages scope by itself; no need to pass cached global prefs to it *)
 toolSettingsPanel[ Dynamic[ dmPrefCache_ ] ] :=
     DynamicModule[
-        { display = ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ] },
+        { display = ProgressIndicator[ Appearance -> { "Percolate", color @ "Gray85_39" } ] },
         Dynamic @ display,
         Initialization            :> (display = disabledAIOverlay[ CreateLLMToolManagerPanel[ "GlobalScopeOnly" -> True ], localAIOnly[ ] ]),
         SynchronousInitialization -> False,
@@ -1848,8 +1850,8 @@ toolSettingsPanel // endDefinition;
 (* ::Subsection::Closed:: *)
 (*subsectionText*)
 subsectionText // beginDefinition;
-subsectionText[ text_ ] /; $CloudEvaluation := Style[ text, "subsectionText", FontColor -> color @ "PreferencesContentFont_1", FontSize -> 16, FontWeight -> "DemiBold" ];
-subsectionText[ text_ ] := Style[ text, "subsectionText", FontColor -> color @ "PreferencesContentFont_1" ];
+subsectionText[ text_ ] /; $CloudEvaluation := Style[ text, "subsectionText", FontColor -> color @ "Gray20_94", FontSize -> 16, FontWeight -> "DemiBold" ];
+subsectionText[ text_ ] := Style[ text, "subsectionText", FontColor -> color @ "Gray20_94" ];
 subsectionText // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1863,7 +1865,7 @@ prefsInputField[ None, update_Function, type_, Hold[ initialValue_ ], opts: Opti
 prefsInputField[ label_, update_Function, type_, Hold[ initialValue_ ], opts: OptionsPattern[ ] ] := Grid[
     { { label, prefsInputField0[ update, type, Hold @ initialValue, opts ] } },
     Alignment -> { Automatic, Baseline },
-    BaseStyle -> { "leadinText", FontColor -> color @ "PreferencesContentFont_2" },
+    BaseStyle -> { "leadinText", FontColor -> color @ "Gray0_100" },
     Spacings  -> 0.5
 ];
 
@@ -1882,7 +1884,7 @@ DynamicModule[ { localValue },
                     opts,
                     Alignment        -> { Left, Top },
                     Appearance       -> "Frameless",
-                    BaseStyle        -> { "controlText", FontColor -> color @ "PreferencesContentFont_2" },
+                    BaseStyle        -> { "controlText", FontColor -> color @ "Gray0_100" },
                     ContinuousAction -> False,
                     Enabled          -> Automatic,
                     FrameMargins     -> { { 6, 6 }, { 4, 4 } },
@@ -1892,12 +1894,12 @@ DynamicModule[ { localValue },
             ]
         ],
         Alignment        -> { Left, Center },
-        Background       -> color @ "PreferencesContentInputFieldBackground",
-        BaseStyle        -> color @ "PreferencesContentFont_2",
+        Background       -> color @ "Gray100_10",
+        BaseStyle        -> color @ "Gray0_100",
         (* The following FrameBoxOptions do not work well in cloud, so disable if needed: *)
         BaselinePosition -> If[ TrueQ @ $CloudEvaluation, Automatic, Top -> Scaled[ 1.3 ] ],
         FrameMargins     -> 0,
-        FrameStyle       -> { AbsoluteThickness[ 1. ], color @ "PreferencesContentInputFieldFrame" },
+        FrameStyle       -> { AbsoluteThickness[ 1. ], color @ "Gray80_47" },
         RoundingRadius   -> 3
     ],
     Initialization            :> (localValue = initialValue),
@@ -1920,7 +1922,7 @@ DynamicModule[ { localValue = None },
                 Dynamic[ localValue, Function[ localValue = #; args ] ],
                 { True -> label, False -> label },
                 BaselinePosition -> Scaled[ 0.2 ],
-                BaseStyle        -> { "checkboxText", FontColor -> color @ "PreferencesContentFont_2" }
+                BaseStyle        -> { "checkboxText", FontColor -> color @ "Gray0_100" }
             ]
         } },
         Alignment -> { Left, Center },
@@ -2159,7 +2161,7 @@ clearConnectionCache // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$loadingPopupMenu*)
-$loadingPopupMenu = PopupMenu[ "x", { "x" -> ProgressIndicator[ Appearance -> { "Percolate", color @ "PreferencesContentProgressIndicator" } ] }, Enabled -> False ];
+$loadingPopupMenu = PopupMenu[ "x", { "x" -> ProgressIndicator[ Appearance -> { "Percolate", color @ "Gray85_39" } ] }, Enabled -> False ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -2173,7 +2175,7 @@ resetButton[ Dynamic[ tab_ ], Dynamic[ dmPrefCache_ ] ] :=
     Module[ { icon, label },
         icon = Style[
             Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "FEBitmaps", "SyntaxColorResetIcon" ][ # ] ]&[
-                color @ "PreferencesContentResetButtonIcon"
+                color @ "Gray39_83"
             ],
             GraphicsBoxOptions -> { BaselinePosition -> Scaled[ 0.1 ] }
         ];
@@ -2181,7 +2183,7 @@ resetButton[ Dynamic[ tab_ ], Dynamic[ dmPrefCache_ ] ] :=
         label = Grid[
             { { icon, Dynamic @ FEPrivate`FrontEndResource[ "PreferencesDialog", "ResetAllSettingsText" ] } },
             Alignment -> { Automatic, Baseline },
-            BaseStyle -> { FontColor -> color @ "PreferencesContentFont_2" }
+            BaseStyle -> { FontColor -> color @ "Gray0_100" }
         ];
 
         Button[
@@ -2193,7 +2195,7 @@ resetButton[ Dynamic[ tab_ ], Dynamic[ dmPrefCache_ ] ] :=
             BaseStyle -> {
                 FontFamily -> Dynamic @ FrontEnd`CurrentValue[ "ControlsFontFamily" ],
                 FontSize   -> Dynamic @ FrontEnd`CurrentValue[ "ControlsFontSize" ],
-                FontColor  -> color @ "PreferencesContentFont_2"
+                FontColor  -> color @ "Gray0_100"
             },
             ImageSize -> Automatic,
             Method    -> "Queued"

@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/SidebarChatInput.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/SidebarChatInput.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -51,7 +51,10 @@ VerificationTest[
                 SetOptions                    = Function[ AppendTo[ log, { "SetOptions", ## } ] ],
                 Wolfram`Chatbook`Common`setCurrentValue = Function[ AppendTo[ log, { "setCurrentValue", ## } ] ],
                 Wolfram`Chatbook`Common`cellTaggedQ     = False &,
-                Wolfram`Chatbook`Common`evaluateSidebarChat = Function[ AppendTo[ log, { "evaluateSidebarChat", #1, #3 } ] ],
+                Wolfram`Chatbook`Common`evaluateSidebarChat = Function[
+                    AppendTo[ log, { "evaluateSidebarChat", #1, #3 } ];
+                    AppendTo[ log, { "evaluateSidebarChat-InputField", #5 } ]
+                ],
                 Wolfram`Chatbook`ChatModes`UI`Private`$workspaceChatInitialized = True
             },
             CurrentValue /: Set[ CurrentValue[ args___ ], value_ ] := (AppendTo[ log, { "CurrentValue", args } ]; value);
@@ -59,10 +62,31 @@ VerificationTest[
             log
         ]
     ];
+
+    $sidebarChatInput  = CellObject[ "sidebar-chat-input" ];
+    $sidebarChatOutput = CellObject[ "sidebar-chat-output" ];
+
+    (* Sends "Hello" from the sidebar with a stubbed front end. ChatCellEvaluate gives result, and then the cell after
+       the chat input is next (None for no cell). The arguments of
+       evaluateSidebarChat after the input are args. Gives the result and a log of the calls that look at or change
+       the sidebar: *)
+    sendSidebarChat[ result_, next_, args__ ] := Module[ { log = { } },
+        Block[
+            {
+                CurrentValue,
+                ChatCellEvaluate = result &,
+                NextCell         = (AppendTo[ log, { "NextCell", # } ]; next) &,
+                NotebookDelete   = AppendTo[ log, { "NotebookDelete", # } ] &,
+                Wolfram`Chatbook`Common`appendCellToSidebarChat = $sidebarChatInput &,
+                Wolfram`Chatbook`Common`setCurrentValue         = Null &
+            },
+            { Wolfram`Chatbook`Common`evaluateSidebarChat[ $userNotebook, $sidebarCell, "Hello", args ], log }
+        ]
+    ];
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "Definitions@@Tests/SidebarChatInput.wlt:25,1-66,2"
+    TestID   -> "Definitions"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -74,7 +98,7 @@ VerificationTest[
     Cases[ runSidebarSend[ ], { "evaluateSidebarChat", __ } ],
     { { "evaluateSidebarChat", $userNotebook, "Reply with exactly: OK2" } },
     SameTest -> MatchQ,
-    TestID   -> "SidebarSend-EvaluatesChat@@Tests/SidebarChatInput.wlt:73,1-78,2"
+    TestID   -> "SidebarSend-EvaluatesChat"
 ]
 
 (* Sending a sidebar message must not write the user's notebook options, e.g. WindowElements: *)
@@ -82,22 +106,93 @@ VerificationTest[
     FreeQ[ runSidebarSend[ ], { "setCurrentValue", $userNotebook, ___ } | { "SetOptions", $userNotebook, ___ } | WindowElements ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "SidebarSend-NoWindowElementsWrite@@Tests/SidebarChatInput.wlt:81,1-86,2"
+    TestID   -> "SidebarSend-NoWindowElementsWrite"
 ]
 
 (* The front end runs the pre-built copy of the sidebar cell from the text resources, so it must match the source: *)
 VerificationTest[
-    Module[ { files },
-        files = FileNameJoin @ { PacletObject[ "Wolfram/Chatbook" ][ "Location" ], #, "TextResources", "ChatbookResources.tr" } & /@
-            { "FrontEnd", "DarkModeSupport" };
+    Module[ { file },
+        file = FileNameJoin @ { PacletObject[ "Wolfram/Chatbook" ][ "Location" ], "FrontEnd", "TextResources", "ChatbookResources.tr" };
         {
-            StringContainsQ[ ReadString @ #, "ChatModes`UI`Private`clearSidebarOverlayMenus[" ],
-            StringContainsQ[ ReadString @ #, "ChatModes`UI`Private`clearOverlayMenus[" ]
-        } & /@ Select[ files, FileExistsQ ]
+            StringContainsQ[ ReadString @ file, "ChatModes`UI`Private`clearSidebarOverlayMenus[" ],
+            StringContainsQ[ ReadString @ file, "ChatModes`UI`Private`clearOverlayMenus[" ]
+        }
     ],
-    { { True, False }.. },
+    { True, False },
     SameTest -> MatchQ,
-    TestID   -> "SidebarSend-PrebuiltResource@@Tests/SidebarChatInput.wlt:89,1-101,2"
+    TestID   -> "SidebarSend-PrebuiltResource"
+]
+
+(* The input field variable is given, so that the text of a stopped chat can be put back in it: *)
+VerificationTest[
+    Cases[ runSidebarSend[ ], { "evaluateSidebarChat-InputField", field_ } :> HoldComplete @ field ],
+    { HoldComplete @ Dynamic @ Typeset`fieldContent$$ },
+    SameTest -> MatchQ,
+    TestID   -> "SidebarSend-InputField-GH#1710"
+]
+
+VerificationTest[
+    Module[ { file },
+        file = FileNameJoin @ { PacletObject[ "Wolfram/Chatbook" ][ "Location" ], "FrontEnd", "TextResources", "ChatbookResources.tr" };
+        StringContainsQ[
+            StringDelete[ ReadString @ file, WhitespaceCharacter ],
+            "Wolfram`Chatbook`Common`evaluateSidebarChat[Typeset`nbo$$,Typeset`sidebarCell$$,Typeset`input$$,Dynamic[Typeset`chatEvalCell$$],Dynamic[Typeset`fieldContent$$]]"
+        ]
+    ],
+    True,
+    SameTest -> MatchQ,
+    TestID   -> "SidebarSend-PrebuiltResource-InputField-GH#1710"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Stopped Chats*)
+
+(* A chat that is stopped before its response arrives has no output cell. Its input is removed, so the next message
+   isn't also answering it, and its text is put back in the input field: *)
+VerificationTest[
+    Module[ { cell = None, field = "" },
+        { sendSidebarChat[ Null, None, Dynamic @ cell, Dynamic @ field ], cell, field }
+    ],
+    {
+        { Null, { { "NextCell", $sidebarChatInput }, { "NotebookDelete", $sidebarChatInput } } },
+        $sidebarChatInput,
+        "Hello"
+    },
+    SameTest -> MatchQ,
+    TestID   -> "EvaluateSidebarChat-StoppedChat-GH#1710"
+]
+
+(* Text typed while the chat ran is kept: *)
+VerificationTest[
+    Module[ { cell = None, field = "New text" },
+        { sendSidebarChat[ Null, None, Dynamic @ cell, Dynamic @ field ], field }
+    ],
+    { { Null, { { "NextCell", $sidebarChatInput }, { "NotebookDelete", $sidebarChatInput } } }, "New text" },
+    SameTest -> MatchQ,
+    TestID   -> "EvaluateSidebarChat-StoppedChat-KeepsNewInput-GH#1710"
+]
+
+(* The sidebar input cell of a front end session that started with an older version of Chatbook doesn't give the input
+   field. The input is still removed: *)
+VerificationTest[
+    Module[ { cell = None },
+        sendSidebarChat[ Null, None, Dynamic @ cell ]
+    ],
+    { Null, { { "NextCell", $sidebarChatInput }, { "NotebookDelete", $sidebarChatInput } } },
+    SameTest -> MatchQ,
+    TestID   -> "EvaluateSidebarChat-StoppedChat-NoInputField-GH#1710"
+]
+
+(* A chat that left a cell after its input (a response, or the error cell of a failed request) keeps its input, and
+   the input field stays empty: *)
+VerificationTest[
+    Module[ { cell = None, field = "" },
+        { sendSidebarChat[ Null, $sidebarChatOutput, Dynamic @ cell, Dynamic @ field ], field }
+    ],
+    { { Null, { { "NextCell", $sidebarChatInput } } }, "" },
+    SameTest -> MatchQ,
+    TestID   -> "EvaluateSidebarChat-Answered-GH#1710"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -119,7 +214,7 @@ VerificationTest[
         TrackedSymbols :> { Wolfram`Chatbook`$ChatEvaluationCell }
     ] ],
     SameTest -> MatchQ,
-    TestID   -> "SendButton-ScopedDynamic-robustness-4@@Tests/SidebarChatInput.wlt:108,1-123,2"
+    TestID   -> "SendButton-ScopedDynamic-robustness-4"
 ]
 
 (* The front end evaluates a kernel Dynamic in a DynamicModule with the module's variables, even if it doesn't use them.
@@ -141,7 +236,7 @@ VerificationTest[
     },
     { True, True, 1 },
     SameTest -> MatchQ,
-    TestID   -> "SendButton-InitializationGate-chatbar-8@@Tests/SidebarChatInput.wlt:129,1-145,2"
+    TestID   -> "SendButton-InitializationGate-chatbar-8"
 ]
 
 VerificationTest[
@@ -152,7 +247,7 @@ VerificationTest[
     },
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "SendButton-InitializationSetsFlag-chatbar-8@@Tests/SidebarChatInput.wlt:147,1-156,2"
+    TestID   -> "SendButton-InitializationSetsFlag-chatbar-8"
 ]
 
 VerificationTest[
@@ -165,26 +260,25 @@ VerificationTest[
     ],
     HoldComplete[ CompoundExpression[ _, Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChatIn", ParentCell[ EvaluationCell[ ] ] ] ] ],
     SameTest -> MatchQ,
-    TestID   -> "SendButton-ScopedStop-robustness-4@@Tests/SidebarChatInput.wlt:158,1-169,2"
+    TestID   -> "SendButton-ScopedStop-robustness-4"
 ]
 
 (* The front end draws the prebuilt sidebar cell, so it must match the source: *)
 VerificationTest[
-    Module[ { files },
-        files = FileNameJoin @ { PacletObject[ "Wolfram/Chatbook" ][ "Location" ], #, "TextResources", "ChatbookResources.tr" } & /@
-            { "FrontEnd", "DarkModeSupport" };
-        With[ { s = StringDelete[ ReadString @ #, WhitespaceCharacter ] },
+    Module[ { file },
+        file = FileNameJoin @ { PacletObject[ "Wolfram/Chatbook" ][ "Location" ], "FrontEnd", "TextResources", "ChatbookResources.tr" };
+        With[ { s = StringDelete[ ReadString @ file, WhitespaceCharacter ] },
             {
                 StringContainsQ[ s, "Wolfram`Chatbook`Common`chatEvaluatingInQ[ParentCell[EvaluationCell[]]]" ],
                 StringContainsQ[ s, "\"StopChatIn\",ParentCell[EvaluationCell[]]" ],
                 StringContainsQ[ s, "FEPrivate`SameQ[Typeset`initializedQ$$,True]" ],
                 StringContainsQ[ s, "$ChatEvaluationCell===Typeset`chatEvalCell$$" ]
             }
-        ] & /@ Select[ files, FileExistsQ ]
+        ]
     ],
-    { { True, True, True, False }.. },
+    { True, True, True, False },
     SameTest -> MatchQ,
-    TestID   -> "SendButton-PrebuiltResource@@Tests/SidebarChatInput.wlt:172,1-188,2"
+    TestID   -> "SendButton-PrebuiltResource"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

@@ -7,10 +7,10 @@
 Function[ Evaluate @ ToBoxes @
 	With[
 		{
-			baseColor      = color @ "StopChatButtonSpinnerBase",
-			highlightColor = color @ "StopChatButtonSpinnerHighlight",
-			bgHover        = color @ "NA_BlueHueButtonBackgroundHover",
-			frameHover     = color @ "NA_BlueHueButtonFrameHover"
+			baseColor      = color @ "Gray94_20",
+			highlightColor = color @ "Blue_75C2EB_669CBD",
+			bgHover        = color @ "Gray100_10",
+			frameHover     = color @ "Blue_B1D5E8_607D8F"
 		},
 		MouseAppearance[
 			Framed[

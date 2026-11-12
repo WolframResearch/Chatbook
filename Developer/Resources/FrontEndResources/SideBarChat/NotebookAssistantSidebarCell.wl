@@ -3,9 +3,9 @@ Cell[
 		RowBox @ {
 			With[
 		        {
-		            background  = LightDarkSwitched[ RGBColor["#128ED1"], RGBColor["#7FC7FB"] ],
+		            background  = color @ "Blue_128ED1_7FC7FB",
 		            colorCenter = LightDarkSwitched[ RGBColor["#E0F2FC"], RGBColor["#F5F5F5"] ],
-		            colorEdges  = LightDarkSwitched[ RGBColor["#128ED1"], RGBColor["#7FC7FB"] ]
+		            colorEdges  = color @ "Blue_128ED1_7FC7FB"
 		        },
 		        Cell[ BoxData @
 		            ToBoxes @ PaneSelector[
@@ -52,7 +52,7 @@ Cell[
 		"NotebookSelectionSnapshotExclusionZone"
 	],
 	"NotebookAssistant`Sidebar`NotebookAssistantSidebarCell",
-	Background        -> color @ "NA_ChatInputFieldBackgroundArea", (* this colors the entire initial sidebar as gray to make it easier to see *)
+	Background        -> color @ "Blue_EEF9FF_263541", (* this colors the entire initial sidebar as gray to make it easier to see *)
 	CellFrameMargins  -> 0,
 	CellMargins       -> { { 0, 0 }, { 0, 0 } },
 	CellTags          -> "NotebookAssistantSidebarCell",

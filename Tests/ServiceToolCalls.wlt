@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/ServiceToolCalls.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/ServiceToolCalls.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -75,7 +75,7 @@ VerificationTest[
     },
     Null,
     SameTest -> MatchQ,
-    TestID   -> "Definitions@@Tests/ServiceToolCalls.wlt:24,1-79,2"
+    TestID   -> "Definitions"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -92,7 +92,7 @@ VerificationTest[
         { "Assistant", "Let me compute.", { { "id1111111", "1+1" } }, { } }
     },
     SameTest -> MatchQ,
-    TestID   -> "ServiceToolCalls-InTurn-FirstCall@@Tests/ServiceToolCalls.wlt:88,1-96,2"
+    TestID   -> "ServiceToolCalls-InTurn-FirstCall"
 ]
 
 VerificationTest[
@@ -102,7 +102,7 @@ VerificationTest[
         { "Assistant", ""     , { { "id1111111", "1+1" } }, { } }
     },
     SameTest -> MatchQ,
-    TestID   -> "ServiceToolCalls-InTurn-FirstCall-NoText@@Tests/ServiceToolCalls.wlt:98,1-106,2"
+    TestID   -> "ServiceToolCalls-InTurn-FirstCall-NoText"
 ]
 
 (* Earlier tool calls of the same response are kept with their results: *)
@@ -125,7 +125,7 @@ VerificationTest[
         { "Assistant", "Now the second.", { { "id2222222", "2+2" } }, { }                     }
     },
     SameTest -> MatchQ,
-    TestID   -> "ServiceToolCalls-InTurn-SecondCall@@Tests/ServiceToolCalls.wlt:109,1-129,2"
+    TestID   -> "ServiceToolCalls-InTurn-SecondCall"
 ]
 
 VerificationTest[
@@ -154,7 +154,7 @@ VerificationTest[
         { "Assistant", ""       , { { "id3333333", "3+3" } }, { }                     }
     },
     SameTest -> MatchQ,
-    TestID   -> "ServiceToolCalls-InTurn-ThirdCall@@Tests/ServiceToolCalls.wlt:131,1-158,2"
+    TestID   -> "ServiceToolCalls-InTurn-ThirdCall"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -186,7 +186,7 @@ VerificationTest[
         { "Assistant", "Done."          , { }                       , { }                     }
     },
     SameTest -> MatchQ,
-    TestID   -> "ServiceToolCalls-History@@Tests/ServiceToolCalls.wlt:163,1-190,2"
+    TestID   -> "ServiceToolCalls-History"
 ]
 
 (* A result at the end of the message: *)
@@ -200,7 +200,7 @@ VerificationTest[
         { "Tool"     , "", { }                       , { { "id1111111", "2" } } }
     },
     SameTest -> MatchQ,
-    TestID   -> "ServiceToolCalls-History-EndsWithResult@@Tests/ServiceToolCalls.wlt:193,1-204,2"
+    TestID   -> "ServiceToolCalls-History-EndsWithResult"
 ]
 
 (* Results written without an ID get one from the request: *)
@@ -215,7 +215,7 @@ VerificationTest[
         { "Assistant", "Done.", { }, { } }
     },
     SameTest -> MatchQ,
-    TestID   -> "ServiceToolCalls-History-NoID@@Tests/ServiceToolCalls.wlt:207,1-219,2"
+    TestID   -> "ServiceToolCalls-History-NoID"
 ]
 
 (* 5 character IDs from before 3eee65a8 are replaced, since MistralAI only accepts 9 characters: *)
@@ -230,7 +230,7 @@ VerificationTest[
         { "Assistant", "Done.", { }, { } }
     },
     SameTest -> MatchQ,
-    TestID   -> "ServiceToolCalls-History-OldID@@Tests/ServiceToolCalls.wlt:222,1-234,2"
+    TestID   -> "ServiceToolCalls-History-OldID"
 ]
 
 (* Splitting 10 tool calls takes about 70 ms. It took about 500 ms when each LLMToolResponse went through the
@@ -252,7 +252,7 @@ VerificationTest[
     ],
     _? (LessThan[ 0.25 ]),
     SameTest -> MatchQ,
-    TestID   -> "ServiceToolCalls-History-Timing@@Tests/ServiceToolCalls.wlt:238,1-256,2"
+    TestID   -> "ServiceToolCalls-History-Timing"
 ]
 
 (* Earlier tool calls are sent the same way during the response and later in the chat history: *)
@@ -289,7 +289,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "ServiceToolCalls-InTurn-Matches-History@@Tests/ServiceToolCalls.wlt:259,1-293,2"
+    TestID   -> "ServiceToolCalls-InTurn-Matches-History"
 ]
 
 (* The IDs are kept until the messages are prepared for the LLM: *)
@@ -330,7 +330,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "ServiceToolCalls-ConstructMessages-KeepsIDs@@Tests/ServiceToolCalls.wlt:296,1-334,2"
+    TestID   -> "ServiceToolCalls-ConstructMessages-KeepsIDs"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -368,7 +368,7 @@ VerificationTest[
         |>
     },
     SameTest -> SameQ,
-    TestID   -> "OtherToolMethods-RemoveIDs@@Tests/ServiceToolCalls.wlt:341,1-372,2"
+    TestID   -> "OtherToolMethods-RemoveIDs"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -396,7 +396,7 @@ VerificationTest[
         { "Assistant", "Done.", { }                       , { } }
     },
     SameTest -> MatchQ,
-    TestID   -> "ServiceToolCalls-EndMarker-In-Output-GH#314@@Tests/ServiceToolCalls.wlt:379,1-400,2"
+    TestID   -> "ServiceToolCalls-EndMarker-In-Output-GH#314"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

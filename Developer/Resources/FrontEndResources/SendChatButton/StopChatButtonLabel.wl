@@ -7,16 +7,16 @@
 Function[ Evaluate @ ToBoxes @
 	With[
 		{
-			baseColor      = color @ "StopChatButtonSpinnerBase",
-			highlightColor = color @ "StopChatButtonSpinnerHighlight",
-			bgHover        = color @ "NA_BlueHueButtonBackgroundHover",
-			frameHover     = color @ "NA_BlueHueButtonFrameHover"
+			baseColor      = color @ "Gray94_20",
+			highlightColor = color @ "Blue_75C2EB_669CBD",
+			bgHover        = color @ "Gray100_10",
+			frameHover     = color @ "Blue_B1D5E8_607D8F"
 		},
 		MouseAppearance[
 			Framed[
 				Graphics[
 					{
-						Thickness[0.09090909090909091], FaceForm[LightDarkSwitched[RGBColor[0.0705882, 0.55686275, 0.8196078, 1.], RGBColor[0.49803922, 0.78039216, 0.9843137]]], 
+						Thickness[0.09090909090909091], FaceForm[color @ "Blue_128ED1_7FC7FB"], 
 						RawBoxes @ FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}}}, {{{9., 0.}, {2., 0.}, {0.8949995040893555, 0.},
 							{0., 0.8949999809265137}, {0., 2.}, {0., 9.}, {0., 10.105000495910645`}, {0.8949995040893555, 11.}, {2., 11.}, {9., 11.}, {10.105000019073486`, 11.},
 							{11., 10.105000495910645`}, {11., 9.}, {11., 2.}, {11., 0.8949999809265137}, {10.105000019073486`, 0.}, {9., 0.}}}]
@@ -31,7 +31,7 @@ Function[ Evaluate @ ToBoxes @
 				],
 				BaselinePosition -> Baseline,
 				FrameMargins     -> 0,
-				FrameStyle       -> LightDarkSwitched[RGBColor[0.07058823529411765, 0.5568627450980392, 0.8196078431372549], RGBColor[0.4980392156862745, 0.7803921568627451, 0.984313725490196]],
+				FrameStyle       -> color @ "Blue_128ED1_7FC7FB",
 				ImageSize        -> #2,
 				RoundingRadius   -> 4
 			],

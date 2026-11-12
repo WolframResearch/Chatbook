@@ -232,7 +232,7 @@ When `Automatic`, resolved via `$modelAutoSettings` lookup. Models without an ov
 
 ### Model-Specific Overrides
 
-- **Claude Fable 5, Claude Fable 5.1, Claude Opus 5, Claude Opus 5.5**: `"claude-opus-4-8"`.
+- **Claude Fable 5, Claude Fable 5.1, Claude Fable 5.2, Claude Opus 5, Claude Opus 5.5**: `"claude-opus-4-8"`.
 
 ## `"StopTokens"`
 

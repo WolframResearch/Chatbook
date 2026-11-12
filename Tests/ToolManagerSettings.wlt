@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/ToolManagerSettings.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/ToolManagerSettings.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -89,7 +89,7 @@ VerificationTest[
     ,
     { _Function, _Function, _Function },
     SameTest -> MatchQ,
-    TestID   -> "Definitions@@Tests/ToolManagerSettings.wlt:26,1-93,2"
+    TestID   -> "Definitions"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -100,7 +100,7 @@ VerificationTest[
     withFakeStore[ checkboxHandler[ False ]; checkboxHandler[ True ] ],
     <| |>,
     SameTest -> MatchQ,
-    TestID   -> "CheckboxRoundTrip@@Tests/ToolManagerSettings.wlt:98,1-104,2"
+    TestID   -> "CheckboxRoundTrip"
 ]
 
 VerificationTest[
@@ -108,7 +108,7 @@ VerificationTest[
     withFakeStore[ popupHandler[ None ]; popupHandler[ Inherited ] ],
     <| |>,
     SameTest -> MatchQ,
-    TestID   -> "PopupRoundTrip@@Tests/ToolManagerSettings.wlt:106,1-112,2"
+    TestID   -> "PopupRoundTrip"
 ]
 
 VerificationTest[
@@ -116,7 +116,7 @@ VerificationTest[
     withFakeStore[ popupHandler[ None ]; clearAction[ ] ],
     <| |>,
     SameTest -> MatchQ,
-    TestID   -> "ClearButton@@Tests/ToolManagerSettings.wlt:114,1-120,2"
+    TestID   -> "ClearButton"
 ]
 
 VerificationTest[
@@ -127,7 +127,7 @@ VerificationTest[
     withFakeStore[ clearAction[ ] ],
     <| "ToolSelections" -> <| "Other" -> <| "PlainChat" -> True |> |> |>,
     SameTest -> MatchQ,
-    TestID   -> "ClearButtonKeepsOtherTools@@Tests/ToolManagerSettings.wlt:122,1-131,2"
+    TestID   -> "ClearButtonKeepsOtherTools"
 ]
 
 VerificationTest[
@@ -138,7 +138,7 @@ VerificationTest[
     withFakeStore[ clearAction[ ] ],
     <| "ToolSelections" -> <| "Other" -> { "PlainChat" -> True } |> |>,
     SameTest -> MatchQ,
-    TestID   -> "ClearButtonRuleLists@@Tests/ToolManagerSettings.wlt:133,1-142,2"
+    TestID   -> "ClearButtonRuleLists"
 ]
 
 VerificationTest[
@@ -146,7 +146,7 @@ VerificationTest[
     withFakeStore[ popupHandler[ Inherited ] ],
     <| |>,
     SameTest -> MatchQ,
-    TestID   -> "PopupInheritedRuleList@@Tests/ToolManagerSettings.wlt:144,1-150,2"
+    TestID   -> "PopupInheritedRuleList"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

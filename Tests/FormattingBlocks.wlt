@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/FormattingBlocks.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/FormattingBlocks.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -98,7 +98,7 @@ VerificationTest[
 
     Null,
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Definitions@@Tests/FormattingBlocks.wlt:32,1-102,2"
+    TestID   -> "Blocks-Definitions"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -128,7 +128,7 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Heading-Structure@@Tests/FormattingBlocks.wlt:114,1-132,2"
+    TestID   -> "Blocks-Heading-Structure"
 ]
 
 (* The number of "#" characters selects the section style. Only "Title" and "Section" get an explicit font size (the
@@ -153,7 +153,7 @@ VerificationTest[
         { "Subsubsubsubsection", Inherited, { { 0, 0 }, { 2, 5  } } }
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Heading-Levels@@Tests/FormattingBlocks.wlt:137,1-157,2"
+    TestID   -> "Blocks-Heading-Levels"
 ]
 
 (* Each heading level serializes back to the same number of "#" characters: *)
@@ -175,7 +175,7 @@ VerificationTest[
         "###### Six"
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Heading-Serialization@@Tests/FormattingBlocks.wlt:160,1-179,2"
+    TestID   -> "Blocks-Heading-Serialization"
 ]
 
 (* Levels deeper than six share the sixth level's style, so they serialize as level six: *)
@@ -183,7 +183,7 @@ VerificationTest[
     MarkdownRoundTrip /@ { "####### Seven", "######## Eight" },
     { "###### Seven", "###### Eight" },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Heading-Deeper-Than-Six-Serialization@@Tests/FormattingBlocks.wlt:182,1-187,2"
+    TestID   -> "Blocks-Heading-Deeper-Than-Six-Serialization"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -195,7 +195,7 @@ VerificationTest[
     FormatMarkdown[ "## **Bold** heading" ],
     { blocksSection @ blocksTextCell[ StyleBox[ "Bold", FontWeight -> Bold ], " heading" ] },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Heading-Bold@@Tests/FormattingBlocks.wlt:194,1-199,2"
+    TestID   -> "Blocks-Heading-Bold"
 ]
 
 VerificationTest[
@@ -210,7 +210,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Heading-Italic-And-Strikethrough@@Tests/FormattingBlocks.wlt:201,1-214,2"
+    TestID   -> "Blocks-Heading-Italic-And-Strikethrough"
 ]
 
 (* Inline code naming a system symbol becomes a documentation link, also inside headings: *)
@@ -228,14 +228,14 @@ VerificationTest[
         { blocksSection @ blocksTextCell[ $$blocksPlotLink ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Heading-Inline-Code@@Tests/FormattingBlocks.wlt:217,1-232,2"
+    TestID   -> "Blocks-Heading-Inline-Code"
 ]
 
 VerificationTest[
     FormatMarkdown[ "## [Example](https://example.com)" ],
     { blocksSection @ blocksTextCell[ StyleBox[ $$blocksExampleLink ] | $$blocksExampleLink ] },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Heading-Hyperlink@@Tests/FormattingBlocks.wlt:234,1-239,2"
+    TestID   -> "Blocks-Heading-Hyperlink"
 ]
 
 VerificationTest[
@@ -247,7 +247,7 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Heading-Math@@Tests/FormattingBlocks.wlt:241,1-251,2"
+    TestID   -> "Blocks-Heading-Math"
 ]
 
 VerificationTest[
@@ -266,7 +266,7 @@ VerificationTest[
         "## [Example](https://example.com)"
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Heading-Inline-Formatting-Serialization@@Tests/FormattingBlocks.wlt:253,1-270,2"
+    TestID   -> "Blocks-Heading-Inline-Formatting-Serialization"
 ]
 
 (* HTML entities and unicode in headings: *)
@@ -277,14 +277,14 @@ VerificationTest[
         { blocksSection @ blocksTextBox[ "H\[EAcute]ading \[LongDash] \[UDoubleDot]n\[IDoubleDot]code" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Heading-Entities-And-Unicode@@Tests/FormattingBlocks.wlt:273,1-281,2"
+    TestID   -> "Blocks-Heading-Entities-And-Unicode"
 ]
 
 VerificationTest[
     MarkdownRoundTrip /@ { "## Fish &amp; Chips", "## H\[EAcute]ading \[LongDash] \[UDoubleDot]n\[IDoubleDot]code" },
     { "## Fish & Chips", "## H\[EAcute]ading \[LongDash] \[UDoubleDot]n\[IDoubleDot]code" },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Heading-Entities-And-Unicode-Serialization@@Tests/FormattingBlocks.wlt:283,1-288,2"
+    TestID   -> "Blocks-Heading-Entities-And-Unicode-Serialization"
 ]
 
 (* Only the leading "#" characters set the level. Other "#" characters are part of the heading text: *)
@@ -301,7 +301,7 @@ VerificationTest[
         { "# C# language", "## Heading #1" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Heading-Hash-In-Text@@Tests/FormattingBlocks.wlt:291,1-305,2"
+    TestID   -> "Blocks-Heading-Hash-In-Text"
 ]
 
 (* A heading that is entirely bold (as LLMs often write) still has its content wrapped in a TextData cell: *)
@@ -309,7 +309,7 @@ VerificationTest[
     { FormatMarkdown[ "## **All bold**" ], MarkdownRoundTrip[ "## **All bold**" ] },
     { { blocksSection @ blocksTextCell @ StyleBox[ "All bold", FontWeight -> Bold ] }, "## **All bold**" },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Heading-Fully-Formatted@@Tests/FormattingBlocks.wlt:308,1-313,2"
+    TestID   -> "Blocks-Heading-Fully-Formatted"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -321,7 +321,7 @@ VerificationTest[
     FormatMarkdown /@ { "##NoSpace", "#hashtag here", "Text # not heading", "Text ## not heading" },
     { { "##NoSpace" }, { "#hashtag here" }, { "Text # not heading" }, { "Text ## not heading" } },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Heading-Requires-Space-And-Line-Start@@Tests/FormattingBlocks.wlt:320,1-325,2"
+    TestID   -> "Blocks-Heading-Requires-Space-And-Line-Start"
 ]
 
 (* A heading needs some text. A partial heading while streaming stays plain text: *)
@@ -329,14 +329,14 @@ VerificationTest[
     { FormatMarkdown[ "# " ], FormatMarkdown[ "## ", "Streaming" ], FormatMarkdown[ "Text\n\n#", "Streaming" ] },
     { { "#" }, { "##" }, { "Text\n\n#" } },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Heading-Empty@@Tests/FormattingBlocks.wlt:328,1-333,2"
+    TestID   -> "Blocks-Heading-Empty"
 ]
 
 VerificationTest[
     FormatMarkdown[ "## Hea", "Streaming" ],
     { blocksSection @ blocksTextBox[ "Hea" ] },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Heading-Streaming-Partial@@Tests/FormattingBlocks.wlt:335,1-340,2"
+    TestID   -> "Blocks-Heading-Streaming-Partial"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -352,7 +352,7 @@ VerificationTest[
         { "Intro\n", blocksSection @ blocksTextBox[ "Heading" ], "\nBody text" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Heading-Paragraph-Spacing@@Tests/FormattingBlocks.wlt:348,1-356,2"
+    TestID   -> "Blocks-Heading-Paragraph-Spacing"
 ]
 
 (* Extra blank lines before a heading are dropped, but extra blank lines after one are kept: *)
@@ -363,7 +363,7 @@ VerificationTest[
         { blocksSection @ blocksTextBox[ "H" ], "\n\nBody" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Heading-Extra-Blank-Lines@@Tests/FormattingBlocks.wlt:359,1-367,2"
+    TestID   -> "Blocks-Heading-Extra-Blank-Lines"
 ]
 
 (* Headings at the very start and end of the response: *)
@@ -376,7 +376,7 @@ VerificationTest[
         { blocksSection @ blocksTextBox[ "H" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Heading-Start-And-End@@Tests/FormattingBlocks.wlt:370,1-380,2"
+    TestID   -> "Blocks-Heading-Start-And-End"
 ]
 
 VerificationTest[
@@ -390,7 +390,7 @@ VerificationTest[
         blocksHeading[ blocksTextBox[ "C" ], "Subsection", Inherited, { { 0, 0 }, { 5, 15 } } ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Heading-Consecutive@@Tests/FormattingBlocks.wlt:382,1-394,2"
+    TestID   -> "Blocks-Heading-Consecutive"
 ]
 
 (* When serialized, headings are surrounded by blank lines: *)
@@ -398,7 +398,7 @@ VerificationTest[
     blocksRoundTrip /@ { "Intro\n## Heading\nBody text", "Text\n\n## A\n## B\n### C" },
     { "Intro\n\n## Heading\n\nBody text", "Text\n\n## A\n\n## B\n\n### C" },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Heading-Serialization-Spacing@@Tests/FormattingBlocks.wlt:397,1-402,2"
+    TestID   -> "Blocks-Heading-Serialization-Spacing"
 ]
 
 (* Headings directly before and after list items. When serialized, they are surrounded by blank lines: *)
@@ -416,7 +416,7 @@ VerificationTest[
         { "* a\n\n## H", "## H\n\n* a", "* a\n\n## H\n\n* b" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Heading-Next-To-Lists@@Tests/FormattingBlocks.wlt:405,1-420,2"
+    TestID   -> "Blocks-Heading-Next-To-Lists"
 ]
 
 (* Trailing spaces after the heading text are invisible and are dropped when serialized: *)
@@ -424,7 +424,7 @@ VerificationTest[
     MarkdownRoundTrip[ "## Heading   \nText" ],
     "## Heading\n\nText",
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Heading-Trailing-Spaces-Serialization@@Tests/FormattingBlocks.wlt:423,1-428,2"
+    TestID   -> "Blocks-Heading-Trailing-Spaces-Serialization"
 ]
 
 (* Headings next to code blocks, with or without blank lines in between: *)
@@ -445,14 +445,14 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Heading-Next-To-Code-Block@@Tests/FormattingBlocks.wlt:431,1-449,2"
+    TestID   -> "Blocks-Heading-Next-To-Code-Block"
 ]
 
 VerificationTest[
     blocksRoundTrip /@ { "```wl\n1+1\n```\n## After code", "## Before code\n```wl\n1+1\n```" },
     { "```wl\n1 + 1\n```\n\n## After code", "## Before code\n\n```wl\n1 + 1\n```" },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Heading-Next-To-Code-Block-Serialization@@Tests/FormattingBlocks.wlt:451,1-456,2"
+    TestID   -> "Blocks-Heading-Next-To-Code-Block-Serialization"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -473,7 +473,7 @@ VerificationTest[
         Cell[ TextData @ { StyleBox[ "\[Bullet]", FontColor -> _ ], " two" }, "InlineItem" ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-List-Structure@@Tests/FormattingBlocks.wlt:468,1-477,2"
+    TestID   -> "Blocks-List-Structure"
 ]
 
 (* "- " and "* " make the same items: *)
@@ -481,7 +481,7 @@ VerificationTest[
     FormatMarkdown[ "- one\n- two" ] === FormatMarkdown[ "* one\n* two" ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "Blocks-List-Hyphen-Same-As-Asterisk@@Tests/FormattingBlocks.wlt:480,1-485,2"
+    TestID   -> "Blocks-List-Hyphen-Same-As-Asterisk"
 ]
 
 (* Items always serialize with "*": *)
@@ -489,7 +489,7 @@ VerificationTest[
     MarkdownRoundTrip /@ { "- one\n- two", "* one\n* two" },
     { "* one\n* two", "* one\n* two" },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-List-Serialization@@Tests/FormattingBlocks.wlt:488,1-493,2"
+    TestID   -> "Blocks-List-Serialization"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -509,14 +509,14 @@ VerificationTest[
         blocksItem[ " back" ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-List-Nested@@Tests/FormattingBlocks.wlt:500,1-513,2"
+    TestID   -> "Blocks-List-Nested"
 ]
 
 VerificationTest[
     MarkdownRoundTrip[ "- one\n  - nested\n    - deeper\n- back" ],
     "* one\n  * nested\n    * deeper\n* back",
     SameTest -> MatchQ,
-    TestID   -> "Blocks-List-Nested-Serialization@@Tests/FormattingBlocks.wlt:515,1-520,2"
+    TestID   -> "Blocks-List-Nested-Serialization"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -537,14 +537,14 @@ VerificationTest[
         blocksItem[ " ", StyleBox[ "both", FontWeight -> Bold, FontSlant -> Italic ] ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-List-Inline-Formatting@@Tests/FormattingBlocks.wlt:526,1-541,2"
+    TestID   -> "Blocks-List-Inline-Formatting"
 ]
 
 VerificationTest[
     MarkdownRoundTrip[ "- **bold** item\n- item with `Plot`\n- [link](https://example.com)\n- *italic*\n- ***both***" ],
     "* **bold** item\n* item with [Plot](paclet:ref/Plot)\n* [link](https://example.com)\n* *italic*\n* ***both***",
     SameTest -> MatchQ,
-    TestID   -> "Blocks-List-Inline-Formatting-Serialization@@Tests/FormattingBlocks.wlt:543,1-548,2"
+    TestID   -> "Blocks-List-Inline-Formatting-Serialization"
 ]
 
 (* A bold label at the start of an item, as LLMs often write: *)
@@ -552,7 +552,7 @@ VerificationTest[
     blocksNormalized[ "- **Note:** description here" ],
     { blocksItem[ " ", StyleBox[ "Note:", FontWeight -> Bold ], " description here" ] },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-List-Bold-Label@@Tests/FormattingBlocks.wlt:551,1-556,2"
+    TestID   -> "Blocks-List-Bold-Label"
 ]
 
 (* With the "* " marker, emphasis asterisks right after the marker belong to the item text: *)
@@ -570,7 +570,7 @@ VerificationTest[
         "* **Bold**: text\n* *italic* item"
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-List-Asterisk-Marker-With-Emphasis@@Tests/FormattingBlocks.wlt:559,1-574,2"
+    TestID   -> "Blocks-List-Asterisk-Marker-With-Emphasis"
 ]
 
 (* Item text is formatted as inline text only, so other markers in it are left as text: *)
@@ -583,7 +583,7 @@ VerificationTest[
         { blocksItem[ " item <tag>" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-List-Item-Text@@Tests/FormattingBlocks.wlt:577,1-587,2"
+    TestID   -> "Blocks-List-Item-Text"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -600,7 +600,7 @@ VerificationTest[
         { "Text\n", blocksItem[ " one" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-List-After-Paragraph@@Tests/FormattingBlocks.wlt:595,1-604,2"
+    TestID   -> "Blocks-List-After-Paragraph"
 ]
 
 (* Blank lines between items are dropped, so consecutive lists merge into one: *)
@@ -611,7 +611,7 @@ VerificationTest[
         { blocksItem[ " a" ], "\n", blocksItem[ " b" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-List-Blank-Lines-Between-Items@@Tests/FormattingBlocks.wlt:607,1-615,2"
+    TestID   -> "Blocks-List-Blank-Lines-Between-Items"
 ]
 
 (* A line that follows an item without a marker is plain text on the next line: *)
@@ -623,7 +623,7 @@ VerificationTest[
         { StyleBox[ "Bold", FontWeight -> Bold ], " text\n", blocksItem[ " item" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-List-Adjacent-Text@@Tests/FormattingBlocks.wlt:618,1-627,2"
+    TestID   -> "Blocks-List-Adjacent-Text"
 ]
 
 (* Leading and trailing blank lines around a list that is the whole response are trimmed: *)
@@ -631,21 +631,21 @@ VerificationTest[
     blocksNormalized[ "\n\n- a\n\n" ],
     { blocksItem[ " a" ] },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-List-Trimmed@@Tests/FormattingBlocks.wlt:630,1-635,2"
+    TestID   -> "Blocks-List-Trimmed"
 ]
 
 VerificationTest[
     blocksRoundTrip /@ { "Intro:\n\n- one\n- two", "- one\n- two\n\n- three" },
     { "Intro:\n* one\n* two", "* one\n* two\n* three" },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-List-Spacing-Serialization@@Tests/FormattingBlocks.wlt:637,1-642,2"
+    TestID   -> "Blocks-List-Spacing-Serialization"
 ]
 
 VerificationTest[
     Table[ blocksNormalized[ "- item\n```wl\n1+1\n```", status ], { status, { "Finished", "Streaming" } } ],
     { { blocksItem[ " item" ], "\n", $$blocksCodeBlock }, { blocksItem[ " item" ], "\n", $$blocksCodeBlock } },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-List-Before-Code-Block@@Tests/FormattingBlocks.wlt:644,1-649,2"
+    TestID   -> "Blocks-List-Before-Code-Block"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -663,7 +663,7 @@ VerificationTest[
         { "\[Bullet] item one\n\[Bullet] item two" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-List-Not-Bullets@@Tests/FormattingBlocks.wlt:656,1-667,2"
+    TestID   -> "Blocks-List-Not-Bullets"
 ]
 
 (* "+" is not a bullet marker, so the text stays as written: *)
@@ -671,7 +671,7 @@ VerificationTest[
     { FormatMarkdown[ "+ plus one\n+ plus two" ], MarkdownRoundTrip[ "+ plus one\n+ plus two" ] },
     { { "+ plus one\n+ plus two" }, "+ plus one\n+ plus two" },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-List-Plus-Plain-Text@@Tests/FormattingBlocks.wlt:670,1-675,2"
+    TestID   -> "Blocks-List-Plus-Plain-Text"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -696,14 +696,14 @@ VerificationTest[
         { "1. ", StyleBox[ "First", FontWeight -> Bold ], ": desc\n2. Second" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-List-Numbered-Plain-Text@@Tests/FormattingBlocks.wlt:683,1-700,2"
+    TestID   -> "Blocks-List-Numbered-Plain-Text"
 ]
 
 VerificationTest[
     MarkdownRoundTrip /@ { "1. first\n2. second\n3. third", "1) first\n2) second", "1. **First**: desc\n2. Second" },
     { "1. first\n2. second\n3. third", "1) first\n2) second", "1. **First**: desc\n2. Second" },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-List-Numbered-Serialization@@Tests/FormattingBlocks.wlt:702,1-707,2"
+    TestID   -> "Blocks-List-Numbered-Serialization"
 ]
 
 (* Bullets nested under a numbered item are subitems: *)
@@ -711,14 +711,14 @@ VerificationTest[
     blocksNormalized[ "1. first\n   - sub\n2. second" ],
     { "1. first\n", blocksSubitem[ "   ", " sub" ], "\n2. second" },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-List-Numbered-With-Bullets@@Tests/FormattingBlocks.wlt:710,1-715,2"
+    TestID   -> "Blocks-List-Numbered-With-Bullets"
 ]
 
 VerificationTest[
     blocksRoundTrip[ "1. first\n   - sub\n2. second" ],
     "1. first\n   * sub\n2. second",
     SameTest -> MatchQ,
-    TestID   -> "Blocks-List-Numbered-With-Bullets-Serialization@@Tests/FormattingBlocks.wlt:717,1-722,2"
+    TestID   -> "Blocks-List-Numbered-With-Bullets-Serialization"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -735,7 +735,7 @@ VerificationTest[
         { blocksItem[ " a" ], "\n", blocksItem[ " b" ], "\n", blocksSubitem[ "  ", " c" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-List-Streaming@@Tests/FormattingBlocks.wlt:729,1-739,2"
+    TestID   -> "Blocks-List-Streaming"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -767,7 +767,7 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Delimiter-Structure@@Tests/FormattingBlocks.wlt:746,1-771,2"
+    TestID   -> "Blocks-Delimiter-Structure"
 ]
 
 (* Three or more "-", "*", or "_" characters on a line of their own all make the same rule: *)
@@ -775,14 +775,14 @@ VerificationTest[
     Union[ FormatMarkdown /@ { "---", "***", "___", "----------", "*****", "______" } ],
     { { $$blocksDelimiter } },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Delimiter-Variants@@Tests/FormattingBlocks.wlt:774,1-779,2"
+    TestID   -> "Blocks-Delimiter-Variants"
 ]
 
 VerificationTest[
     MarkdownRoundTrip /@ { "---", "***", "___", "----------", "*****", "______" },
     { "---", "---", "---", "---", "---", "---" },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Delimiter-Serialization@@Tests/FormattingBlocks.wlt:781,1-786,2"
+    TestID   -> "Blocks-Delimiter-Serialization"
 ]
 
 (* Blank lines around a rule are optional. Unlike headings and bullets, the rule doesn't consume the line breaks
@@ -802,7 +802,7 @@ VerificationTest[
         { "Text\n", $$blocksDelimiter, "\nMore\n", $$blocksDelimiter, "\nEnd" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Delimiter-Between-Paragraphs@@Tests/FormattingBlocks.wlt:791,1-806,2"
+    TestID   -> "Blocks-Delimiter-Between-Paragraphs"
 ]
 
 (* Rules next to other blocks: *)
@@ -816,7 +816,7 @@ VerificationTest[
         { $$blocksDelimiter, "\n", blocksSection @ blocksTextBox[ "H" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Delimiter-Adjacent-Blocks@@Tests/FormattingBlocks.wlt:809,1-820,2"
+    TestID   -> "Blocks-Delimiter-Adjacent-Blocks"
 ]
 
 (* When serialized, rules are surrounded by blank lines: *)
@@ -824,7 +824,7 @@ VerificationTest[
     blocksRoundTrip /@ { "Above\n---\nBelow", "Above\n\n\n---\n\n\nBelow", "---\n---", "- a\n---\n- b", "## H\n---" },
     { "Above\n\n---\n\nBelow", "Above\n\n---\n\nBelow", "---\n\n---", "* a\n\n---\n\n* b", "## H\n\n---" },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Delimiter-Serialization-Spacing@@Tests/FormattingBlocks.wlt:823,1-828,2"
+    TestID   -> "Blocks-Delimiter-Serialization-Spacing"
 ]
 
 (* Fewer than three characters, mixed characters, or other text on the line: *)
@@ -832,14 +832,14 @@ VerificationTest[
     FormatMarkdown /@ { "--", "Text --- more", "-*-", "---text" },
     { { "--" }, { "Text --- more" }, { "-*-" }, { "---text" } },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Delimiter-Not-Delimiters@@Tests/FormattingBlocks.wlt:831,1-836,2"
+    TestID   -> "Blocks-Delimiter-Not-Delimiters"
 ]
 
 VerificationTest[
     blocksNormalized[ #, "Streaming" ] & /@ { "--", "---", "Text\n\n---" },
     { { "--" }, { $$blocksDelimiter }, { "Text\n", $$blocksDelimiter } },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Delimiter-Streaming@@Tests/FormattingBlocks.wlt:838,1-843,2"
+    TestID   -> "Blocks-Delimiter-Streaming"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -884,7 +884,7 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-BlockQuote-Structure@@Tests/FormattingBlocks.wlt:855,1-888,2"
+    TestID   -> "Blocks-BlockQuote-Structure"
 ]
 
 (* Consecutive quoted lines form one quote, with the ">" markers removed from each line. The space after ">" is
@@ -897,7 +897,7 @@ VerificationTest[
         { blocksQuote @ blocksTextBox[ "extra spaces" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-BlockQuote-Lines@@Tests/FormattingBlocks.wlt:892,1-901,2"
+    TestID   -> "Blocks-BlockQuote-Lines"
 ]
 
 (* A line with only ">" (or "> ") inside a quote is a blank line in the quote: *)
@@ -905,7 +905,7 @@ VerificationTest[
     FormatMarkdown /@ { "> q1\n>\n> q2", "> a\n> \n> b" },
     { { blocksQuote @ blocksTextBox[ "q1\n\nq2" ] }, { blocksQuote @ blocksTextBox[ "a\n\nb" ] } },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-BlockQuote-Blank-Quote-Line@@Tests/FormattingBlocks.wlt:904,1-909,2"
+    TestID   -> "Blocks-BlockQuote-Blank-Quote-Line"
 ]
 
 (* Quotes separated by a blank line are separate quotes: *)
@@ -913,7 +913,7 @@ VerificationTest[
     blocksNormalized[ "> q1\n\n> q2" ],
     { blocksQuote @ blocksTextBox[ "q1" ], "\n", blocksQuote @ blocksTextBox[ "q2" ] },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-BlockQuote-Separate-Quotes@@Tests/FormattingBlocks.wlt:912,1-917,2"
+    TestID   -> "Blocks-BlockQuote-Separate-Quotes"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -932,7 +932,7 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-BlockQuote-Inline-Formatting@@Tests/FormattingBlocks.wlt:923,1-936,2"
+    TestID   -> "Blocks-BlockQuote-Inline-Formatting"
 ]
 
 (* Quotes with formatted content serialize back to quoted markdown: *)
@@ -940,7 +940,7 @@ VerificationTest[
     MarkdownRoundTrip[ "> **bold** and `Plot` and *it*" ],
     "> **bold** and [Plot](paclet:ref/Plot) and *it*",
     SameTest -> MatchQ,
-    TestID   -> "Blocks-BlockQuote-Inline-Formatting-Serialization@@Tests/FormattingBlocks.wlt:939,1-944,2"
+    TestID   -> "Blocks-BlockQuote-Inline-Formatting-Serialization"
 ]
 
 (* A quote that is entirely bold or italic: *)
@@ -954,14 +954,14 @@ VerificationTest[
         { "> **Note**", "> *all italic*" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-BlockQuote-Fully-Formatted@@Tests/FormattingBlocks.wlt:947,1-958,2"
+    TestID   -> "Blocks-BlockQuote-Fully-Formatted"
 ]
 
 VerificationTest[
     FormatMarkdown[ "> quote &amp; more" ],
     { blocksQuote @ blocksTextBox[ "quote & more" ] },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-BlockQuote-HTML-Entity@@Tests/FormattingBlocks.wlt:960,1-965,2"
+    TestID   -> "Blocks-BlockQuote-HTML-Entity"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -976,7 +976,7 @@ VerificationTest[
         { "Text\n\n", blocksQuote @ blocksTextBox[ "q" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-BlockQuote-Between-Paragraphs@@Tests/FormattingBlocks.wlt:971,1-980,2"
+    TestID   -> "Blocks-BlockQuote-Between-Paragraphs"
 ]
 
 (* Quotes next to other blocks, separated by a blank line after the quote: *)
@@ -990,7 +990,7 @@ VerificationTest[
         { blocksQuote @ blocksTextBox[ "q" ], "\n", blocksItem[ " a" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-BlockQuote-Adjacent-Blocks@@Tests/FormattingBlocks.wlt:983,1-994,2"
+    TestID   -> "Blocks-BlockQuote-Adjacent-Blocks"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1001,7 +1001,7 @@ VerificationTest[
     FormatMarkdown /@ { "a > b", ">", "x >= y" },
     { { "a > b" }, { ">" }, { "x >= y" } },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-BlockQuote-Not-Quotes@@Tests/FormattingBlocks.wlt:1000,1-1005,2"
+    TestID   -> "Blocks-BlockQuote-Not-Quotes"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1012,7 +1012,7 @@ VerificationTest[
     FormatMarkdown[ #, "Streaming" ] & /@ { "> qu", "> " },
     { { blocksQuote @ blocksTextBox[ "qu" ] }, { blocksQuote @ blocksTextBox[ "" ] } },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-BlockQuote-Streaming@@Tests/FormattingBlocks.wlt:1011,1-1016,2"
+    TestID   -> "Blocks-BlockQuote-Streaming"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1038,7 +1038,7 @@ VerificationTest[
         { "Para one\n\n\n\nPara two" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Paragraph-Line-Breaks@@Tests/FormattingBlocks.wlt:1027,1-1042,2"
+    TestID   -> "Blocks-Paragraph-Line-Breaks"
 ]
 
 (* Serialization collapses runs of blank lines into one: *)
@@ -1051,7 +1051,7 @@ VerificationTest[
     },
     { "Line one\nLine two", "Para one\n\nPara two", "Para one\n\nPara two", "Para one\n\nPara two" },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Paragraph-Line-Breaks-Serialization@@Tests/FormattingBlocks.wlt:1045,1-1055,2"
+    TestID   -> "Blocks-Paragraph-Line-Breaks-Serialization"
 ]
 
 (* Text that ends with a single line break right before a block cell gets a space before the line break. This was
@@ -1067,7 +1067,7 @@ VerificationTest[
     },
     { "Intro \n", "Intro \n", "Intro \n", "Intro \n", "Intro \n", "Intro \n" },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Paragraph-Space-Before-Block-Line-Break@@Tests/FormattingBlocks.wlt:1059,1-1071,2"
+    TestID   -> "Blocks-Paragraph-Space-Before-Block-Line-Break"
 ]
 
 (* Text after a block cell starts with a single line break, also when there's a blank line in the markdown (so no
@@ -1082,7 +1082,7 @@ VerificationTest[
         { blocksQuote @ blocksTextBox[ "q" ], "\nBody" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Paragraph-Text-After-Block@@Tests/FormattingBlocks.wlt:1076,1-1086,2"
+    TestID   -> "Blocks-Paragraph-Text-After-Block"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1094,7 +1094,7 @@ VerificationTest[
     blocksNormalized /@ { "", "\n", " ", "  \n\n  " },
     { { }, { }, { }, { } },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Paragraph-Empty-Response@@Tests/FormattingBlocks.wlt:1093,1-1098,2"
+    TestID   -> "Blocks-Paragraph-Empty-Response"
 ]
 
 (* Whitespace at the start and end of the whole response is trimmed: *)
@@ -1102,7 +1102,7 @@ VerificationTest[
     FormatMarkdown /@ { "  \n\nLeading and trailing\n\n  ", "\n\n\nText\n\n\n", "   spaces   " },
     { { "Leading and trailing" }, { "Text" }, { "spaces" } },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Paragraph-Trim-Response@@Tests/FormattingBlocks.wlt:1101,1-1106,2"
+    TestID   -> "Blocks-Paragraph-Trim-Response"
 ]
 
 VerificationTest[
@@ -1114,7 +1114,7 @@ VerificationTest[
         { blocksQuote @ blocksTextBox[ "q" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Paragraph-Trim-Around-Blocks@@Tests/FormattingBlocks.wlt:1108,1-1118,2"
+    TestID   -> "Blocks-Paragraph-Trim-Around-Blocks"
 ]
 
 (* Trailing spaces at the end of a line (a markdown hard line break) give a normal line break. The spaces themselves
@@ -1123,7 +1123,7 @@ VerificationTest[
     { blocksNormalized[ "Text  \nwith trailing spaces" ], blocksRoundTrip[ "Text  \nwith trailing spaces" ] },
     { { "Text\nwith trailing spaces" }, "Text\nwith trailing spaces" },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Paragraph-Trailing-Spaces@@Tests/FormattingBlocks.wlt:1122,1-1127,2"
+    TestID   -> "Blocks-Paragraph-Trailing-Spaces"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1135,7 +1135,7 @@ VerificationTest[
     FormatMarkdown /@ { "Text\n```", "Text\n\n```", "Some text\n\n```\n", "foo```" },
     { { "Text" }, { "Text" }, { "Some text" }, { "foo" } },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Paragraph-Stray-Fence@@Tests/FormattingBlocks.wlt:1134,1-1139,2"
+    TestID   -> "Blocks-Paragraph-Stray-Fence"
 ]
 
 (* An extra closing fence after a code block is removed as well: *)
@@ -1143,7 +1143,7 @@ VerificationTest[
     FormatMarkdown[ "```wl\n1+1\n```\n```" ],
     { $$blocksCodeBlock },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Paragraph-Stray-Fence-After-Code-Block@@Tests/FormattingBlocks.wlt:1142,1-1147,2"
+    TestID   -> "Blocks-Paragraph-Stray-Fence-After-Code-Block"
 ]
 
 (* A fence in the middle of a line is kept: *)
@@ -1151,7 +1151,7 @@ VerificationTest[
     FormatMarkdown[ "Text ``` here" ],
     { "Text ``` here" },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Paragraph-Fence-In-Text@@Tests/FormattingBlocks.wlt:1150,1-1155,2"
+    TestID   -> "Blocks-Paragraph-Fence-In-Text"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1164,7 +1164,7 @@ VerificationTest[
     blocksNormalized[ "## Heading\r\n\r\nText\r\n- item\r\n- item2" ],
     { blocksSection @ blocksTextBox[ "Heading" ], "\nText\n", blocksItem[ " item" ], "\n", blocksItem[ " item2" ] },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Paragraph-CRLF-Blocks@@Tests/FormattingBlocks.wlt:1163,1-1168,2"
+    TestID   -> "Blocks-Paragraph-CRLF-Blocks"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1177,7 +1177,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Paragraph-Unicode@@Tests/FormattingBlocks.wlt:1174,1-1181,2"
+    TestID   -> "Blocks-Paragraph-Unicode"
 ]
 
 (* Indented code blocks and setext headings are not supported, so they stay plain text: *)
@@ -1185,7 +1185,7 @@ VerificationTest[
     FormatMarkdown /@ { "Text\n\n    code line", "Heading\n=====\n\nText" },
     { { "Text\n\n    code line" }, { "Heading\n=====\n\nText" } },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Paragraph-Unsupported-Blocks@@Tests/FormattingBlocks.wlt:1184,1-1189,2"
+    TestID   -> "Blocks-Paragraph-Unsupported-Blocks"
 ]
 
 (* Long lines and many blocks: *)
@@ -1204,7 +1204,7 @@ VerificationTest[
         { blocksQuote[ quote_String /; StringCount[ quote, "quoted line" ] === 300 && StringFreeQ[ quote, ">" ] ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Paragraph-Long-Input@@Tests/FormattingBlocks.wlt:1192,1-1208,2"
+    TestID   -> "Blocks-Paragraph-Long-Input"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1224,14 +1224,14 @@ VerificationTest[
         { "Intro\n\nRange[10]" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-WL-Code-Text@@Tests/FormattingBlocks.wlt:1217,1-1228,2"
+    TestID   -> "Blocks-WL-Code-Text"
 ]
 
 VerificationTest[
     MarkdownRoundTrip /@ { "Range[10]", "- Plot[Sin[x], {x, 0, 1}]", "## Plot[x]", "> Plot[x]" },
     { "``Range[10]``", "* ``Plot[Sin[x], {x, 0, 1}]``", "## ``Plot[x]``", "> ``Plot[x]``" },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-WL-Code-Text-Serialization@@Tests/FormattingBlocks.wlt:1230,1-1235,2"
+    TestID   -> "Blocks-WL-Code-Text-Serialization"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1261,7 +1261,7 @@ VerificationTest[
         { "<>" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-HTMLEntities-Decoded@@Tests/FormattingBlocks.wlt:1242,1-1265,2"
+    TestID   -> "Blocks-HTMLEntities-Decoded"
 ]
 
 (* Entity names are case-sensitive, as in HTML. HTML5 also has uppercase forms of the most common ones, like "&AMP;": *)
@@ -1275,7 +1275,7 @@ VerificationTest[
         { "&Amp; &MDASH;" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-HTMLEntities-Case-Sensitive@@Tests/FormattingBlocks.wlt:1268,1-1279,2"
+    TestID   -> "Blocks-HTMLEntities-Case-Sensitive"
 ]
 
 (* The HTML5 names of ASCII characters are decoded too: *)
@@ -1283,7 +1283,7 @@ VerificationTest[
     FormatMarkdown[ "a &excl; &commat; &lpar;b&rpar; &quest; &Hat; &lcub;&rcub;" ],
     { "a ! @ (b) ? ^ {}" },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-HTMLEntities-ASCII-Names@@Tests/FormattingBlocks.wlt:1282,1-1287,2"
+    TestID   -> "Blocks-HTMLEntities-ASCII-Names"
 ]
 
 (* Unknown entities and a bare "&" are left alone: *)
@@ -1291,7 +1291,7 @@ VerificationTest[
     FormatMarkdown /@ { "&unknown; entity", "&notanentityatall;", "a & b", "&a;b&c;" },
     { { "&unknown; entity" }, { "&notanentityatall;" }, { "a & b" }, { "&a;b&c;" } },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-HTMLEntities-Unknown@@Tests/FormattingBlocks.wlt:1290,1-1295,2"
+    TestID   -> "Blocks-HTMLEntities-Unknown"
 ]
 
 (* Text that only looks like an entity is not changed: *)
@@ -1299,7 +1299,7 @@ VerificationTest[
     FormatMarkdown /@ { "Tom & Jerry; fun", "R&D; costs" },
     { { "Tom & Jerry; fun" }, { "R&D; costs" } },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-HTMLEntities-Lookalikes@@Tests/FormattingBlocks.wlt:1298,1-1303,2"
+    TestID   -> "Blocks-HTMLEntities-Lookalikes"
 ]
 
 (* Long entity names and numbers are decoded, and so is an uppercase "X" in hexadecimal entities. Numbers that aren't
@@ -1320,7 +1320,7 @@ VerificationTest[
         { "&#0; &#55296; &#x110000; &#x; &#; &#\:0663;" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-HTMLEntities-Long-And-Numeric@@Tests/FormattingBlocks.wlt:1307,1-1324,2"
+    TestID   -> "Blocks-HTMLEntities-Long-And-Numeric"
 ]
 
 (* Space entities give their space characters. When the text is serialized, a non-breaking space becomes a plain
@@ -1335,7 +1335,7 @@ VerificationTest[
         "non breaking"
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-HTMLEntities-Spaces@@Tests/FormattingBlocks.wlt:1328,1-1339,2"
+    TestID   -> "Blocks-HTMLEntities-Spaces"
 ]
 
 (* Entities are decoded once, so an escaped entity gives the entity: *)
@@ -1346,7 +1346,7 @@ VerificationTest[
     },
     { { { "&lt;" }, { "&amp; &#60;" } }, "* a &lt; b" },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-HTMLEntities-Decoded-Once@@Tests/FormattingBlocks.wlt:1342,1-1350,2"
+    TestID   -> "Blocks-HTMLEntities-Decoded-Once"
 ]
 
 (* Entities are decoded before anything else is parsed, so they are decoded inside code too: *)
@@ -1366,14 +1366,14 @@ VerificationTest[
         "```wl\nx && y\n```"
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-HTMLEntities-In-Code@@Tests/FormattingBlocks.wlt:1353,1-1370,2"
+    TestID   -> "Blocks-HTMLEntities-In-Code"
 ]
 
 VerificationTest[
     MarkdownRoundTrip /@ { "Fish &amp; chips", "a &lt; b &gt; c", "- item &lt;tag&gt;" },
     { "Fish & chips", "a < b > c", "* item <tag>" },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-HTMLEntities-Serialization@@Tests/FormattingBlocks.wlt:1372,1-1377,2"
+    TestID   -> "Blocks-HTMLEntities-Serialization"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1394,7 +1394,7 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Precedence-Code-Block-Content@@Tests/FormattingBlocks.wlt:1384,1-1398,2"
+    TestID   -> "Blocks-Precedence-Code-Block-Content"
 ]
 
 (* The heading text is whatever follows the "#" characters, even if it looks like a bullet: *)
@@ -1402,7 +1402,7 @@ VerificationTest[
     FormatMarkdown[ "# - x" ],
     { blocksHeading[ blocksTextBox[ "- x" ], "Title", 26, { { 0, 0 }, { 5, 15 } } ] },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Precedence-Heading-Content@@Tests/FormattingBlocks.wlt:1401,1-1406,2"
+    TestID   -> "Blocks-Precedence-Heading-Content"
 ]
 
 (* Escaped markdown characters give the same blocks as without escapes. This includes blocks in the text before a code
@@ -1420,7 +1420,7 @@ VerificationTest[
     },
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Precedence-Escaped-Path-Same-Blocks@@Tests/FormattingBlocks.wlt:1410,1-1424,2"
+    TestID   -> "Blocks-Precedence-Escaped-Path-Same-Blocks"
 ]
 
 (* Escapes inside block content are unescaped: *)
@@ -1434,7 +1434,7 @@ VerificationTest[
         blocksQuote @ blocksTextBox[ "q _x_" ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Precedence-Escapes-In-Blocks@@Tests/FormattingBlocks.wlt:1427,1-1438,2"
+    TestID   -> "Blocks-Precedence-Escapes-In-Blocks"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1464,7 +1464,7 @@ VerificationTest[
         "\nEnd."
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Document-Structure@@Tests/FormattingBlocks.wlt:1445,1-1468,2"
+    TestID   -> "Blocks-Document-Structure"
 ]
 
 (* Block constructs format the same way while streaming. The second streaming call gets the block cells from the
@@ -1475,14 +1475,14 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Document-Streaming-Same@@Tests/FormattingBlocks.wlt:1472,1-1479,2"
+    TestID   -> "Blocks-Document-Streaming-Same"
 ]
 
 VerificationTest[
     blocksRoundTrip[ "# Title\n\nIntro paragraph.\n\n## Section\n\n- one\n- **two**\n  - sub\n\n---\n\nEnd." ],
     "# Title\n\nIntro paragraph.\n\n## Section\n\n* one\n* **two**\n  * sub\n\n---\n\nEnd.",
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Document-Serialization@@Tests/FormattingBlocks.wlt:1481,1-1486,2"
+    TestID   -> "Blocks-Document-Serialization"
 ]
 
 (* Formatting the serialized markdown again gives the same output: *)
@@ -1496,7 +1496,7 @@ VerificationTest[
     },
     { True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-Document-Reformat-Serialized@@Tests/FormattingBlocks.wlt:1489,1-1500,2"
+    TestID   -> "Blocks-Document-Reformat-Serialized"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1515,7 +1515,7 @@ VerificationTest[
         { blocksQuote @ blocksTextBox[ "a\nb" ], "\nc" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-BlockQuote-Text-Directly-After@@Tests/FormattingBlocks.wlt:1440,1-1451,2"
+    TestID   -> "Blocks-BlockQuote-Text-Directly-After"
 ]
 
 (* A list item, heading, horizontal rule or code block on the line after a quote is formatted as that block: *)
@@ -1528,7 +1528,7 @@ VerificationTest[
         { blocksQuote @ blocksTextBox[ "q" ], "\n", $$blocksCodeBlock }
     },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-BlockQuote-Blocks-Directly-After@@Tests/FormattingBlocks.wlt:1454,1-1464,2"
+    TestID   -> "Blocks-BlockQuote-Blocks-Directly-After"
 ]
 
 (* Streaming gives the same output: *)
@@ -1537,7 +1537,7 @@ VerificationTest[
         { "> q\nBody", "> q\nB", "> q\n- a" },
     { True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-BlockQuote-Directly-After-Streaming@@Tests/FormattingBlocks.wlt:1467,1-1473,2"
+    TestID   -> "Blocks-BlockQuote-Directly-After-Streaming"
 ]
 
 (* The text after a quote is serialized on its own line, and formatting the serialized markdown again gives the same
@@ -1553,7 +1553,7 @@ VerificationTest[
     },
     { { "Before\n\n> **quoted**\nAfter", "> **q**\n* item" }, { True, True, True } },
     SameTest -> MatchQ,
-    TestID   -> "Blocks-BlockQuote-Directly-After-Serialization@@Tests/FormattingBlocks.wlt:1477,1-1489,2"
+    TestID   -> "Blocks-BlockQuote-Directly-After-Serialization"
 ]
 
 (* A tool call after a quote starts on its own line in the serialized text, as the chat history needs: *)
@@ -1563,7 +1563,7 @@ VerificationTest[
     ],
     "> **q**\n" <> "TOOLCALL: wolfram_language_evaluator\n{\"code\":\"1\"}\nRESULT\n1\nENDRESULT(abc)\nText",
     SameTest -> MatchQ,
-    TestID   -> "Blocks-BlockQuote-Tool-Call-Directly-After-Serialization@@Tests/FormattingBlocks.wlt:1492,1-1499,2"
+    TestID   -> "Blocks-BlockQuote-Tool-Call-Directly-After-Serialization"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

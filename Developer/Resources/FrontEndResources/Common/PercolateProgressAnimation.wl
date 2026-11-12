@@ -2,10 +2,7 @@ RawBoxes @ ToBoxes @
   DynamicModule[{Typeset`t = 0., Typeset`v1 = 1., Typeset`v2 = 1., Typeset`v3 = 1.},
     With[
     {
-      bgColor = LightDarkSwitched[
-        RGBColor[0.7490196078431373, 0.7843137254901961, 0.8],
-        RGBColor[0.49411764705882355, 0.5215686274509804, 0.5333333333333333]
-      ],
+      bgColor = color @ "Blue_BFC8CC_7E8588",
       fgColor = LightDarkSwitched[
         RGBColor[0.3843137254901961, 0.4745098039215686, 0.5137254901960784],
         RGBColor[0.7215686274509804, 0.7803921568627451, 0.8117647058823529]

@@ -350,7 +350,7 @@ notebooksInformation // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*combineNotebookInfo*)
 combineNotebookInfo // beginDefinition;
-combineNotebookInfo[ a: { $Failed | Missing[ "NotebookClosed", ___ ], ___ } ] := missingNotebook @ a;
+combineNotebookInfo[ a: { ___, $Failed | Missing[ "NotebookClosed", ___ ], ___ } ] := missingNotebook @ a;
 combineNotebookInfo[ a_List ] := With[ { as = Association @ a }, KeySort @ DeleteMissing @ as /; notebookInfoQ @ as ];
 combineNotebookInfo[ a_List ] := missingNotebook @ a;
 combineNotebookInfo // endDefinition;
@@ -359,7 +359,7 @@ combineNotebookInfo // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*missingNotebook*)
 missingNotebook // beginDefinition;
-missingNotebook[ { _, "NotebookObject" -> nbo_NotebookObject, ___ } ] := missingNotebook @ nbo;
+missingNotebook[ { ___, "NotebookObject" -> nbo_NotebookObject, ___ } ] := missingNotebook @ nbo;
 missingNotebook[ nbo_NotebookObject ] := Missing[ "NotebookClosed", nbo ];
 missingNotebook // endDefinition;
 
@@ -978,7 +978,7 @@ compressUntilViewed // endDefinition;
 
 (* TODO: move this to the stylesheet *)
 $statelessProgressIndicator =
-    With[ { clock := Clock[ 10, 1.5 ], col = color @ "StatelessProgressIndicator" },
+    With[ { clock := Clock[ 10, 1.5 ], col = color @ "Gray75_54" },
         RawBoxes @ GraphicsBox[
             {
                 col,

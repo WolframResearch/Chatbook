@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName[ $TestFileName ], "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/EmulatedStopTokens.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/EmulatedStopTokens.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -64,7 +64,7 @@ VerificationTest[
         2
     ],
     SameTest -> MatchQ,
-    TestID   -> "EmulatedStopTokens-ToolMethods@@Tests/EmulatedStopTokens.wlt:28,1-68,2"
+    TestID   -> "EmulatedStopTokens-ToolMethods"
 ]
 
 VerificationTest[
@@ -88,7 +88,7 @@ VerificationTest[
     ],
     { None, None, None, None },
     SameTest -> MatchQ,
-    TestID   -> "EmulatedStopTokens-NotApplicable@@Tests/EmulatedStopTokens.wlt:70,1-92,2"
+    TestID   -> "EmulatedStopTokens-NotApplicable"
 ]
 
 VerificationTest[
@@ -106,7 +106,7 @@ VerificationTest[
     ],
     { { "[INFO]" }, { "\n/exec", "[INFO]" } },
     SameTest -> MatchQ,
-    TestID   -> "EmulatedStopTokens-AutomaticAssistance@@Tests/EmulatedStopTokens.wlt:94,1-110,2"
+    TestID   -> "EmulatedStopTokens-AutomaticAssistance"
 ]
 
 (* The emulated stop tokens for resolved settings should match what the model would get if it supported them: *)
@@ -125,7 +125,7 @@ VerificationTest[
     ],
     { { "\n/exec" }, { "ENDTOOLCALL" }, { "ENDTOOLCALL" }, None, None },
     SameTest -> MatchQ,
-    TestID   -> "EmulatedStopTokens-ResolvedSettings@@Tests/EmulatedStopTokens.wlt:113,1-129,2"
+    TestID   -> "EmulatedStopTokens-ResolvedSettings"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -141,7 +141,7 @@ VerificationTest[
     },
     { True, False, False, False, True },
     SameTest -> MatchQ,
-    TestID   -> "StopTokensSupportedQ@@Tests/EmulatedStopTokens.wlt:134,1-145,2"
+    TestID   -> "StopTokensSupportedQ"
 ]
 
 (* Explicitly given stop tokens should not be replaced by automatic ones: *)
@@ -159,7 +159,7 @@ VerificationTest[
     ],
     { { "STOP" }, None, { "STOP" }, { "\n/exec", "/end" } },
     SameTest -> MatchQ,
-    TestID   -> "ExplicitStopTokens-Resolved@@Tests/EmulatedStopTokens.wlt:148,1-163,2"
+    TestID   -> "ExplicitStopTokens-Resolved"
 ]
 
 (* Explicitly given stop tokens are sent when supported, and emulated otherwise: *)
@@ -184,7 +184,7 @@ VerificationTest[
     ],
     { { { "STOP" }, None }, { _Missing, { "STOP" } }, { _Missing, { "STOP" } }, { _Missing, None } },
     SameTest -> MatchQ,
-    TestID   -> "ExplicitStopTokens-SentOrEmulated@@Tests/EmulatedStopTokens.wlt:166,1-188,2"
+    TestID   -> "ExplicitStopTokens-SentOrEmulated"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -237,7 +237,7 @@ VerificationTest[
     ],
     { "Some text\n\n/wl\nPrime[123]", "Some text\n\n/wl\nPrime[123]", True },
     SameTest -> MatchQ,
-    TestID   -> "EmulatedStop-CleanStop@@Tests/EmulatedStopTokens.wlt:197,1-241,2"
+    TestID   -> "EmulatedStop-CleanStop"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -286,7 +286,7 @@ VerificationTest[
     ],
     { "/wl\nPrime[123]", "/wl\nPrime[123]", True },
     SameTest -> MatchQ,
-    TestID   -> "EmulatedStop-DiscardsHallucinatedContinuation@@Tests/EmulatedStopTokens.wlt:246,1-290,2"
+    TestID   -> "EmulatedStop-DiscardsHallucinatedContinuation"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -335,7 +335,7 @@ VerificationTest[
     ],
     { "/wl\nRandomReal[]", "/wl\nRandomReal[]", True },
     SameTest -> MatchQ,
-    TestID   -> "EmulatedStop-SplitStopToken@@Tests/EmulatedStopTokens.wlt:295,1-339,2"
+    TestID   -> "EmulatedStop-SplitStopToken"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -384,7 +384,7 @@ VerificationTest[
     ],
     { "Just a normal response with no tools.", "Just a normal response with no tools.", False },
     SameTest -> MatchQ,
-    TestID   -> "EmulatedStop-NoToolCall@@Tests/EmulatedStopTokens.wlt:344,1-388,2"
+    TestID   -> "EmulatedStop-NoToolCall"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -442,7 +442,7 @@ VerificationTest[
     ],
     { True, True, True, "NextPrime[2543568463]" },
     SameTest -> MatchQ,
-    TestID   -> "EmulatedStop-MultiRound@@Tests/EmulatedStopTokens.wlt:396,1-446,2"
+    TestID   -> "EmulatedStop-MultiRound"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -507,7 +507,7 @@ VerificationTest[
         "plot a function"
     },
     SameTest -> MatchQ,
-    TestID   -> "EmulatedStop-TextualSplitStopToken@@Tests/EmulatedStopTokens.wlt:454,1-511,2"
+    TestID   -> "EmulatedStop-TextualSplitStopToken"
 ]
 
 (* When several stop tokens are emulated, the response is cut at whichever appears first: *)
@@ -531,7 +531,7 @@ VerificationTest[
     ],
     { "/wl\nPrime[5]", True },
     SameTest -> MatchQ,
-    TestID   -> "EmulatedStop-FirstOfSeveralStopTokens@@Tests/EmulatedStopTokens.wlt:514,1-535,2"
+    TestID   -> "EmulatedStop-FirstOfSeveralStopTokens"
 ]
 
 (* The end turn token is emulated for the "Service" tool method: *)
@@ -555,7 +555,7 @@ VerificationTest[
     ],
     { "The answer is 42.\n", True },
     SameTest -> MatchQ,
-    TestID   -> "EmulatedStop-ServiceEndToken@@Tests/EmulatedStopTokens.wlt:538,1-559,2"
+    TestID   -> "EmulatedStop-ServiceEndToken"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -578,7 +578,7 @@ VerificationTest[
     ],
     { "a ENDTOOLCALL", "b ENDTOOLCALL" },
     SameTest -> MatchQ,
-    TestID   -> "DropReasoningPositions@@Tests/EmulatedStopTokens.wlt:566,1-582,2"
+    TestID   -> "DropReasoningPositions"
 ]
 
 (* A reasoning summary (as streamed from the responses endpoint) mentions the end token before the actual tool call,
@@ -636,7 +636,7 @@ VerificationTest[
         { False, False, True }
     },
     SameTest -> MatchQ,
-    TestID   -> "EmulatedStop-IgnoresReasoningSummary@@Tests/EmulatedStopTokens.wlt:586,1-640,2"
+    TestID   -> "EmulatedStop-IgnoresReasoningSummary"
 ]
 
 (* Reasoning that's still streaming hasn't been closed yet: *)
@@ -660,7 +660,7 @@ VerificationTest[
     ],
     { "<think type='summary' id='abc123'>\nThe call should end with ENDTOOLCALL", False },
     SameTest -> MatchQ,
-    TestID   -> "EmulatedStop-IgnoresUnclosedReasoning@@Tests/EmulatedStopTokens.wlt:643,1-664,2"
+    TestID   -> "EmulatedStop-IgnoresUnclosedReasoning"
 ]
 
 (* ::**************************************************************************************************************:: *)

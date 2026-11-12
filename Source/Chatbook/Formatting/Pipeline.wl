@@ -208,7 +208,8 @@ makeResultCell1 // beginDefinition;
 
 (* When the text has markdown escapes, the parts that keep their raw text (code blocks, tool calls, think tags and
    speech) get their escapes back, and every other part has the placeholders in its output replaced with the plain
-   characters. This is done for each part, since some of them are compressed until they're viewed: *)
+   characters (inline code and math replace their own placeholders first, see $codeUnescapeRules and
+   $texUnescapeRules). This is done for each part, since some of them are compressed until they're viewed: *)
 makeResultCell1[ expr: $$rawTextToken[ ___ ] ] /; $markdownEscapes := makeResultCell0 @ restoreRawText @ expr;
 makeResultCell1[ expr_ ] /; $markdownEscapes := unescapeMarkdownStrings @ makeResultCell0 @ expr;
 makeResultCell1[ expr_ ] := makeResultCell0 @ expr;
@@ -274,10 +275,10 @@ makeResultCell0[ codeBlockCell[ language_String, code_String ] ] := {
 };
 
 makeResultCell0[ inlineCodeCell[ code_String? almostCertainlyWLCodeQ ] ] :=
-    makeInlineWL @ StringReplace[ code, $mdUnescapeRules ];
+    makeInlineWL @ StringReplace[ code, $codeUnescapeRules ];
 
 makeResultCell0[ inlineCodeCell[ code_String ] ] := ReplaceAll[
-    makeInlineCodeCell @ StringReplace[ code, $mdUnescapeRules ],
+    makeInlineCodeCell @ StringReplace[ code, $codeUnescapeRules ],
     "\[FreeformPrompt]" :> RuleCondition @ $freeformPromptBox
 ];
 

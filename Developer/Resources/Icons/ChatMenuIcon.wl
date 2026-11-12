@@ -1,7 +1,7 @@
 Graphics[
  {
   Thickness[ 0.071429 ],
-  FaceForm @ { color @ "NA_BlueHueButtonIcon", Opacity[ 1.0 ] },
+  FaceForm @ { color @ "Blue_128ED1_7FC7FB", Opacity[ 1.0 ] },
   FilledCurve[
    {
     { { 0, 2, 0 }, { 0, 1, 0 }, { 0, 1, 0 }, { 0, 1, 0 } },
