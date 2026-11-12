@@ -1255,7 +1255,7 @@ $cutWhite     = color @ "Gray100_10";
 chatbarUsageThermometerBase[ width_, usage_, label_, size_ : Automatic ] :=
     With[
         {
-            color = Which[
+            barColor = Which[
                 usage >= 0.95, $cutRed,
                 usage >= 0.80, $cutOrange,
                 usage >= 0.75, $cutYellow,
@@ -1268,14 +1268,14 @@ chatbarUsageThermometerBase[ width_, usage_, label_, size_ : Automatic ] :=
                     Framed[
                         Graphics[ { },
                             ImageSize    -> { Max[Sign[usage], (width - 2*$cutMargin) * usage], $cutHeight-2*$cutMargin },
-                            Background   -> color,
+                            Background   -> barColor,
                             ImageMargins -> 0
                         ],
                         Background     -> $cutWhite,
                         BaselinePosition -> Center -> Center,
                         ContentPadding -> False,
                         FrameMargins   -> $cutMargin,
-                        FrameStyle     -> color,
+                        FrameStyle     -> barColor,
                         ImageSize      -> { width, $cutHeight },
                         RoundingRadius -> If[size === Small, 2, 1]
                     ],

@@ -48,6 +48,49 @@ VerificationTest[
     TestID   -> "DefinedColorNamesUsedMoreThanOnce"
 ]
 
+(* A local variable or parameter named color would replace the color function inside its scope, so
+   color @ "Name" there would become value[ "Name" ] instead of a color: *)
+VerificationTest[
+    Needs[ "CodeParser`" ];
+    Module[ { colorSymbol, colorCall, bindsColor },
+        colorSymbol = CodeParser`LeafNode[ Symbol, "color", _ ];
+        colorCall = CodeParser`CallNode[ colorSymbol, { CodeParser`LeafNode[ String, _, _ ] }, _ ];
+        bindsColor = Alternatives[
+            CodeParser`CallNode[
+                CodeParser`LeafNode[ Symbol, "With" | "Module" | "Block" | "DynamicModule", _ ],
+                {
+                    CodeParser`CallNode[
+                        CodeParser`LeafNode[ Symbol, "List", _ ],
+                        { ___, colorSymbol | CodeParser`CallNode[ CodeParser`LeafNode[ Symbol, "Set" | "SetDelayed", _ ], { colorSymbol, _ }, _ ], ___ },
+                        _
+                    ],
+                    ___
+                },
+                _
+            ],
+            CodeParser`CallNode[
+                CodeParser`LeafNode[ Symbol, "SetDelayed" | "Set" | "RuleDelayed", _ ],
+                { _? (! FreeQ[ #, CodeParser`CallNode[ CodeParser`LeafNode[ Symbol, "Pattern", _ ], { colorSymbol, ___ }, _ ] ] &), _ },
+                _
+            ]
+        ];
+        Flatten @ Map[
+            Function[ file,
+                Cases[
+                    Quiet @ CodeParser`CodeParse @ File @ file,
+                    node: bindsColor /; ! FreeQ[ node, colorCall ] :>
+                        FileNameTake[ file ] <> ":" <> ToString @ node[[ 3 ]][ CodeParser`Source ][[ 1, 1 ]],
+                    Infinity
+                ]
+            ],
+            FileNames[ { "*.wl", "*.wls" }, FileNameJoin @ { $repositoryDir, # } & /@ { "Source", "Developer" }, Infinity ]
+        ]
+    ],
+    { },
+    SameTest -> MatchQ,
+    TestID   -> "ColorNotShadowedByLocalVariables"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Dynamic Content*)
