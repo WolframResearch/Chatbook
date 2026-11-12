@@ -2146,9 +2146,17 @@ autoCorrect // endDefinition;
 
 $$specialBoxName = "AudioBox"|"MarkdownImageBox"|"VideoBox";
 
+(* autoCorrect runs on the whole accumulated text for every chunk, so its rules must not start at every character of a
+   long run and scan the rest of it each time, which took 1-6 s for a run of 20K spaces, newlines or backslashes
+   (#1720). These only match a run from its first character: the lookbehind fails when the character before it is the
+   same. It comes after the first character so that it's only tried there, which is cheaper on typical text. *)
+$$spaces      = " "  ~~ RegularExpression[ "(?<! {2})" ] ~~ " "...;
+$$backslashes = "\\" ~~ RegularExpression[ "(?<!\\\\{2})" ] ~~ "\\"...;
+
 $llmAutoCorrectRulesNoMoonshot := $llmAutoCorrectRulesNoMoonshot = Flatten @ {
-    StartOfLine ~~ WhitespaceCharacter... ~~ "/command\ncode:" :> "/wl\ncode:",
-    " ".. ~~ "/" ~~ name: Repeated[ Except[ WhitespaceCharacter ], { 1, 80 } ] ~~ " "... ~~ "\n" /;
+    (* No newlines in the whitespace, since StartOfLine matches at every line in a run of newlines: *)
+    StartOfLine ~~ Except[ "\n", WhitespaceCharacter ]... ~~ "/command\ncode:" :> "/wl\ncode:",
+    $$spaces ~~ "/" ~~ name: Repeated[ Except[ WhitespaceCharacter ], { 1, 80 } ] ~~ " "... ~~ "\n" /;
         toolShortNameQ @ name :>
             "\n/"<>name<>"\n",
     "```" ~~ code: Except[ "\n" ].. ~~ "```" :> "``"<>code<>"``",
@@ -2166,11 +2174,17 @@ $llmAutoCorrectRulesNoMoonshot := $llmAutoCorrectRulesNoMoonshot = Flatten @ {
        character, which should reduce the likelihood of incorrect unicode characters being used instead. *)
     RegularExpression["\\\\u[Ff]351"] -> "\[FreeformPrompt]",
     RegularExpression["\\\\u[Ff][Ff]1[Dd]"] -> "\[FreeformPrompt]",
-    "\\"... ~~ "\:ff1d" -> "\[FreeformPrompt]",
-    "\\".. ~~ "[FreeformInput]" -> "\[FreeformPrompt]",
-    "\\".. ~~ "[FreeformEntity]" -> "\[FreeformPrompt]",
-    "\\".. ~~ "[FreeformPrompt]" -> "\[FreeformPrompt]",
-    "\\".. ~~ "[RawEscape][FreeformPrompt]" -> "\[FreeformPrompt]",
+    (* One rule after the backslashes, so the lookbehind in $$backslashes is only tried once at each backslash. The bare
+       "\:ff1d" is a separate rule, since a rule that can start with an optional run ("\\"... ~~ "\:ff1d") made calls
+       on text over about 2K characters about 1.5 times as slow: *)
+    $$backslashes ~~ Alternatives[
+        "\:ff1d",
+        "[FreeformInput]",
+        "[FreeformEntity]",
+        "[FreeformPrompt]",
+        "[RawEscape][FreeformPrompt]"
+    ] -> "\[FreeformPrompt]",
+    "\:ff1d" -> "\[FreeformPrompt]",
     (* ============================================== *)
     "\n<|image_sentinel|>\n" :> "\n",
     "<|image_sentinel|>" :> "",
