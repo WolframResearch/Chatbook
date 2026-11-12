@@ -254,4 +254,76 @@ VerificationTest[
     TestID   -> "AutoCorrect-Moonshot-Coverage"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Long Runs*)
+(* The rules that start with a run of spaces or backslashes only match from the first character of the run, and the
+   rule for "/command" only skips horizontal whitespace, so blank lines before it are kept: *)
+VerificationTest[
+    withMoonshotTestHandlerData[
+        Wolfram`Chatbook`Common`autoCorrect /@ {
+            "Text   /wl  \n1+1",
+            "\\\\\\\:ff1d[\"a\"]",
+            "\\\\\\" <> "[FreeformInput][\"a\"]",
+            "Text\n  /command\ncode: 1+1",
+            "Text\n\n/command\ncode: 1+1"
+        }
+    ],
+    {
+        "Text\n/wl\n1+1",
+        "\[FreeformPrompt][\"a\"]",
+        "\[FreeformPrompt][\"a\"]",
+        "Text\n/wl\ncode: 1+1",
+        "Text\n\n/wl\ncode: 1+1"
+    },
+    SameTest -> MatchQ,
+    TestID   -> "AutoCorrect-Runs-Examples-GH#1720"
+]
+
+(* The lookbehinds only make the runs faster to match, so the rules give the same results without them: *)
+VerificationTest[
+    $runReferenceRules = ReplaceAll[
+        Wolfram`Chatbook`SendChat`Private`$llmAutoCorrectRulesNoMoonshot,
+        Alternatives @@ Cases[
+            { Wolfram`Chatbook`SendChat`Private`$$spaces, Wolfram`Chatbook`SendChat`Private`$$backslashes },
+            _RegularExpression,
+            Infinity
+        ] -> Sequence[ ]
+    ];
+
+    $runFragments = {
+        " ", "   ", "\t", "\n", "\n\n", "\r\n", "\\", "\\\\", "x", "abc", "/", "/wl", " /wl\n", "  /wl \n", "/notatool",
+        "/command\ncode:", "\:ff1d", "[FreeformInput]", "[FreeformEntity]", "[FreeformPrompt]",
+        "[RawEscape][FreeformPrompt]", "\\uF351", "```", "<|image_sentinel|>", "\[FreeformPrompt]"
+    };
+
+    $runStrings = BlockRandom[
+        SeedRandom[ 1720 ];
+        Table[ StringJoin @ RandomChoice[ $runFragments, RandomInteger @ { 0, 40 } ], 2000 ]
+    ];
+
+    {
+        (* Make sure the lookbehinds were removed: *)
+        $runReferenceRules =!= Wolfram`Chatbook`SendChat`Private`$llmAutoCorrectRulesNoMoonshot,
+        withMoonshotTestHandlerData @ Select[
+            $runStrings,
+            Wolfram`Chatbook`Common`autoCorrect[ # ] =!= StringReplace[ #, $runReferenceRules ] &
+        ]
+    },
+    { True, { } },
+    SameTest -> MatchQ,
+    TestID   -> "AutoCorrect-Runs-Matches-Reference-GH#1720"
+]
+
+(* Each of these took seconds with the old rules, which scanned the rest of a run from every character in it: *)
+VerificationTest[
+    Max @ Table[
+        First @ AbsoluteTiming @ Wolfram`Chatbook`Common`autoCorrect[ "x" <> StringRepeat[ run, 30000 ] <> "y" ],
+        { run, { " ", "\n", "\r\n", "\\" } }
+    ],
+    _? (LessThan[ 0.5 ]),
+    SameTest -> MatchQ,
+    TestID   -> "AutoCorrect-Runs-Timing-GH#1720"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)
