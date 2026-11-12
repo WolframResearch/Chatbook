@@ -51,12 +51,36 @@ VerificationTest[
                 SetOptions                    = Function[ AppendTo[ log, { "SetOptions", ## } ] ],
                 Wolfram`Chatbook`Common`setCurrentValue = Function[ AppendTo[ log, { "setCurrentValue", ## } ] ],
                 Wolfram`Chatbook`Common`cellTaggedQ     = False &,
-                Wolfram`Chatbook`Common`evaluateSidebarChat = Function[ AppendTo[ log, { "evaluateSidebarChat", #1, #3 } ] ],
+                Wolfram`Chatbook`Common`evaluateSidebarChat = Function[
+                    AppendTo[ log, { "evaluateSidebarChat", #1, #3 } ];
+                    AppendTo[ log, { "evaluateSidebarChat-InputField", #5 } ]
+                ],
                 Wolfram`Chatbook`ChatModes`UI`Private`$workspaceChatInitialized = True
             },
             CurrentValue /: Set[ CurrentValue[ args___ ], value_ ] := (AppendTo[ log, { "CurrentValue", args } ]; value);
             ReleaseHold @ $sendHandler;
             log
+        ]
+    ];
+
+    $sidebarChatInput  = CellObject[ "sidebar-chat-input" ];
+    $sidebarChatOutput = CellObject[ "sidebar-chat-output" ];
+
+    (* Sends "Hello" from the sidebar with a stubbed front end. ChatCellEvaluate gives result, and then the cell after
+       the chat input is next (None for no cell). The arguments of
+       evaluateSidebarChat after the input are args. Gives the result and a log of the calls that look at or change
+       the sidebar: *)
+    sendSidebarChat[ result_, next_, args__ ] := Module[ { log = { } },
+        Block[
+            {
+                CurrentValue,
+                ChatCellEvaluate = result &,
+                NextCell         = (AppendTo[ log, { "NextCell", # } ]; next) &,
+                NotebookDelete   = AppendTo[ log, { "NotebookDelete", # } ] &,
+                Wolfram`Chatbook`Common`appendCellToSidebarChat = $sidebarChatInput &,
+                Wolfram`Chatbook`Common`setCurrentValue         = Null &
+            },
+            { Wolfram`Chatbook`Common`evaluateSidebarChat[ $userNotebook, $sidebarCell, "Hello", args ], log }
         ]
     ];
     ,
@@ -97,6 +121,78 @@ VerificationTest[
     { True, False },
     SameTest -> MatchQ,
     TestID   -> "SidebarSend-PrebuiltResource"
+]
+
+(* The input field variable is given, so that the text of a stopped chat can be put back in it: *)
+VerificationTest[
+    Cases[ runSidebarSend[ ], { "evaluateSidebarChat-InputField", field_ } :> HoldComplete @ field ],
+    { HoldComplete @ Dynamic @ Typeset`fieldContent$$ },
+    SameTest -> MatchQ,
+    TestID   -> "SidebarSend-InputField-GH#1710"
+]
+
+VerificationTest[
+    Module[ { file },
+        file = FileNameJoin @ { PacletObject[ "Wolfram/Chatbook" ][ "Location" ], "FrontEnd", "TextResources", "ChatbookResources.tr" };
+        StringContainsQ[
+            StringDelete[ ReadString @ file, WhitespaceCharacter ],
+            "Wolfram`Chatbook`Common`evaluateSidebarChat[Typeset`nbo$$,Typeset`sidebarCell$$,Typeset`input$$,Dynamic[Typeset`chatEvalCell$$],Dynamic[Typeset`fieldContent$$]]"
+        ]
+    ],
+    True,
+    SameTest -> MatchQ,
+    TestID   -> "SidebarSend-PrebuiltResource-InputField-GH#1710"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Stopped Chats*)
+
+(* A chat that is stopped before its response arrives has no output cell. Its input is removed, so the next message
+   isn't also answering it, and its text is put back in the input field: *)
+VerificationTest[
+    Module[ { cell = None, field = "" },
+        { sendSidebarChat[ Null, None, Dynamic @ cell, Dynamic @ field ], cell, field }
+    ],
+    {
+        { Null, { { "NextCell", $sidebarChatInput }, { "NotebookDelete", $sidebarChatInput } } },
+        $sidebarChatInput,
+        "Hello"
+    },
+    SameTest -> MatchQ,
+    TestID   -> "EvaluateSidebarChat-StoppedChat-GH#1710"
+]
+
+(* Text typed while the chat ran is kept: *)
+VerificationTest[
+    Module[ { cell = None, field = "New text" },
+        { sendSidebarChat[ Null, None, Dynamic @ cell, Dynamic @ field ], field }
+    ],
+    { { Null, { { "NextCell", $sidebarChatInput }, { "NotebookDelete", $sidebarChatInput } } }, "New text" },
+    SameTest -> MatchQ,
+    TestID   -> "EvaluateSidebarChat-StoppedChat-KeepsNewInput-GH#1710"
+]
+
+(* The sidebar input cell of a front end session that started with an older version of Chatbook doesn't give the input
+   field. The input is still removed: *)
+VerificationTest[
+    Module[ { cell = None },
+        sendSidebarChat[ Null, None, Dynamic @ cell ]
+    ],
+    { Null, { { "NextCell", $sidebarChatInput }, { "NotebookDelete", $sidebarChatInput } } },
+    SameTest -> MatchQ,
+    TestID   -> "EvaluateSidebarChat-StoppedChat-NoInputField-GH#1710"
+]
+
+(* A chat that left a cell after its input (a response, or the error cell of a failed request) keeps its input, and
+   the input field stays empty: *)
+VerificationTest[
+    Module[ { cell = None, field = "" },
+        { sendSidebarChat[ Null, $sidebarChatOutput, Dynamic @ cell, Dynamic @ field ], field }
+    ],
+    { { Null, { { "NextCell", $sidebarChatInput } } }, "" },
+    SameTest -> MatchQ,
+    TestID   -> "EvaluateSidebarChat-Answered-GH#1710"
 ]
 
 (* ::**************************************************************************************************************:: *)

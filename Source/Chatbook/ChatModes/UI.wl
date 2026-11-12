@@ -597,7 +597,15 @@ makeSidebarChatInputCell[ ] := Cell[
                                     Typeset`returnKeyDownQ = False;
                                     Needs[ "Wolfram`Chatbook`" -> None ];
                                     If[ Not @ TrueQ @ $workspaceChatInitialized, initializeWorkspaceChat[ ] ];
-                                    evaluateSidebarChat[ Typeset`nbo, Typeset`sidebarCell, Typeset`input, Dynamic @ Typeset`chatEvalCell ]
+                                    (* the input field is given so that the text of a chat that is stopped before
+                                       its response arrives can be put back (#1710) *)
+                                    evaluateSidebarChat[
+                                        Typeset`nbo,
+                                        Typeset`sidebarCell,
+                                        Typeset`input,
+                                        Dynamic @ Typeset`chatEvalCell,
+                                        Dynamic @ Typeset`fieldContent
+                                    ]
                                 ];
                                 (* spooky action at a distance: regenerating a side bar ChatOutput cell *)
                                 If[ cellTaggedQ[ Typeset`chatInputFieldCell, "RegenerateChatOutput" ],
