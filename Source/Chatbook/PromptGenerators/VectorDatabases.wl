@@ -1720,8 +1720,39 @@ currentDownloadQ // endDefinition;
 (*inVectorDBDirectory*)
 inVectorDBDirectory // beginDefinition;
 inVectorDBDirectory // Attributes = { HoldFirst };
-inVectorDBDirectory[ eval_ ] := WithCleanup[ SetDirectory @ $vectorDBDirectory, eval, ResetDirectory[ ] ];
+
+(* The databases store relative file locations, which SemanticSearch expands against the current directory: *)
+inVectorDBDirectory[ eval_ ] := WithCleanup[
+    SetDirectory @ toWindowsShortPath @ $vectorDBDirectory,
+    eval,
+    ResetDirectory[ ]
+];
+
 inVectorDBDirectory // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toWindowsShortPath*)
+(*
+    SemanticSearch opens the USearch index files with the ANSI Windows API, but LibraryLink passes UTF-8 paths, so a
+    path with non-ASCII characters (e.g. an accented user name) can't be opened, and the search fails with
+    Failure["ErrorManagerThrowNameError", ...]. The 8.3 short form of the path is ASCII, so use it instead.
+
+    This does nothing where 8.3 names aren't available (e.g. disabled by policy or on ReFS volumes), in which case the
+    search fails as before. Remove this once SemanticSearch handles these paths.
+*)
+toWindowsShortPath // beginDefinition;
+
+toWindowsShortPath[ path_ ] /; $OperatingSystem =!= "Windows" || ! StringQ @ path || PrintableASCIIQ @ path :=
+    path;
+
+(* Cached, since Information also looks up things like the owner of the file. There's one entry per directory. *)
+toWindowsShortPath[ path_String ] := toWindowsShortPath[ path ] =
+    With[ { short = Quiet @ Information[ File @ path, "AbsoluteShortFileName" ] },
+        If[ StringQ @ short && PrintableASCIIQ @ short && FileExistsQ @ short, short, path ]
+    ];
+
+toWindowsShortPath // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
