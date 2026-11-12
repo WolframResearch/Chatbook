@@ -160,8 +160,9 @@ $embeddingService        = "Local";
 $embeddingModel          = "SentenceBERT";
 $embeddingAuthentication = Automatic;
 
-(* Maximum number of cached search results and embeddings (the oldest half is dropped when exceeded): *)
+(* Maximum number of cached search results (the oldest half is dropped when exceeded): *)
 $maxVectorDBSearchCacheSize = 100;
+(* Maximum number of cached embeddings (the least recently used ones are dropped when exceeded): *)
 $maxEmbeddingCacheSize      = 1000;
 
 
@@ -3055,7 +3056,11 @@ getEmbedding // Options = { "CacheEmbeddings" -> $cacheEmbeddings };
 
 getEmbedding[ string_String, opts: OptionsPattern[ ] ] :=
     With[ { embedding = $embeddingCache[ string ] },
-        embedding /; NumericArrayQ @ embedding
+        (
+            (* Move it to the end, so the least recently used embeddings are dropped first (see getEmbeddings0): *)
+            $embeddingCache = Append[ KeyDrop[ $embeddingCache, string ], string -> embedding ];
+            embedding
+        ) /; NumericArrayQ @ embedding
     ];
 
 getEmbedding[ string_String, opts: OptionsPattern[ ] ] := Enclose[
@@ -3085,17 +3090,22 @@ getEmbeddings // endDefinition;
 getEmbeddings0 // beginDefinition;
 
 getEmbeddings0[ strings: { __String } ] := Enclose[
-    Module[ { cache, notCached, vectors },
-        (* Drop the oldest embeddings when the cache is full: *)
-        If[ Length @ $embeddingCache >= $maxEmbeddingCacheSize,
-            $embeddingCache = Take[ $embeddingCache, -Floor[ $maxEmbeddingCacheSize / 2 ] ]
+    Module[ { cached, notCached, vectors },
+        (* Move the requested embeddings to the end, so the least recently used ones are dropped first.
+           Every save embeds all message pairs of the conversation (see createMessageVectors), so this keeps them
+           cached until the conversation has about as many pairs as the cache holds. *)
+        cached          = KeyTake[ $embeddingCache, strings ];
+        $embeddingCache = Join[ KeyDrop[ $embeddingCache, strings ], cached ];
+        notCached       = Select[ strings, ! KeyExistsQ[ cached, # ] & ];
+        vectors         = ConfirmMatch[ getAndCacheEmbeddings @ notCached, { ___NumericArray }, "CacheEmbeddings" ];
+        (* Drop the least recently used embeddings when the cache is full: *)
+        If[ Length @ $embeddingCache > $maxEmbeddingCacheSize,
+            $embeddingCache = Take[ $embeddingCache, -$maxEmbeddingCacheSize ]
         ];
-        (* Look up results in a snapshot, since a preemptive evaluation could trim the cache before this finishes: *)
-        cache     = $embeddingCache;
-        notCached = Select[ strings, ! KeyExistsQ[ cache, # ] & ];
-        vectors   = ConfirmMatch[ getAndCacheEmbeddings @ notCached, { ___NumericArray }, "CacheEmbeddings" ];
+        (* Don't look up results in the cache: the trim drops some of them when more strings are requested than the
+           cache holds, and a preemptive evaluation could also trim it before this finishes: *)
         ConfirmMatch[
-            Lookup[ Join[ cache, AssociationThread[ notCached, vectors ] ], strings ],
+            Lookup[ Join[ cached, AssociationThread[ notCached, vectors ] ], strings ],
             { __NumericArray },
             "Result"
         ]
