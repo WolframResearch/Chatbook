@@ -70,9 +70,7 @@ createPreferencesContent[ ] := Enclose[
             makeScrollableInCloud @ Grid[
                 {
                     $verticalSpacer,
-                    (* Unclear whether Cloud should display the checkbox. Leave off for now. *)
-                    If[ TrueQ @ $cloudNotebooks, Nothing, { allowAICheckbox, SpanFromLeft }],
-                    (* If[ TrueQ @ $cloudNotebooks, Nothing, $verticalSpacer], *)
+                    { allowAICheckbox, SpanFromLeft },
                     { tabView, "" },
                     $verticalSpacer,
                     { reset, SpanFromLeft },
@@ -82,7 +80,7 @@ createPreferencesContent[ ] := Enclose[
                 BaseStyle  -> "defaultGrid",  (* Defined in the SystemDialog stylesheet *)
                 AutoDelete -> False,
                 FrameStyle -> { AbsoluteThickness[ 1 ], color @ "Gray90_33" },
-                Dividers   -> { False, { If[ TrueQ @ $cloudNotebooks, 4, 5 ] -> True } },
+                Dividers   -> { False, { 5 -> True } },
                 Spacings   -> { 0, 0.7 }
             ],
 
