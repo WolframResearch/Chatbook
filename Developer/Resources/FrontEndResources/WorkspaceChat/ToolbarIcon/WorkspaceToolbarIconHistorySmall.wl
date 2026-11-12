@@ -9,7 +9,7 @@ Graphics[{Thickness[0.14285714285714285],
        {7., 3.5939998626708984}, {0., 3.5939998626708984}, 
        {0., 2.3929998874664307}}, {{0., 0.}, {7., 0.}, 
        {7., 1.2000000476837158}, {0., 1.2000000476837158}, {0., 0.}}}]}, 
-   FaceForm[color @ "NA_ToolbarTitleFont"]]}, 
+   FaceForm[color @ "Blue_3383AC_BDE4FF"]]}, 
  ImageSize -> {8., 7.}, PlotRange -> {{-0.5, 7.5}, {-0.5, 6.5}}, 
  AspectRatio -> Automatic,
  BaselinePosition -> Center -> Center]

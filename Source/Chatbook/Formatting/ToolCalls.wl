@@ -377,13 +377,13 @@ makeToolCallRawView[ KeyValuePattern[ "ToolCall" -> raw_String ] ] :=
                 FontSize   -> 11,
                 Background -> None
             ],
-            Background   -> color @ "NA_ChatOutputToolCallBackground",
+            Background   -> color @ "Gray100_10",
             FrameMargins -> 5,
             FrameStyle   -> None,
             ImageSize    -> { Scaled[ 1 ], Automatic },
             BaseStyle    -> "Text"
         ],
-        Background   -> color @ "NA_ChatOutputToolCallBackground",
+        Background   -> color @ "Gray100_10",
         FrameStyle   -> None,
         FrameMargins -> 10
     ];
@@ -402,11 +402,11 @@ makeToolCallInterpretedView[ as_Association ] :=
                 Item[
                     Pane[ Style[ (*FIXME:TR*)"INPUT", FontSize -> 11 ], FrameMargins -> { { 5, 5 }, { 1, 1 } } ],
                     ItemSize   -> Fit,
-                    Background -> color @ "NA_ChatOutputToolCallHeaderBackground"
+                    Background -> color @ "Gray95_15"
                 ],
                 Framed[
                     makeToolCallInputSection @ as,
-                    Background   -> color @ "NA_ChatOutputToolCallBackground",
+                    Background   -> color @ "Gray100_10",
                     FrameMargins -> 5,
                     FrameStyle   -> None,
                     ImageSize    -> { Scaled[ 1 ], Automatic }
@@ -414,11 +414,11 @@ makeToolCallInterpretedView[ as_Association ] :=
                 Item[
                     Pane[ Style[ (*FIXME:TR*)"OUTPUT", FontSize -> 11 ], FrameMargins -> { { 5, 5 }, { 1, 1 } } ],
                     ItemSize   -> Fit,
-                    Background -> color @ "NA_ChatOutputToolCallHeaderBackground"
+                    Background -> color @ "Gray95_15"
                 ],
                 Framed[
                     makeToolCallOutputSection @ as,
-                    Background   -> color @ "NA_ChatOutputToolCallBackground",
+                    Background   -> color @ "Gray100_10",
                     FrameMargins -> 5,
                     FrameStyle   -> None,
                     ImageSize    -> { Scaled[ 1 ], Automatic }
@@ -426,7 +426,7 @@ makeToolCallInterpretedView[ as_Association ] :=
             },
             Alignment -> Left
         ],
-        Background   -> color @ "NA_ChatOutputToolCallBackground",
+        Background   -> color @ "Gray100_10",
         BaseStyle    -> { Editable -> False },
         FrameStyle   -> None,
         FrameMargins -> 10
@@ -447,7 +447,7 @@ makeToolCallInputSection[ as: KeyValuePattern[ "Parameters" -> params_Associatio
             Alignment  -> Left,
             BaseStyle  -> { "Text", LineBreakWithin -> Automatic },
             Dividers   -> All,
-            FrameStyle -> color @ "NA_ChatOutputToolCallInputFrame",
+            FrameStyle -> color @ "Gray90_35",
             Spacings   -> 1
         ]
     ],

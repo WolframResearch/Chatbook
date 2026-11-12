@@ -1,22 +1,22 @@
-(GraphicsBox[
+Function @ Evaluate @ ToBoxes @ Graphics[
     {
-        #,
-        Thickness[0.057142857142857134`],
+        #1,
+        Thickness[0.057142857142857134],
         JoinForm[{"Miter", 10}],
-        LineBox[CompressedData["
-            1:eJxTTMoPSmViYGCQBGIQHbRDrvV1oaGDbFSK9f1+TQftdrGb57ZrO+QLNR84pajt4JckEGFZouPw5e+Vipduhg6VL9UMOdaoQt
-            XrO0iyhPHpflJ0eHpB6fbPf0YObI1TnbtzZODyvdPzgCbxwvV/uuQLNFHAYUmBLdd1ZW0HBjB4YA92x0RNOP/0Qtdtn2s1Hdy2fQ
-            bqZHcA8/8qw+UhtCycD3L298sycPMh7pR0ABkbuIPX4fHS2UcUNrDC3QdRLwB3/xoZkIPf28P8B5OH+R+mHxY+MPNRwu+8DJw/DW
-            jL898yDguk9O+qsOlB+cpweZj/0MMfABcuoYk=
-        "]],
-        FilledCurveBox[
+        Line[{
+            {17.445, 12.781}, {13.859, 13.566}, {14.227, 17.277}, {10.836, 15.781}, {8.973, 18.996}, {7.106, 15.781},
+            {3.719, 17.277}, {4.086, 13.57}, {0.5, 12.785}, {0.5, 12.746}, {2.934, 9.996}, {0.5, 7.25}, {0.5, 7.207},
+            {4.086, 6.418}, {3.715, 2.711}, {7.106, 4.207}, {8.973, 0.996}, {10.836, 4.207}, {14.227, 2.711},
+            {13.859, 6.418}, {17.445, 7.203}, {17.445, 7.246}, {15.012, 9.992}, {17.445, 12.746}, {17.445, 12.781}
+        }],
+        FilledCurve[
             {{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}}},
             {{{6.856, 5.7615}, {6.856, 14.2335}, {13.207, 10.0155}, {6.856, 5.7615}}}
         ]
     },
-    AspectRatio      -> Automatic,
-    BaselinePosition -> Scaled[0.28888888888888886`],
-    ImagePadding     -> 0,
-    ImageSize        -> {18, 18},
-    PlotRange        -> {{-1.5274999999999999`, 19.4725}, {-0.5040000000000013, 20.496}}
-]&)
+    AspectRatio -> Automatic,
+    BaselinePosition -> Scaled[0.28888888888888886],
+    ImagePadding -> 0,
+    ImageSize -> {18, 18},
+    PlotRange -> {{-1.5274999999999999, 19.4725}, {-0.5040000000000013, 20.496}}
+]

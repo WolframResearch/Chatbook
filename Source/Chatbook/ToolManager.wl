@@ -20,9 +20,9 @@ $toolsWidth             = 240;
 $personasWidth          = 30;
 $rightColWidth         := Switch[ $Language, "Japanese", 130, "French", 117, _, 107 ];
 $rowHeight              = 30;
-$highlightCol           = color @ "ManagerGridHighlight";
-$dividerCol             = color @ "ManagerGridFrame";
-$activeBlue             = color @ "ManagerGridActiveBlue";
+$highlightCol           = color @ "Gray95_15";
+$dividerCol             = color @ "Gray85_43";
+$activeBlue             = LightDarkSwitched[ RGBColor[ "#187AED" ], RGBColor[ "#83ACF8" ] ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -88,7 +88,7 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List, opts : OptionsPattern[ ] 
         gridOpts = Sequence[
             Spacings -> { 0, 0 },
             ItemSize -> { 0, 0 },
-            Dividers -> { None, { None, { color @ "ManagerGridFrame_2" }, None } }
+            Dividers -> { None, { None, { color @ "Gray90_36" }, None } }
         ];
 
         DynamicModule[
@@ -153,7 +153,7 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List, opts : OptionsPattern[ ] 
                                                     Pane[ #, FrameMargins -> { { 0, 0 }, { 2, 2 } } ],
                                                     { "MouseEntered" :> FEPrivate`Set[ { row, column }, { None, None } ] }
                                                 ],
-                                                Background -> color @ "ManagerGridHeaderBackground"
+                                                Background -> color @ "Gray90_23"
                                             ],
                                             {
                                                 Row @ { Spacer[ 4 ], tr[ "ToolManagerTool" ] },
@@ -294,7 +294,7 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List, opts : OptionsPattern[ ] 
                                     }
                                 },
                                 Alignment  -> { Left, Top },
-                                Background -> color @ "ManagerGridItemBackground",
+                                Background -> color @ "Gray100_14",
                                 BaseStyle  -> $baseStyle,
                                 ItemSize   -> { 0, 0 },
                                 Spacings   -> { 0, 0 },
@@ -494,16 +494,16 @@ attachOverlay[ expr_, opts___ ] := AttachCell[
             {
                 Framed[
                     "",
-                    Background -> color @ "ManagerGridHighlightFade",
+                    Background -> LightDarkSwitched[ GrayLevel[ 0.97, 0.85 ], GrayLevel[ 0.1913, 0.85 ] ],
                     FrameStyle -> None,
                     ImageSize  -> { Full, Last @ AbsoluteCurrentValue[ FrontEnd`EvaluationNotebook[ ], WindowSize ] }
                 ],
                 Framed[
                     overlayGrid @ expr,
-                    Background       -> color @ "ManagerGridItemBackground",
+                    Background       -> color @ "Gray100_14",
                     DefaultBaseStyle -> $baseStyle,
                     FrameMargins     -> 20,
-                    FrameStyle       -> color @ "ManagerGridFrame",
+                    FrameStyle       -> color @ "Gray85_43",
                     RoundingRadius   -> 8,
                     opts
                 ]
@@ -681,8 +681,8 @@ configureButton[ tool_Association? configurableToolQ, index_Integer, Dynamic[ { 
             ],
             {
                 { { False, False }, { True, False }  , { True, True }   },
-                { Transparent     , color @ "ManagerGrid_Gray_2", $activeBlue      },
-                { Transparent     , color @ "ManagerGrid_Gray_1", color @ "ManagerGrid_Gray_1" }
+                { Transparent     , color @ "Gray65_63", $activeBlue      },
+                { Transparent     , color @ "Gray80_49", color @ "Gray80_49" }
             }
         ],
         Dynamic @ { FEPrivate`SameQ[ row, index ], FrontEnd`CurrentValue[ "MouseOver" ] },
@@ -719,8 +719,8 @@ configureButton[ tool_Association, index_Integer, Dynamic[ { row_, column_ } ] ]
             ],
             {
                 { { False, False }, { True, False } , { True, True }   },
-                { Transparent     , color @ "ManagerGrid_Gray_1", color @ "ManagerGrid_Gray_1" },
-                { Transparent     , color @ "ManagerGrid_Gray_1", color @ "ManagerGrid_Gray_1" }
+                { Transparent     , color @ "Gray80_49", color @ "Gray80_49" },
+                { Transparent     , color @ "Gray80_49", color @ "Gray80_49" }
             }
         ],
         Dynamic @ { FEPrivate`SameQ[ row, index ], FrontEnd`CurrentValue[ "MouseOver" ] },
@@ -756,7 +756,7 @@ deleteButton[ tool_Association? deletableToolQ, index_Integer, Dynamic[ { row_, 
             ],
             {
                 { { False, False }, { True, False }  , { True, True } },
-                { Transparent     , color @ "ManagerGrid_Gray_2", $activeBlue    },
+                { Transparent     , color @ "Gray65_63", $activeBlue    },
                 { Transparent     , Transparent      , Transparent    }
             }
         ],
@@ -794,7 +794,7 @@ deleteButton[ tool_Association, index_Integer, Dynamic[ { row_, column_ } ] ] :=
             ],
             {
                 { { False, False }, { True, False } , { True, True }   },
-                { Transparent     , color @ "ManagerGrid_Gray_1", color @ "ManagerGrid_Gray_1" },
+                { Transparent     , color @ "Gray80_49", color @ "Gray80_49" },
                 { Transparent     , Transparent     , Transparent      }
             }
         ],
@@ -1074,11 +1074,11 @@ rightColControl[
                                         { "", "" }
                                     ],
                                     {
-                                        color @ "ManagerGrid_Gray_2",
+                                        color @ "Gray65_63",
                                         $activeBlue,
-                                        color @ "ManagerGrid_Gray_2",
+                                        color @ "Gray65_63",
                                         $activeBlue,
-                                        color @ "ManagerGrid_Gray_2",
+                                        color @ "Gray65_63",
                                         $activeBlue
                                     }
                                 }
@@ -1144,7 +1144,7 @@ rightColControl[
                             ],
                             {
                                 { { True, False } , { True, True } },
-                                { color @ "ManagerGrid_Gray_3", $activeBlue    }
+                                { color @ "Gray50_75", $activeBlue    }
                             }
                         ],
                         Dynamic @ { FEPrivate`MemberQ[ notInherited, row ], FrontEnd`CurrentValue[ "MouseOver" ] },
@@ -1208,7 +1208,7 @@ personaNameDisplay[ personaNames_, Dynamic[ column_ ] ] :=
             Thread[ allowedIndices -> personaNames ],
             Dynamic @ column,
             "",
-            BaseStyle -> { FontColor -> color @ "ManagerGrid_Gray_3", $baseStyle },
+            BaseStyle -> { FontColor -> color @ "Gray50_75", $baseStyle },
             ImageSize -> Automatic
         ]
     ];
@@ -1397,10 +1397,10 @@ cloudToolGrid[ tools: { __Association } ] := Grid[
         cloudToolGridRow /@ tools
     ],
     Alignment  -> { Left, Center },
-    Background -> { color @ "ManagerGridItemBackground", { color @ "ManagerGridHeaderBackground", color @ "ManagerGridItemBackground" } },
+    Background -> { color @ "Gray100_14", { color @ "Gray90_23", color @ "Gray100_14" } },
     BaseStyle  -> "Text",
     Dividers   -> { True, All },
-    FrameStyle -> color @ "ManagerGridHeaderBackground"
+    FrameStyle -> color @ "Gray90_23"
 ];
 
 cloudToolGrid // endDefinition;
@@ -1471,7 +1471,7 @@ cloudConfigureToolButton // beginDefinition;
 
 cloudConfigureToolButton[ tool_Association ] :=
     Tooltip[
-        iconData[ "Cog", color @ "ManagerGrid_Gray_1" ],
+        iconData[ "Cog", color @ "Gray80_49" ],
         nonConfigurableTooltip @ tool
     ];
 
@@ -1493,14 +1493,14 @@ cloudDeleteToolButton[ tool_Association? deletableToolQ ] :=
 
 cloudDeleteToolButton[ tool_Association ] :=
     Tooltip[
-        iconData[ "Bin", color @ "ManagerGrid_Gray_1" ],
+        iconData[ "Bin", color @ "Gray80_49" ],
         nonDeletableTooltip @ tool
     ];
 
 cloudDeleteToolButton // endDefinition;
 
 $cloudDeleteToolButtonLabel := $cloudDeleteToolButtonLabel = Mouseover[
-    iconData[ "Bin", color @ "ManagerGrid_Gray_2" ],
+    iconData[ "Bin", color @ "Gray65_63" ],
     iconData[ "Bin", $activeBlue ]
 ];
 

@@ -142,8 +142,11 @@ Chatbook is a symbol for miscellaneous chat notebook messages.\
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Load Files*)
+(* ColorData comes first: values that call the color function when a file loads (e.g. $cellFrameColor) are only
+   resolved if color is already defined. *)
 $ChatbookContexts = {
     "Wolfram`Chatbook`",
+    "Wolfram`Chatbook`ColorData`",
     "Wolfram`Chatbook`Actions`",
     "Wolfram`Chatbook`ChatbookFiles`",
     "Wolfram`Chatbook`ChatGroups`",
@@ -156,7 +159,6 @@ $ChatbookContexts = {
     "Wolfram`Chatbook`Citations`",
     "Wolfram`Chatbook`CloudToolbar`",
     "Wolfram`Chatbook`CodeCheck`",
-    "Wolfram`Chatbook`ColorData`",
     "Wolfram`Chatbook`Common`",
     "Wolfram`Chatbook`ConvertChatNotebook`",
     "Wolfram`Chatbook`CreateChatNotebook`",

@@ -4,13 +4,13 @@ Overlay[
 	{
 		With[
 			{
-				baseColor = color @ "StopChatButtonSpinnerBase",
-				highlightColor = color @ "StopChatButtonSpinnerHighlight"
+				baseColor = color @ "Gray94_20",
+				highlightColor = color @ "Blue_75C2EB_669CBD"
 			},
 			RawBoxes @ DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ChatEvaluatingSpinner" ][ #, baseColor, highlightColor ] ]
 		],
 		Graphics[
-			{ color @ "NA_BlueHueButtonIcon", Rectangle[ { -0.5, -0.5 }, { 0.5, 0.5 } ] },
+			{ color @ "Blue_128ED1_7FC7FB", Rectangle[ { -0.5, -0.5 }, { 0.5, 0.5 } ] },
 			ImageSize -> #,
 			PlotRange -> 1.1
 		]

@@ -120,19 +120,19 @@ MakeSidebarMenu // endDefinition;
 
 
 (* side bar is 15.0+ and thus supports LightDarkSwitched *)
-$ControlFontColorDefault = LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.9613 ] ];
-$ControlFontColorHover   = LightDarkSwitched[ RGBColor[ "#2FA7DC" ], RGBColor[ "#87D0F9" ] ];
+$ControlFontColorDefault = color @ "Gray20_94";
+$ControlFontColorHover   = color @ "Blue_2FA7DC_87D0F9";
 $ControlFontColorPressed = LightDarkSwitched[ RGBColor[ "#0E7FB1" ], RGBColor[ "#4ABEF3" ] ];
 $DividerColor            = LightDarkSwitched @ GrayLevel[ 0.9098 ];
-$FrameColorDefault       = LightDarkSwitched[ GrayLevel[ 0.749 ], GrayLevel[ 0.5495 ] ];
+$FrameColorDefault       = color @ "Gray75_54";
 $FrameColorHover         = LightDarkSwitched[ RGBColor[ "#8BCCE9" ], RGBColor[ "#7BBBD6" ] ];
 $FrameColorPressed       = LightDarkSwitched[ RGBColor[ "#67A3BE" ], RGBColor[ "#6390A6" ] ];
-$MainBackground          = LightDarkSwitched[ GrayLevel[ 0.97647 ], GrayLevel[ 0.17974 ] ];
+$MainBackground          = color @ "Gray98_17";
 $MatchContentBackground  = ThemeColor[ "Background" ];
 $NavigationColorDefault  = LightDarkSwitched[ RGBColor[ "#2285C3" ], RGBColor[ "#8BCAF9" ] ];
 $NavigationColorHover    = LightDarkSwitched[ RGBColor[ "#2FA7DC" ], RGBColor[ "#B2DCFB" ] ];
 $NavigationColorPressed  = LightDarkSwitched[ RGBColor[ "#2285C3" ], RGBColor[ "#8BCAF9" ] ];
-$ResetButtonHover        = LightDarkSwitched[ RGBColor[ "#2FA7DC" ], RGBColor[ "#87D0F9" ] ];
+$ResetButtonHover        = color @ "Blue_2FA7DC_87D0F9";
 $ResetButtonPressed      = LightDarkSwitched[ RGBColor[ "#0E7FB1" ], RGBColor[ "#4ABEF3" ] ];
 $TransparentBackground   = Transparent;
 
@@ -627,7 +627,7 @@ Attributes[ sidebarMenuItemIcon ] = { HoldRest };
 (* The sidebar is persistent so keep the check marks up-to-date in all categories *)
 (* Note: we've deemed it looks best to have the check mark always darker in color regardless of whether it's inherited *)
 sidebarMenuItemIcon[ spec_Association?AssociationQ, sidebarNotebook_ ] :=
-With[ { val = Lookup[ spec, "Value", None ], c1 = color @ "ChatMenuItemCheckmarkTrue", c2 = color @ "ChatMenuItemCheckmarkInherited" },
+With[ { val = Lookup[ spec, "Value", None ], c1 = color @ "Gray25_92", c2 = color @ "Gray75_52" },
 Row[ Flatten @ {
     Switch[ Lookup[ spec, "Category", None ],
         "Persona",
@@ -674,7 +674,7 @@ sidebarMenuItemIcon // endDefinition
 MakeMenu // beginDefinition;
 
 Options[ MakeMenu ] = {
-    CellFrameColor -> color @ "ChatMenuFrame",
+    CellFrameColor -> color @ "Gray85_41",
     ImageSize      -> { 200, UpTo[ 450 ] },
     TaggingRules   -> <||>
 };
@@ -758,7 +758,7 @@ menuFrame // beginDefinition;
 menuFrame[ resolvedItems_List, imageSize_, frameColor_ ] :=
 Framed[
     menuPane[ resolvedItems, imageSize ],
-    Background       -> color @ "ChatMenuItemBackground",
+    Background       -> color @ "Gray98_19",
     BaselinePosition -> Baseline,
     FrameMargins     -> 3,
     FrameStyle       -> Directive[ AbsoluteThickness[ 1 ], frameColor ],
@@ -814,8 +814,8 @@ If[ Lookup[ spec, "Check", None ] === None,
     ,
     Row[ Flatten @ {
         Switch[ Lookup[ spec, "Check", False ],
-            True,      Style[ "\[Checkmark]", FontColor -> color @ "ChatMenuItemCheckmarkTrue" ],
-            Inherited, Style[ "\[Checkmark]", FontColor -> color @ "ChatMenuItemCheckmarkInherited" ],
+            True,      Style[ "\[Checkmark]", FontColor -> color @ "Gray25_92" ],
+            Inherited, Style[ "\[Checkmark]", FontColor -> color @ "Gray75_52" ],
             _,         Style[ "\[Checkmark]", ShowContents -> False ]
         ],
         Lookup[ spec, "Icon", { " ", resizeMenuIcon @ Graphics[ Background -> Red ] }, Replace[ #, { None :> Nothing, _ :> { " ", resizeMenuIcon @ # } } ]& ]

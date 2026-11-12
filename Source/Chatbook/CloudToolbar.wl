@@ -11,7 +11,7 @@ Needs[ "Wolfram`Chatbook`UI`"     ];
 (* ::Section::Closed:: *)
 (*Configuration*)
 $notebookTypeLabelOptions = Sequence[
-    FontColor  -> color @ "CloudToolbarFont",
+    FontColor  -> color @ "Gray20_94",
     FontFamily -> "Source Sans Pro",
     FontSize   -> 16,
     FontWeight -> "DemiBold"
@@ -77,8 +77,8 @@ makeChatCloudDefaultNotebookDockedCell[ ] := Cell[ BoxData @ ToBoxes @
                             Spacings  -> { 0.3, 0 } ],
                         FrameMargins -> { { 4, 4 }, { 1, 1 } },
                         FrameStyle   -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
-                            color @ "NA_CloudToolbarButtonFrameHover",
-                            color @ "NA_CloudToolbarButtonFrame"
+                            color @ "Blue_A1CDE4_607E91",
+                            color @ "Blue_E9F7FF_2D3E4C"
                         ] )
                     ],
                     insertCellStyle @ "ChatDelimiter",
@@ -94,8 +94,8 @@ makeChatCloudDefaultNotebookDockedCell[ ] := Cell[ BoxData @ ToBoxes @
                             Spacings  -> { 0.3, 0 } ],
                         FrameMargins -> { { 4, 4 }, { 1, 1 } },
                         FrameStyle   -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
-                            color @ "NA_CloudToolbarButtonFrameHover",
-                            color @ "NA_CloudToolbarButtonFrame"
+                            color @ "Blue_A1CDE4_607E91",
+                            color @ "Blue_E9F7FF_2D3E4C"
                         ] )
                     ]                    ,
                     insertCellStyle @ "ChatInput",
@@ -110,13 +110,13 @@ makeChatCloudDefaultNotebookDockedCell[ ] := Cell[ BoxData @ ToBoxes @
         BaseStyle  -> {
             "Text", FontSize -> 1, (* FontSize sets the Spacing scale *)
             FrameBoxOptions -> {
-                Background     -> color @ "NA_CloudToolbarBackground",
-                BaseStyle      -> { FontColor -> color @ "NA_CloudToolbarFont", FontFamily -> "Source Sans Pro", FontSize -> 12, FrameMargins -> { { 4, 4 }, { 2, 2 } } },
+                Background     -> color @ "Blue_E9F7FF_405A6E",
+                BaseStyle      -> { FontColor -> color @ "Gray20_94", FontFamily -> "Source Sans Pro", FontSize -> 12, FrameMargins -> { { 4, 4 }, { 2, 2 } } },
                 RoundingRadius -> 4
             }
         }
     ],
-    Background       -> color @ "NA_CloudToolbarBackground",
+    Background       -> color @ "Blue_E9F7FF_405A6E",
     CellFrameMargins -> 1,
     CellTags         -> "NotebookAssistantDockedCell",
     TextAlignment    -> Center
@@ -184,7 +184,7 @@ $cloudPreferencesCell := $cloudPreferencesCell = Cell[
         ImageSize -> { Scaled[ 1 ], Automatic },
         Alignment -> { Center, Top }
     ],
-    Background -> color @ "CloudToolbarPreferencesCellBackground",
+    Background -> color @ "Gray95_15",
     CellTags -> "CloudChatPreferencesDockedCell"
 ];
 
@@ -283,7 +283,7 @@ insertStyleMenuItem[ icon_, style_, shortcut_ ] :=
         { {
             Pane[ icon, ImageSize -> $menuItemIconSize ],
             Item[ style, ItemSize -> 12 ],
-            Style[ shortcut, FontColor -> color @ "CloudToolbarMenuShortcutFont" ]
+            Style[ shortcut, FontColor -> color @ "Gray75_51" ]
         } },
         Alignment -> { { Center, Left, Right }, Center }
     ] :> insertCellStyle @ style;

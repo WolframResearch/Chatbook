@@ -1,37 +1,25 @@
-(GraphicsBox[
-    {#, AbsoluteThickness[1], Opacity[1.],
-        JoinedCurveBox[
+Function @ Evaluate @ ToBoxes @ Graphics[
+    {
+        #1,
+        AbsoluteThickness[1],
+        Opacity[1.],
+        JoinedCurve[
             {{
-                {0, 2, 0},
-                {0, 1, 0},
-                {0, 1, 0},
-                {0, 1, 0},
-                {0, 1, 0},
-                {0, 1, 0},
-                {0, 1, 0},
-                {0, 1, 0},
-                {0, 1, 0},
-                {0,
-                    1, 0
-                },
-                {0, 1, 0},
-                {0, 1, 0},
-                {0, 1, 0},
-                {0, 1, 0},
-                {1, 3, 3},
-                {1, 3, 3}
+                {0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0},
+                {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}
             }},
-            CompressedData["
-                1:eJxTTMoPSmVmYGBgBGJRIGYCYmWv6mZ9n3/2cmJZvp/5BBzci37yv9wu6/AuysnuhaQynG8at8uT55AGXJwBDHQdPl3yTR
-                KIUIfzo1Ks7/vzajiosjVOdfbWccjaUzJZokUFrv8ySLmlqoPbts9/r1iowsVh6mD6zp4BAh4NnPbA3AHTr+ss8/rRNoS7YX
-                yYv2D+7H/ySf5SPrdD7D/nX29ff7H/6hXZZnGNGc6HqYPRMPEDb+bZ6FxBqAPpOprL7YAefgCtVISU
-            "],
+            {{
+                {1.8936, 4.0146}, {7.4296, 9.5506}, {7.4296, 12.379}, {9.5506, 14.5}, {11.672, 14.5}, {12.026, 14.147},
+                {10.258, 12.379}, {10.612, 10.611}, {12.379, 10.258}, {14.147, 12.025}, {14.5, 11.672}, {14.5, 9.5506},
+                {12.379, 7.4286}, {9.5506, 7.4286}, {4.0146, 1.8936}, {3.4296, 1.3076}, {2.4796, 1.3076},
+                {1.8936, 1.8936}, {1.3076, 2.4786}, {1.3076, 3.4286}, {1.8936, 4.0146}
+            }},
             CurveClosed -> {1}
         ]
     },
-    AspectRatio      -> Automatic,
-    ImagePadding     -> 0,
-    ImageSize        -> {16., 16.},
-    PlotRange        -> {{-0.09619999999999962, 15.9038}, {-0.09619999999999962, 15.9038}},
+    AspectRatio -> Automatic,
+    ImagePadding -> 0,
+    ImageSize -> {16., 16.},
+    PlotRange -> {{-0.09619999999999962, 15.9038}, {-0.09619999999999962, 15.9038}},
     PlotRangePadding -> None
-])&
+]

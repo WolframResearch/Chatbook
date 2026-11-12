@@ -1,6 +1,6 @@
 (* Created with the Wolfram Language : www.wolfram.com *)
 Graphics[{Thickness[0.09523809523809523], 
-  FaceForm[{color @ "NA_ChatCodeBlockTemplateButtonIcon", 
+  FaceForm[{color @ "Blue_4A95CC_67B5EC", 
     Opacity[1.]}], FilledCurve[{{{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, 
     {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
     0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}}, {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, 

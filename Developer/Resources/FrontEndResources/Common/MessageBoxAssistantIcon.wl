@@ -2,7 +2,7 @@ Graphics[
 	{
 		Thickness @ 0.06557377049180328,
 		{
-			FaceForm @ LightDarkSwitched @ RGBColor[0.8784313725490196, 0.9490196078431372, 0.9882352941176471, 1.],
+			FaceForm @ color @ "Blue_E0F2FC_344858",
 			FilledCurve[
 				{
 					{
