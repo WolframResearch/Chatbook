@@ -20,6 +20,13 @@ $mdEscapeRules    = "\\" <> # -> esc @ # & /@ $mdEscapedCharacters;
 $mdUnescapeRules  = esc @ # -> # & /@ $mdEscapedCharacters;
 $texUnescapeRules = esc @ # -> "\\" <> # & /@ $mdEscapedCharacters;
 
+(* Inline code keeps the backslash of \\, \[ and \] (as in "\\d" or \[Alpha]), since CommonMark has no escapes in code
+   spans. The other escapes are removed: models often escape ` and $ in inline code too (e.g. `\$Failed`), and
+   serialization currently escapes ` $ * _ # | in inline code (a known quirk, see "Inline code content is
+   markdown-escaped when serialized" in Developer/FormatterHarness/QUIRKS.md), so removing them keeps round trips
+   stable: *)
+$codeUnescapeRules = esc @ # -> If[ MemberQ[ { "\\", "[", "]" }, # ], "\\" <> #, # ] & /@ $mdEscapedCharacters;
+
 (* Parts of the text that keep their raw text, including any escapes (see makeResultCell1): *)
 $$rawTextToken = codeBlockCell | inlineToolCallCell | thoughtsOpener | thinkingOpener | speechCell;
 

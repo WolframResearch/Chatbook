@@ -92,10 +92,10 @@ makeInlineCodeCell[ code_String /; almostCertainlyWLCodeQ[ code, True ] ] :=
     makeInlineWL @ code;
 
 makeInlineCodeCell[ s_String? LowerCaseQ ] :=
-    StyleBox[ unescapeInlineMarkdown @ s, "TI" ];
+    StyleBox[ s, "TI" ];
 
 makeInlineCodeCell[ code_String ] := Cell[
-    BoxData @ TemplateBox[ { Cell[ unescapeInlineMarkdown @ code, Background -> None ] }, "ChatCodeInlineTemplate" ],
+    BoxData @ TemplateBox[ { Cell[ code, Background -> None ] }, "ChatCodeInlineTemplate" ],
     "ChatCodeActive"
 ];
 
