@@ -1032,7 +1032,7 @@ makeChatInputActiveCellDingbat // beginDefinition;
 	The CellObject may change when we cut+paste the cell.
 	The Initialization runs every time we cut+paste the cell.
 	Recalculate the CellObjects during initialization. *)
-makeChatInputActiveCellDingbat[ anchor_, offest_, relativeAnchor_ ] :=
+makeChatInputActiveCellDingbat[ anchor_, offset_, relativeAnchor_ ] :=
 DynamicModule[
 	{
 		Typeset`dingbatCell  = None,
@@ -1087,7 +1087,7 @@ DynamicModule[
 								],
 								"NotebookAssistant`ChatInput`PersonaIcon"
 							],
-							anchor, offest, relativeAnchor
+							anchor, offset, relativeAnchor
 						]
 					]
 				]

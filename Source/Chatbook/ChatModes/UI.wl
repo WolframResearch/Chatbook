@@ -242,7 +242,7 @@ makeSidebarChatScrollingCell // beginDefinition;
 (* This is an "empty" cell used for new sidebar chats
     * see resource NotebookAssistantSidebarCell.wl
     * this cell is overwritten during evaluateSidebarChat because we detect that this cell has no inline cells *)
-makeSidebarChatScrollingCell[ nbo_NotebookObject, dockedCell_CellObject, chatIntputCell_CellObject ] :=
+makeSidebarChatScrollingCell[ nbo_NotebookObject, dockedCell_CellObject, chatInputCell_CellObject ] :=
 Cell[ BoxData @ ToBoxes @
     Pane[
         Grid[
@@ -262,7 +262,7 @@ Cell[ BoxData @ ToBoxes @
                     (FrontEnd`AbsoluteCurrentValue[ "ViewSize" ][[ 2 ]]
                     - 7 (* the top bar that better separates the sidebar from the default toolbar *)
                     - FrontEnd`AbsoluteCurrentValue[     dockedCell, { CellSize, 2 } ]
-                    - FrontEnd`AbsoluteCurrentValue[ chatIntputCell, { CellSize, 2 } ]
+                    - FrontEnd`AbsoluteCurrentValue[ chatInputCell, { CellSize, 2 } ]
                     )/(0.85*FrontEnd`AbsoluteCurrentValue[ nbo, Magnification ])
                 ] },
         Scrollbars -> { False, False }

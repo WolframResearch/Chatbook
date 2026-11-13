@@ -1488,7 +1488,7 @@ scanSuspiciousSymbol[pos_, ast_] :=
 					;
 					Nothing
 					(* ;
-					CodeInspector`InspectionObject["GlobalCapitalizedSymbol","Bad Function Name: " <> name, "RemarkChatebook",
+					CodeInspector`InspectionObject["GlobalCapitalizedSymbol","Bad Function Name: " <> name, "RemarkChatbook",
    						Association@{ConfidenceLevel -> 1,(*Source*)funcnode[[-1]]}] *)
 			]
 	]
