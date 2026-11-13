@@ -807,6 +807,11 @@ resolveFullModelSpec[ settings: KeyValuePattern[ "Model" -> model_ ] ] :=
 resolveFullModelSpec[ { service_String, name_ } ] :=
     resolveFullModelSpec @ <| "Service" -> service, "Name" -> name |>;
 
+(* A model name without a service (e.g. "Model" -> "gpt-4" from SetModel or older chat notebooks) is an OpenAI model,
+   the same as in serviceName and the model menu: *)
+resolveFullModelSpec[ name_String ] :=
+    resolveFullModelSpec @ { "OpenAI", name };
+
 resolveFullModelSpec[ model: KeyValuePattern @ { "Service" -> "LLMKit", "Name" -> $$unspecified } ] :=
     standardizeModelData @ <|
         model,

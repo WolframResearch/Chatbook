@@ -19,7 +19,7 @@ The value can be specified in three ways:
 Model is resolved **first** in the topological sort order (`$autoSettingKeyPriority` explicitly prepends `"Model"`). During `resolveAutoSettings` (`Settings.wl`), the model is resolved via `resolveFullModelSpec` (`Models.wl`):
 
 1. Already-resolved models (with `"ResolvedModel" -> True`) are returned unchanged.
-2. `{service, name}` lists and plain strings are converted to Associations.
+2. `{service, name}` lists and plain strings (as OpenAI models) are converted to Associations.
 3. **LLMKit service** with unspecified name: substitutes the actual backing service and model from `$defaultLLMKitService`/`$defaultLLMKitModelName` and sets `"Authentication" -> "LLMKit"`.
 4. **Other services** with `"Name" -> Automatic`: calls `chooseDefaultModelName` (`Models.wl`), which tries in order:
    - The `$DefaultModel` name if the service matches

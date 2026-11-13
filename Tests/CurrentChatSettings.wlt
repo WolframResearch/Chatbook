@@ -143,6 +143,19 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*#1173*)
+(* A model name without a service is an OpenAI model: *)
+VerificationTest[
+    Wolfram`Chatbook`Common`resolveAutoSettings[
+        <| Wolfram`Chatbook`Common`$defaultChatSettings, "Model" -> "gpt-4" |>
+    ][ "Model" ],
+    KeyValuePattern @ { "Service" -> "OpenAI", "Name" -> "gpt-4", "ResolvedModel" -> True },
+    SameTest -> MatchQ,
+    TestID   -> "ResolveAutoSettings-StringModel-GH#1173"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*#1750*)
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::PrivateContextSymbol:: *)
