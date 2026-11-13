@@ -42,11 +42,13 @@ $displayedPreferencesPages := $preferencesPages;
 createPreferencesContent // beginDefinition;
 
 createPreferencesContent[ ] := Enclose[
-    Module[ { tabs, tabView, reset },
+    Module[ { tabs, tabView, reset, allowAICheckbox },
         (* Retrieve the dynamic content for each preferences tab, confirming that it matches the expected types: *)
         (* buildID makes each rebuild's boxes unique, so the front end replaces the DynamicModule and runs its
            Initialization again instead of keeping the old instance with stale service and model values: *)
         DynamicModule[ { buildID = CreateUUID[ ], tab, dmPrefCache, default, service, model, state, serviceSelector = $loadingPopupMenu, modelNameSelector = $loadingPopupMenu },
+
+            allowAICheckbox = Pane[ allowAISettings[ ], FrameMargins -> { { 10, 10 }, { 0, 0 } } ];
 
             tabs = createTabViewTabs[ $displayedPreferencesPages, dmPrefCache, default, service, model, state, serviceSelector, modelNameSelector ];
 
@@ -68,6 +70,7 @@ createPreferencesContent[ ] := Enclose[
             makeScrollableInCloud @ Grid[
                 {
                     $verticalSpacer,
+                    { allowAICheckbox, SpanFromLeft },
                     { tabView, "" },
                     $verticalSpacer,
                     { reset, SpanFromLeft },
@@ -77,7 +80,7 @@ createPreferencesContent[ ] := Enclose[
                 BaseStyle  -> "defaultGrid",  (* Defined in the SystemDialog stylesheet *)
                 AutoDelete -> False,
                 FrameStyle -> { AbsoluteThickness[ 1 ], color @ "Gray90_33" },
-                Dividers   -> { False, { 4 -> True } },
+                Dividers   -> { False, { 5 -> True } },
                 Spacings   -> { 0, 0.7 }
             ],
 
@@ -107,8 +110,10 @@ createPreferencesContent[ ] := Enclose[
             ),
             SynchronousInitialization -> False,
             UnsavedVariables          :> { buildID, state },
+            (* tab is unset if the content is replaced before its asynchronous Initialization has run: *)
             Deinitialization          :> If[
-                tab =!= Replace[ CurrentChatSettings[ $FrontEnd, "CurrentPreferencesTab" ], $$unspecified -> "Services" ],
+                MatchQ[ tab, $$preferencesPage ] &&
+                    tab =!= Replace[ CurrentChatSettings[ $FrontEnd, "CurrentPreferencesTab" ], $$unspecified -> "Services" ],
                 CurrentChatSettings[ $FrontEnd, "CurrentPreferencesTab" ] = tab
             ]
 
@@ -134,6 +139,93 @@ makeScrollableInCloud[ expr_ ] :=
     Pane @ expr;
 
 makeScrollableInCloud // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*allowAISettings*)
+
+allowAISettings // beginDefinition;
+
+allowAISettings[ ] :=
+    highlightControl[
+        prefsCheckbox[
+            Function[ setAllowExternalLLMConnectivity @ TrueQ @ # ],
+            tr[ "PreferencesContentAllowAILabel" ],
+            Hold @ allowExternalLLMConnectivityQ[ ]
+        ],
+        None,
+        "AllowAI"
+    ];
+
+allowAISettings // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*AllowExternalLLMConnectivity*)
+(* System`$AllowExternalLLMConnectivity is what LLM services check. Since 16.0 the front end stores the setting as
+   CurrentValue[ $FrontEnd, "AllowExternalLLMConnectivity" ] and pushes it to its kernels after each evaluation.
+   Before 16.0 the symbol comes from a paclet (if it's installed) and there is no front end option, so the value is
+   kept in a PersistentSymbol and restored when Chatbook loads. *)
+$allowExternalLLMConnectivityKey = "Wolfram/Chatbook/AllowExternalLLMConnectivity";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*allowExternalLLMConnectivityQ*)
+(* Reads only the kernel symbol, so it can be used while building dynamic content without making it depend on front
+   end options: *)
+allowExternalLLMConnectivityQ // beginDefinition;
+allowExternalLLMConnectivityQ[ ] := System`$AllowExternalLLMConnectivity =!= False;
+allowExternalLLMConnectivityQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*setAllowExternalLLMConnectivity*)
+setAllowExternalLLMConnectivity // beginDefinition;
+
+setAllowExternalLLMConnectivity[ value: True|False ] := (
+    If[ sufficientVersionQ[ 16.0 ],
+        CurrentValue[ $FrontEnd, "AllowExternalLLMConnectivity" ] = value,
+        PersistentSymbol[ $allowExternalLLMConnectivityKey, "Local" ] = value
+    ];
+    (* The front end would also update the kernel, but only after this evaluation finishes: *)
+    setKernelAllowExternalLLMConnectivity @ value;
+    updateDynamics[ "Preferences" ];
+    value
+);
+
+setAllowExternalLLMConnectivity // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*setKernelAllowExternalLLMConnectivity*)
+setKernelAllowExternalLLMConnectivity // beginDefinition;
+
+setKernelAllowExternalLLMConnectivity[ value: True|False ] :=
+    With[ { protected = MemberQ[ Attributes @ System`$AllowExternalLLMConnectivity, Protected ] },
+        Unprotect @ System`$AllowExternalLLMConnectivity;
+        System`$AllowExternalLLMConnectivity = value;
+        If[ protected, Protect @ System`$AllowExternalLLMConnectivity ];
+        value
+    ];
+
+setKernelAllowExternalLLMConnectivity // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*restoreAllowExternalLLMConnectivity*)
+(* Called when Chatbook loads. Since 16.0 the front end sets the value, so this only applies to earlier versions, and
+   only if nothing (e.g. the user) has given the symbol a value already. *)
+restoreAllowExternalLLMConnectivity // beginDefinition;
+
+restoreAllowExternalLLMConnectivity[ ] :=
+    If[ ! sufficientVersionQ[ 16.0 ] && OwnValues @ System`$AllowExternalLLMConnectivity === { },
+        Replace[
+            PersistentSymbol[ $allowExternalLLMConnectivityKey, "Local" ],
+            value: True|False :> setKernelAllowExternalLLMConnectivity @ value
+        ]
+    ];
+
+restoreAllowExternalLLMConnectivity // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -191,7 +283,7 @@ preferencesContent // endDefinition;
 
 disabledAIOverlayBanner // beginDefinition;
 
-disabledAIOverlayBanner[ ] :=
+disabledAIOverlayBanner[ "Admin" ] :=
 Framed[
     Grid[
         { {
@@ -234,7 +326,63 @@ Framed[
     RoundingRadius -> 8
 ];
 
+disabledAIOverlayBanner[ "User" ] :=
+Framed[
+    Grid[
+        { {
+            chatbookExpression[ "DisabledByAdmin" ], (* same icon as admin *)
+            Style[ tr @ "PreferencesContentAIDisabledByUser", FontSize -> 14 ]
+        } },
+        Alignment -> { Left, Center },
+        Spacings  -> { 1.0, 0 }
+    ],
+    Alignment      -> { Left, Top },
+    Background     -> LightDarkSwitched @ GrayLevel[ 1 ],
+    FrameMargins   -> 14,
+    FrameStyle     -> LightDarkSwitched @ RGBColor["#EBEBEB"],
+    ImageMargins   -> { { 0, 0 }, { 10, 0 } },
+    ImageSize      -> Scaled[ 1 ],
+    RoundingRadius -> 8
+];
+
 disabledAIOverlayBanner // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*localAIOnly*)
+
+localAIOnly // beginDefinition;
+
+localAIOnly[ ] := Which[
+    (* if disabled via license *)
+    Lookup[
+        First[ Select[ CurrentValue[ "ActivationInformation" ], #Status === "Active"& ], <| |> ],
+        "Features",
+        True, (* i.e. there's no active license, in which case I don't know how you got here *)
+        !MemberQ[ #, "LLMSupport" ]&
+    ],
+        { True, "Admin" },
+
+    (* if disabled via ERP *)
+    Lookup[
+        Lookup[ CurrentValue[ "WolframAccountInformation" ], "ServerMetadata", <| |>, Replace[ #, Except[ _Association?AssociationQ ] -> <| |> ]& ],
+        "LLMFeaturesPermitted",
+        False,
+        # === False&
+    ],
+        { True, "Admin" },
+
+    (* if disabled via Preferences checkbox. Don't read CurrentValue[ $FrontEnd, "AllowExternalLLMConnectivity" ] here:
+       this runs while building the preferences content, and that read makes the content rebuild whenever any
+       $FrontEnd option changes. *)
+    ! allowExternalLLMConnectivityQ[ ],
+        { True, "User" },
+
+    True,
+        { False, "Unused" }
+];
+
+localAIOnly // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -278,35 +426,11 @@ If[ $preferencesContentEnabledQ,
     Pros: easier to implement; does not push down reset button
     Cons: Enabled -> False does not disable all mouse-hover elements (e.g. tooltips, also can delete installed personas) *)
 
-localAIOnly[ ] := Which[
-    (* if disabled via license *)
-    Lookup[
-        First[ Select[ CurrentValue[ "ActivationInformation" ], #Status === "Active"& ], <| |> ],
-        "Features",
-        True, (* i.e. there's no active license, in which case I don't know how you got here *)
-        !MemberQ[ #, "LLMSupport" ]&
-    ],
-        True,
-
-    (* if disabled via ERP *)
-    Lookup[
-        Lookup[ CurrentValue[ "WolframAccountInformation" ], "ServerMetadata", <| |>, Replace[ #, Except[ _Association?AssociationQ ] -> <| |> ]& ],
-        "LLMFeaturesPermitted",
-        False,
-        # === False&
-    ],
-        True,
-
-    True,
-        False
-];
-
-
-disabledAIOverlay[ content_, localAIOnlyQ_ ] :=
+disabledAIOverlay[ content_, { localAIOnlyQ_, type_String } ] :=
 If[ TrueQ @ localAIOnlyQ, (* Cloud may not be aware of new licence bit *)
     Grid[
         {
-            { disabledAIOverlayBanner[ ] },
+            { disabledAIOverlayBanner @ type },
             {
                  (* "controlText" isn't a 1-to-1 match with the enabled state, but it's close *)
                 RawBoxes @ Cell[ BoxData @ ToBoxes @
