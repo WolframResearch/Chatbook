@@ -76,6 +76,20 @@ stripCodePadding // endDefinition;
 (*makeInteractiveCodeCell*)
 makeInteractiveCodeCell // beginDefinition;
 
+(* Wolfram Language scripts: the shebang line (e.g. "#!/usr/bin/env wolframscript") isn't Wolfram Language code, so it's
+   shown as a header above the code, like in the package editor. The code block buttons only use the code below it.
+   A path must follow "#!", since "#!" alone is valid code (Factorial[#]): *)
+makeInteractiveCodeCell[ lang_String? wolframLanguageQ, code_String ] /; StringStartsQ[ code, "#!" ~~ " "... ~~ "/" ] :=
+    With[
+        {
+            cell = First[
+                StringCases[ code, $$shebangScript :> addScriptHeader[ line, makeInteractiveCodeCell[ lang, rest ] ], 1 ],
+                None
+            ]
+        },
+        cell /; cell =!= None
+    ];
+
 (* TODO: define template boxes for these *)
 makeInteractiveCodeCell[ language_, code_String ] /; $dynamicText :=
     If[ TrueQ @ wolframLanguageQ @ language,
@@ -135,6 +149,64 @@ makeInteractiveCodeCell[ language_String, code_String ] :=
     ];
 
 makeInteractiveCodeCell // endDefinition;
+
+(* A shebang line, then the code after any blank lines (a code block with only a shebang line is formatted as usual): *)
+$$shebangScript = StartOfString ~~
+    line: ("#!" ~~ Except[ "\n" ]...) ~~ WhitespaceCharacter... ~~ "\n" ~~
+    rest: (___ ~~ Except[ WhitespaceCharacter ] ~~ ___);
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*addScriptHeader*)
+addScriptHeader // beginDefinition;
+
+(* The shebang line is kept in TaggingRules, so serialization can put it back in front of the code: *)
+addScriptHeader[ line_String, Cell[ BoxData @ TemplateBox[ { cell_Cell, lang_ }, template_ ], "ChatCodeBlock" ] ] :=
+    Cell[
+        BoxData @ TemplateBox[
+            {
+                Cell[
+                    BoxData @ GridBox[
+                        { { scriptHeaderBoxes @ line }, { cell } },
+                        GridBoxAlignment -> { "Columns" -> { { Left } } },
+                        GridBoxSpacings  -> { "Columns" -> { { 0 } }, "Rows" -> { 0, 0.5, 0 } }
+                    ],
+                    TaggingRules -> <| "ShebangLine" -> line |>
+                ],
+                lang
+            },
+            template
+        ],
+        "ChatCodeBlock"
+    ];
+
+(* Anything else, e.g. a transcript (In[1]:= ...), is formatted as usual with the shebang line included: *)
+addScriptHeader[ _String, _ ] := None;
+
+addScriptHeader // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*scriptHeaderBoxes*)
+scriptHeaderBoxes // beginDefinition;
+
+(* Same colors as the shebang line in the package editor: *)
+scriptHeaderBoxes[ line_String ] := FrameBox[
+    StyleBox[
+        "\"" <> StringReplace[ line, { "\\" -> "\\\\", "\"" -> "\\\"" } ] <> "\"",
+        FontColor            -> GrayLevel[ 1 ],
+        FontFamily           -> Dynamic @ AbsoluteCurrentValue[ { StyleHints, "CodeFont" } ],
+        FontSize             -> 12,
+        FontWeight           -> Plain,
+        ShowStringCharacters -> False
+    ],
+    Background   -> RGBColor[ 0.259, 0.51, 0.122 ],
+    FrameMargins -> { { 8, 8 }, { 3, 3 } },
+    FrameStyle   -> None,
+    ImageSize    -> { Full, Automatic }
+];
+
+scriptHeaderBoxes // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
