@@ -434,7 +434,7 @@ cloudBoxParent // endDefinition;
 (*topParentCell*)
 topParentCell // beginDefinition;
 
-(* no recursion necessary in destop 14.3+ *)
+(* no recursion necessary in desktop 14.3+ *)
 topParentCell[ cell_CellObject ] /; !$cloudNotebooks :=
 Module[ { cellStack, cellInformation, cellStyles },
     cellStack = ParentCell[ cell, All ];      (* "All" is new in 14.3 and undocumented *)

@@ -83,7 +83,7 @@ MapThread[
         optionsList = DeleteCases[ SortBy[ Complement[ b, a ], First ], _[ System`MenuCommandKey | System`MenuSortingValue, _ ] ];
         
         Switch[ #2,
-            "AssistantMessageBox",  (* the FrameBox is effecively the same as in WorkspaceChat.nb, with added ImageMargins because we use an Overlay to add the icon *)
+            "AssistantMessageBox",  (* the FrameBox is effectively the same as in WorkspaceChat.nb, with added ImageMargins because we use an Overlay to add the icon *)
                 Cell[
                     StyleData[ "NotebookAssistant`Sidebar`AssistantMessageBox" ], (* no need to inherit StyleData as this only defines the DisplayFunction *)
                     TemplateBoxOptions -> {
@@ -94,7 +94,7 @@ MapThread[
                 ],
 
             (* Same as above but without the EventHandler *)
-            "AssistantMessageBoxActive",  (* the FrameBox is effecively the same as in WorkspaceChat.nb, with added ImageMargins because we use an Overlay to add the icon *)
+            "AssistantMessageBoxActive",  (* the FrameBox is effectively the same as in WorkspaceChat.nb, with added ImageMargins because we use an Overlay to add the icon *)
                 Cell[
                     StyleData[ "NotebookAssistant`Sidebar`AssistantMessageBoxActive" ], (* no need to inherit StyleData as this only defines the DisplayFunction *)
                     TemplateBoxOptions -> {

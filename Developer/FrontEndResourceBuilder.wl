@@ -286,7 +286,7 @@ toTextResourceString[CompressResourceValue[expr_]] :=
 
 (*
 This stylesheet is intended to prevent dynamics from firing while processing
-cells and boxes. It's not bulletproof, and may not always be desireable, but
+cells and boxes. It's not bulletproof, and may not always be desirable, but
 for now, we use it unconditionally.
 *)
 $exportPacketStyleDefinitions = StyleDefinitions -> Notebook[

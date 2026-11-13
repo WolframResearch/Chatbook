@@ -870,7 +870,7 @@ fixPatternBrackets[_][code_String, {}]:= {<|"Code"->code, "Status"->"Fixed"|>}
 (*Scoring*)
 
 
-(*Syntax informations to check System functions arguments*)
+(*Syntax information to check System functions arguments*)
 $syntargs := $syntargs = 	{Import[PacletObject["Wolfram/Chatbook"]["AssetLocation", "SyntaxInformation"], "WXF"]
 							(*temporarily adding missing info from SyntaxInformation*)
 							,"With" -> {__}

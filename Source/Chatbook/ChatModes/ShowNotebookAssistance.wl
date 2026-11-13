@@ -287,8 +287,8 @@ autoShowNotebookAssistance[ "CellInsertionPoint", obj0_, opts: OptionsPattern[ ]
                     "NotebookAssistant`Sidebar`UserMessageBox"
                 ],
                 "NotebookAssistant`Sidebar`ChatInput",
-                (* If we were writing this CellObject as a top-level cell then we could use ExpressoinUUID to coerce the front end use a pre-specified UUID.
-                    However, the side bar is a more complicated Cell within a Cell and in that case the ExpressoinUUID is dropped. *)
+                (* If we were writing this CellObject as a top-level cell then we could use ExpressionUUID to coerce the front end use a pre-specified UUID.
+                    However, the side bar is a more complicated Cell within a Cell and in that case the ExpressionUUID is dropped. *)
                 CellTags -> uuid
             ];
 
@@ -429,7 +429,7 @@ showNotebookAssistanceSidebar[ nbo_NotebookObject, input_, evaluate_, toggle_, s
                     If[ chatInputCell =!= None, FrontEnd`MoveCursorToInputField[ nbo, "AttachedChatInputField", chatInputCell, chatInputCell ] ]
                 ],
 
-            (* The sidebar assistant is persistant to a given notebook. *)
+            (* The sidebar assistant is persistent to a given notebook. *)
             True,
                 FrontEndTokenExecute[ nbo, "SwitchSidebar", <| "PanelID" -> "NotebookAssistant", "PreferredSize" -> $sidebarChatWidth @ nbo |> ];
                 chatInputCell = First[ Cells[ sidebarCell, CellStyle -> "ChatInputField" ], None ];

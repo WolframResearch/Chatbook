@@ -12,7 +12,7 @@ System`CellFrameRoundingRadius; (* in case stylesheets build prior to 15.0 *)
 
 
 (* ::Subsection::Closed:: *)
-(*tr suppport *)
+(*tr support *)
 
 
 tr[name_?StringQ] := Dynamic[FEPrivate`FrontEndResource["ChatbookStrings", name]]

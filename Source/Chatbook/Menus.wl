@@ -92,7 +92,7 @@ With[ { en = EvaluationNotebook[ ], mag = If[$OperatingSystem =!= "MacOSX", 0.75
                         BaseStyle -> FontSize -> 1, ItemSize -> Automatic, Spacings -> { 0, -4 }, Alignment -> Left
                     ],
 
-                (* some day this meny may depend on the model (service) and model name... *)
+                (* some day this menu may depend on the model (service) and model name... *)
                 "AdvancedSettings" ->
                     Column[
                         {
