@@ -266,4 +266,50 @@ VerificationTest[
     TestID         -> "ToolResult-NoSandboxKernel-GH#855"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Kernel Reuse*)
+
+(* These tests launch a separate sandbox kernel, which isn't possible in every test environment: *)
+VerificationTest[
+    $localEvaluatorAvailable = MatchQ[
+        Quiet @ Wolfram`Chatbook`WolframLanguageToolEvaluate[ "1 + 1", "Result", "Method" -> "Local" ],
+        HoldCompleteForm[ 2 ]
+    ],
+    True|False,
+    SameTest -> MatchQ,
+    TestID   -> "ReuseSandboxKernel-Available"
+]
+
+(* The kernel that was set up is reused instead of being restarted for each evaluation: *)
+If[ $localEvaluatorAvailable,
+    VerificationTest[
+        Module[ { kernel, result },
+            kernel = Wolfram`Chatbook`$SandboxKernel;
+            result = Wolfram`Chatbook`WolframLanguageToolEvaluate[ "1 + 1", "Result", "Method" -> "Local" ];
+            { result, Wolfram`Chatbook`$SandboxKernel === kernel, MemberQ[ Links[ ], kernel ] }
+        ],
+        { HoldCompleteForm[ 2 ], True, True },
+        SameTest       -> MatchQ,
+        TimeConstraint -> 60,
+        TestID         -> "ReuseSandboxKernel-SetUp"
+    ]
+]
+
+(* A link left open by an interrupted startup is closed and replaced instead of being reused: *)
+If[ $localEvaluatorAvailable,
+    VerificationTest[
+        Module[ { link, result },
+            Scan[ LinkClose, Select[ Links[ ], Wolfram`Chatbook`Sandbox`Private`sandboxKernelQ ] ];
+            link   = LinkLaunch @ Wolfram`Chatbook`Common`$sandboxKernelCommandLine;
+            result = Wolfram`Chatbook`WolframLanguageToolEvaluate[ "1 + 1", "Result", "Method" -> "Local" ];
+            { result, MemberQ[ Links[ ], link ] }
+        ],
+        { HoldCompleteForm[ 2 ], False },
+        SameTest       -> MatchQ,
+        TimeConstraint -> 60,
+        TestID         -> "ReuseSandboxKernel-NotSetUp"
+    ]
+]
+
 (* :!CodeAnalysis::EndBlock:: *)

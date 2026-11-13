@@ -443,7 +443,9 @@ sandboxKernelQ[ ___ ] := False;
 (* ::Subsubsection::Closed:: *)
 (*checkSandboxKernel*)
 checkSandboxKernel // beginDefinition;
-checkSandboxKernel[ kernel_LinkObject ] /; IntegerQ @ pingSandboxKernel @ kernel := kernel;
+(* Only reuse the kernel that startSandboxKernel finished setting up. A link to a kernel that was never set up can be
+   left open if startup was interrupted, e.g. by an abort: *)
+checkSandboxKernel[ kernel_LinkObject ] /; kernel === $SandboxKernel && IntegerQ @ pingSandboxKernel @ kernel := kernel;
 checkSandboxKernel[ kernel_LinkObject ] := startSandboxKernel[ ];
 checkSandboxKernel // endDefinition;
 
