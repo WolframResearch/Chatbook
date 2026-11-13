@@ -537,6 +537,10 @@ getCodeBlockContent[   Cell[ b_BoxData, "ChatCodeBlock",        ___ ] ] := getCo
 getCodeBlockContent[   Cell[   BoxData[ c_Cell ],               ___ ] ] := getCodeBlockContent @ c;         (* recurse into any BoxData inline cells *)
 getCodeBlockContent[ c:Cell[    cData_, cs_String,              ___ ] ] := c;                               (* stop recursion at unexpected cell structures *)
 
+(* Skip the shebang line header of scripts: *)
+getCodeBlockContent[ Cell[ BoxData[ GridBox[ { _, { c_Cell } }, ___ ], ___ ], ___, TaggingRules -> KeyValuePattern[ "ShebangLine" -> _ ], ___ ] ] :=
+    getCodeBlockContent @ c;
+
 getCodeBlockContent[ TemplateBox[ { boxes_, ___ }, "ChatCodeBlockTemplate" | "NotebookAssistant`Sidebar`ChatCodeBlockTemplate", ___ ] ] := getCodeBlockContent @ boxes;
 getCodeBlockContent[ DynamicModuleBox[ _, boxes_, ___ ] ] := getCodeBlockContent @ boxes;
 getCodeBlockContent[ TagBox[ boxes_, _EventHandlerTag, ___ ] ] := getCodeBlockContent @ boxes;

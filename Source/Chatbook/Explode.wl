@@ -217,6 +217,10 @@ $preprocessingRules := $preprocessingRules = Dispatch @ {
     (* Remove "ChatCodeBlockTemplate" template boxes: *)
     TemplateBox[ { cell_Cell, ___ }, "ChatCodeBlockTemplate" | "NotebookAssistant`Sidebar`ChatCodeBlockTemplate", ___ ] :> cell,
 
+    (* Remove the shebang line header of scripts: *)
+    Cell[ BoxData[ GridBox[ { _, { cell_Cell } }, ___ ], ___ ], ___, TaggingRules -> KeyValuePattern[ "ShebangLine" -> _ ], ___ ] :>
+        cell,
+
     (* Remove nested cells: *)
     Cell @ BoxData[ cell_Cell, ___ ] :> cell,
 

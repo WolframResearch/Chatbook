@@ -634,6 +634,14 @@ cellToString[ Cell[ a__, $$docSearchStyle, b___ ] ] :=
 cellToString[ Cell[ BoxData[ TemplateBox[ { name_String, content_ }, "FileListing", ___ ], ___ ], ___ ] ] :=
     name <> "\n```\n" <> fasterCellToString @ content <> "\n```";
 
+(* Code blocks that show the shebang line of a script as a header put it back in front of the code: *)
+cellToString[ Cell[
+    BoxData[ GridBox[ { _, { Cell[ BoxData[ boxes_, ___ ], a___ ] } }, ___ ], ___ ],
+    ___,
+    TaggingRules -> KeyValuePattern[ "ShebangLine" -> line_String ],
+    ___
+] ] := cellToString @ Cell[ BoxData @ RowBox @ { line, "\n", boxes }, a ];
+
 (* Delimit code blocks with triple backticks *)
 cellToString[ cell_Cell? codeBlockQ ] /; ! TrueQ @ $delimitedCodeBlock := Enclose[
     Block[ { $delimitedCodeBlock = True },

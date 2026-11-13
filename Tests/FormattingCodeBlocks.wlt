@@ -936,6 +936,94 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Script Shebang Lines*)
+
+(* A Wolfram Language script's shebang line isn't parsed as code. It's shown as a header above the code (like in the
+   package editor) and kept in the TaggingRules of the cell that holds both: *)
+VerificationTest[
+    cbScript[ line_, inner_ ] := Cell[
+        BoxData @ GridBox[ { { FrameBox[ StyleBox[ "\"" <> line <> "\"", ___ ], ___ ] }, { inner } }, ___ ],
+        TaggingRules -> KeyValuePattern[ "ShebangLine" -> line ]
+    ];
+    $cbScript = "```wl\n#!/usr/bin/env wolframscript\n\nx = 1\n```";
+    ,
+    Null,
+    SameTest -> MatchQ,
+    TestID   -> "CodeBlocks-Shebang-Definitions-GH#896"
+]
+
+(* Blank lines between the shebang line and the code are dropped: *)
+VerificationTest[
+    FormatMarkdown[ $cbScript ],
+    { cbBlock[ cbScript[ "#!/usr/bin/env wolframscript", cbWL @ RowBox @ { "x", "=", "1" } ], "Wolfram" ] },
+    SameTest -> MatchQ,
+    TestID   -> "CodeBlocks-Shebang-Finished-GH#896"
+]
+
+VerificationTest[
+    FormatMarkdown[ $cbScript, "Streaming" ],
+    { cbBlock[ cbScript[ "#!/usr/bin/env wolframscript", Cell[ BoxData[ "x = 1" ], "ChatCodeActive" ] ], _ ] },
+    SameTest -> MatchQ,
+    TestID   -> "CodeBlocks-Shebang-Streaming-GH#896"
+]
+
+(* Only Wolfram Language code that starts with a shebang line and has code after it gets the header. Other blocks are
+   formatted as usual: *)
+VerificationTest[
+    cbSummary /@ {
+        "```wl\n#!/usr/bin/env wolframscript\n```",
+        "```wl\nx = 1\n#!/usr/bin/env wolframscript\n```",
+        "```python\n#!/usr/bin/env python\nprint(1)\n```",
+        "```\n#!/bin/sh\necho hi\n```"
+    },
+    { { "Wolfram", "ChatCode" }, { "Wolfram", "ChatCode" }, { "Python", "ExternalLanguage" }, { "", "ChatPreformatted" } },
+    SameTest -> MatchQ,
+    TestID   -> "CodeBlocks-Shebang-Other-Code-GH#896"
+]
+
+(* Code that's formatted as a transcript doesn't get the header. The shebang line is the plain text first row, as for
+   any text before the first label: *)
+VerificationTest[
+    FormatMarkdown[ "```wl\n#!/usr/bin/env wolframscript\nIn[1]:= x\nOut[1]= x\n```" ],
+    cbTranscript @ {
+        { "", cbBlock[ cbPreformatted[ "#!/usr/bin/env wolframscript", "Plaintext" ], "Plaintext" ] },
+        { cbLabel[ "In[1]:=" ], cbBlock[ cbWL[ "x" ], "Wolfram" ] },
+        { cbLabel[ "Out[1]=" ], Cell[ BoxData[ "x" ], "Output" ] }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "CodeBlocks-Shebang-Transcript-GH#896"
+]
+
+(* The insert, evaluate and copy buttons only use the code below the header: *)
+VerificationTest[
+    Wolfram`Chatbook`Formatting`Private`getCodeBlockContent @ First @ cbCodeBlocks @ $cbScript,
+    Cell[ BoxData @ RowBox @ { "x", "=", "1" }, "Input" ],
+    SameTest -> MatchQ,
+    TestID   -> "CodeBlocks-Shebang-Button-Content-GH#896"
+]
+
+(* Copying a response as notebook cells gives an input cell with the code: *)
+VerificationTest[
+    Cases[ ExplodeCell @ Cell[ TextData @ FormatMarkdown[ "Text\n\n" <> $cbScript ], "ChatOutput" ], Cell[ _, Except[ "Text" ], ___ ] ],
+    { Cell[ BoxData @ RowBox @ { "x", "=", "1" }, "Input", ___ ] },
+    SameTest -> MatchQ,
+    TestID   -> "CodeBlocks-Shebang-ExplodeCell-GH#896"
+]
+
+(* Chat history keeps the shebang line in front of the code: *)
+VerificationTest[
+    {
+        MarkdownRoundTrip @ $cbScript,
+        MarkdownRoundTrip[ $cbScript, "Streaming" ],
+        Block[ { $SidebarChat = True }, MarkdownRoundTrip @ $cbScript ]
+    },
+    ConstantArray[ "```wl\n#!/usr/bin/env wolframscript\nx = 1\n```", 3 ],
+    SameTest -> MatchQ,
+    TestID   -> "CodeBlocks-Shebang-Serialization-GH#896"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Sidebar Template*)
 
 (* In the notebook assistant sidebar the sidebar version of the template is used, with the same arguments. Streaming
