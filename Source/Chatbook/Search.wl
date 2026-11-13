@@ -31,19 +31,19 @@ SearchChats[ app: _String|All, query_String, opts: OptionsPattern[ ] ] :=
 SearchChats[ query_String, opts: OptionsPattern[ ] ] :=
     catchMine @ SearchChats[ All, query, opts ];
 
-SearchChats // endDefinition;
+SearchChats // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*searchChats*)
 searchChats // beginDefinition;
 
-searchChats[ appName_String, query_String, max_? Positive, cache_ ] := Enclose[
+searchChats[ appSpec: _String|All, query_String, max_? Positive, cache_ ] := Enclose[
     Catch @ Module[ { index, data, values, nearest, embedding, idx, results },
 
         If[ query === "", Throw @ { } ];
-        index = ConfirmBy[ loadChatSearchIndex @ appName, AssociationQ, "Load" ];
-        data  = ConfirmMatch[ getChatSearchData[ appName, index ], { _List, _NearestFunction } | None, "Data" ];
+        index = ConfirmBy[ loadChatSearchIndex @ appSpec, AssociationQ, "Load" ];
+        data  = ConfirmMatch[ getChatSearchData[ appSpec, index ], { _List, _NearestFunction } | None, "Data" ];
 
         If[ data === None, Throw @ { } ];
 
@@ -74,22 +74,26 @@ searchChats // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*getChatSearchData*)
 (* Returns the flattened index values and a NearestFunction for their vectors, or None if there are no vectors.
-   A result other than None is cached for the most recently searched app and reused while its index is unchanged.
-   Any change to the index (add, remove, rebuild, or load from disk) makes it differ from the cached index,
+   A result other than None is cached for the most recently searched app (or All) and reused while its index is
+   unchanged. Any change to the index (add, remove, rebuild, or load from disk) makes it differ from the cached index,
    so the cache entry stops matching without each of those writers needing to invalidate it. While the index
-   is unchanged, the SameQ check is cheap since both sides are the same expression. *)
+   is unchanged, the SameQ check is cheap since both sides are the same expression.
+   For All, the index has an index for each app, and one NearestFunction covers the chats of every app, so results
+   from different apps are ordered by distance. *)
 getChatSearchData // beginDefinition;
 
-getChatSearchData[ appName_String, index_Association ] :=
-    With[ { cached = $chatSearchData[ appName ] },
+getChatSearchData[ appSpec: _String|All, index_Association ] :=
+    With[ { cached = $chatSearchData[ appSpec ] },
         cached[ "Data" ] /; AssociationQ @ cached && cached[ "Index" ] === index
     ];
 
-getChatSearchData[ appName_String, index_Association ] := Enclose[
-    Catch @ Module[ { flat, values, vectors, nearest },
+getChatSearchData[ appSpec: _String|All, index_Association ] := Enclose[
+    Catch @ Module[ { chats, flat, values, vectors, nearest },
+
+        chats = If[ appSpec === All, Catenate[ Values /@ Values @ index ], Values @ index ];
 
         flat = ConfirmMatch[
-            Flatten[ Thread @ { KeyDrop[ #, "Vectors" ], #Vectors } & /@ Values @ index, 1 ],
+            Flatten[ Thread @ { KeyDrop[ #, "Vectors" ], #Vectors } & /@ chats, 1 ],
             { { _Association, _NumericArray }... },
             "Flat"
         ];
@@ -105,8 +109,8 @@ getChatSearchData[ appName_String, index_Association ] := Enclose[
             "Nearest"
         ];
 
-        (* Only one app is cached at a time to limit memory use: *)
-        $chatSearchData = <| appName -> <| "Index" -> index, "Data" -> { values, nearest } |> |>;
+        (* Only one app (or All) is cached at a time to limit memory use: *)
+        $chatSearchData = <| appSpec -> <| "Index" -> index, "Data" -> { values, nearest } |> |>;
 
         { values, nearest }
     ],

@@ -90,9 +90,12 @@ VerificationTest[
 
     (* The uncached search implementation that SearchChats must match exactly: *)
     referenceSearch // ClearAll;
-    referenceSearch[ app_String, query_String, max_ ] := Catch @ Module[ { index, flat, values, vectors, embedding, idx },
+    referenceSearch[ app: _String|All, query_String, max_ ] := Catch @ Module[ { index, flat, values, vectors, embedding, idx },
         If[ query === "", Throw @ { } ];
-        index = Values @ Wolfram`Chatbook`Search`Private`$chatSearchIndex[ app ];
+        index = If[ app === All,
+                    Catenate[ Values /@ Values @ Wolfram`Chatbook`Search`Private`$chatSearchIndex ],
+                    Values @ Wolfram`Chatbook`Search`Private`$chatSearchIndex[ app ]
+                ];
         flat = Flatten[ Thread @ { KeyDrop[ #, "Vectors" ], #Vectors } & /@ index, 1 ];
         If[ flat === { }, Throw @ { } ];
         { values, vectors } = Transpose @ flat;
@@ -103,7 +106,7 @@ VerificationTest[
 
     (* Returns the query and MaxItems value for every result that differs from the reference: *)
     searchMismatches // ClearAll;
-    searchMismatches[ app_String ] := Select[
+    searchMismatches[ app: _String|All ] := Select[
         Flatten[ Table[ { query, max }, { query, $queries }, { max, { 1, 3, 10, 25, Infinity } } ], 1 ],
         Function[
             Module[ { results },
@@ -115,7 +118,7 @@ VerificationTest[
 
     (* Marks the cached values so tests can tell whether a search used the cache: *)
     markCache // ClearAll;
-    markCache[ app_String ] :=
+    markCache[ app: _String|All ] :=
         Wolfram`Chatbook`Search`Private`$chatSearchData[ app, "Data" ] = MapAt[
             Map[ Append[ "FromCache" -> True ] ],
             Wolfram`Chatbook`Search`Private`$chatSearchData[ app, "Data" ],
@@ -301,6 +304,57 @@ VerificationTest[
     { { Last @ $testApps }, { First @ $testApps }, { Last @ $testApps }, { }, { } },
     SameTest -> MatchQ,
     TestID   -> "SearchCache-MultipleApps"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*All Apps*)
+
+(* Searching All also includes apps other than the test apps that have a search index, e.g. the user's own chats,
+   so these tests only require that the results include both test apps: *)
+VerificationTest[
+    (* Drop the in-memory indexes, as if in a new session, so that searching All must load them from disk: *)
+    KeyDropFrom[ Wolfram`Chatbook`Search`Private`$chatSearchIndex, $testApps ];
+    {
+        SubsetQ[ Union @ Lookup[ SearchChats[ All, First @ $queries, MaxItems -> Infinity ], "AppName" ], $testApps ],
+        searchMismatches @ All,
+        Keys @ Wolfram`Chatbook`Search`Private`$chatSearchData
+    },
+    { True, { }, { All } },
+    SameTest -> MatchQ,
+    TestID   -> "SearchAll-MatchesReference-GH#1732"
+]
+
+VerificationTest[
+    SearchChats[ First @ $queries ] === SearchChats[ All, First @ $queries ],
+    True,
+    SameTest -> MatchQ,
+    TestID   -> "SearchAll-DefaultApp-GH#1732"
+]
+
+VerificationTest[
+    markCache @ All;
+    usedCacheQ @ SearchChats[ All, First @ $queries ],
+    True,
+    SameTest -> MatchQ,
+    TestID   -> "SearchAll-ReusedWhileIndexUnchanged"
+]
+
+VerificationTest[
+    markCache @ All;
+    addTestChats @ Table[ testChat[ Last @ $testApps, i ], { i, 21, 25 } ];
+    { usedCacheQ @ SearchChats[ All, First @ $queries ], searchMismatches @ All },
+    { False, { } },
+    SameTest -> MatchQ,
+    TestID   -> "SearchAll-InvalidatedByAdd"
+]
+
+VerificationTest[
+    SearchChats[ 123 ],
+    _Failure,
+    { SearchChats::InvalidArguments },
+    SameTest -> MatchQ,
+    TestID   -> "SearchChats-InvalidArguments"
 ]
 
 (* ::**************************************************************************************************************:: *)
