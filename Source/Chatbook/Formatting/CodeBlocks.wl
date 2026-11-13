@@ -77,8 +77,9 @@ stripCodePadding // endDefinition;
 makeInteractiveCodeCell // beginDefinition;
 
 (* Wolfram Language scripts: the shebang line (e.g. "#!/usr/bin/env wolframscript") isn't Wolfram Language code, so it's
-   shown as a header above the code, like in the package editor. The code block buttons only use the code below it: *)
-makeInteractiveCodeCell[ lang_String? wolframLanguageQ, code_String ] /; StringStartsQ[ code, "#!" ] :=
+   shown as a header above the code, like in the package editor. The code block buttons only use the code below it.
+   A path must follow "#!", since "#!" alone is valid code (Factorial[#]): *)
+makeInteractiveCodeCell[ lang_String? wolframLanguageQ, code_String ] /; StringStartsQ[ code, "#!" ~~ " "... ~~ "/" ] :=
     With[
         {
             cell = First[

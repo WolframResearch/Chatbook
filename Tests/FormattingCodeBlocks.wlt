@@ -967,16 +967,23 @@ VerificationTest[
     TestID   -> "CodeBlocks-Shebang-Streaming-GH#896"
 ]
 
-(* Only Wolfram Language code that starts with a shebang line and has code after it gets the header. Other blocks are
-   formatted as usual: *)
+(* Only Wolfram Language code that starts with a shebang line and has code after it gets the header. Other blocks
+   (including code that starts with "#!" but no path, which is valid Wolfram Language) are formatted as usual: *)
 VerificationTest[
     cbSummary /@ {
         "```wl\n#!/usr/bin/env wolframscript\n```",
         "```wl\nx = 1\n#!/usr/bin/env wolframscript\n```",
+        "```wl\n#! & /@ Range[5]\nTotal[%]\n```",
         "```python\n#!/usr/bin/env python\nprint(1)\n```",
         "```\n#!/bin/sh\necho hi\n```"
     },
-    { { "Wolfram", "ChatCode" }, { "Wolfram", "ChatCode" }, { "Python", "ExternalLanguage" }, { "", "ChatPreformatted" } },
+    {
+        { "Wolfram", "ChatCode" },
+        { "Wolfram", "ChatCode" },
+        { "Wolfram", "ChatCode" },
+        { "Python", "ExternalLanguage" },
+        { "", "ChatPreformatted" }
+    },
     SameTest -> MatchQ,
     TestID   -> "CodeBlocks-Shebang-Other-Code-GH#896"
 ]
