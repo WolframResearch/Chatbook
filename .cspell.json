@@ -1,4 +1,6 @@
 {
+    // British spellings (licence, behaviour, ...) are accepted.
+    "language": "en,en-GB",
     "words": [
         "AIAPI",
         "apriori",
