@@ -1,6 +1,21 @@
 {
     // British spellings (licence, behaviour, ...) are accepted.
     "language": "en,en-GB",
+    "ignorePaths": [
+        ".git",
+        "**/*.nb",
+        "**/*.wxf",
+        "**/*.mx",
+        "**/*.png",
+        "LICENSE*",
+        // Localized UI strings (Spanish, French, ...): not English.
+        "FrontEnd/TextResources/**",
+        // Tokenizer data.
+        "Assets/Tokenizers/**",
+        // Formatter test corpus: deliberately odd text.
+        "Developer/FormatterHarness/corpus/**",
+        "Developer/VectorDatabases/DefinitionNotebooks/**"
+    ],
     "words": [
         "AIAPI",
         "apriori",
