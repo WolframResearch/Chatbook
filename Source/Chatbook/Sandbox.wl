@@ -1377,7 +1377,7 @@ cloudSandboxEvaluate[ input: $$sandboxInput ] := Enclose[
         $lastSandboxEvaluation = input;
 
         api = ConfirmMatch[ getCloudEvaluatorAPI[ ], _CloudObject|_Failure, "CloudEvaluator" ];
-        If[ FailureQ @ api, Throw @ api ];
+        If[ FailureQ @ api, Throw @ cloudFailureResult @ api ];
 
         (* The cloud evaluator runs all segments in a single request, since the kernel state does not persist between
            requests. The cloud API applies the overall time constraint. *)
@@ -1422,7 +1422,8 @@ cloudSandboxEvaluate[ input: $$sandboxInput ] := Enclose[
             "Response"
         ];
 
-        If[ FailureQ @ response, Throw @ response ];
+        (* The raw failure includes the request, so it's replaced with a failure that only describes the problem: *)
+        If[ FailureQ @ response, Throw @ cloudFailureResult @ cloudEvaluatorRequestFailure[ ] ];
 
         records = ConfirmMatch[ cloudSegmentRecords @ response, { __Association }, "Records" ];
         If[ $requestedLine =!= None, $cloudLineNumber = line + Length @ records ];
@@ -1439,6 +1440,34 @@ cloudSandboxEvaluate[ input: $$sandboxInput ] := Enclose[
 ];
 
 cloudSandboxEvaluate // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cloudFailureResult*)
+cloudFailureResult // beginDefinition;
+
+(* The cloud evaluator could not be reached. As with a local kernel that could not be started, the failure is reported
+   to the model as the result, instead of ending the chat with an internal failure. As with a kernel quit, there's no
+   output, only the failure message: *)
+cloudFailureResult[ failure_Failure ] := Enclose[
+    $lastSandboxResult = ConfirmBy[
+        <|
+            sandboxResultData @ {
+                <|
+                    "Result"    -> stoppedSegmentResult[ failure, "KernelQuit" ],
+                    "OutputLog" -> { failure[ "Message" ] },
+                    "Packets"   -> { }
+                |>
+            },
+            "Line" -> $cloudLineNumber
+        |>,
+        AssociationQ,
+        "Result"
+    ],
+    throwInternalFailure
+];
+
+cloudFailureResult // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -3181,6 +3210,21 @@ This may mean that the number of currently running kernels exceeds the limit def
 ];
 
 noSandboxKernelFailure // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*cloudEvaluatorRequestFailure*)
+cloudEvaluatorRequestFailure // beginDefinition;
+
+cloudEvaluatorRequestFailure[ ] := Failure[
+    "CloudEvaluatorRequestFailed",
+    <|
+        "MessageTemplate"   -> "Unable to get a result from the cloud evaluator: the request failed or did not finish in time.",
+        "MessageParameters" -> { }
+    |>
+];
+
+cloudEvaluatorRequestFailure // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
