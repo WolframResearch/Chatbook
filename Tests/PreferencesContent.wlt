@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/PreferencesContent.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/PreferencesContent.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -65,7 +65,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "ResetChatPreferences-Notebooks-PreservesOtherTabs@@Tests/PreferencesContent.wlt:28,1-69,2"
+    TestID   -> "ResetChatPreferences-Notebooks-PreservesOtherTabs"
 ]
 
 VerificationTest[
@@ -88,7 +88,7 @@ VerificationTest[
     ],
     { True, { } },
     SameTest -> MatchQ,
-    TestID   -> "ResetChatPreferences-Notebooks-NoDefaultsWritten@@Tests/PreferencesContent.wlt:71,1-92,2"
+    TestID   -> "ResetChatPreferences-Notebooks-NoDefaultsWritten"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -127,7 +127,7 @@ VerificationTest[
     ],
     { True, "LLMKit", "" },
     SameTest -> MatchQ,
-    TestID   -> "ResetChatPreferences-Services-RebuildsPanel@@Tests/PreferencesContent.wlt:97,1-131,2"
+    TestID   -> "ResetChatPreferences-Services-RebuildsPanel"
 ]
 
 VerificationTest[
@@ -138,7 +138,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "CreatePreferencesContent-UniqueBoxesPerRebuild@@Tests/PreferencesContent.wlt:133,1-142,2"
+    TestID   -> "CreatePreferencesContent-UniqueBoxesPerRebuild"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -167,7 +167,7 @@ VerificationTest[
     ],
     { "Notebooks", "Cloud", "Services", "Cloud", "Personas", "Tools" },
     SameTest -> MatchQ,
-    TestID   -> "ResetChatPreferences-RefreshesCloudPreferences@@Tests/PreferencesContent.wlt:149,1-171,2"
+    TestID   -> "ResetChatPreferences-RefreshesCloudPreferences"
 ]
 
 VerificationTest[
@@ -207,7 +207,7 @@ VerificationTest[
         "VisiblePersonas"   -> { "Birdnardo" }
     |>,
     SameTest -> MatchQ,
-    TestID   -> "UnsetChatSettingsKeys-Cloud@@Tests/PreferencesContent.wlt:173,1-211,2"
+    TestID   -> "UnsetChatSettingsKeys-Cloud"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -238,7 +238,7 @@ VerificationTest[
         { Wolfram`Chatbook`Common`$corePersonaNames, Wolfram`Chatbook`Common`$corePersonaNames }
     },
     SameTest -> MatchQ,
-    TestID   -> "ResetChatPreferences-Personas-UnsetsKeys@@Tests/PreferencesContent.wlt:216,1-242,2"
+    TestID   -> "ResetChatPreferences-Personas-UnsetsKeys"
 ]
 
 VerificationTest[
@@ -274,7 +274,7 @@ VerificationTest[
         { Wolfram`Chatbook`Common`$corePersonaNames, Wolfram`Chatbook`Common`$corePersonaNames, 0.3 }
     },
     SameTest -> MatchQ,
-    TestID   -> "ResetChatPreferences-Personas-Cloud@@Tests/PreferencesContent.wlt:244,1-278,2"
+    TestID   -> "ResetChatPreferences-Personas-Cloud"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -296,7 +296,7 @@ VerificationTest[
     ],
     { Wolfram`Chatbook`Common`$corePersonaNames, { } },
     SameTest -> MatchQ,
-    TestID   -> "FilterPersonas-ReadingWritesNothing@@Tests/PreferencesContent.wlt:283,1-300,2"
+    TestID   -> "FilterPersonas-ReadingWritesNothing"
 ]
 
 VerificationTest[
@@ -313,7 +313,7 @@ VerificationTest[
     ],
     { "Wolfie", "Birdnardo", "PlainChat" },
     SameTest -> MatchQ,
-    TestID   -> "FilterPersonas-VisibleAndFavoritesOrder@@Tests/PreferencesContent.wlt:302,1-317,2"
+    TestID   -> "FilterPersonas-VisibleAndFavoritesOrder"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -343,7 +343,7 @@ VerificationTest[
     ],
     { True, { } },
     SameTest -> MatchQ,
-    TestID   -> "PersonaManagerPanel-ViewingWritesNothing@@Tests/PreferencesContent.wlt:322,1-347,2"
+    TestID   -> "PersonaManagerPanel-ViewingWritesNothing"
 ]
 
 VerificationTest[
@@ -366,7 +366,143 @@ VerificationTest[
     ],
     { False, { "RawModel", "PlainChat" } },
     SameTest -> MatchQ,
-    TestID   -> "PersonaManagerPanel-RemovesUninstalledVisiblePersonas@@Tests/PreferencesContent.wlt:349,1-370,2"
+    TestID   -> "PersonaManagerPanel-RemovesUninstalledVisiblePersonas"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*AllowExternalLLMConnectivity*)
+VerificationTest[
+    UsingFrontEnd @ Block[ { Wolfram`Chatbook`Common`sufficientVersionQ, Wolfram`Chatbook`PreferencesContent`Private`allowAISettings },
+        Wolfram`Chatbook`PreferencesContent`Private`allowAISettings[ ] := "VersionedCheckboxMarker";
+        Wolfram`Chatbook`Common`sufficientVersionQ[ 16.0 ] = False;
+        With[ { oldBoxes = ToBoxes @ Wolfram`Chatbook`Common`createPreferencesContent[ ] },
+            Wolfram`Chatbook`Common`sufficientVersionQ[ 16.0 ] = True;
+            With[ { newBoxes = ToBoxes @ Wolfram`Chatbook`Common`createPreferencesContent[ ] },
+                { StringFreeQ[ ToString[ oldBoxes, InputForm ], "VersionedCheckboxMarker" ],
+                  ! StringFreeQ[ ToString[ newBoxes, InputForm ], "VersionedCheckboxMarker" ] }
+            ]
+        ]
+    ],
+    { True, True },
+    SameTest -> MatchQ,
+    TestID   -> "CreatePreferencesContent-CheckboxRequires16"
+]
+
+VerificationTest[
+    If[ Wolfram`Chatbook`Common`sufficientVersionQ[ 16.0 ],
+        UsingFrontEnd @ Module[ { original, attributes, values },
+            original   = CurrentValue[ $FrontEnd, "AllowExternalLLMConnectivity" ];
+            attributes = Attributes @ System`$AllowExternalLLMConnectivity;
+            values     = OwnValues @ System`$AllowExternalLLMConnectivity;
+            WithCleanup[
+                Unprotect @ System`$AllowExternalLLMConnectivity;
+                System`$AllowExternalLLMConnectivity = True;
+                Protect @ System`$AllowExternalLLMConnectivity;
+                {
+                    Wolfram`Chatbook`PreferencesContent`Private`setAllowExternalLLMConnectivity[ False ],
+                    CurrentValue[ $FrontEnd, "AllowExternalLLMConnectivity" ],
+                    System`$AllowExternalLLMConnectivity,
+                    MemberQ[ Attributes @ System`$AllowExternalLLMConnectivity, Protected ]
+                },
+                CurrentValue[ $FrontEnd, "AllowExternalLLMConnectivity" ] = original;
+                Unprotect @ System`$AllowExternalLLMConnectivity;
+                OwnValues @ System`$AllowExternalLLMConnectivity = values;
+                Attributes @ System`$AllowExternalLLMConnectivity = attributes
+            ]
+        ],
+        { False, False, False, True }
+    ],
+    { False, False, False, True },
+    SameTest -> MatchQ,
+    TestID   -> "SetAllowExternalLLMConnectivity-UpdatesFrontEndAndKernel"
+]
+
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`Common`sufficientVersionQ,
+            Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ,
+            ServiceExecute
+        },
+        Wolfram`Chatbook`Common`sufficientVersionQ[ 16.0 ] = True;
+        Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ[ ] = False;
+        ServiceExecute[ ___ ] := (Message[ ServiceExecute::extllm ]; "UnexpectedRequest");
+        Wolfram`Chatbook`Common`getServiceData[ ]
+    ],
+    $Failed,
+    SameTest -> MatchQ,
+    TestID   -> "GetServiceData-DisabledDoesNotRequestOrWarn"
+]
+
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`Common`sufficientVersionQ,
+            Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ,
+            ServiceExecute
+        },
+        Wolfram`Chatbook`Common`sufficientVersionQ[ 16.0 ] = False;
+        Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ[ ] = False;
+        ServiceExecute[ ___ ] := <| "data" -> <| "userHasSubscription" -> True |> |>;
+        Wolfram`Chatbook`Common`getServiceData[ ]
+    ],
+    <| "userHasSubscription" -> True |>,
+    SameTest -> MatchQ,
+    TestID   -> "GetServiceData-Before16NotBlocked"
+]
+
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`Common`sufficientVersionQ,
+            Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ,
+            ServiceExecute
+        },
+        Wolfram`Chatbook`Common`sufficientVersionQ[ 16.0 ] = True;
+        Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ[ ] = True;
+        ServiceExecute[ ___ ] := (Message[ ServiceExecute::extllm ]; <| "data" -> <| "userHasSubscription" -> True |> |>);
+        Wolfram`Chatbook`Common`getServiceData[ ]
+    ],
+    <| "userHasSubscription" -> True |>,
+    SameTest -> MatchQ,
+    TestID   -> "GetServiceData-OnlyQuietsConnectivityWarning"
+]
+
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`Common`sufficientVersionQ,
+            Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ,
+            ServiceExecute
+        },
+        Wolfram`Chatbook`Common`sufficientVersionQ[ 16.0 ] = True;
+        Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ[ ] = True;
+        ServiceExecute[ ___ ] := (Message[ ServiceExecute::other ]; $Failed);
+        Wolfram`Chatbook`Common`getServiceData[ ]
+    ],
+    $Failed,
+    { ServiceExecute::other },
+    SameTest -> MatchQ,
+    TestID   -> "GetServiceData-OtherMessagesRemainVisible"
+]
+
+(* Reading the front end option while building the content would make it rebuild whenever any $FrontEnd option changes: *)
+VerificationTest[
+    UsingFrontEnd @ Module[ { calls = { } },
+        Internal`InheritedBlock[ { MathLink`CallFrontEnd },
+            Unprotect @ MathLink`CallFrontEnd;
+            MathLink`CallFrontEnd[ args___ ] /; ! TrueQ @ $inCall := Block[ { $inCall = True },
+                AppendTo[ calls, HoldComplete @ args ];
+                MathLink`CallFrontEnd @ args
+            ];
+            ToBoxes @ Wolfram`Chatbook`Common`createPreferencesContent[ ]
+        ];
+        FreeQ[ calls, "AllowExternalLLMConnectivity" ]
+    ],
+    True,
+    SameTest -> MatchQ,
+    TestID   -> "CreatePreferencesContent-NoAllowExternalLLMConnectivityDependency"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

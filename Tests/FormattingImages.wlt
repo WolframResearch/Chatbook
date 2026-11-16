@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/FormattingImages.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/FormattingImages.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -134,7 +134,7 @@ VerificationTest[
     FileExistsQ /@ { $imgSmallFile, $imgMediumFile, $imgLargeFile, $imgMaxFile, $imgOverMaxFile, $imgMissingFile },
     { True, True, True, True, True, False },
     SameTest -> MatchQ,
-    TestID   -> "Images-Definitions@@Tests/FormattingImages.wlt:30,1-138,2"
+    TestID   -> "Images-Definitions"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -151,7 +151,7 @@ VerificationTest[
     imgFormat[ "![alt](attachment://content-abc12)" ],
     { imgCell[ $imgList, "alt", imgKeyMD[ "alt" ] ] },
     SameTest -> MatchQ,
-    TestID   -> "Images-Attachment-Finished@@Tests/FormattingImages.wlt:150,1-155,2"
+    TestID   -> "Images-Attachment-Finished"
 ]
 
 (* The streaming display is the same: *)
@@ -159,7 +159,7 @@ VerificationTest[
     imgFormat[ "![alt](attachment://content-abc12)", "Streaming" ],
     { imgCell[ $imgList, "alt", imgKeyMD[ "alt" ] ] },
     SameTest -> MatchQ,
-    TestID   -> "Images-Attachment-Streaming@@Tests/FormattingImages.wlt:158,1-163,2"
+    TestID   -> "Images-Attachment-Streaming"
 ]
 
 (* Attached Image values are shown as images: *)
@@ -167,7 +167,7 @@ VerificationTest[
     imgFormat[ "![pic](attachment://content-img01)" ],
     { imgCell[ _? imgRasterQ, "pic", imgKeyMD[ "pic", "content-img01" ] ] },
     SameTest -> MatchQ,
-    TestID   -> "Images-Attachment-Image-Value@@Tests/FormattingImages.wlt:166,1-171,2"
+    TestID   -> "Images-Attachment-Image-Value"
 ]
 
 (* The attachment store normally holds HoldComplete[ expr ], but values that are not held work too: *)
@@ -175,7 +175,7 @@ VerificationTest[
     imgFormat[ "![alt](attachment://content-abc12)", "Finished", <| "content-abc12" -> { 1, 2, 3 } |> ],
     { imgCell[ $imgList, "alt", imgKeyMD[ "alt" ] ] },
     SameTest -> MatchQ,
-    TestID   -> "Images-Attachment-Unheld-Value@@Tests/FormattingImages.wlt:174,1-179,2"
+    TestID   -> "Images-Attachment-Unheld-Value"
 ]
 
 (* An attachment is found by looking for any known key in the URL, ignoring case. So the scheme does not matter, a bare
@@ -196,7 +196,7 @@ VerificationTest[
         { imgCell[ $imgList, "alt", "![alt](attachment://content-abc12.png)" | "![alt](content-abc12)" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-Attachment-Key-Anywhere-In-URL@@Tests/FormattingImages.wlt:183,1-200,2"
+    TestID   -> "Images-Attachment-Key-Anywhere-In-URL"
 ]
 
 (* Formatted attachments serialize back to the markdown image: *)
@@ -208,7 +208,7 @@ VerificationTest[
     },
     { imgKeyMD[ "alt" ], imgKeyMD[ "alt" ], imgKeyMD[ "pic", "content-img01" ] },
     SameTest -> MatchQ,
-    TestID   -> "Images-Attachment-Round-Trip@@Tests/FormattingImages.wlt:203,1-212,2"
+    TestID   -> "Images-Attachment-Round-Trip"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -224,7 +224,7 @@ VerificationTest[
     ],
     { uri_String, { imgCell[ $imgList, None, uri_ ] } } /; StringStartsQ[ uri, "![Data](expression://content-" ],
     SameTest -> MatchQ,
-    TestID   -> "Images-Attachment-Empty-Alt@@Tests/FormattingImages.wlt:220,1-228,2"
+    TestID   -> "Images-Attachment-Empty-Alt"
 ]
 
 VerificationTest[
@@ -234,7 +234,7 @@ VerificationTest[
     ],
     { uri_String, { imgCell[ _? imgRasterQ, None, uri_ ] } } /; StringStartsQ[ uri, "![Image](attachment://content-" ],
     SameTest -> MatchQ,
-    TestID   -> "Images-Attachment-Empty-Alt-Image@@Tests/FormattingImages.wlt:230,1-238,2"
+    TestID   -> "Images-Attachment-Empty-Alt-Image"
 ]
 
 VerificationTest[
@@ -244,7 +244,7 @@ VerificationTest[
     ],
     { uri_String, uri_String },
     SameTest -> MatchQ,
-    TestID   -> "Images-Attachment-Empty-Alt-Round-Trip@@Tests/FormattingImages.wlt:240,1-248,2"
+    TestID   -> "Images-Attachment-Empty-Alt-Round-Trip"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -261,7 +261,7 @@ VerificationTest[
         MatchQ[ rt, imgURIMD @ uri ]
     ],
     SameTest -> MatchQ,
-    TestID   -> "Images-Real-Expression-URI@@Tests/FormattingImages.wlt:256,1-265,2"
+    TestID   -> "Images-Real-Expression-URI"
 ]
 
 VerificationTest[
@@ -276,7 +276,7 @@ VerificationTest[
         MatchQ[ rt, imgURIMD @ uri ]
     ],
     SameTest -> MatchQ,
-    TestID   -> "Images-Real-Image-URI@@Tests/FormattingImages.wlt:267,1-280,2"
+    TestID   -> "Images-Real-Image-URI"
 ]
 
 (* Graphics (e.g. plots from the evaluator tool) are the most common attachments. They are shown as their own boxes,
@@ -305,7 +305,7 @@ VerificationTest[
         MatchQ[ rt, imgURIMD @ uri ]
     ],
     SameTest -> MatchQ,
-    TestID   -> "Images-Real-Graphics-URI@@Tests/FormattingImages.wlt:284,1-309,2"
+    TestID   -> "Images-Real-Graphics-URI"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -327,7 +327,7 @@ VerificationTest[
     },
     { _TagBox, _TagBox },
     SameTest -> MatchQ,
-    TestID   -> "Images-Attachment-Missing-Key@@Tests/FormattingImages.wlt:318,1-331,2"
+    TestID   -> "Images-Attachment-Missing-Key"
 ]
 
 VerificationTest[
@@ -339,7 +339,7 @@ VerificationTest[
     ],
     _TagBox,
     SameTest -> MatchQ,
-    TestID   -> "Images-Attachment-Missing-Key-Streaming@@Tests/FormattingImages.wlt:333,1-343,2"
+    TestID   -> "Images-Attachment-Missing-Key-Streaming"
 ]
 
 (* Other schemes are not looked up as attachments, so a missing key is treated like a missing file: *)
@@ -347,7 +347,7 @@ VerificationTest[
     imgFormat[ "![alt](dynamic://content-zzz99)" ],
     { imgCell[ _? imgNotFoundQ, "alt", "![alt](dynamic://content-zzz99)" ] },
     SameTest -> MatchQ,
-    TestID   -> "Images-Attachment-Missing-Key-Other-Scheme@@Tests/FormattingImages.wlt:346,1-351,2"
+    TestID   -> "Images-Attachment-Missing-Key-Other-Scheme"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -362,7 +362,7 @@ VerificationTest[
     ],
     { imgCell[ "CACHED", "alt", imgKeyMD[ "alt" ] ] },
     SameTest -> MatchQ,
-    TestID   -> "Images-Attachment-Uses-Box-Cache@@Tests/FormattingImages.wlt:359,1-366,2"
+    TestID   -> "Images-Attachment-Uses-Box-Cache"
 ]
 
 VerificationTest[
@@ -372,7 +372,7 @@ VerificationTest[
     ],
     <| Hash[ { 1, 2, 3 } ] -> $imgList |>,
     SameTest -> MatchQ,
-    TestID   -> "Images-Attachment-Fills-Box-Cache@@Tests/FormattingImages.wlt:368,1-376,2"
+    TestID   -> "Images-Attachment-Fills-Box-Cache"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -394,7 +394,7 @@ VerificationTest[
         { imgCell[ $imgList, "[x]", imgKeyMD[ "[x]" ] ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-Alt-With-Brackets@@Tests/FormattingImages.wlt:387,1-398,2"
+    TestID   -> "Images-Alt-With-Brackets"
 ]
 
 (* The tooltip shows the alt text as a string box, so quotes are escaped there, while the serialized markdown keeps
@@ -411,7 +411,7 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-Alt-With-Quotes@@Tests/FormattingImages.wlt:402,1-415,2"
+    TestID   -> "Images-Alt-With-Quotes"
 ]
 
 VerificationTest[
@@ -430,7 +430,7 @@ VerificationTest[
         imgKeyMD[ "\[Pi] \[TildeTilde] 3.14 \[LongDash] \:0433\:0440\:0430\:0444\:0438\:043a\:0430" ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-Alt-Unicode@@Tests/FormattingImages.wlt:417,1-434,2"
+    TestID   -> "Images-Alt-Unicode"
 ]
 
 (* Markdown escapes in the alt text are removed, in both the tooltip and the serialized markdown: *)
@@ -438,7 +438,7 @@ VerificationTest[
     NormalizeTextData @ imgFormat[ "Some \\* text ![a\\_b](attachment://content-abc12)" ],
     { "Some * text ", imgCell[ $imgList, "a_b", imgKeyMD[ "a_b" ] ] },
     SameTest -> MatchQ,
-    TestID   -> "Images-Alt-Markdown-Escapes@@Tests/FormattingImages.wlt:437,1-442,2"
+    TestID   -> "Images-Alt-Markdown-Escapes"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -450,14 +450,14 @@ VerificationTest[
     NormalizeTextData @ imgFormat[ "Here is ![alt](attachment://content-abc12) inline." ],
     { "Here is ", imgCell[ $imgList, "alt", imgKeyMD[ "alt" ] ], " inline." },
     SameTest -> MatchQ,
-    TestID   -> "Images-Inline-In-Sentence@@Tests/FormattingImages.wlt:449,1-454,2"
+    TestID   -> "Images-Inline-In-Sentence"
 ]
 
 VerificationTest[
     NormalizeTextData @ imgFormat[ "![a](attachment://content-abc12) ![b](attachment://content-abc12)" ],
     { imgCell[ $imgList, "a", imgKeyMD[ "a" ] ], " ", imgCell[ $imgList, "b", imgKeyMD[ "b" ] ] },
     SameTest -> MatchQ,
-    TestID   -> "Images-Two-On-One-Line@@Tests/FormattingImages.wlt:456,1-461,2"
+    TestID   -> "Images-Two-On-One-Line"
 ]
 
 (* An image on its own line between paragraphs is separated from them by single line breaks (the pane adds vertical
@@ -474,7 +474,7 @@ VerificationTest[
         { "Before\n", imgCell[ $imgList, "a", imgKeyMD[ "a" ] ], "\nAfter" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-Own-Line-Between-Paragraphs@@Tests/FormattingImages.wlt:465,1-478,2"
+    TestID   -> "Images-Own-Line-Between-Paragraphs"
 ]
 
 (* The serialized image is on its own line. Any whitespace is allowed around it, since the blank lines are currently
@@ -498,7 +498,7 @@ VerificationTest[
         ]
     ],
     SameTest -> MatchQ,
-    TestID   -> "Images-Own-Line-Round-Trip@@Tests/FormattingImages.wlt:482,1-502,2"
+    TestID   -> "Images-Own-Line-Round-Trip"
 ]
 
 (* Images next to other blocks: *)
@@ -529,14 +529,14 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-Next-To-Blocks@@Tests/FormattingImages.wlt:505,1-533,2"
+    TestID   -> "Images-Next-To-Blocks"
 ]
 
 VerificationTest[
     NormalizeTextData @ imgFormat[ "```wl\n1+1\n```\n![a](attachment://content-abc12)" ],
     { Cell[ _, "ChatCodeBlock", ___ ], "\n", imgCell[ $imgList, "a", imgKeyMD[ "a" ] ] },
     SameTest -> MatchQ,
-    TestID   -> "Images-After-Code-Block@@Tests/FormattingImages.wlt:535,1-540,2"
+    TestID   -> "Images-After-Code-Block"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -554,7 +554,7 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-In-List-Item@@Tests/FormattingImages.wlt:548,1-558,2"
+    TestID   -> "Images-In-List-Item"
 ]
 
 VerificationTest[
@@ -568,7 +568,7 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-In-List-Subitem@@Tests/FormattingImages.wlt:560,1-572,2"
+    TestID   -> "Images-In-List-Subitem"
 ]
 
 VerificationTest[
@@ -588,7 +588,7 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-In-Heading@@Tests/FormattingImages.wlt:574,1-592,2"
+    TestID   -> "Images-In-Heading"
 ]
 
 (* The image is the first entry of a two-column table row (the table structure itself is tested in
@@ -603,14 +603,14 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-In-Table-Cell@@Tests/FormattingImages.wlt:596,1-607,2"
+    TestID   -> "Images-In-Table-Cell"
 ]
 
 VerificationTest[
     imgFormat[ "> ![x](attachment://content-abc12)" ],
     { Cell[ _? (! FreeQ[ #, imgBoxes[ $imgList, "x", imgKeyMD[ "x" ] ] ] &), "BlockQuote", ___ ] },
     SameTest -> MatchQ,
-    TestID   -> "Images-In-Block-Quote@@Tests/FormattingImages.wlt:609,1-614,2"
+    TestID   -> "Images-In-Block-Quote"
 ]
 
 (* Numbered list items are plain text, so the image is inline after the number: *)
@@ -618,7 +618,7 @@ VerificationTest[
     NormalizeTextData @ imgFormat[ "1. ![a](attachment://content-abc12)\n2. two" ],
     { "1. ", imgCell[ $imgList, "a", imgKeyMD[ "a" ] ], "\n2. two" },
     SameTest -> MatchQ,
-    TestID   -> "Images-In-Numbered-List@@Tests/FormattingImages.wlt:617,1-622,2"
+    TestID   -> "Images-In-Numbered-List"
 ]
 
 (* Inside list items the image rule comes before the hyperlink rule, so an image next to a link in the same item is
@@ -638,7 +638,7 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-In-List-Item-With-Link@@Tests/FormattingImages.wlt:626,1-642,2"
+    TestID   -> "Images-In-List-Item-With-Link"
 ]
 
 (* Image syntax inside inline code is code, not an image: *)
@@ -658,7 +658,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-In-Inline-Code@@Tests/FormattingImages.wlt:645,1-662,2"
+    TestID   -> "Images-In-Inline-Code"
 ]
 
 (* Images inside these constructs serialize back to the markdown image in place: *)
@@ -679,7 +679,7 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-Inside-Constructs-Round-Trip@@Tests/FormattingImages.wlt:665,1-683,2"
+    TestID   -> "Images-Inside-Constructs-Round-Trip"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -701,7 +701,7 @@ VerificationTest[
         { "Look ![alt]" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-Incomplete-Syntax@@Tests/FormattingImages.wlt:690,1-705,2"
+    TestID   -> "Images-Incomplete-Syntax"
 ]
 
 (* The same for an inline URI that is not closed yet, even when its key is known: *)
@@ -717,7 +717,7 @@ VerificationTest[
         { "See <!attachment://content-abc12!" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-Incomplete-Inline-URI@@Tests/FormattingImages.wlt:708,1-721,2"
+    TestID   -> "Images-Incomplete-Inline-URI"
 ]
 
 (* An image that is not complete yet inside a list item or heading also stays as text while streaming: *)
@@ -731,7 +731,7 @@ VerificationTest[
         { Cell[ BoxData @ PaneBox[ StyleBox[ "\"Title ![alt](att\"", "Section", ___ ], ___ ], "InlineSection", ___ ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-Incomplete-Syntax-In-Constructs@@Tests/FormattingImages.wlt:724,1-735,2"
+    TestID   -> "Images-Incomplete-Syntax-In-Constructs"
 ]
 
 (* A complete image is shown while a later one is still incomplete: *)
@@ -742,7 +742,7 @@ VerificationTest[
     ],
     { imgCell[ $imgList, "a", imgKeyMD[ "a" ] ], "\nMore ![b](attach" },
     SameTest -> MatchQ,
-    TestID   -> "Images-Streaming-Complete-Then-Incomplete@@Tests/FormattingImages.wlt:738,1-746,2"
+    TestID   -> "Images-Streaming-Complete-Then-Incomplete"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -761,7 +761,7 @@ VerificationTest[
         { imgCell[ _? imgRasterQ, "small", "![small](" <> $imgSmallFile <> ")" | "![small](file://" <> $imgSmallFile <> ")" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-Local-File@@Tests/FormattingImages.wlt:757,1-765,2"
+    TestID   -> "Images-Local-File"
 ]
 
 VerificationTest[
@@ -774,14 +774,14 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-Local-File-Attachment-Scheme@@Tests/FormattingImages.wlt:767,1-778,2"
+    TestID   -> "Images-Local-File-Attachment-Scheme"
 ]
 
 VerificationTest[
     imgFormat[ "![small](" <> $imgSmallFile <> ")", "Streaming" ],
     { imgCell[ _? imgRasterQ, "small", "![small](" <> $imgSmallFile <> ")" ] },
     SameTest -> MatchQ,
-    TestID   -> "Images-Local-File-Streaming@@Tests/FormattingImages.wlt:780,1-785,2"
+    TestID   -> "Images-Local-File-Streaming"
 ]
 
 (* Surrounding whitespace in the alt text is trimmed: *)
@@ -789,7 +789,7 @@ VerificationTest[
     imgFormat[ "![  spaced alt  ](" <> $imgSmallFile <> ")" ],
     { imgCell[ _? imgRasterQ, "spaced alt", "![spaced alt](" <> $imgSmallFile <> ")" ] },
     SameTest -> MatchQ,
-    TestID   -> "Images-Local-File-Alt-Trimmed@@Tests/FormattingImages.wlt:788,1-793,2"
+    TestID   -> "Images-Local-File-Alt-Trimmed"
 ]
 
 (* Without alt text there is no tooltip (the serialized form is not checked here, since it is currently wrong for
@@ -798,14 +798,14 @@ VerificationTest[
     imgFormat[ "![](" <> $imgSmallFile <> ")" ],
     { Cell[ BoxData @ imgPane @ TagBox[ _? imgRasterQ, "MarkdownImage", ___ ], ___ ] },
     SameTest -> MatchQ,
-    TestID   -> "Images-Local-File-Empty-Alt@@Tests/FormattingImages.wlt:797,1-802,2"
+    TestID   -> "Images-Local-File-Empty-Alt"
 ]
 
 VerificationTest[
     FreeQ[ imgFormat[ "![](" <> $imgSmallFile <> ")" ], _TooltipBox ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "Images-Local-File-Empty-Alt-No-Tooltip@@Tests/FormattingImages.wlt:804,1-809,2"
+    TestID   -> "Images-Local-File-Empty-Alt-No-Tooltip"
 ]
 
 VerificationTest[
@@ -820,7 +820,7 @@ VerificationTest[
         "![small](" <> $imgSmallFile <> ")" | "![small](file://" <> $imgSmallFile <> ")"
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-Local-File-Round-Trip@@Tests/FormattingImages.wlt:811,1-824,2"
+    TestID   -> "Images-Local-File-Round-Trip"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -843,14 +843,14 @@ VerificationTest[
         { imgCell[ _? imgNotFoundQ, "alt", "![alt](nonexistent-image.png)" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-Missing-File@@Tests/FormattingImages.wlt:832,1-847,2"
+    TestID   -> "Images-Missing-File"
 ]
 
 VerificationTest[
     imgFormat[ "![alt](" <> $imgMissingFile <> ")", "Streaming" ],
     { imgCell[ _? imgNotFoundQ, "alt", "![alt](" <> $imgMissingFile <> ")" ] },
     SameTest -> MatchQ,
-    TestID   -> "Images-Missing-File-Streaming@@Tests/FormattingImages.wlt:849,1-854,2"
+    TestID   -> "Images-Missing-File-Streaming"
 ]
 
 VerificationTest[
@@ -860,14 +860,14 @@ VerificationTest[
     },
     { "![alt](" <> $imgMissingFile <> ")", "See ![alt](nonexistent-image.png) here" },
     SameTest -> MatchQ,
-    TestID   -> "Images-Missing-File-Round-Trip@@Tests/FormattingImages.wlt:856,1-864,2"
+    TestID   -> "Images-Missing-File-Round-Trip"
 ]
 
 VerificationTest[
     imgFormat[ "![](" <> $imgMissingFile <> ")" ],
     { Cell[ BoxData @ imgPane @ TagBox[ TemplateBox[ { }, "ImageNotFound" ], "MarkdownImage", ___ ], ___ ] },
     SameTest -> MatchQ,
-    TestID   -> "Images-Missing-File-Empty-Alt@@Tests/FormattingImages.wlt:866,1-871,2"
+    TestID   -> "Images-Missing-File-Empty-Alt"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -890,7 +890,7 @@ VerificationTest[
         { { 800, 10 }, $imgNaturalSize }
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-Resize-Small-Unchanged@@Tests/FormattingImages.wlt:879,1-894,2"
+    TestID   -> "Images-Resize-Small-Unchanged"
 ]
 
 (* Larger images are downsampled to fit in 800 pixels and shown at half that size (so an 801 pixel wide image is shown
@@ -905,7 +905,7 @@ VerificationTest[
         { { 800, 10 }, imgShownAt @ { 400, 5 } }
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-Resize-Large@@Tests/FormattingImages.wlt:898,1-909,2"
+    TestID   -> "Images-Resize-Large"
 ]
 
 (* While streaming, images are downsampled to fit in $maxDynamicImageSize (200, a quarter of $maxImageSize) pixels,
@@ -914,7 +914,7 @@ VerificationTest[
     { imgDims @ #, imgSize @ # } & @ imgFormat[ "![a](" <> $imgLargeFile <> ")", "Streaming" ],
     { { 200, 180 }, imgShownAt @ { 400, 360 } },
     SameTest -> MatchQ,
-    TestID   -> "Images-Resize-Large-Streaming@@Tests/FormattingImages.wlt:913,1-918,2"
+    TestID   -> "Images-Resize-Large-Streaming"
 ]
 
 (* Only the streaming resolution is checked for medium sized images, since the size they are shown at while streaming
@@ -923,7 +923,7 @@ VerificationTest[
     imgDims @ imgFormat[ "![a](" <> $imgMediumFile <> ")", "Streaming" ],
     { w_, h_ } /; Max[ w, h ] <= 200,
     SameTest -> MatchQ,
-    TestID   -> "Images-Resize-Medium-Streaming-Resolution@@Tests/FormattingImages.wlt:922,1-927,2"
+    TestID   -> "Images-Resize-Medium-Streaming-Resolution"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -940,7 +940,7 @@ VerificationTest[
     },
     ConstantArray[ { imgCell[ $imgList, "alt", imgKeyMD[ "alt" ] ] }, 4 ],
     SameTest -> MatchQ,
-    TestID   -> "Images-Code-Fence-Image@@Tests/FormattingImages.wlt:934,1-944,2"
+    TestID   -> "Images-Code-Fence-Image"
 ]
 
 (* Also while streaming, including a fence that is not closed yet: *)
@@ -951,7 +951,7 @@ VerificationTest[
     },
     ConstantArray[ { imgCell[ $imgList, "alt", imgKeyMD[ "alt" ] ] }, 2 ],
     SameTest -> MatchQ,
-    TestID   -> "Images-Code-Fence-Image-Streaming@@Tests/FormattingImages.wlt:947,1-955,2"
+    TestID   -> "Images-Code-Fence-Image-Streaming"
 ]
 
 VerificationTest[
@@ -964,7 +964,7 @@ VerificationTest[
         { imgCell[ _? imgRasterQ, "alt", "![alt](" <> $imgSmallFile <> ")" ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-Code-Fence-Image-Variants@@Tests/FormattingImages.wlt:957,1-968,2"
+    TestID   -> "Images-Code-Fence-Image-Variants"
 ]
 
 (* It serializes as the image rather than as a code block: *)
@@ -972,7 +972,7 @@ VerificationTest[
     imgRoundTrip[ "```\n![alt](attachment://content-abc12)\n```" ],
     imgKeyMD[ "alt" ],
     SameTest -> MatchQ,
-    TestID   -> "Images-Code-Fence-Image-Round-Trip@@Tests/FormattingImages.wlt:971,1-976,2"
+    TestID   -> "Images-Code-Fence-Image-Round-Trip"
 ]
 
 (* Code with other content around an image is an ordinary code block: *)
@@ -988,7 +988,7 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-Code-Fence-Not-Only-Image@@Tests/FormattingImages.wlt:979,1-992,2"
+    TestID   -> "Images-Code-Fence-Not-Only-Image"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1014,7 +1014,7 @@ VerificationTest[
         { "See ", imgCell[ $imgList, None, uri_ ], " here" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-Inline-URI@@Tests/FormattingImages.wlt:1000,1-1018,2"
+    TestID   -> "Images-Inline-URI"
 ]
 
 VerificationTest[
@@ -1024,7 +1024,7 @@ VerificationTest[
     ],
     { uri_String, rt_String } /; rt === "See " <> uri <> " here",
     SameTest -> MatchQ,
-    TestID   -> "Images-Inline-URI-Round-Trip@@Tests/FormattingImages.wlt:1020,1-1028,2"
+    TestID   -> "Images-Inline-URI-Round-Trip"
 ]
 
 (* Any scheme of up to 20 letters is accepted: *)
@@ -1047,7 +1047,7 @@ VerificationTest[
         { imgCell[ $imgList, None, uri_ ], imgCell[ $imgList, None, uri_ ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-Inline-URI-Schemes@@Tests/FormattingImages.wlt:1031,1-1051,2"
+    TestID   -> "Images-Inline-URI-Schemes"
 ]
 
 (* The key can have at most five characters after "content-" (the length of keys made by MakeExpressionURI), otherwise
@@ -1063,7 +1063,7 @@ VerificationTest[
         { "See <!attachment://content-abc12x!> here" }
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-Inline-URI-Key-Length@@Tests/FormattingImages.wlt:1056,1-1067,2"
+    TestID   -> "Images-Inline-URI-Key-Length"
 ]
 
 (* Inline URIs inside list items and headings: *)
@@ -1093,7 +1093,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-Inline-URI-In-List-And-Heading@@Tests/FormattingImages.wlt:1070,1-1097,2"
+    TestID   -> "Images-Inline-URI-In-List-And-Heading"
 ]
 
 (* Some malformed variants that models write are corrected to the inline URI syntax before formatting, and the
@@ -1116,7 +1116,7 @@ VerificationTest[
         MatchQ[ c, { "See ", imgCell[ $imgList, "Data", imgURIMD @ uri ], " here" } ]
     ],
     SameTest -> MatchQ,
-    TestID   -> "Images-Inline-URI-Auto-Corrected@@Tests/FormattingImages.wlt:1101,1-1120,2"
+    TestID   -> "Images-Inline-URI-Auto-Corrected"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1136,7 +1136,7 @@ VerificationTest[
         " now"
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-Expression-Link@@Tests/FormattingImages.wlt:1128,1-1140,2"
+    TestID   -> "Images-Expression-Link"
 ]
 
 VerificationTest[
@@ -1153,7 +1153,7 @@ VerificationTest[
     ],
     { 1, 2, 3 },
     SameTest -> MatchQ,
-    TestID   -> "Images-Expression-Link-Data@@Tests/FormattingImages.wlt:1142,1-1157,2"
+    TestID   -> "Images-Expression-Link-Data"
 ]
 
 (* While streaming, the link is only styled as a hyperlink: *)
@@ -1164,7 +1164,7 @@ VerificationTest[
     ],
     { "Click ", StyleBox[ "this", "Hyperlink" ], " now" },
     SameTest -> MatchQ,
-    TestID   -> "Images-Expression-Link-Streaming@@Tests/FormattingImages.wlt:1160,1-1168,2"
+    TestID   -> "Images-Expression-Link-Streaming"
 ]
 
 (* Any scheme, or a bare key, makes an expression link, and they work in list items: *)
@@ -1194,7 +1194,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-Expression-Link-Variants@@Tests/FormattingImages.wlt:1171,1-1198,2"
+    TestID   -> "Images-Expression-Link-Variants"
 ]
 
 (* A URI that is not shaped like an expression URI is an ordinary hyperlink: *)
@@ -1211,7 +1211,7 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-Expression-Link-Not-A-Key@@Tests/FormattingImages.wlt:1201,1-1215,2"
+    TestID   -> "Images-Expression-Link-Not-A-Key"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1225,7 +1225,7 @@ VerificationTest[
     ],
     { $imgList, { $imgList } },
     SameTest -> MatchQ,
-    TestID   -> "Images-CachedBoxes@@Tests/FormattingImages.wlt:1222,1-1229,2"
+    TestID   -> "Images-CachedBoxes"
 ]
 
 VerificationTest[
@@ -1234,7 +1234,7 @@ VerificationTest[
     ],
     "CACHED",
     SameTest -> MatchQ,
-    TestID   -> "Images-CachedBoxes-Hit@@Tests/FormattingImages.wlt:1231,1-1238,2"
+    TestID   -> "Images-CachedBoxes-Hit"
 ]
 
 (* Dynamic content is never cached, so that each use gets its own dynamic identity (Manipulate is checked in
@@ -1249,7 +1249,7 @@ VerificationTest[
     ],
     { _DynamicBox, _DynamicModuleBox, <| |> },
     SameTest -> MatchQ,
-    TestID   -> "Images-CachedBoxes-Dynamic-Not-Cached@@Tests/FormattingImages.wlt:1242,1-1253,2"
+    TestID   -> "Images-CachedBoxes-Dynamic-Not-Cached"
 ]
 
 VerificationTest[
@@ -1257,7 +1257,7 @@ VerificationTest[
     _Failure,
     { CachedBoxes::InvalidArguments },
     SameTest -> MatchQ,
-    TestID   -> "Images-CachedBoxes-Invalid-Arguments@@Tests/FormattingImages.wlt:1255,1-1261,2"
+    TestID   -> "Images-CachedBoxes-Invalid-Arguments"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1282,7 +1282,7 @@ VerificationTest[
     ],
     { TagBox[ _DynamicModuleBox, "DynamicEmbeddedHTMLBoxes" ], 1, $imgList },
     SameTest -> MatchQ,
-    TestID   -> "Images-Cloud-Raster-Boxes@@Tests/FormattingImages.wlt:1270,1-1286,2"
+    TestID   -> "Images-Cloud-Raster-Boxes"
 ]
 
 (* Formatted images keep their serialization data in the cloud: *)
@@ -1302,7 +1302,7 @@ VerificationTest[
         imgKeyMD[ "pic", "content-img01" ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-Cloud-Formatted-Image@@Tests/FormattingImages.wlt:1289,1-1306,2"
+    TestID   -> "Images-Cloud-Formatted-Image"
 ]
 
 (* The queued boxes are given as base64 encoded data once, and DisplayBase64Boxes turns that data back into boxes: *)
@@ -1324,7 +1324,7 @@ VerificationTest[
     ],
     { True, RawBoxes @ RowBox @ { "imgTestBoxes1" }, <| |>, True, _Missing },
     SameTest -> MatchQ,
-    TestID   -> "Images-Cloud-Base64-Boxes@@Tests/FormattingImages.wlt:1309,1-1328,2"
+    TestID   -> "Images-Cloud-Base64-Boxes"
 ]
 
 (* Without data, or while streaming, a progress indicator is shown instead: *)
@@ -1335,7 +1335,7 @@ VerificationTest[
     },
     { RawBoxes[ p_PanelBox ], RawBoxes[ p_PanelBox ] } /; ! FreeQ[ p, ProgressIndicator ],
     SameTest -> MatchQ,
-    TestID   -> "Images-Cloud-Base64-Waiting@@Tests/FormattingImages.wlt:1331,1-1339,2"
+    TestID   -> "Images-Cloud-Base64-Waiting"
 ]
 
 (* In the cloud, the decoded boxes are rasterized and shown as an embedded HTML image: *)
@@ -1365,7 +1365,7 @@ VerificationTest[
         ]
     ],
     SameTest -> MatchQ,
-    TestID   -> "Images-Cloud-Embedded-HTML@@Tests/FormattingImages.wlt:1342,1-1369,2"
+    TestID   -> "Images-Cloud-Embedded-HTML"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1392,7 +1392,7 @@ VerificationTest[
         { UpTo[ 400 ], UpTo[ 360 ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-Private-Attachment-Image@@Tests/FormattingImages.wlt:1380,1-1396,2"
+    TestID   -> "Images-Private-Attachment-Image"
 ]
 
 (* Other expressions are shown unevaluated in a Wolfram Language code block, and in an active code cell while
@@ -1434,7 +1434,7 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "Images-Private-Attachment-Expression@@Tests/FormattingImages.wlt:1400,1-1438,2"
+    TestID   -> "Images-Private-Attachment-Expression"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1444,7 +1444,7 @@ VerificationTest[
     DeleteDirectory[ $imgDir, DeleteContents -> True ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "Images-Cleanup@@Tests/FormattingImages.wlt:1443,1-1448,2"
+    TestID   -> "Images-Cleanup"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

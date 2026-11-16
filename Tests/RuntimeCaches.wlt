@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/RuntimeCaches.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/RuntimeCaches.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -28,7 +28,7 @@ VerificationTest[
     Wolfram`Chatbook`Common`$mxFlag,
     False,
     SameTest -> SameQ,
-    TestID   -> "MXFlag-FalseAtRuntime-GH#1697@@Tests/RuntimeCaches.wlt:27,1-32,2"
+    TestID   -> "MXFlag-FalseAtRuntime-GH#1697"
 ]
 
 (* The flag must be read when used, or the value set while loading the package gets saved as True in the MX file: *)
@@ -36,7 +36,7 @@ VerificationTest[
     Block[ { Wolfram`ChatbookInternal`$BuildingMX = True }, Wolfram`Chatbook`Common`$mxFlag ],
     True,
     SameTest -> SameQ,
-    TestID   -> "MXFlag-TrueWhileBuildingMX-GH#1697@@Tests/RuntimeCaches.wlt:35,1-40,2"
+    TestID   -> "MXFlag-TrueWhileBuildingMX-GH#1697"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -50,7 +50,7 @@ VerificationTest[
     OwnValues @ Wolfram`Chatbook`Common`Private`$templateBoxDisplayFunctions,
     { _ :> _Association? AssociationQ },
     SameTest -> MatchQ,
-    TestID   -> "TemplateBoxDisplayFunctions-Cached-GH#1697@@Tests/RuntimeCaches.wlt:48,1-54,2"
+    TestID   -> "TemplateBoxDisplayFunctions-Cached-GH#1697"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

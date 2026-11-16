@@ -36,8 +36,7 @@ RawBoxes @ ToBoxes @ DynamicModule[{Typeset`t = 0.0},
       EdgeForm[None],
       
       {
-        LightDarkSwitched[RGBColor[0.7490196078431373,0.7843137254901961,0.8],
-          RGBColor[0.49411764705882355,0.5215686274509804,0.5333333333333333]],
+        color @ "Blue_BFC8CC_7E8588",
         Rectangle[{19.8015, 16.1965}, {21.5525, 17.947499999999998}]
       },
       {Opacity[
@@ -66,8 +65,7 @@ RawBoxes @ ToBoxes @ DynamicModule[{Typeset`t = 0.0},
       },
 
       {
-        LightDarkSwitched[RGBColor[0.7490196078431373,0.7843137254901961,0.8],
-          RGBColor[0.49411764705882355,0.5215686274509804,0.5333333333333333]],
+        color @ "Blue_BFC8CC_7E8588",
         Rectangle[{24.135113227868022, 16.182113227868022}, {25.914886772131975, 17.961886772131976}]
       },
       {Opacity[
@@ -95,8 +93,7 @@ RawBoxes @ ToBoxes @ DynamicModule[{Typeset`t = 0.0},
       Rectangle[{24.135113227868022, 16.182113227868022}, {25.914886772131975, 17.961886772131976}]},
 
       {
-        LightDarkSwitched[RGBColor[0.7490196078431373,0.7843137254901961,0.8],
-          RGBColor[0.49411764705882355,0.5215686274509804,0.5333333333333333]],
+        color @ "Blue_BFC8CC_7E8588",
         Rectangle[{28.497500000000002, 16.1965}, {30.2485, 17.947499999999998}]
       },
       {Opacity[

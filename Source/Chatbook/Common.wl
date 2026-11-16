@@ -1313,7 +1313,7 @@ inlineTemplateBoxes // endDefinition;
 (*$templateBoxDisplayFunctions*)
 $templateBoxDisplayFunctions := Enclose[
     Module[ { file, functions },
-        file = ConfirmBy[ $thisPaclet[ "AssetLocation", "DisplayFunctionsDark" ], FileExistsQ, "File" ];
+        file = ConfirmBy[ $thisPaclet[ "AssetLocation", "DisplayFunctions" ], FileExistsQ, "File" ];
         functions = ConfirmBy[ Developer`ReadWXFFile @ file, AssociationQ, "Functions" ];
         If[ TrueQ @ $mxFlag, functions, $templateBoxDisplayFunctions = functions ]
     ],

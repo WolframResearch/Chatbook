@@ -302,7 +302,7 @@ tryMakeChatEnabledNotebook[
 					"",
 					tr[ "UITryEnableChatDialogConfirm" ]
 				}, BaseStyle -> {"DialogTextBasic", FontSize -> 15, LineIndent -> 0}, Spacings -> {0, 0}],
-				Background -> color @ "NA_NotebookBackground"
+				Background -> color @ "Gray100_10"
 			],
 			_?BooleanQ
 		]
@@ -332,12 +332,12 @@ makeEnableAIChatFeaturesLabel[ enabled_? BooleanQ ] :=
 			Style[
 				tr @ "UIEnableChatFeatures",
 				FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
-					color @ "ChatMenuCheckboxLabelFontHover",
-					color @ "ChatMenuCheckboxLabelFont"
+					color @ "Gray54_71",
+					color @ "Gray0_100"
 				])
 			]
 			,
-			Style[ tr @ "UIEnableChatFeatures", FontColor -> color @ "ChatMenuCheckboxLabelFontDisabled" ]
+			Style[ tr @ "UIEnableChatFeatures", FontColor -> color @ "Gray50_75" ]
 		],
 		! enabled,
 		195
@@ -412,8 +412,8 @@ makeAutomaticResultAnalysisCheckbox[
 				StripOnInput -> True
 			],
 			FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
-				color @ "ChatMenuCheckboxLabelFontHover",
-				color @ "ChatMenuCheckboxLabelFont"
+				color @ "Gray54_71",
+				color @ "Gray0_100"
 			])
 		],
 		True,
@@ -441,8 +441,8 @@ DynamicModule[ { value, mouseover = False },
 							Style[
 								FrontEndResource[ "ChatbookStrings", "UIAutomaticAnalysisLabel" ],
 								FontColor -> (Dynamic[ If[ mouseover, #1, #2 ] ]&[
-									LightDarkSwitched[ RGBColor[ "#2FA7DC" ], RGBColor[ "#87D0F9" ] ], (* should these move to ColorData? *)
-									LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.9613 ] ]
+									color @ "Blue_2FA7DC_87D0F9", (* should these move to ColorData? *)
+									color @ "Gray20_94"
 								])]
 						},
 						BaseStyle -> {
@@ -528,12 +528,12 @@ With[
 				"ChatMenuLabel",
 				If[ MatchQ[ appContainer, _CellObject ],
 					FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
-						LightDarkSwitched[ RGBColor[ "#2FA7DC" ], RGBColor[ "#87D0F9" ] ],
-						LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.9613 ] ]
+						color @ "Blue_2FA7DC_87D0F9",
+						color @ "Gray20_94"
 					]),
 					FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
-						color @ "ChatMenuCheckboxLabelFontHover",
-						color @ "ChatMenuCheckboxLabelFont"
+						color @ "Gray54_71",
+						color @ "Gray0_100"
 					])
 				]
 			];
@@ -601,12 +601,12 @@ With[
 				"ChatMenuLabel",
 				If[ MatchQ[ appContainer, _CellObject ],
 					FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
-						LightDarkSwitched[ RGBColor[ "#2FA7DC" ], RGBColor[ "#87D0F9" ] ],
-						LightDarkSwitched[ GrayLevel[ 0.2 ], GrayLevel[ 0.9613 ] ]
+						color @ "Blue_2FA7DC_87D0F9",
+						color @ "Gray20_94"
 					]),
 					FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
-						color @ "ChatMenuCheckboxLabelFontHover",
-						color @ "ChatMenuCheckboxLabelFont"
+						color @ "Gray54_71",
+						color @ "Gray0_100"
 					])
 				]
 			];
@@ -819,24 +819,24 @@ errorMessageFrame // beginDefinition;
 
 errorMessageFrame[ "Fatal", size_, content_ ] :=
 	Framed[
-		Style[ content, FontColor -> color @ "ErrorMessageFatalFont" ],
+		Style[ content, FontColor -> color @ "Gray20_94" ],
 		$commonErrorFrameOptions, ImageSize -> size,
-		Background -> color @ "ErrorMessageFatalBackground",
-		FrameStyle -> Directive[ AbsoluteThickness[ 2 ], color @ "ErrorMessageFatalFrame" ] ];
+		Background -> LightDarkSwitched[ RGBColor[ "#FFF3F1" ], RGBColor[ "#471F18" ] ],
+		FrameStyle -> Directive[ AbsoluteThickness[ 2 ], LightDarkSwitched[ RGBColor[ "#FFC4BA" ], RGBColor[ "#843629" ] ] ] ];
 
 errorMessageFrame[ "NonFatal", size_, content_ ] :=
 	Framed[
-		Style[ content, FontColor -> color @ "ErrorMessageNonFatalFont" ],
+		Style[ content, FontColor -> color @ "Gray20_94" ],
 		$commonErrorFrameOptions, ImageSize -> size,
-		Background -> color @ "ErrorMessageNonFatalBackground",
-		FrameStyle -> Directive[ AbsoluteThickness[ 2 ], color @ "ErrorMessageNonFatalFrame" ] ];
+		Background -> LightDarkSwitched[ RGBColor[ "#FFFAF2" ], RGBColor[ "#453112" ] ],
+		FrameStyle -> Directive[ AbsoluteThickness[ 2 ], LightDarkSwitched[ RGBColor[ "#FFD8AB" ], RGBColor[ "#8C611C" ] ] ] ];
 
 errorMessageFrame[ "Blocked", size_, content_ ] :=
 	Framed[
-		Style[ content, FontColor -> color @ "ErrorMessageBlockedFont" ],
+		Style[ content, FontColor -> color @ "Gray20_94" ],
 		$commonErrorFrameOptions, ImageSize -> size,
-		Background -> color @ "ErrorMessageBlockedBackground",
-		FrameStyle -> Directive[ AbsoluteThickness[ 2 ], color @ "ErrorMessageBlockedFrame" ] ];
+		Background -> LightDarkSwitched[ RGBColor[ "#F3FBFF" ], RGBColor[ "#1E3744" ] ],
+		FrameStyle -> Directive[ AbsoluteThickness[ 2 ], LightDarkSwitched[ RGBColor[ "#AADAF4" ], RGBColor[ "#3F728C" ] ] ] ];
 
 errorMessageFrame // endDefinition;
 
@@ -867,58 +867,58 @@ errorMessageLabeledButtonAppearance // beginDefinition;
 errorMessageLabeledButtonAppearance[ "Fatal", text_ ] :=
 mouseDown[
 	Framed[
-		Style[ text, FontColor -> color @ "ErrorMessageFatalFont" ],
+		Style[ text, FontColor -> color @ "Gray20_94" ],
 		$commonLabeledButtonOptions,
-		Background -> color @ "ErrorMessageFatalLabelButtonBackground",
-		FrameStyle -> color @ "ErrorMessageFatalLabelButtonBackground" ],
+		Background -> color @ "Red_FF8A7A_A74436",
+		FrameStyle -> color @ "Red_FF8A7A_A74436" ],
 	Framed[
-		Style[ text, FontColor -> color @ "ErrorMessageFatalFont" ],
+		Style[ text, FontColor -> color @ "Gray20_94" ],
 		$commonLabeledButtonOptions,
-		Background -> color @ "ErrorMessageFatalLabelButtonBackgroundHover",
-		FrameStyle -> color @ "ErrorMessageFatalLabelButtonFrameHover" ],
+		Background -> color @ "Red_FFCAC2_CF5443",
+		FrameStyle -> color @ "Red_FFA597_CF5443" ],
 	Framed[
-		Style[ text, FontColor -> color @ "ErrorMessageFatalFont" ],
+		Style[ text, FontColor -> color @ "Gray20_94" ],
 		$commonLabeledButtonOptions,
-		Background -> color @ "ErrorMessageFatalLabelButtonBackgroundPressed",
-		FrameStyle -> color @ "ErrorMessageFatalLabelButtonBackgroundPressed" ]
+		Background -> color @ "Red_ED6541_A72F1E",
+		FrameStyle -> color @ "Red_ED6541_A72F1E" ]
 ]
 
 errorMessageLabeledButtonAppearance[ "NonFatal", text_ ] :=
 mouseDown[
 	Framed[
-		Style[ text, FontColor -> color @ "ErrorMessageNonFatalFont" ],
+		Style[ text, FontColor -> color @ "Gray20_94" ],
 		$commonLabeledButtonOptions,
-		Background -> color @ "ErrorMessageNonFatalLabelButtonBackground",
-		FrameStyle -> color @ "ErrorMessageNonFatalLabelButtonBackground" ],
+		Background -> color @ "Orange_FAC14D_CD7E16",
+		FrameStyle -> color @ "Orange_FAC14D_CD7E16" ],
 	Framed[
-		Style[ text, FontColor -> color @ "ErrorMessageNonFatalFont" ],
+		Style[ text, FontColor -> color @ "Gray20_94" ],
 		$commonLabeledButtonOptions,
-		Background -> color @ "ErrorMessageNonFatalLabelButtonBackgroundHover",
-		FrameStyle -> color @ "ErrorMessageNonFatalLabelButtonFrameHover" ],
+		Background -> color @ "Orange_FFE2A7_F09215",
+		FrameStyle -> color @ "Orange_FBC24E_F09215" ],
 	Framed[
-		Style[ text, FontColor -> color @ "ErrorMessageNonFatalFont" ],
+		Style[ text, FontColor -> color @ "Gray20_94" ],
 		$commonLabeledButtonOptions,
-		Background -> color @ "ErrorMessageNonFatalLabelButtonBackgroundPressed",
-		FrameStyle -> color @ "ErrorMessageNonFatalLabelButtonBackgroundPressed" ]
+		Background -> color @ "Orange_F09215_B25B02",
+		FrameStyle -> color @ "Orange_F09215_B25B02" ]
 ]
 
 errorMessageLabeledButtonAppearance[ "Blocked", text_ ] :=
 mouseDown[
 	Framed[
-		Style[ text, FontColor -> color @ "ErrorMessageBlockedFont" ],
+		Style[ text, FontColor -> color @ "Gray20_94" ],
 		$commonLabeledButtonOptions,
-		Background -> color @ "ErrorMessageBlockedLabelButtonBackground",
-		FrameStyle -> color @ "ErrorMessageBlockedLabelButtonBackground" ],
+		Background -> color @ "Blue_7DC7EE_3389B9",
+		FrameStyle -> color @ "Blue_7DC7EE_3389B9" ],
 	Framed[
-		Style[ text, FontColor -> color @ "ErrorMessageBlockedFont" ],
+		Style[ text, FontColor -> color @ "Gray20_94" ],
 		$commonLabeledButtonOptions,
-		Background -> color @ "ErrorMessageBlockedLabelButtonBackgroundHover",
-		FrameStyle -> color @ "ErrorMessageBlockedLabelButtonFrameHover" ],
+		Background -> color @ "Blue_C8E9FB_3E9CD1",
+		FrameStyle -> color @ "Blue_A3D5F0_3E9CD1" ],
 	Framed[
-		Style[ text, FontColor -> color @ "ErrorMessageBlockedFont" ],
+		Style[ text, FontColor -> color @ "Gray20_94" ],
 		$commonLabeledButtonOptions,
-		Background -> color @ "ErrorMessageBlockedLabelButtonBackgroundPressed",
-		FrameStyle -> color @ "ErrorMessageBlockedLabelButtonBackgroundPressed" ]
+		Background -> color @ "Blue_3383AC_145F89",
+		FrameStyle -> color @ "Blue_3383AC_145F89" ]
 ]
 
 errorMessageLabeledButtonAppearance // endDefinition;
@@ -953,23 +953,23 @@ errorMessageCloseButtonAppearance // beginDefinition;
 
 errorMessageCloseButtonAppearance[ "NonFatal" ] :=
 mouseDown[
-	chatbookIcon[ "Close", False, color @ "ErrorMessageNonFatalCloseButtonFrame",        color @ "ErrorMessageNonFatalCloseButtonBackground",        color @ "ErrorMessageNonFatalFont"],
-	chatbookIcon[ "Close", False, color @ "ErrorMessageNonFatalCloseButtonFrameHover",   color @ "ErrorMessageNonFatalCloseButtonBackgroundHover",   color @ "ErrorMessageNonFatalFont"],
-	chatbookIcon[ "Close", False, color @ "ErrorMessageNonFatalCloseButtonFramePressed", color @ "ErrorMessageNonFatalCloseButtonBackgroundPressed", color @ "ErrorMessageNonFatalFont"]
+	chatbookIcon[ "Close", False, color @ "Orange_FAC14D_CD7E16",        color @ "Orange_FAC14D_CD7E16",        color @ "Gray20_94"],
+	chatbookIcon[ "Close", False, color @ "Orange_FBC24E_F09215",   color @ "Orange_FFE2A7_F09215",   color @ "Gray20_94"],
+	chatbookIcon[ "Close", False, color @ "Orange_F09215_B25B02", color @ "Orange_F09215_B25B02", color @ "Gray20_94"]
 ]
 
 errorMessageCloseButtonAppearance[ "Fatal" ] :=
 mouseDown[
-	chatbookIcon[ "Close", False, color @ "ErrorMessageFatalCloseButtonFrame",        color @ "ErrorMessageFatalCloseButtonBackground",        color @ "ErrorMessageFatalFont"],
-	chatbookIcon[ "Close", False, color @ "ErrorMessageFatalCloseButtonFrameHover",   color @ "ErrorMessageFatalCloseButtonBackgroundHover",   color @ "ErrorMessageFatalFont"],
-	chatbookIcon[ "Close", False, color @ "ErrorMessageFatalCloseButtonFramePressed", color @ "ErrorMessageFatalCloseButtonBackgroundPressed", color @ "ErrorMessageFatalFont"]
+	chatbookIcon[ "Close", False, color @ "Red_FF8A7A_A74436",        color @ "Red_FF8A7A_A74436",        color @ "Gray20_94"],
+	chatbookIcon[ "Close", False, color @ "Red_FFA597_CF5443",   color @ "Red_FFCAC2_CF5443",   color @ "Gray20_94"],
+	chatbookIcon[ "Close", False, color @ "Red_ED6541_A72F1E", color @ "Red_ED6541_A72F1E", color @ "Gray20_94"]
 ]
 
 errorMessageCloseButtonAppearance[ "Blocked" ] :=
 mouseDown[
-	chatbookIcon[ "Close", False, color @ "ErrorMessageBlockedCloseButtonFrame",        color @ "ErrorMessageBlockedCloseButtonBackground",        color @ "ErrorMessageBlockedFont"],
-	chatbookIcon[ "Close", False, color @ "ErrorMessageBlockedCloseButtonFrameHover",   color @ "ErrorMessageBlockedCloseButtonBackgroundHover",   color @ "ErrorMessageBlockedFont"],
-	chatbookIcon[ "Close", False, color @ "ErrorMessageBlockedCloseButtonFramePressed", color @ "ErrorMessageBlockedCloseButtonBackgroundPressed", color @ "ErrorMessageBlockedFont"]
+	chatbookIcon[ "Close", False, color @ "Blue_7DC7EE_3389B9",        color @ "Blue_7DC7EE_3389B9",        color @ "Gray20_94"],
+	chatbookIcon[ "Close", False, color @ "Blue_C8E9FB_3E9CD1",   color @ "Blue_A3D5F0_3E9CD1",   color @ "Gray20_94"],
+	chatbookIcon[ "Close", False, color @ "Blue_3383AC_145F89", color @ "Blue_3383AC_145F89", color @ "Gray20_94"]
 ]
 
 errorMessageCloseButtonAppearance // endDefinition;
@@ -1000,20 +1000,20 @@ errorMessageLinkAppearance // beginDefinition;
 
 errorMessageLinkAppearance[ "Fatal" , text_ ] :=
 Mouseover[
-	Style[ text, FontColor -> color @ "ErrorMessageFatalFont", $commonErrorLinkOptions ],
-	Style[ text, FontColor -> color @ "ErrorMessageFatalLinkFontHover", $commonErrorLinkOptions ],
+	Style[ text, FontColor -> color @ "Gray20_94", $commonErrorLinkOptions ],
+	Style[ text, FontColor -> LightDarkSwitched[ RGBColor[ "#E15438" ], RGBColor[ "#E36958" ] ], $commonErrorLinkOptions ],
 	BaselinePosition -> Baseline ]
 
 errorMessageLinkAppearance[ "NonFatal", text_ ] :=
 Mouseover[
-	Style[ text, FontColor -> color @ "ErrorMessageNonFatalFont", $commonErrorLinkOptions ],
-	Style[ text, FontColor -> color @ "ErrorMessageNonFatalLinkFontHover", $commonErrorLinkOptions ],
+	Style[ text, FontColor -> color @ "Gray20_94", $commonErrorLinkOptions ],
+	Style[ text, FontColor -> LightDarkSwitched[ RGBColor[ "#CF8B00" ], RGBColor[ "#FBAB41" ] ], $commonErrorLinkOptions ],
 	BaselinePosition -> Baseline ]
 
 errorMessageLinkAppearance[ "Blocked", text_ ] :=
 Mouseover[
-	Style[ text, FontColor -> color @ "ErrorMessageBlockedFont", $commonErrorLinkOptions ],
-	Style[ text, FontColor -> color @ "ErrorMessageBlockedLinkFontHover", $commonErrorLinkOptions ],
+	Style[ text, FontColor -> color @ "Gray20_94", $commonErrorLinkOptions ],
+	Style[ text, FontColor -> LightDarkSwitched[ RGBColor[ "#449DCC" ], RGBColor[ "#58B2E5" ] ], $commonErrorLinkOptions ],
 	BaselinePosition -> Baseline ]
 
 errorMessageLinkAppearance // endDefinition;
@@ -1216,7 +1216,7 @@ Module[ { currentPage, currentPageData, evaluatorName, icon, displayName },
 				{
 					RawBoxes @ StyleBox[
 						RowBox @ { currentPage, "/", Lookup[ allPageData, "PageCount", 1 ] },
-						FontColor  -> LightDarkSwitched[ RGBColor["#333333"], RGBColor["#F5F5F5"] ],
+						FontColor  -> color @ "Gray20_94",
 						FontFamily -> "Roboto",
 						FontSize   -> 8
 					]
@@ -1274,7 +1274,7 @@ Grid[
 				blueHueButtonAppearance[
 					Graphics[
 						{
-							FaceForm @ LightDarkSwitched[ RGBColor["#333333"], RGBColor["#F5F5F5"] ],
+							FaceForm @ color @ "Gray20_94",
 							Polygon @ { { 0, 0 }, { 0, 1 }, { -0.5, 0.5 } }
 						},
 						ImageSize -> 3 ],
@@ -1291,7 +1291,7 @@ Grid[
 				blueHueButtonAppearance[
 					Graphics[
 						{
-							FaceForm @ LightDarkSwitched[ RGBColor["#333333"], RGBColor["#F5F5F5"] ],
+							FaceForm @ color @ "Gray20_94",
 							Polygon @ { { 0, 0 }, { 0, 1 }, { 0.5, 0.5 } }
 						},
 						ImageSize -> 3 ],

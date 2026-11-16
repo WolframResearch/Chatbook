@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/SelectContextCells.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/SelectContextCells.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -45,7 +45,7 @@ VerificationTest[
     timedSelectIndices[ info_ ] := AbsoluteTiming @ selectIndices @ info,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "Definitions@@Tests/SelectContextCells.wlt:24,1-49,2"
+    TestID   -> "Definitions"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -55,42 +55,42 @@ VerificationTest[
     selectIndices @ syntheticCellInfo[ 10, 1 -> "AboveCell" ],
     <| "Before" -> { }, "Selected" -> { }, "After" -> Range[ 1, 10 ] |>,
     SameTest -> MatchQ,
-    TestID   -> "AboveFirstCell@@Tests/SelectContextCells.wlt:54,1-59,2"
+    TestID   -> "AboveFirstCell"
 ]
 
 VerificationTest[
     selectIndices @ syntheticCellInfo[ 10, 4 -> "BelowCell" ],
     <| "Before" -> Range[ 4 ], "Selected" -> { }, "After" -> Range[ 5, 10 ] |>,
     SameTest -> MatchQ,
-    TestID   -> "BelowCell@@Tests/SelectContextCells.wlt:61,1-66,2"
+    TestID   -> "BelowCell"
 ]
 
 VerificationTest[
     selectIndices @ syntheticCellInfo[ 10, 6 -> { 1, 3 } ],
     <| "Before" -> Range[ 5 ], "Selected" -> { 6 }, "After" -> Range[ 7, 10 ] |>,
     SameTest -> MatchQ,
-    TestID   -> "CursorInCell@@Tests/SelectContextCells.wlt:68,1-73,2"
+    TestID   -> "CursorInCell"
 ]
 
 VerificationTest[
     selectIndices @ syntheticCellInfo[ 10, 3 -> "CellBracket", 4 -> "CellBracket", 5 -> "CellBracket" ],
     <| "Before" -> { 1, 2 }, "Selected" -> { 3, 4, 5 }, "After" -> Range[ 6, 10 ] |>,
     SameTest -> MatchQ,
-    TestID   -> "CellBracketRun@@Tests/SelectContextCells.wlt:75,1-80,2"
+    TestID   -> "CellBracketRun"
 ]
 
 VerificationTest[
     selectIndices @ syntheticCellInfo[ 10, 10 -> "CellBracket" ],
     <| "Before" -> Range[ 9 ], "Selected" -> { 10 }, "After" -> { } |>,
     SameTest -> MatchQ,
-    TestID   -> "CellBracketLastCell@@Tests/SelectContextCells.wlt:82,1-87,2"
+    TestID   -> "CellBracketLastCell"
 ]
 
 VerificationTest[
     selectIndices @ syntheticCellInfo[ 10 ],
     <| "Before" -> Range[ 10 ], "Selected" -> { }, "After" -> { } |>,
     SameTest -> MatchQ,
-    TestID   -> "NoCursor@@Tests/SelectContextCells.wlt:89,1-94,2"
+    TestID   -> "NoCursor"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -103,14 +103,14 @@ VerificationTest[
         <| "Before" -> Range[ 1400, 1499 ], "Selected" -> { 1500 }, "After" -> Range[ 1501, 1550 ] |>
     },
     SameTest -> MatchQ,
-    TestID   -> "LargeNotebookCellBracket@@Tests/SelectContextCells.wlt:99,1-107,2"
+    TestID   -> "LargeNotebookCellBracket"
 ]
 
 VerificationTest[
     timedSelectIndices @ syntheticCellInfo[ 3000 ],
     { _Real? (# < 1 &), <| "Before" -> Range[ 2901, 3000 ], "Selected" -> { }, "After" -> { } |> },
     SameTest -> MatchQ,
-    TestID   -> "LargeNotebookNoCursor@@Tests/SelectContextCells.wlt:109,1-114,2"
+    TestID   -> "LargeNotebookNoCursor"
 ]
 
 VerificationTest[
@@ -120,7 +120,7 @@ VerificationTest[
         <| "Before" -> Range[ 1400, 1499 ], "Selected" -> { 1500 }, "After" -> Range[ 1501, 1550 ] |>
     },
     SameTest -> MatchQ,
-    TestID   -> "LargeNotebookCursorInCell@@Tests/SelectContextCells.wlt:116,1-124,2"
+    TestID   -> "LargeNotebookCursorInCell"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

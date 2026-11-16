@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/WriteResult.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/WriteResult.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -42,12 +42,14 @@ VerificationTest[
     |>;
 
     (* Evaluates `eval` without a front end. Notebook writes are collected in $staticWrites, and the front end parses
-       of Wolfram Language code (one per code block, plus any inline code) are counted in $reparseCount: *)
+       of Wolfram Language code (one per code block, plus any inline code) are counted in $reparseCount. The chat's
+       settings are given to the static writes the same way its handlers give them: *)
     withoutFrontEnd // Attributes = { HoldFirst };
     withoutFrontEnd[ eval_ ] := Block[
         {
             Wolfram`Chatbook`Formatting`Private`reparseBoxStructurePacket = ($reparseCount++; #1) &,
             Wolfram`Chatbook`Common`usingFrontEnd = Identity,
+            Wolfram`Chatbook`SendChat`Private`$settings = $formatSettings,
             Wolfram`Chatbook`$ChatHandlerData = <| "ChatNotebookSettings" -> $formatSettings |>,
             NotebookRead  = Null &,
             NotebookWrite = (Internal`StuffBag[ $staticWrites, #2 ]; Null) &,
@@ -130,7 +132,7 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "Definitions@@Tests/WriteResult.wlt:25,1-134,2"
+    TestID   -> "Definitions"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -152,7 +154,7 @@ VerificationTest[
         { "", "lambda = 3, 1", False, False, False, False }
     },
     SameTest -> MatchQ,
-    TestID   -> "StaticCodeBlockCache-Populated-While-Streaming@@Tests/WriteResult.wlt:142,1-156,2"
+    TestID   -> "StaticCodeBlockCache-Populated-While-Streaming"
 ]
 
 VerificationTest[
@@ -179,7 +181,7 @@ VerificationTest[
     ],
     { { 5, 5 }, True, 3, 5, True },
     SameTest -> MatchQ,
-    TestID   -> "StaticCodeBlockCache-Final-Cell-Identical@@Tests/WriteResult.wlt:158,1-183,2"
+    TestID   -> "StaticCodeBlockCache-Final-Cell-Identical"
 ]
 
 VerificationTest[
@@ -196,7 +198,7 @@ VerificationTest[
     ],
     { 5, True },
     SameTest -> MatchQ,
-    TestID   -> "StaticCodeBlockCache-Static-Writes-Identical@@Tests/WriteResult.wlt:185,1-200,2"
+    TestID   -> "StaticCodeBlockCache-Static-Writes-Identical"
 ]
 
 (* The cache is only used for chat output, so other formatting is unaffected: *)
@@ -208,7 +210,7 @@ VerificationTest[
     ],
     <| |>,
     SameTest -> MatchQ,
-    TestID   -> "StaticCodeBlockCache-Unused-Elsewhere@@Tests/WriteResult.wlt:203,1-212,2"
+    TestID   -> "StaticCodeBlockCache-Unused-Elsewhere"
 ]
 
 VerificationTest[
@@ -229,7 +231,7 @@ VerificationTest[
     ],
     { 2, { "ChatCodeBlockTemplate" }, { "NotebookAssistant`Sidebar`ChatCodeBlockTemplate" } },
     SameTest -> MatchQ,
-    TestID   -> "StaticCodeBlockCache-Separate-Chat-Modes@@Tests/WriteResult.wlt:214,1-233,2"
+    TestID   -> "StaticCodeBlockCache-Separate-Chat-Modes"
 ]
 
 (* Streaming formatting gives different code blocks, so it must not use or fill the cache, even when it runs while the
@@ -252,7 +254,36 @@ VerificationTest[
     ],
     { 5, <| |> },
     SameTest -> MatchQ,
-    TestID   -> "StaticCodeBlockCache-Not-Used-While-Streaming@@Tests/WriteResult.wlt:238,1-256,2"
+    TestID   -> "StaticCodeBlockCache-Not-Used-While-Streaming"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Static Writes*)
+
+(* An auto-assist chat's handlers run after its own evaluation has ended, possibly after another chat action has reset
+   $ChatHandlerData. The static writes made while streaming use the chat's own settings: *)
+VerificationTest[
+    withoutFrontEnd @ Block[ { Wolfram`Chatbook`Common`$staticCodeBlockCache = <| |> },
+        Module[ { expected, reset, plain },
+            expected = First @ streamResponse @ $codeBlockResponse;
+            $staticWrites = Internal`Bag[ ];
+            reset = Block[ { $ChatHandlerData = <| |> }, First @ streamResponse @ $codeBlockResponse ];
+            $staticWrites = Internal`Bag[ ];
+            plain = Block[ { Wolfram`Chatbook`SendChat`Private`$settings = <| "AutoFormat" -> False |> },
+                First @ streamResponse @ $codeBlockResponse
+            ];
+            {
+                Length @ expected,
+                reset === expected,
+                Count[ expected, Cell[ _, "ChatCodeBlock", ___ ], Infinity ],
+                Count[ plain, Cell[ _, "ChatCodeBlock", ___ ], Infinity ]
+            }
+        ]
+    ],
+    { 5, True, 5, 0 },
+    SameTest -> MatchQ,
+    TestID   -> "StaticWrites-Reset-Handler-Data-GH#1034"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -272,7 +303,7 @@ VerificationTest[
         |>
     },
     SameTest -> MatchQ,
-    TestID   -> "WriteResult-Normal-Response@@Tests/WriteResult.wlt:261,1-276,2"
+    TestID   -> "WriteResult-Normal-Response"
 ]
 
 (* The body data is not extracted for a successful response until the debug data is inspected: *)
@@ -302,14 +333,14 @@ VerificationTest[
     ],
     { "Reformatted", 0, <| "Body" -> "body", "Processed" -> "Hi", "Data" -> Missing[ "NotAvailable" ] |>, 1 },
     SameTest -> MatchQ,
-    TestID   -> "WriteResult-Normal-Response-Lazy-Body-Data@@Tests/WriteResult.wlt:279,1-306,2"
+    TestID   -> "WriteResult-Normal-Response-Lazy-Body-Data"
 ]
 
 VerificationTest[
     responseResult[ { $taskFinished }, 200 ],
     { { "Error", KeyValuePattern @ { "StatusCode" -> 200, "Error" -> "ServerResponseEmpty" } }, _ },
     SameTest -> MatchQ,
-    TestID   -> "WriteResult-Empty-Response@@Tests/WriteResult.wlt:308,1-313,2"
+    TestID   -> "WriteResult-Empty-Response"
 ]
 
 VerificationTest[
@@ -325,7 +356,7 @@ VerificationTest[
         _
     },
     SameTest -> MatchQ,
-    TestID   -> "WriteResult-Error-JSON@@Tests/WriteResult.wlt:315,1-329,2"
+    TestID   -> "WriteResult-Error-JSON"
 ]
 
 VerificationTest[
@@ -344,7 +375,7 @@ VerificationTest[
         _
     },
     SameTest -> MatchQ,
-    TestID   -> "WriteResult-Error-JSON-Split-Chunks@@Tests/WriteResult.wlt:331,1-348,2"
+    TestID   -> "WriteResult-Error-JSON-Split-Chunks"
 ]
 
 VerificationTest[
@@ -363,7 +394,7 @@ VerificationTest[
         _
     },
     SameTest -> MatchQ,
-    TestID   -> "WriteResult-Error-Event-Stream@@Tests/WriteResult.wlt:350,1-367,2"
+    TestID   -> "WriteResult-Error-Event-Stream"
 ]
 
 VerificationTest[
@@ -386,7 +417,7 @@ VerificationTest[
         KeyValuePattern[ "Processed" -> "" ]
     },
     SameTest -> MatchQ,
-    TestID   -> "WriteResult-Error-HTML@@Tests/WriteResult.wlt:369,1-390,2"
+    TestID   -> "WriteResult-Error-HTML"
 ]
 
 VerificationTest[
@@ -409,7 +440,7 @@ VerificationTest[
         KeyValuePattern[ "Processed" -> "" ]
     },
     SameTest -> MatchQ,
-    TestID   -> "WriteResult-Error-XML@@Tests/WriteResult.wlt:392,1-413,2"
+    TestID   -> "WriteResult-Error-XML"
 ]
 
 (* A body without content that parses as XML data is an error even if the status code is OK: *)
@@ -428,7 +459,7 @@ VerificationTest[
         _
     },
     SameTest -> MatchQ,
-    TestID   -> "WriteResult-Error-Parsed-XML@@Tests/WriteResult.wlt:416,1-432,2"
+    TestID   -> "WriteResult-Error-Parsed-XML"
 ]
 
 (* A response with content is still an error if the status code is not OK: *)
@@ -450,7 +481,7 @@ VerificationTest[
         2
     ],
     SameTest -> MatchQ,
-    TestID   -> "WriteResult-Error-Status-Code@@Tests/WriteResult.wlt:435,1-454,2"
+    TestID   -> "WriteResult-Error-Status-Code"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

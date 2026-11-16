@@ -160,8 +160,9 @@ $embeddingService        = "Local";
 $embeddingModel          = "SentenceBERT";
 $embeddingAuthentication = Automatic;
 
-(* Maximum number of cached search results and embeddings (the oldest half is dropped when exceeded): *)
+(* Maximum number of cached search results (the oldest half is dropped when exceeded): *)
 $maxVectorDBSearchCacheSize = 100;
+(* Maximum number of cached embeddings (the least recently used ones are dropped when exceeded): *)
 $maxEmbeddingCacheSize      = 1000;
 
 
@@ -1719,8 +1720,39 @@ currentDownloadQ // endDefinition;
 (*inVectorDBDirectory*)
 inVectorDBDirectory // beginDefinition;
 inVectorDBDirectory // Attributes = { HoldFirst };
-inVectorDBDirectory[ eval_ ] := WithCleanup[ SetDirectory @ $vectorDBDirectory, eval, ResetDirectory[ ] ];
+
+(* The databases store relative file locations, which SemanticSearch expands against the current directory: *)
+inVectorDBDirectory[ eval_ ] := WithCleanup[
+    SetDirectory @ toWindowsShortPath @ $vectorDBDirectory,
+    eval,
+    ResetDirectory[ ]
+];
+
 inVectorDBDirectory // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toWindowsShortPath*)
+(*
+    SemanticSearch opens the USearch index files with the ANSI Windows API, but LibraryLink passes UTF-8 paths, so a
+    path with non-ASCII characters (e.g. an accented user name) can't be opened, and the search fails with
+    Failure["ErrorManagerThrowNameError", ...]. The 8.3 short form of the path is ASCII, so use it instead.
+
+    This does nothing where 8.3 names aren't available (e.g. disabled by policy or on ReFS volumes), in which case the
+    search fails as before. Remove this once SemanticSearch handles these paths.
+*)
+toWindowsShortPath // beginDefinition;
+
+toWindowsShortPath[ path_ ] /; $OperatingSystem =!= "Windows" || ! StringQ @ path || PrintableASCIIQ @ path :=
+    path;
+
+(* Cached, since Information also looks up things like the owner of the file. There's one entry per directory. *)
+toWindowsShortPath[ path_String ] := toWindowsShortPath[ path ] =
+    With[ { short = Quiet @ Information[ File @ path, "AbsoluteShortFileName" ] },
+        If[ StringQ @ short && PrintableASCIIQ @ short && FileExistsQ @ short, short, path ]
+    ];
+
+toWindowsShortPath // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -3055,7 +3087,11 @@ getEmbedding // Options = { "CacheEmbeddings" -> $cacheEmbeddings };
 
 getEmbedding[ string_String, opts: OptionsPattern[ ] ] :=
     With[ { embedding = $embeddingCache[ string ] },
-        embedding /; NumericArrayQ @ embedding
+        (
+            (* Move it to the end, so the least recently used embeddings are dropped first (see getEmbeddings0): *)
+            $embeddingCache = Append[ KeyDrop[ $embeddingCache, string ], string -> embedding ];
+            embedding
+        ) /; NumericArrayQ @ embedding
     ];
 
 getEmbedding[ string_String, opts: OptionsPattern[ ] ] := Enclose[
@@ -3085,17 +3121,22 @@ getEmbeddings // endDefinition;
 getEmbeddings0 // beginDefinition;
 
 getEmbeddings0[ strings: { __String } ] := Enclose[
-    Module[ { cache, notCached, vectors },
-        (* Drop the oldest embeddings when the cache is full: *)
-        If[ Length @ $embeddingCache >= $maxEmbeddingCacheSize,
-            $embeddingCache = Take[ $embeddingCache, -Floor[ $maxEmbeddingCacheSize / 2 ] ]
+    Module[ { cached, notCached, vectors },
+        (* Move the requested embeddings to the end, so the least recently used ones are dropped first.
+           Every save embeds all message pairs of the conversation (see createMessageVectors), so this keeps them
+           cached until the conversation has about as many pairs as the cache holds. *)
+        cached          = KeyTake[ $embeddingCache, strings ];
+        $embeddingCache = Join[ KeyDrop[ $embeddingCache, strings ], cached ];
+        notCached       = Select[ strings, ! KeyExistsQ[ cached, # ] & ];
+        vectors         = ConfirmMatch[ getAndCacheEmbeddings @ notCached, { ___NumericArray }, "CacheEmbeddings" ];
+        (* Drop the least recently used embeddings when the cache is full: *)
+        If[ Length @ $embeddingCache > $maxEmbeddingCacheSize,
+            $embeddingCache = Take[ $embeddingCache, -$maxEmbeddingCacheSize ]
         ];
-        (* Look up results in a snapshot, since a preemptive evaluation could trim the cache before this finishes: *)
-        cache     = $embeddingCache;
-        notCached = Select[ strings, ! KeyExistsQ[ cache, # ] & ];
-        vectors   = ConfirmMatch[ getAndCacheEmbeddings @ notCached, { ___NumericArray }, "CacheEmbeddings" ];
+        (* Don't look up results in the cache: the trim drops some of them when more strings are requested than the
+           cache holds, and a preemptive evaluation could also trim it before this finishes: *)
         ConfirmMatch[
-            Lookup[ Join[ cache, AssociationThread[ notCached, vectors ] ], strings ],
+            Lookup[ Join[ cached, AssociationThread[ notCached, vectors ] ], strings ],
             { __NumericArray },
             "Result"
         ]

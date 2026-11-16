@@ -4,7 +4,7 @@ RawBoxes @ ToBoxes @ Mouseover[
  Graphics[
   {
    Thickness[ 0.11111 ],
-   FaceForm @ { color @ "NA_OverlayMenuIcon_Blue", Opacity[ 1.0 ] },
+   FaceForm @ { color @ "Blue_66ADD2_66ADD2", Opacity[ 1.0 ] },
    FilledCurve[
     {
      {
@@ -66,7 +66,7 @@ RawBoxes @ ToBoxes @ Mouseover[
  Graphics[
   {
    Thickness[ 0.11111 ],
-   FaceForm @ color @ "NA_OverlayMenuIconHover",
+   FaceForm @ color @ "Blue_3383AC_BDE4FF",
    FilledCurve[
     {
      {

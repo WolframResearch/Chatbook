@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/StopChat.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/StopChat.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -56,7 +56,7 @@ VerificationTest[
     ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "StopChat-Definitions@@Tests/StopChat.wlt:28,1-60,2"
+    TestID   -> "StopChat-Definitions"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -69,7 +69,7 @@ VerificationTest[
     stopChat[ True, None ],
     <| "StopRequested" -> True, "ChatEvaluationCell" -> None, "Stopped" -> { } |>,
     SameTest -> SameQ,
-    TestID   -> "StopChat-Evaluating-No-Output-Cell-GH#1708@@Tests/StopChat.wlt:68,1-73,2"
+    TestID   -> "StopChat-Evaluating-No-Output-Cell-GH#1708"
 ]
 
 (* The output cell is stopped as before, and the chat is also told not to submit its request: *)
@@ -77,7 +77,7 @@ VerificationTest[
     stopChat[ True, CellObject[ "TestOutputCell" ] ],
     <| "StopRequested" -> True, "ChatEvaluationCell" -> None, "Stopped" -> { CellObject[ "TestOutputCell" ] } |>,
     SameTest -> SameQ,
-    TestID   -> "StopChat-Evaluating-Output-Cell-GH#1707@@Tests/StopChat.wlt:76,1-81,2"
+    TestID   -> "StopChat-Evaluating-Output-Cell-GH#1707"
 ]
 
 (* An output cell in the sidebar is nested in other cells, and it's the output cell that's stopped, not the sidebar: *)
@@ -95,7 +95,7 @@ VerificationTest[
     ],
     <| "StopRequested" -> True, "ChatEvaluationCell" -> None, "Stopped" -> { CellObject[ "TestOutputCell" ] } |>,
     SameTest -> SameQ,
-    TestID   -> "StopChat-Evaluating-Sidebar-Output-Cell-GH#1707@@Tests/StopChat.wlt:84,1-99,2"
+    TestID   -> "StopChat-Evaluating-Sidebar-Output-Cell-GH#1707"
 ]
 
 (* A chat is only stopped once: *)
@@ -103,7 +103,7 @@ VerificationTest[
     stopChat[ True, CellObject[ "TestOutputCell" ], True ],
     <| "StopRequested" -> True, "ChatEvaluationCell" -> CellObject[ "TestInputCell" ], "Stopped" -> { } |>,
     SameTest -> SameQ,
-    TestID   -> "StopChat-Evaluating-Already-Stopped@@Tests/StopChat.wlt:102,1-107,2"
+    TestID   -> "StopChat-Evaluating-Already-Stopped"
 ]
 
 (* The request's task is removed, even if it isn't in the output cell's settings yet: *)
@@ -115,7 +115,7 @@ VerificationTest[
     ],
     "Removed",
     SameTest -> SameQ,
-    TestID   -> "StopChat-Evaluating-Removes-Task-GH#1707@@Tests/StopChat.wlt:110,1-119,2"
+    TestID   -> "StopChat-Evaluating-Removes-Task-GH#1707"
 ]
 
 (* If submitting the request failed, there's no task to remove: *)
@@ -123,7 +123,7 @@ VerificationTest[
     stopChat[ True, None, False, Failure[ "TestFailure", <| |> ] ],
     <| "StopRequested" -> True, "ChatEvaluationCell" -> None, "Stopped" -> { } |>,
     SameTest -> SameQ,
-    TestID   -> "StopChat-Evaluating-Failed-Request@@Tests/StopChat.wlt:122,1-127,2"
+    TestID   -> "StopChat-Evaluating-Failed-Request"
 ]
 
 (* The stop button in an output cell's dingbat (cloud notebooks) stops that cell. If it's the output of the chat that's
@@ -159,7 +159,7 @@ VerificationTest[
         { False, CellObject[ "TestInputCell" ] }
     },
     SameTest -> SameQ,
-    TestID   -> "StopChat-Output-Cell-Button-GH#1707@@Tests/StopChat.wlt:131,1-163,2"
+    TestID   -> "StopChat-Output-Cell-Button-GH#1707"
 ]
 
 (* The chat's time limit stops it the same way, from the chat's own evaluation: *)
@@ -181,7 +181,7 @@ VerificationTest[
     ],
     { True, None, "Removed" },
     SameTest -> SameQ,
-    TestID   -> "StopChat-Evaluating-Time-Limit@@Tests/StopChat.wlt:166,1-185,2"
+    TestID   -> "StopChat-Evaluating-Time-Limit"
 ]
 
 (* A response that finished just before the stop isn't processed further, e.g. its tool call isn't evaluated: *)
@@ -195,7 +195,7 @@ VerificationTest[
     ] & /@ { False, True },
     { { "Evaluated", None }, { Null, None } },
     SameTest -> SameQ,
-    TestID   -> "RunNextTask-Stopped-GH#1707@@Tests/StopChat.wlt:188,1-199,2"
+    TestID   -> "RunNextTask-Stopped-GH#1707"
 ]
 
 (* Each chat starts without a stop request, and a stop request ends with its chat: *)
@@ -221,7 +221,7 @@ VerificationTest[
     },
     { False, False },
     SameTest -> SameQ,
-    TestID   -> "WithChatState-Stop-Request@@Tests/StopChat.wlt:202,1-225,2"
+    TestID   -> "WithChatState-Stop-Request"
 ]
 
 (* A chat that's evaluated inside an auto-assist chat's handler (e.g. by a tool) has its own stop request: *)
@@ -239,7 +239,7 @@ VerificationTest[
     ],
     True,
     SameTest -> SameQ,
-    TestID   -> "WithChatState-AutoAssist-Handler@@Tests/StopChat.wlt:228,1-243,2"
+    TestID   -> "WithChatState-AutoAssist-Handler"
 ]
 
 (* In chat notebooks, the stop button already shows while the chat is queued. If the chat is stopped before it sets
@@ -264,7 +264,7 @@ VerificationTest[
     ] & /@ { False, True },
     { CellObject[ "TestInputCell" ], None },
     SameTest -> SameQ,
-    TestID   -> "WithChatEvaluationCell-Stopped-Before@@Tests/StopChat.wlt:247,1-268,2"
+    TestID   -> "WithChatEvaluationCell-Stopped-Before"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -277,7 +277,7 @@ VerificationTest[
     stopChat[ False, CellObject[ "TestOutputCell" ] ],
     <| "StopRequested" -> False, "ChatEvaluationCell" -> None, "Stopped" -> { CellObject[ "TestOutputCell" ] } |>,
     SameTest -> SameQ,
-    TestID   -> "StopChat-Not-Evaluating@@Tests/StopChat.wlt:276,1-281,2"
+    TestID   -> "StopChat-Not-Evaluating"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -318,14 +318,14 @@ VerificationTest[
     ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "Handler-Definitions@@Tests/StopChat.wlt:290,1-322,2"
+    TestID   -> "Handler-Definitions"
 ]
 
 VerificationTest[
     handlerStopRequest /@ { True, False },
     { False, True },
     SameTest -> SameQ,
-    TestID   -> "AutoAssist-Handler-Other-Chat-Stopped@@Tests/StopChat.wlt:324,1-329,2"
+    TestID   -> "AutoAssist-Handler-Other-Chat-Stopped"
 ]
 
 (* When an emulated stop token is found in a response chunk, the "BodyChunkReceived" handler processes the response
@@ -374,14 +374,14 @@ VerificationTest[
     ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "EmulatedStop-Handler-Definitions@@Tests/StopChat.wlt:334,1-378,2"
+    TestID   -> "EmulatedStop-Handler-Definitions"
 ]
 
 VerificationTest[
     emulatedStopHandlerStopRequest /@ { True, False },
     { { False, "Removed" }, { True, "Removed" } },
     SameTest -> SameQ,
-    TestID   -> "AutoAssist-EmulatedStop-Handler-Other-Chat-Stopped@@Tests/StopChat.wlt:380,1-385,2"
+    TestID   -> "AutoAssist-EmulatedStop-Handler-Other-Chat-Stopped"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -466,7 +466,7 @@ VerificationTest[
     ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "SendChat-Definitions@@Tests/StopChat.wlt:394,1-470,2"
+    TestID   -> "SendChat-Definitions"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -490,7 +490,7 @@ VerificationTest[
         "LastTask" -> "TestTask"
     |>,
     SameTest -> SameQ,
-    TestID   -> "SendChat-Not-Stopped@@Tests/StopChat.wlt:477,1-494,2"
+    TestID   -> "SendChat-Not-Stopped"
 ]
 
 (* Stopped before the output cell is created, so nothing is written: *)
@@ -498,7 +498,7 @@ VerificationTest[
     sendChatStoppedAt[ "Start" ],
     <| "Result" -> Null, "Events" -> { }, "LastTask" -> None |>,
     SameTest -> SameQ,
-    TestID   -> "SendChat-Stopped-Before-Output-Cell-GH#1708@@Tests/StopChat.wlt:497,1-502,2"
+    TestID   -> "SendChat-Stopped-Before-Output-Cell-GH#1708"
 ]
 
 (* Stopped while the output cell was being created, before StopChat could find it in $lastCellObject: *)
@@ -510,7 +510,7 @@ VerificationTest[
         "LastTask" -> None
     |>,
     SameTest -> SameQ,
-    TestID   -> "SendChat-Stopped-Creating-Output-Cell-GH#1708@@Tests/StopChat.wlt:505,1-514,2"
+    TestID   -> "SendChat-Stopped-Creating-Output-Cell-GH#1708"
 ]
 
 (* Stopped while the messages were constructed (e.g. waiting for the documentation search). StopChat has already
@@ -519,14 +519,14 @@ VerificationTest[
     sendChatStoppedAt[ "ConstructMessages" ],
     <| "Result" -> Null, "Events" -> { "CreateOutput", "ConstructMessages" }, "LastTask" -> None |>,
     SameTest -> SameQ,
-    TestID   -> "SendChat-Stopped-Constructing-Messages-GH#1707@@Tests/StopChat.wlt:518,1-523,2"
+    TestID   -> "SendChat-Stopped-Constructing-Messages-GH#1707"
 ]
 
 VerificationTest[
     sendChatStoppedAt[ "ChatPre" ],
     <| "Result" -> Null, "Events" -> { "CreateOutput", "ConstructMessages", "ChatPre" }, "LastTask" -> None |>,
     SameTest -> SameQ,
-    TestID   -> "SendChat-Stopped-ChatPre-GH#1707@@Tests/StopChat.wlt:525,1-530,2"
+    TestID   -> "SendChat-Stopped-ChatPre-GH#1707"
 ]
 
 (* Stopped while the request was submitted, before StopChat could find the task in $lastTask: *)
@@ -538,7 +538,7 @@ VerificationTest[
         "LastTask" -> None
     |>,
     SameTest -> SameQ,
-    TestID   -> "SendChat-Stopped-Submitting-GH#1707@@Tests/StopChat.wlt:533,1-542,2"
+    TestID   -> "SendChat-Stopped-Submitting-GH#1707"
 ]
 
 (* The same, but submitting the request failed. The chat ends without a task, since the failure isn't one: *)
@@ -556,7 +556,7 @@ VerificationTest[
         "LastTask" -> None
     |>,
     SameTest -> SameQ,
-    TestID   -> "SendChat-Stopped-Submitting-Failed-GH#1707@@Tests/StopChat.wlt:545,1-560,2"
+    TestID   -> "SendChat-Stopped-Submitting-Failed-GH#1707"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -643,7 +643,7 @@ VerificationTest[
         "ChatEvaluationCell" -> None
     |>,
     SameTest -> SameQ,
-    TestID   -> "SendChat-Stopped-While-Waiting-GH#1707@@Tests/StopChat.wlt:569,1-647,2"
+    TestID   -> "SendChat-Stopped-While-Waiting-GH#1707"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -717,7 +717,7 @@ VerificationTest[
     ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "ToolEvaluation-Definitions@@Tests/StopChat.wlt:656,1-721,2"
+    TestID   -> "ToolEvaluation-Definitions"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -740,7 +740,7 @@ VerificationTest[
         "LastTask" -> "TestTask"
     |>,
     SameTest -> SameQ,
-    TestID   -> "ToolEvaluation-Not-Stopped@@Tests/StopChat.wlt:728,1-744,2"
+    TestID   -> "ToolEvaluation-Not-Stopped"
 ]
 
 (* StopChat has already written the output cell, so the chat ends without evaluating the tool: *)
@@ -748,7 +748,7 @@ VerificationTest[
     toolEvaluationStoppedAt[ "ToolRequest" ],
     <| "Result" -> Null, "Events" -> { "ToolRequest" }, "LastTask" -> None |>,
     SameTest -> SameQ,
-    TestID   -> "ToolEvaluation-Stopped-Before-Tool-GH#1707@@Tests/StopChat.wlt:747,1-752,2"
+    TestID   -> "ToolEvaluation-Stopped-Before-Tool-GH#1707"
 ]
 
 (* ... or without sending the tool response: *)
@@ -756,14 +756,14 @@ VerificationTest[
     toolEvaluationStoppedAt[ "EvaluateTool" ],
     <| "Result" -> Null, "Events" -> { "ToolRequest", "EvaluateTool" }, "LastTask" -> None |>,
     SameTest -> SameQ,
-    TestID   -> "ToolEvaluation-Stopped-Evaluating-Tool-GH#1707@@Tests/StopChat.wlt:755,1-760,2"
+    TestID   -> "ToolEvaluation-Stopped-Evaluating-Tool-GH#1707"
 ]
 
 VerificationTest[
     toolEvaluationStoppedAt[ "ConstructMessages" ],
     <| "Result" -> Null, "Events" -> { "ToolRequest", "EvaluateTool", "ConstructMessages" }, "LastTask" -> None |>,
     SameTest -> SameQ,
-    TestID   -> "ToolEvaluation-Stopped-Constructing-Messages-GH#1707@@Tests/StopChat.wlt:762,1-767,2"
+    TestID   -> "ToolEvaluation-Stopped-Constructing-Messages-GH#1707"
 ]
 
 VerificationTest[
@@ -774,7 +774,7 @@ VerificationTest[
         "LastTask" -> None
     |>,
     SameTest -> SameQ,
-    TestID   -> "ToolEvaluation-Stopped-Submitting-GH#1707@@Tests/StopChat.wlt:769,1-778,2"
+    TestID   -> "ToolEvaluation-Stopped-Submitting-GH#1707"
 ]
 
 VerificationTest[
@@ -791,7 +791,7 @@ VerificationTest[
         "LastTask" -> None
     |>,
     SameTest -> SameQ,
-    TestID   -> "ToolEvaluation-Stopped-Submitting-Failed-GH#1707@@Tests/StopChat.wlt:780,1-795,2"
+    TestID   -> "ToolEvaluation-Stopped-Submitting-Failed-GH#1707"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -824,7 +824,7 @@ VerificationTest[
     ],
     { { "Prompt" }, { 1 } },
     SameTest -> SameQ,
-    TestID   -> "ApplyPromptGenerators-Stopped-Chat-GH#1707@@Tests/StopChat.wlt:802,1-828,2"
+    TestID   -> "ApplyPromptGenerators-Stopped-Chat-GH#1707"
 ]
 
 (* A request with a time limit (e.g. the documentation search filter, or its retry) isn't submitted after the chat is
@@ -850,7 +850,7 @@ VerificationTest[
     ],
     { Failure[ "TimedOut", _ ], 0, "Response", 1 },
     SameTest -> MatchQ,
-    TestID   -> "LLMSynthesize-Stopped-Chat-GH#1707@@Tests/StopChat.wlt:832,1-854,2"
+    TestID   -> "LLMSynthesize-Stopped-Chat-GH#1707"
 ]
 
 (* Wolfram|Alpha results aren't cached if the chat was stopped, since the wait for them ended early: *)
@@ -877,7 +877,7 @@ VerificationTest[
     ],
     2,
     SameTest -> SameQ,
-    TestID   -> "WolframAlphaResults-Stopped-Chat-Not-Cached@@Tests/StopChat.wlt:857,1-881,2"
+    TestID   -> "WolframAlphaResults-Stopped-Chat-Not-Cached"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -895,7 +895,7 @@ VerificationTest[
     ],
     { True, "Removed" },
     SameTest -> SameQ,
-    TestID   -> "TaskWaitYield-Stopped-Chat-GH#1707@@Tests/StopChat.wlt:888,1-899,2"
+    TestID   -> "TaskWaitYield-Stopped-Chat-GH#1707"
 ]
 
 (* Callers that wait without a time limit may need the result, so their waits don't end early: *)
@@ -909,7 +909,7 @@ VerificationTest[
     ],
     { "TimedOut", "Removed" },
     SameTest -> SameQ,
-    TestID   -> "TaskWaitYield-Stopped-Chat-Unlimited@@Tests/StopChat.wlt:902,1-913,2"
+    TestID   -> "TaskWaitYield-Stopped-Chat-Unlimited"
 ]
 
 (* A wait in an auto-assist chat's handler (e.g. the documentation search in a tool call) doesn't end early because
@@ -928,7 +928,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> SameQ,
-    TestID   -> "TaskWaitYield-AutoAssist-Handler@@Tests/StopChat.wlt:917,1-932,2"
+    TestID   -> "TaskWaitYield-AutoAssist-Handler"
 ]
 
 (* The task is also removed if an outer time limit interrupts the wait (it used to keep running, and its handler
@@ -946,7 +946,7 @@ VerificationTest[
     ],
     { "TimedOut", "Removed" },
     SameTest -> SameQ,
-    TestID   -> "TaskWaitYield-Outer-TimeConstrained-GH#1707@@Tests/StopChat.wlt:936,1-950,2"
+    TestID   -> "TaskWaitYield-Outer-TimeConstrained-GH#1707"
 ]
 
 (* Same for an abort: *)
@@ -963,7 +963,7 @@ VerificationTest[
     ],
     { "Aborted", "Removed" },
     SameTest -> SameQ,
-    TestID   -> "TaskWaitYield-Abort-GH#1707@@Tests/StopChat.wlt:953,1-967,2"
+    TestID   -> "TaskWaitYield-Abort-GH#1707"
 ]
 
 (* Waiting for several tasks, an interruption also removes the tasks that weren't waited for yet: *)
@@ -980,7 +980,7 @@ VerificationTest[
     ],
     { "TimedOut", { "Removed", "Removed" } },
     SameTest -> SameQ,
-    TestID   -> "TaskWaitYield-List-Outer-TimeConstrained-GH#1707@@Tests/StopChat.wlt:970,1-984,2"
+    TestID   -> "TaskWaitYield-List-Outer-TimeConstrained-GH#1707"
 ]
 
 (* The same for tasks in a nested list: *)
@@ -997,7 +997,7 @@ VerificationTest[
     ],
     { "TimedOut", { "Removed", "Removed", "Removed" } },
     SameTest -> SameQ,
-    TestID   -> "TaskWaitYield-Nested-List-Outer-TimeConstrained@@Tests/StopChat.wlt:987,1-1001,2"
+    TestID   -> "TaskWaitYield-Nested-List-Outer-TimeConstrained"
 ]
 
 (* Its own time limit still removes the task: *)
@@ -1009,7 +1009,7 @@ VerificationTest[
     ],
     "Removed",
     SameTest -> SameQ,
-    TestID   -> "TaskWaitYield-TimeConstraint@@Tests/StopChat.wlt:1004,1-1013,2"
+    TestID   -> "TaskWaitYield-TimeConstraint"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1062,7 +1062,7 @@ VerificationTest[
     ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "StopChatIn-Definitions@@Tests/StopChat.wlt:1022,1-1066,2"
+    TestID   -> "StopChatIn-Definitions"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1075,7 +1075,7 @@ VerificationTest[
     ],
     { False, True, False },
     SameTest -> SameQ,
-    TestID   -> "ChatEvaluatingInQ-ChatNotebook-robustness-4@@Tests/StopChat.wlt:1071,1-1079,2"
+    TestID   -> "ChatEvaluatingInQ-ChatNotebook-robustness-4"
 ]
 
 VerificationTest[
@@ -1085,7 +1085,7 @@ VerificationTest[
     ],
     { True, False, False },
     SameTest -> SameQ,
-    TestID   -> "ChatEvaluatingInQ-Window@@Tests/StopChat.wlt:1081,1-1089,2"
+    TestID   -> "ChatEvaluatingInQ-Window"
 ]
 
 (* A sidebar chat is in its sidebar cell, but not in the window or in the user notebook's own chats: *)
@@ -1096,7 +1096,7 @@ VerificationTest[
     ],
     { False, False, True, False },
     SameTest -> SameQ,
-    TestID   -> "ChatEvaluatingInQ-Sidebar@@Tests/StopChat.wlt:1092,1-1100,2"
+    TestID   -> "ChatEvaluatingInQ-Sidebar"
 ]
 
 VerificationTest[
@@ -1106,7 +1106,7 @@ VerificationTest[
     ],
     { False, False, False },
     SameTest -> SameQ,
-    TestID   -> "ChatEvaluatingInQ-NoChat@@Tests/StopChat.wlt:1102,1-1110,2"
+    TestID   -> "ChatEvaluatingInQ-NoChat"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1118,28 +1118,28 @@ VerificationTest[
     stopChatInStopped[ $chatNBInput, $windowNB ],
     False,
     SameTest -> SameQ,
-    TestID   -> "StopChatIn-OtherNotebook-robustness-4@@Tests/StopChat.wlt:1117,1-1122,2"
+    TestID   -> "StopChatIn-OtherNotebook-robustness-4"
 ]
 
 VerificationTest[
     stopChatInStopped[ $sidebarInput, $windowNB ],
     False,
     SameTest -> SameQ,
-    TestID   -> "StopChatIn-Window-SidebarChat@@Tests/StopChat.wlt:1124,1-1129,2"
+    TestID   -> "StopChatIn-Window-SidebarChat"
 ]
 
 VerificationTest[
     { stopChatInStopped[ $windowInput, $windowNB ], stopChatInStopped[ $sidebarInput, $sidebarCell ] },
     { True, True },
     SameTest -> SameQ,
-    TestID   -> "StopChatIn-OwnChat@@Tests/StopChat.wlt:1131,1-1136,2"
+    TestID   -> "StopChatIn-OwnChat"
 ]
 
 VerificationTest[
     stopChatInStopped[ None, $windowNB ],
     False,
     SameTest -> SameQ,
-    TestID   -> "StopChatIn-NoChat@@Tests/StopChat.wlt:1138,1-1143,2"
+    TestID   -> "StopChatIn-NoChat"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

@@ -634,6 +634,14 @@ cellToString[ Cell[ a__, $$docSearchStyle, b___ ] ] :=
 cellToString[ Cell[ BoxData[ TemplateBox[ { name_String, content_ }, "FileListing", ___ ], ___ ], ___ ] ] :=
     name <> "\n```\n" <> fasterCellToString @ content <> "\n```";
 
+(* Code blocks that show the shebang line of a script as a header put it back in front of the code: *)
+cellToString[ Cell[
+    BoxData[ GridBox[ { _, { Cell[ BoxData[ boxes_, ___ ], a___ ] } }, ___ ], ___ ],
+    ___,
+    TaggingRules -> KeyValuePattern[ "ShebangLine" -> line_String ],
+    ___
+] ] := cellToString @ Cell[ BoxData @ RowBox @ { line, "\n", boxes }, a ];
+
 (* Delimit code blocks with triple backticks *)
 cellToString[ cell_Cell? codeBlockQ ] /; ! TrueQ @ $delimitedCodeBlock := Enclose[
     Block[ { $delimitedCodeBlock = True },
@@ -2445,7 +2453,8 @@ riffleTableString[ rows: { ___String } ] := Enclose[
 
         If[ Total @ lengths <= max, Throw @ StringRiffle[ rows, "\n" ] ];
         a = Max[ LengthWhile[ Accumulate @ lengths, # <= Floor[ 2 * (max / 3) ] & ], 3 ];
-        remaining = ConfirmMatch[ max - Total @ lengths[[ 1;;a ]], $$size, "Remaining" ];
+        (* The first three rows are always kept, so they can use up the whole budget on their own: *)
+        remaining = ConfirmMatch[ Max[ 0, max - Total @ lengths[[ 1;;a ]] ], $$size, "Remaining" ];
         b = LengthWhile[ Accumulate @ Reverse @ lengths, # <= remaining & ];
         removed = ConfirmMatch[ count - (a + b), $$size, "Removed" ];
         If[ removed === 0, Throw @ StringRiffle[ rows, "\n" ] ];

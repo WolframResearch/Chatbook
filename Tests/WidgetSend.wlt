@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/WidgetSend.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/WidgetSend.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -58,7 +58,7 @@ VerificationTest[
     Null,
     Null,
     SameTest -> SameQ,
-    TestID   -> "WidgetSend-TestDefinitions@@Tests/WidgetSend.wlt:24,1-62,2"
+    TestID   -> "WidgetSend-TestDefinitions"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -70,21 +70,21 @@ VerificationTest[
     widgetSendResult @ $testCell,
     { { $testCell, True }, { } },
     SameTest -> SameQ,
-    TestID   -> "WidgetSend-AssistanceUnchanged@@Tests/WidgetSend.wlt:69,1-74,2"
+    TestID   -> "WidgetSend-AssistanceUnchanged"
 ]
 
 VerificationTest[
     widgetSendResult @ $Failed,
     { { $testCell, True }, { } },
     SameTest -> SameQ,
-    TestID   -> "WidgetSend-RootEvaluationCell-AssistanceUnchanged@@Tests/WidgetSend.wlt:76,1-81,2"
+    TestID   -> "WidgetSend-RootEvaluationCell-AssistanceUnchanged"
 ]
 
 VerificationTest[
     Wolfram`Chatbook`$AutomaticAssistance,
     False,
     SameTest -> SameQ,
-    TestID   -> "WidgetSend-AutomaticAssistanceScoped@@Tests/WidgetSend.wlt:83,1-88,2"
+    TestID   -> "WidgetSend-AutomaticAssistanceScoped"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

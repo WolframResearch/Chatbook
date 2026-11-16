@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/Services.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/Services.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -75,7 +75,7 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "Definitions@@Tests/Services.wlt:24,1-79,2"
+    TestID   -> "Definitions"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -88,7 +88,7 @@ VerificationTest[
     ],
     If[ $usingLLMServices, None, _Association ],
     SameTest -> MatchQ,
-    TestID   -> "ServiceIcon-DoesNotBuildServiceTable@@Tests/Services.wlt:84,1-92,2"
+    TestID   -> "ServiceIcon-DoesNotBuildServiceTable"
 ]
 
 VerificationTest[
@@ -98,7 +98,7 @@ VerificationTest[
     ],
     { },
     SameTest -> SameQ,
-    TestID   -> "ServiceIcon-SameAsCachedServiceTable@@Tests/Services.wlt:94,1-102,2"
+    TestID   -> "ServiceIcon-SameAsCachedServiceTable"
 ]
 
 VerificationTest[
@@ -108,7 +108,7 @@ VerificationTest[
     ],
     { },
     SameTest -> SameQ,
-    TestID   -> "ServiceIcon-SameAsFullTableLookup@@Tests/Services.wlt:104,1-112,2"
+    TestID   -> "ServiceIcon-SameAsFullTableLookup"
 ]
 
 VerificationTest[
@@ -118,7 +118,7 @@ VerificationTest[
     ],
     { "", True },
     SameTest -> MatchQ,
-    TestID   -> "ServiceIcon-CachedServiceTable-Unknown@@Tests/Services.wlt:114,1-122,2"
+    TestID   -> "ServiceIcon-CachedServiceTable-Unknown"
 ]
 
 (* Calls made while $availableServices is building the table see the temporarily empty table: *)
@@ -133,7 +133,7 @@ VerificationTest[
     ],
     { True, <| |>, { "".. } },
     SameTest -> MatchQ,
-    TestID   -> "ServiceIcon-DuringServiceTableBuild@@Tests/Services.wlt:125,1-137,2"
+    TestID   -> "ServiceIcon-DuringServiceTableBuild"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -152,7 +152,7 @@ VerificationTest[
     ],
     { "P", 0, "D!", 1, None },
     SameTest -> MatchQ,
-    TestID   -> "GetServiceIcon-OnlyEvaluatesRequestedIcon@@Tests/Services.wlt:142,1-156,2"
+    TestID   -> "GetServiceIcon-OnlyEvaluatesRequestedIcon"
 ]
 
 VerificationTest[
@@ -166,7 +166,7 @@ VerificationTest[
         1
     },
     SameTest -> MatchQ,
-    TestID   -> "GetServiceIcon-CustomServices@@Tests/Services.wlt:158,1-170,2"
+    TestID   -> "GetServiceIcon-CustomServices"
 ]
 
 VerificationTest[
@@ -175,7 +175,7 @@ VerificationTest[
     ],
     $customServiceIcons,
     SameTest -> SameQ,
-    TestID   -> "GetServiceIcon-CustomServices-SameAsFullTable@@Tests/Services.wlt:172,1-179,2"
+    TestID   -> "GetServiceIcon-CustomServices-SameAsFullTable"
 ]
 
 VerificationTest[
@@ -189,7 +189,7 @@ VerificationTest[
     ],
     { { Missing[ "KeyAbsent", "Ollama" ], "P" }, { Missing[ "KeyAbsent", "Ollama" ], "P" } },
     SameTest -> MatchQ,
-    TestID   -> "GetServiceIcon-CloudExclusions@@Tests/Services.wlt:181,1-193,2"
+    TestID   -> "GetServiceIcon-CloudExclusions"
 ]
 
 VerificationTest[
@@ -201,7 +201,7 @@ VerificationTest[
     ],
     { { icon: Except[ _Missing ], Missing[ "KeyAbsent", "Plain" ] }, { icon_, Missing[ "KeyAbsent", "Plain" ] } },
     SameTest -> MatchQ,
-    TestID   -> "GetServiceIcon-FallbackServices@@Tests/Services.wlt:195,1-205,2"
+    TestID   -> "GetServiceIcon-FallbackServices"
 ]
 
 VerificationTest[
@@ -217,7 +217,7 @@ VerificationTest[
     ],
     { True, True, False, False, False, False },
     SameTest -> SameQ,
-    TestID   -> "LiteralModelListQ@@Tests/Services.wlt:207,1-221,2"
+    TestID   -> "LiteralModelListQ"
 ]
 
 (* Building the table memoizes standardized models from literal model lists, so the full table is built as usual: *)
@@ -233,7 +233,7 @@ VerificationTest[
     ],
     { Missing[ "KeyAbsent", "Plain" ], True },
     SameTest -> MatchQ,
-    TestID   -> "GetServiceIcon-LiteralModelLists-FullTable@@Tests/Services.wlt:224,1-237,2"
+    TestID   -> "GetServiceIcon-LiteralModelLists-FullTable"
 ]
 
 (* Unexpected service information (e.g. a failure from LLMServiceInformation) also uses the full table as usual: *)
@@ -246,7 +246,7 @@ VerificationTest[
     ],
     { Missing[ "KeyAbsent", "Plain" ], True },
     SameTest -> MatchQ,
-    TestID   -> "GetServiceIcon-InvalidInfo-FullTable-1@@Tests/Services.wlt:240,1-250,2"
+    TestID   -> "GetServiceIcon-InvalidInfo-FullTable-1"
 ]
 
 VerificationTest[
@@ -258,7 +258,7 @@ VerificationTest[
     ],
     { Missing[ "KeyAbsent", "Plain" ], True },
     SameTest -> MatchQ,
-    TestID   -> "GetServiceIcon-InvalidInfo-FullTable-2@@Tests/Services.wlt:252,1-262,2"
+    TestID   -> "GetServiceIcon-InvalidInfo-FullTable-2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -275,7 +275,7 @@ VerificationTest[
     ],
     If[ $usingLLMServices, None, _Association ],
     SameTest -> MatchQ,
-    TestID   -> "ResolveFullModelSpec-LLMKit-DoesNotBuildServiceTable@@Tests/Services.wlt:267,1-279,2"
+    TestID   -> "ResolveFullModelSpec-LLMKit-DoesNotBuildServiceTable"
 ]
 
 VerificationTest[
@@ -285,7 +285,7 @@ VerificationTest[
         KeyValuePattern @ { "Authentication" -> "LLMKit", "Icon" -> _, "ResolvedModel" -> True }
     },
     SameTest -> MatchQ,
-    TestID   -> "ResolveFullModelSpec-LLMKit-Resolved@@Tests/Services.wlt:281,1-289,2"
+    TestID   -> "ResolveFullModelSpec-LLMKit-Resolved"
 ]
 
 VerificationTest[
@@ -295,7 +295,7 @@ VerificationTest[
     ],
     $testLLMKitModel[ "Icon" ],
     SameTest -> SameQ,
-    TestID   -> "ResolveFullModelSpec-LLMKit-Icon@@Tests/Services.wlt:291,1-299,2"
+    TestID   -> "ResolveFullModelSpec-LLMKit-Icon"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -352,7 +352,7 @@ VerificationTest[
         0,
         None
     },
-    TestID -> "LLMKitInfoRequest-ResponseUsed@@Tests/Services.wlt:339,1-356,2"
+    TestID -> "LLMKitInfoRequest-ResponseUsed"
 ]
 
 (* Without a usable response, getLLMKitInfo0 sends its own request as before: *)
@@ -378,7 +378,7 @@ VerificationTest[
         sent
     },
     { 1, 2, 3, 4, 3 },
-    TestID -> "LLMKitInfoRequest-Fallback@@Tests/Services.wlt:359,1-382,2"
+    TestID -> "LLMKitInfoRequest-Fallback"
 ]
 
 (* The response is decoded as UTF-8: *)
@@ -389,7 +389,7 @@ VerificationTest[
         { Wolfram`Chatbook`Services`Private`getLLMKitInfo0[ ], updates }
     ],
     { <| "plan" -> "caf\[EAcute] \:2713" |>, 0 },
-    TestID -> "LLMKitInfoRequest-UTF8@@Tests/Services.wlt:385,1-393,2"
+    TestID -> "LLMKitInfoRequest-UTF8"
 ]
 
 (* Nothing is sent when the user is not signed in: *)
@@ -398,7 +398,7 @@ VerificationTest[
         { Wolfram`Chatbook`Common`startLLMKitInfoRequest[ ], sent, Wolfram`Chatbook`Services`Private`$llmKitInfoRequest }
     ],
     { Null, 0, None },
-    TestID -> "LLMKitInfoRequest-NotSignedIn@@Tests/Services.wlt:396,1-402,2"
+    TestID -> "LLMKitInfoRequest-NotSignedIn"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

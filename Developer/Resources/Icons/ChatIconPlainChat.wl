@@ -2,7 +2,7 @@ Graphics[
  {
   Thickness[ 0.038462 ],
   {
-   FaceForm @ { color @ "ModelPlainChatIconBackground", Opacity[ 1.0 ] },
+   FaceForm @ { LightDarkSwitched[ RGBColor[ "#DAE1E0" ], RGBColor[ "#6B7476" ] ], Opacity[ 1.0 ] },
    FilledCurve[
     {
      {
@@ -46,7 +46,7 @@ Graphics[
    ]
   },
   {
-   FaceForm @ { color @ "ModelPlainChatIconEdge", Opacity[ 1.0 ] },
+   FaceForm @ { LightDarkSwitched[ RGBColor[ "#ACB7BC" ], RGBColor[ "#B9C5C8" ] ], Opacity[ 1.0 ] },
    FilledCurve[
     {
      {

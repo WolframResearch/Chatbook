@@ -5,7 +5,7 @@
 	#2 -> ImageSize: button frame,
 	#3 -> ImageSize: send icon
 	#4 -> ImageSize: stop icon *)
-Function[ Evaluate @ ToBoxes @
+Function[ Evaluate @ ToBoxes @ With[ { hoverFrame = color @ "Blue_B1D5E8_607D8F" },
 	PaneSelector[
 		{
 			True ->
@@ -20,7 +20,7 @@ Function[ Evaluate @ ToBoxes @
 										Background       -> ThemeColor[ "Background" ],
 										BaselinePosition -> Baseline,
 										FrameMargins     -> 0,
-										FrameStyle       -> Dynamic @ If[ CurrentValue[ "MouseOver" ], LightDarkSwitched[ RGBColor[ 0.6941176, 0.8352941, 0.9098039 ], RGBColor[ 0.3764705, 0.490196, 0.5607843 ] ], ThemeColor[ "Background" ] ],
+										FrameStyle       -> Dynamic @ If[ CurrentValue[ "MouseOver" ], hoverFrame, ThemeColor[ "Background" ] ],
 										ImageSize        -> #2,
 										RoundingRadius   -> 4
 									],
@@ -41,7 +41,7 @@ Function[ Evaluate @ ToBoxes @
 									Framed[
 										Graphics[
 											{
-												Thickness[ 0.05 ], LightDarkSwitched[ RGBColor[ 0.9411764, 0.9411764, 0.9411764 ], GrayLevel[ 0.2 ] ], CircleBox[ { 0, 0 }, 1 ],
+												Thickness[ 0.05 ], color @ "Gray94_20", CircleBox[ { 0, 0 }, 1 ],
 												#1, Rectangle[ { -0.5, -0.5 }, { 0.5, 0.5 } ]
 											},
 											ImageSize -> #4,
@@ -51,7 +51,7 @@ Function[ Evaluate @ ToBoxes @
 										Background       -> ThemeColor[ "Background" ],
 										BaselinePosition -> Baseline,
 										FrameMargins     -> 0,
-										FrameStyle       -> Dynamic @ If[ CurrentValue[ "MouseOver" ], LightDarkSwitched[ RGBColor[ 0.6941176, 0.8352941, 0.9098039 ], RGBColor[ 0.3764705, 0.490196, 0.5607843 ] ], ThemeColor[ "Background" ] ],
+										FrameStyle       -> Dynamic @ If[ CurrentValue[ "MouseOver" ], hoverFrame, ThemeColor[ "Background" ] ],
 										ImageSize        -> #2,
 										RoundingRadius   -> 4
 									],
@@ -112,5 +112,6 @@ Function[ Evaluate @ ToBoxes @
 		},
 		Dynamic @ TrueQ @ $CloudEvaluation,
 		ImageSize -> Automatic
+	]
 	]
 ]

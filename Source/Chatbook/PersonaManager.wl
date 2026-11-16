@@ -127,8 +127,8 @@ CreatePersonaManagerPanel[ ] := DynamicModule[ { favorites, delimiterColor, dial
                         ],
                         TrackedSymbols :> {$CachedPersonaData}
                     ]&[
-                        color @ "ManagerGridHeaderBackground",
-                        color @ "ManagerGridItemBackground"
+                        color @ "Gray90_23",
+                        color @ "Gray100_14"
                     ]
                 },
 
@@ -282,7 +282,7 @@ formatName // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*formatVersion*)
 formatVersion // beginDefinition;
-formatVersion[ _Missing ] := Style["\[LongDash]", FontColor -> color @ "ManagerGridFont_1"];
+formatVersion[ _Missing ] := Style["\[LongDash]", FontColor -> color @ "Gray80_49"];
 formatVersion[ version: _String|None ] := version;
 formatVersion // endDefinition;
 

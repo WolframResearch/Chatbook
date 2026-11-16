@@ -1,11 +1,11 @@
-(GraphicsBox[
+Function @ Evaluate @ ToBoxes @ Graphics[
     {
         {
-            #,
+            #1,
             AbsoluteThickness[0.75],
             CapForm["Butt"],
             JoinForm[{"Miter", 10}],
-            JoinedCurveBox[
+            JoinedCurve[
                 {{
                     Line[{{6.76601, 3.695}, {6.15201, 3.695}}],
                     Line[{{6.15201, 3.695}, {2.672, 0.32}}],
@@ -23,11 +23,11 @@
             ]
         },
         {
-            #,
+            #1,
             AbsoluteThickness[0.75],
             CapForm["Butt"],
             JoinForm[{"Miter", 10}],
-            JoinedCurveBox[
+            JoinedCurve[
                 {{
                     Line[{{12, 3.695}, {6.76601, 3.695}}],
                     Line[{{6.76601, 3.695}, {6.76601, 7.215}}],
@@ -45,9 +45,9 @@
             ]
         }
     },
-    AspectRatio      -> Automatic,
-    ImagePadding     -> 0,
-    ImageSize        -> {16., 16.553435076322632`},
-    PlotRange        -> {{0., 12.99549}, {0., 13.445}},
+    AspectRatio -> Automatic,
+    ImagePadding -> 0,
+    ImageSize -> {16., 16.553435076322632},
+    PlotRange -> {{0., 12.99549}, {0., 13.445}},
     PlotRangePadding -> None
-])&
+]

@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/FormattingToolCalls.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/FormattingToolCalls.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -191,14 +191,14 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Definitions@@Tests/FormattingToolCalls.wlt:34,1-195,2"
+    TestID   -> "ToolCalls-Definitions"
 ]
 
 VerificationTest[
     { Head @ tcWLTool, Head @ tcWLResponse, Head @ tcEchoTool, tcEchoResponse[ "Output" ], tcWLResponse[ "Output" ] },
     { LLMTool, LLMToolResponse, LLMTool, "hi **there**", "Out[1]= 2" },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Definitions-Tools@@Tests/FormattingToolCalls.wlt:197,1-202,2"
+    TestID   -> "ToolCalls-Definitions-Tools"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -215,7 +215,7 @@ VerificationTest[
     tcStyles[ "Before\n\n" <> tcWebFetcher[ "tc0001" ] <> "\n\nAfter" ],
     { "Before\n", "InlineToolCall", "\nAfter" },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Full-Items@@Tests/FormattingToolCalls.wlt:214,1-219,2"
+    TestID   -> "ToolCalls-Full-Items"
 ]
 
 (* When the ID isn't in the tool evaluation results (e.g. in a new session), the tool call is parsed from its text.
@@ -231,7 +231,7 @@ VerificationTest[
         "Parameters"  -> $tcWebFetcherQuery
     |>,
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Full-TaggingRules@@Tests/FormattingToolCalls.wlt:225,1-235,2"
+    TestID   -> "ToolCalls-Full-TaggingRules"
 ]
 
 (* A finished tool call is a closed opener labeled "Used <display name>" with the tool's icon: *)
@@ -245,7 +245,7 @@ VerificationTest[
         "Progress" -> False
     |>,
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Full-Label@@Tests/FormattingToolCalls.wlt:238,1-249,2"
+    TestID   -> "ToolCalls-Full-Label"
 ]
 
 (* The opener's content has two tabs, with "Interpreted" selected. "Raw" shows the raw tool call text: *)
@@ -253,7 +253,7 @@ VerificationTest[
     With[ { cell = First @ tcCells @ tcWebFetcher[ "tc0004" ] }, { tcTabs @ cell, tcRawView @ cell } ],
     { { { "\"Raw\"", "\"Interpreted\"" }, 2 }, tcWebFetcher[ "tc0004" ] },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Full-Tabs-And-Raw-View@@Tests/FormattingToolCalls.wlt:252,1-257,2"
+    TestID   -> "ToolCalls-Full-Tabs-And-Raw-View"
 ]
 
 (* When the parameters are only known as text, "Interpreted" shows them as a "Program" cell, and the result as
@@ -265,7 +265,7 @@ VerificationTest[
         "Output" -> Cell[ TextData @ { "ok" }, "Text", Background -> None ]
     |>,
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Full-Interpreted-View@@Tests/FormattingToolCalls.wlt:261,1-269,2"
+    TestID   -> "ToolCalls-Full-Interpreted-View"
 ]
 
 (* While streaming, the tool call is a static placeholder that looks like a closed opener (it has no content), with
@@ -295,7 +295,7 @@ VerificationTest[
         Missing[ "NoTabs" ]
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Full-Streaming@@Tests/FormattingToolCalls.wlt:273,1-299,2"
+    TestID   -> "ToolCalls-Full-Streaming"
 ]
 
 (* Tool calls serialize as their raw text: *)
@@ -309,7 +309,7 @@ VerificationTest[
         "Before\n" <> tcWebFetcher[ "tc0011" ] <> "\nAfter"
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Full-RoundTrip@@Tests/FormattingToolCalls.wlt:302,1-313,2"
+    TestID   -> "ToolCalls-Full-RoundTrip"
 ]
 
 (* "ENDRESULT" without an ID also ends a tool call: *)
@@ -323,7 +323,7 @@ VerificationTest[
     ],
     { { "InlineToolCall", "\nAfter" }, True, "FormattingToolUsed" },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-EndResult-Without-ID@@Tests/FormattingToolCalls.wlt:316,1-327,2"
+    TestID   -> "ToolCalls-EndResult-Without-ID"
 ]
 
 (* An unknown tool is displayed with the name as written and the generic icon: *)
@@ -342,7 +342,7 @@ VerificationTest[
         "made_up_tool"
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Unknown-Tool@@Tests/FormattingToolCalls.wlt:330,1-346,2"
+    TestID   -> "ToolCalls-Unknown-Tool"
 ]
 
 (* The tool name ends at the first line break or "{", so the JSON can be on the same line: *)
@@ -350,7 +350,7 @@ VerificationTest[
     tcTags[ "TOOLCALL: web_fetcher {\"url\":\"https://example.com\"}\nRESULT\nok\nENDRESULT(tc0013)" ][[ { "Name", "DisplayName" } ]],
     <| "Name" -> "web_fetcher", "DisplayName" -> "Web Fetcher" |>,
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Name-Before-JSON@@Tests/FormattingToolCalls.wlt:349,1-354,2"
+    TestID   -> "ToolCalls-Name-Before-JSON"
 ]
 
 (* Trailing whitespace after ENDRESULT is not part of the stored tool call text: *)
@@ -358,7 +358,7 @@ VerificationTest[
     tcTags[ "Before\n" <> tcWebFetcher[ "tc0014" ] <> "   \nAfter" ][ "ToolCall" ],
     tcWebFetcher[ "tc0014" ],
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Trailing-Whitespace-Trimmed@@Tests/FormattingToolCalls.wlt:357,1-362,2"
+    TestID   -> "ToolCalls-Trailing-Whitespace-Trimmed"
 ]
 
 (* A tool call doesn't have to start on its own line: *)
@@ -366,7 +366,7 @@ VerificationTest[
     tcStyles[ "See " <> tcWebFetcher[ "tc0015" ] <> " done" ],
     { "See ", "InlineToolCall", " done" },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Mid-Line@@Tests/FormattingToolCalls.wlt:365,1-370,2"
+    TestID   -> "ToolCalls-Mid-Line"
 ]
 
 (* Consecutive tool calls are separate cells. One blank line between them becomes a single line break, and more blank
@@ -387,7 +387,7 @@ VerificationTest[
         "A\n" <> tcWebFetcher[ "tc0024" ] <> "\n\n" <> tcWebFetcher[ "tc0025" ] <> "\nB"
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Consecutive@@Tests/FormattingToolCalls.wlt:374,1-391,2"
+    TestID   -> "ToolCalls-Consecutive"
 ]
 
 (* A code block in a tool result doesn't end the tool call or become a separate code block: *)
@@ -397,7 +397,7 @@ VerificationTest[
     ],
     { { "InlineToolCall", "\nAfter" }, True },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Result-With-Code-Block@@Tests/FormattingToolCalls.wlt:394,1-401,2"
+    TestID   -> "ToolCalls-Result-With-Code-Block"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -415,7 +415,7 @@ VerificationTest[
     },
     { { "Text\n", "InlineToolCall" }, tcWebFetcher[ "tc0524" ], tcWebFetcher[ "tc0525" ] },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Fence-Prefix-Removed@@Tests/FormattingToolCalls.wlt:410,1-419,2"
+    TestID   -> "ToolCalls-Fence-Prefix-Removed"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -446,7 +446,7 @@ VerificationTest[
         |>
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Unterminated-Finished@@Tests/FormattingToolCalls.wlt:428,1-450,2"
+    TestID   -> "ToolCalls-Unterminated-Finished"
 ]
 
 (* While streaming, a partial tool call is shown as soon as the tool name and the start of its JSON are known: *)
@@ -471,7 +471,7 @@ VerificationTest[
         |>
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Unterminated-Streaming@@Tests/FormattingToolCalls.wlt:453,1-475,2"
+    TestID   -> "ToolCalls-Unterminated-Streaming"
 ]
 
 (* A result that is still streaming in (no ENDRESULT yet) still shows "Using", but "Parameters" is known: *)
@@ -481,7 +481,7 @@ VerificationTest[
     ],
     { <| "Label" -> "FormattingToolUsing", "Progress" -> True |>, $tcWebFetcherQuery },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Unterminated-Streaming-Result@@Tests/FormattingToolCalls.wlt:478,1-485,2"
+    TestID   -> "ToolCalls-Unterminated-Streaming-Result"
 ]
 
 (* Partial tool calls serialize as the text received so far: *)
@@ -489,7 +489,7 @@ VerificationTest[
     tcRoundTrip[ "Before\nTOOLCALL: web_fetcher\n{\"url\":\"ht", "Streaming" ],
     "Before\nTOOLCALL: web_fetcher\n{\"url\":\"ht",
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Unterminated-RoundTrip@@Tests/FormattingToolCalls.wlt:488,1-493,2"
+    TestID   -> "ToolCalls-Unterminated-RoundTrip"
 ]
 
 (* Once the output is finished, a tool call without a result is no longer in progress, however far it got when the chat
@@ -511,7 +511,7 @@ VerificationTest[
         3
     ],
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Cancelled-GH#575@@Tests/FormattingToolCalls.wlt:497,1-515,2"
+    TestID   -> "ToolCalls-Cancelled-GH#575"
 ]
 
 (* A tool that finished with empty output isn't cancelled, whether or not its result is still available: *)
@@ -532,7 +532,7 @@ VerificationTest[
     ],
     ConstantArray[ <| "Label" -> "FormattingToolUsed", "Progress" -> False |>, 2 ],
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Empty-Result-Not-Cancelled-GH#575@@Tests/FormattingToolCalls.wlt:518,1-536,2"
+    TestID   -> "ToolCalls-Empty-Result-Not-Cancelled-GH#575"
 ]
 
 (* The labels are defined for every language: *)
@@ -546,7 +546,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Cancelled-TextResources-GH#575@@Tests/FormattingToolCalls.wlt:539,1-550,2"
+    TestID   -> "ToolCalls-Cancelled-TextResources-GH#575"
 ]
 
 (* Before there's a "{" the tool call can't be parsed, so it only shows a "Using tool..." label without an opener (or
@@ -569,7 +569,7 @@ VerificationTest[
         "Text\nTOOLCALL: web_fetcher"
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-No-Arguments-Loading@@Tests/FormattingToolCalls.wlt:554,1-573,2"
+    TestID   -> "ToolCalls-No-Arguments-Loading"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -606,7 +606,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Neighbors@@Tests/FormattingToolCalls.wlt:580,1-610,2"
+    TestID   -> "ToolCalls-Neighbors"
 ]
 
 (* The same while streaming, and with horizontal rules: *)
@@ -622,7 +622,7 @@ VerificationTest[
         { "Text\n", "MarkdownDelimiter", "\n", "InlineToolCall", "\n", "MarkdownDelimiter", "\nText" }
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Neighbors-Streaming-And-Delimiters@@Tests/FormattingToolCalls.wlt:613,1-626,2"
+    TestID   -> "ToolCalls-Neighbors-Streaming-And-Delimiters"
 ]
 
 (* Tool calls and "/retry" inside think tags are not formatted; they stay as text in the thoughts: *)
@@ -634,7 +634,7 @@ VerificationTest[
     ],
     { { "ThoughtsOpener", TextData @ { tcWebFetcher[ "tc0034" ] <> "\nBad.\n/retry" } }, "\nAfter" },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Inside-Thinking-Not-Formatted@@Tests/FormattingToolCalls.wlt:629,1-638,2"
+    TestID   -> "ToolCalls-Inside-Thinking-Not-Formatted"
 ]
 
 (* Escaped markdown characters elsewhere in the response take a different formatting path, which gives the same
@@ -656,7 +656,7 @@ VerificationTest[
         |>
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Escaped-Text-Equivalent@@Tests/FormattingToolCalls.wlt:642,1-660,2"
+    TestID   -> "ToolCalls-Escaped-Text-Equivalent"
 ]
 
 (* Non-ASCII text in and around tool calls is kept as is, in the display and in serialization: *)
@@ -687,7 +687,7 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Unicode@@Tests/FormattingToolCalls.wlt:663,1-691,2"
+    TestID   -> "ToolCalls-Unicode"
 ]
 
 (* The LLM may write "\r\n" line breaks, while Chatbook appends the tool result with "\n". The tool call is still
@@ -718,7 +718,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Mixed-Line-Endings@@Tests/FormattingToolCalls.wlt:695,1-722,2"
+    TestID   -> "ToolCalls-Mixed-Line-Endings"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -748,7 +748,7 @@ VerificationTest[
         "Text\n/wl\n1+1\n/exec\nRESULT\nOut[1]= 2\nENDRESULT(tc0101)\nAfter"
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Simple-EndResult@@Tests/FormattingToolCalls.wlt:735,1-752,2"
+    TestID   -> "ToolCalls-Simple-EndResult"
 ]
 
 (* Without an ENDRESULT, the command must be the short name of a tool in $ChatHandlerData[ "ToolShortNames" ]. The
@@ -779,7 +779,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Simple-Registered-Command@@Tests/FormattingToolCalls.wlt:757,1-783,2"
+    TestID   -> "ToolCalls-Simple-Registered-Command"
 ]
 
 (* Lines that start with "/" but are not commands (or are unregistered commands without an ENDRESULT) stay as text:
@@ -804,7 +804,7 @@ VerificationTest[
         { "InlineToolCall" }
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Simple-Slash-Lines-Not-ToolCalls@@Tests/FormattingToolCalls.wlt:787,1-808,2"
+    TestID   -> "ToolCalls-Simple-Slash-Lines-Not-ToolCalls"
 ]
 
 (* Whitespace before the command and spaces after it are allowed. The stored tool call text is trimmed: *)
@@ -820,7 +820,7 @@ VerificationTest[
         <| "ToolCall" -> "/wl   \n1+1\n/exec\nRESULT\nx\nENDRESULT(tc0107)" |>
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Simple-Whitespace@@Tests/FormattingToolCalls.wlt:811,1-824,2"
+    TestID   -> "ToolCalls-Simple-Whitespace"
 ]
 
 (* A code block that starts with an unregistered command (and has no ENDRESULT) is an ordinary code block: *)
@@ -828,7 +828,7 @@ VerificationTest[
     Block[ { Wolfram`Chatbook`$ChatHandlerData = <| |> }, tcStyles[ "Code:\n```\n/wl\n1+1\n```\nAfter" ] ],
     { "Code:\n", "ChatCodeBlock", "\nAfter" },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Simple-Code-Block-Not-ToolCall@@Tests/FormattingToolCalls.wlt:827,1-832,2"
+    TestID   -> "ToolCalls-Simple-Code-Block-Not-ToolCall"
 ]
 
 (* An opening code fence directly before a simple tool call is dropped, as for TOOLCALL: *)
@@ -842,7 +842,7 @@ VerificationTest[
         <| "ToolCall" -> "/wl\n1+1\n/exec\nRESULT\nx\nENDRESULT(tc0109)" |>
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Simple-Fence-Prefix-Removed@@Tests/FormattingToolCalls.wlt:835,1-846,2"
+    TestID   -> "ToolCalls-Simple-Fence-Prefix-Removed"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -875,7 +875,7 @@ VerificationTest[
         |>
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Simple-Method-Unterminated@@Tests/FormattingToolCalls.wlt:855,1-879,2"
+    TestID   -> "ToolCalls-Simple-Method-Unterminated"
 ]
 
 (* With a result, it's labeled "Used". The parameters are shown in a grid with the default formatter (ClickToCopy),
@@ -901,7 +901,7 @@ VerificationTest[
         |>
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Simple-Method-Result@@Tests/FormattingToolCalls.wlt:883,1-905,2"
+    TestID   -> "ToolCalls-Simple-Method-Result"
 ]
 
 (* While streaming, parsed simple tool calls are static placeholders: *)
@@ -928,7 +928,7 @@ VerificationTest[
         |>
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Simple-Method-Streaming@@Tests/FormattingToolCalls.wlt:908,1-932,2"
+    TestID   -> "ToolCalls-Simple-Method-Streaming"
 ]
 
 (* Tools with several parameters take them one per line, or by name: *)
@@ -948,7 +948,7 @@ VerificationTest[
         <| "query" -> "population of France", "steps" -> "" |>
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Simple-Method-Parameters@@Tests/FormattingToolCalls.wlt:935,1-952,2"
+    TestID   -> "ToolCalls-Simple-Method-Parameters"
 ]
 
 (* An ENDRESULT makes any command a tool call, but with the "Simple" tool method a command without a registered tool
@@ -989,7 +989,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Simple-Method-Failed@@Tests/FormattingToolCalls.wlt:956,1-993,2"
+    TestID   -> "ToolCalls-Simple-Method-Failed"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1025,7 +1025,7 @@ VerificationTest[
         |>
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Evaluation-Results-TaggingRules@@Tests/FormattingToolCalls.wlt:1002,1-1029,2"
+    TestID   -> "ToolCalls-Evaluation-Results-TaggingRules"
 ]
 
 (* The interpreted parameters are shown in a grid, and the tool's output as formatted markdown: *)
@@ -1040,7 +1040,7 @@ VerificationTest[
         "Output" -> Cell[ TextData @ { "hi ", StyleBox[ "there", FontWeight -> Bold ] }, "Text", Background -> None ]
     |>,
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Evaluation-Results-Interpreted-View@@Tests/FormattingToolCalls.wlt:1032,1-1044,2"
+    TestID   -> "ToolCalls-Evaluation-Results-Interpreted-View"
 ]
 
 (* A built-in tool's formatting function is used for the interpreted view: the Wolfram Language evaluator shows its
@@ -1075,7 +1075,7 @@ VerificationTest[
         |>
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Evaluation-Results-Builtin-Formatter@@Tests/FormattingToolCalls.wlt:1048,1-1079,2"
+    TestID   -> "ToolCalls-Evaluation-Results-Builtin-Formatter"
 ]
 
 (* Simple tool calls ("/wl" ... "/exec") are looked up by their ID the same way, with or without the "Simple" tool
@@ -1123,7 +1123,7 @@ VerificationTest[
         "Text\n/wl\n1+1\n/exec\nRESULT\nOut[1]= 2\nENDRESULT(tc0210)\nAfter"
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Evaluation-Results-Simple-Syntax@@Tests/FormattingToolCalls.wlt:1083,1-1127,2"
+    TestID   -> "ToolCalls-Evaluation-Results-Simple-Syntax"
 ]
 
 (* While streaming, tool calls with evaluation results are static placeholders too: *)
@@ -1142,7 +1142,7 @@ VerificationTest[
         "Progress" -> False
     |>,
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Evaluation-Results-Streaming@@Tests/FormattingToolCalls.wlt:1130,1-1146,2"
+    TestID   -> "ToolCalls-Evaluation-Results-Streaming"
 ]
 
 (* The "OpenToolCallBoxes" setting ($openToolCallBoxes) makes openers initially open, but only for tool calls with
@@ -1162,7 +1162,7 @@ VerificationTest[
     ],
     { { True, True }, False },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Evaluation-Results-Open@@Tests/FormattingToolCalls.wlt:1150,1-1166,2"
+    TestID   -> "ToolCalls-Evaluation-Results-Open"
 ]
 
 (* A Failure in the evaluation results gives a failed tool call: *)
@@ -1183,7 +1183,7 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Evaluation-Results-Failure@@Tests/FormattingToolCalls.wlt:1169,1-1187,2"
+    TestID   -> "ToolCalls-Evaluation-Results-Failure"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1221,7 +1221,7 @@ VerificationTest[
         "My Cool Tool"
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-FormatToolCall-Name@@Tests/FormattingToolCalls.wlt:1199,1-1225,2"
+    TestID   -> "ToolCalls-FormatToolCall-Name"
 ]
 
 (* While streaming, an explicitly empty "Result" means the tool is still running: "Using" with a progress indicator.
@@ -1238,7 +1238,7 @@ VerificationTest[
         <| "State" -> "Static", "Label" -> "FormattingToolUsed", "Progress" -> False |>
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-FormatToolCall-Using@@Tests/FormattingToolCalls.wlt:1229,1-1242,2"
+    TestID   -> "ToolCalls-FormatToolCall-Using"
 ]
 
 (* The "Status" determines whether it's an opener or a static placeholder. Without the third argument, it depends on
@@ -1253,7 +1253,7 @@ VerificationTest[
     },
     { Deploy, DynamicModule, Deploy, DynamicModule, DynamicModule },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-FormatToolCall-Status@@Tests/FormattingToolCalls.wlt:1246,1-1257,2"
+    TestID   -> "ToolCalls-FormatToolCall-Status"
 ]
 
 (* Without a name, the label is the "Using tool..." string resource, or "Cancelled tool call" in finished output: *)
@@ -1267,7 +1267,7 @@ VerificationTest[
         Dynamic @ FEPrivate`FrontEndResource[ "ChatbookStrings", "FormattingToolUsingLoading" ]
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-FormatToolCall-Loading@@Tests/FormattingToolCalls.wlt:1260,1-1271,2"
+    TestID   -> "ToolCalls-FormatToolCall-Loading"
 ]
 
 (* "Open" -> True gives an opener that is initially open: *)
@@ -1275,7 +1275,7 @@ VerificationTest[
     tcLabel[ ToBoxes @ FormatToolCall[ "x", <| "Name" -> "t", "Result" -> "r", "ToolCall" -> "x", "Parameters" -> "q", "Open" -> True |> ] ][ "State" ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-FormatToolCall-Open@@Tests/FormattingToolCalls.wlt:1274,1-1279,2"
+    TestID   -> "ToolCalls-FormatToolCall-Open"
 ]
 
 (* A Failure is shown framed, in both states: *)
@@ -1292,7 +1292,7 @@ VerificationTest[
         Framed[ Failure[ "Oops", <| "MessageTemplate" -> "Bad" |> ], ___ ]
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-FormatToolCall-Failure@@Tests/FormattingToolCalls.wlt:1282,1-1296,2"
+    TestID   -> "ToolCalls-FormatToolCall-Failure"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1313,7 +1313,7 @@ VerificationTest[
         |>
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-FormatToolCall-Views@@Tests/FormattingToolCalls.wlt:1303,1-1317,2"
+    TestID   -> "ToolCalls-FormatToolCall-Views"
 ]
 
 (* Parameters given as an association are shown as a grid of name/value rows: *)
@@ -1333,7 +1333,7 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-FormatToolCall-Parameter-Grid@@Tests/FormattingToolCalls.wlt:1320,1-1337,2"
+    TestID   -> "ToolCalls-FormatToolCall-Parameter-Grid"
 ]
 
 (* The "FormattingFunction" formats parameter values (with "Parameters" and the parameter name) and the result (with
@@ -1371,7 +1371,7 @@ VerificationTest[
         |>
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-FormatToolCall-Formatting-Functions@@Tests/FormattingToolCalls.wlt:1343,1-1375,2"
+    TestID   -> "ToolCalls-FormatToolCall-Formatting-Functions"
 ]
 
 (* The default formatter shows non-string results as they are, and uses the "Result" of an association result: *)
@@ -1385,7 +1385,7 @@ VerificationTest[
         Cell[ TextData @ { StyleBox[ "it", FontSlant -> Italic ] }, "Text", Background -> None ]
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-FormatToolCall-Auto-Formatter-Results@@Tests/FormattingToolCalls.wlt:1378,1-1389,2"
+    TestID   -> "ToolCalls-FormatToolCall-Auto-Formatter-Results"
 ]
 
 (* Markdown results are fully formatted, including code blocks. Like for built-in formatters, "Input" cells are changed
@@ -1406,7 +1406,7 @@ VerificationTest[
         Background -> None
     ],
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-FormatToolCall-Code-Block-Result@@Tests/FormattingToolCalls.wlt:1393,1-1410,2"
+    TestID   -> "ToolCalls-FormatToolCall-Code-Block-Result"
 ]
 
 (* Very large opener content (over 50,000 bytes) is compressed until the opener is viewed (it's decompressed by a
@@ -1427,7 +1427,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-FormatToolCall-Large-Content-Compressed@@Tests/FormattingToolCalls.wlt:1414,1-1431,2"
+    TestID   -> "ToolCalls-FormatToolCall-Large-Content-Compressed"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1469,7 +1469,7 @@ VerificationTest[
         "Text\n" <> tcWebFetcher[ "tc0302" ] <> "\nAfter"
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Custom-Formatter@@Tests/FormattingToolCalls.wlt:1439,1-1473,2"
+    TestID   -> "ToolCalls-Custom-Formatter"
 ]
 
 (* The processing function gets the tool call text and the full parsed tool call, including the icons and result
@@ -1521,7 +1521,7 @@ VerificationTest[
         { "/zz\nfoo\n/exec\nRESULT\nx\nENDRESULT(tc0304)", Failure[ "InvalidToolCall", _ ] }
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Custom-Formatter-Arguments@@Tests/FormattingToolCalls.wlt:1477,1-1525,2"
+    TestID   -> "ToolCalls-Custom-Formatter-Arguments"
 ]
 
 (* A "FormatToolCall" processing function of None uses the default formatting: *)
@@ -1536,7 +1536,7 @@ VerificationTest[
     ],
     <| "State" -> False, "Label" -> "FormattingToolUsed", "Name" -> "Web Fetcher" |>,
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Custom-Formatter-None@@Tests/FormattingToolCalls.wlt:1528,1-1540,2"
+    TestID   -> "ToolCalls-Custom-Formatter-None"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1565,7 +1565,7 @@ VerificationTest[
         tcWebFetcher[ "tc0402" ]
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Retry-Finished@@Tests/FormattingToolCalls.wlt:1548,1-1569,2"
+    TestID   -> "ToolCalls-Retry-Finished"
 ]
 
 (* The discarded tool call and its text are formatted as usual (including markdown) and shown faded, one row per
@@ -1594,7 +1594,7 @@ VerificationTest[
         Column[ { RawBoxes @ Cell[ TextData @ { Cell[ _, "InlineToolCall", ___ ] }, "Text", OrderlessPatternSequence[ Background -> None, FontOpacity -> 0.5 ] ] }, Spacings -> 0.5 ]
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Retry-Discarded-Content@@Tests/FormattingToolCalls.wlt:1573,1-1598,2"
+    TestID   -> "ToolCalls-Retry-Discarded-Content"
 ]
 
 (* While streaming, the discarded material is a static placeholder without content: *)
@@ -1614,7 +1614,7 @@ VerificationTest[
         Missing[ "NoContent" ]
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Retry-Streaming@@Tests/FormattingToolCalls.wlt:1601,1-1618,2"
+    TestID   -> "ToolCalls-Retry-Streaming"
 ]
 
 (* Text before the discarded tool call is kept; everything from the tool call to "/retry" is discarded, including
@@ -1623,7 +1623,7 @@ VerificationTest[
     tcStyles[ "Intro\n" <> tcWebFetcher[ "tc0407" ] <> "\nText A\n\nText B\n/retry\nFinal" ],
     { "Intro\n", "DiscardedMaterial", "\nFinal" },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Retry-Text-Before-Kept@@Tests/FormattingToolCalls.wlt:1622,1-1627,2"
+    TestID   -> "ToolCalls-Retry-Text-Before-Kept"
 ]
 
 (* Each "/retry" discards the tool call before it. Consecutive discarded tool calls are grouped into one opener, with
@@ -1659,7 +1659,7 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Retry-Grouped@@Tests/FormattingToolCalls.wlt:1631,1-1663,2"
+    TestID   -> "ToolCalls-Retry-Grouped"
 ]
 
 (* Failed tool calls can be discarded too, and get their own row: *)
@@ -1704,7 +1704,7 @@ VerificationTest[
         ]
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Retry-Failed-ToolCall@@Tests/FormattingToolCalls.wlt:1666,1-1708,2"
+    TestID   -> "ToolCalls-Retry-Failed-ToolCall"
 ]
 
 (* "/retry" at the end of the response: *)
@@ -1716,7 +1716,7 @@ VerificationTest[
     },
     { { "DiscardedMaterial" }, { "DiscardedMaterial" }, { "DiscardedMaterial" } },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Retry-At-End@@Tests/FormattingToolCalls.wlt:1711,1-1720,2"
+    TestID   -> "ToolCalls-Retry-At-End"
 ]
 
 (* "/retry" before any tool call is removed: *)
@@ -1724,7 +1724,7 @@ VerificationTest[
     tcStyles[ "/retry\n" <> tcWebFetcher[ "tc0411" ] <> "\nDone." ],
     { "InlineToolCall", "\nDone." },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Retry-Without-ToolCall@@Tests/FormattingToolCalls.wlt:1723,1-1728,2"
+    TestID   -> "ToolCalls-Retry-Without-ToolCall"
 ]
 
 (* "/retry" must be followed by whitespace or the end of the response: *)
@@ -1732,7 +1732,7 @@ VerificationTest[
     tcStyles[ "Type /retrying to try again." ],
     { "Type /retrying to try again." },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Retry-Prefix-Not-Retry@@Tests/FormattingToolCalls.wlt:1731,1-1736,2"
+    TestID   -> "ToolCalls-Retry-Prefix-Not-Retry"
 ]
 
 (* A "/retry" line is never the command of a simple tool call, even when an ENDRESULT follows: *)
@@ -1740,7 +1740,7 @@ VerificationTest[
     tcStyles[ tcWebFetcher[ "tc0421" ] <> "\nBad\n/retry\nfoo\nENDRESULT(tc0422)" ],
     { "DiscardedMaterial", "\nfoo\nENDRESULT(tc0422)" },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Retry-Not-Simple-ToolCall@@Tests/FormattingToolCalls.wlt:1739,1-1744,2"
+    TestID   -> "ToolCalls-Retry-Not-Simple-ToolCall"
 ]
 
 (* Simple tool calls can be discarded too: *)
@@ -1748,7 +1748,7 @@ VerificationTest[
     tcStyles[ "/wl\n1\n/exec\nRESULT\n1\nENDRESULT(tc0412)\nBad.\n/retry\n/wl\n2\n/exec\nRESULT\n2\nENDRESULT(tc0413)\nOK" ],
     { "DiscardedMaterial", "\n", "InlineToolCall", "\nOK" },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Retry-Simple-ToolCalls@@Tests/FormattingToolCalls.wlt:1747,1-1752,2"
+    TestID   -> "ToolCalls-Retry-Simple-ToolCalls"
 ]
 
 (* Discarded material is not serialized (the line break after it is, so it leaves a blank line): *)
@@ -1756,7 +1756,7 @@ VerificationTest[
     tcRoundTrip[ "Intro\n" <> tcWebFetcher[ "tc0414" ] <> "\nBad.\n/retry\n" <> tcWebFetcher[ "tc0415" ] <> "\nDone." ],
     "Intro\n\n" <> tcWebFetcher[ "tc0415" ] <> "\nDone.",
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Retry-RoundTrip@@Tests/FormattingToolCalls.wlt:1755,1-1760,2"
+    TestID   -> "ToolCalls-Retry-RoundTrip"
 ]
 
 (* With escaped markdown characters, discarded text has its escapes removed, and the streaming display is the same: *)
@@ -1777,7 +1777,7 @@ VerificationTest[
         Column[ { RawBoxes @ Cell[ TextData @ { Cell[ _, "InlineToolCall", ___ ], "\nBad $5." }, ___ ] }, ___ ]
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Retry-Escaped@@Tests/FormattingToolCalls.wlt:1763,1-1781,2"
+    TestID   -> "ToolCalls-Retry-Escaped"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1807,7 +1807,7 @@ VerificationTest[
     };,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-EndMarker-Definitions-GH#314@@Tests/FormattingToolCalls.wlt:1790,1-1811,2"
+    TestID   -> "ToolCalls-EndMarker-Definitions-GH#314"
 ]
 
 (* The whole result stays in the tool call box: *)
@@ -1815,7 +1815,7 @@ VerificationTest[
     tcStyles[ tcAppendResult[ "Textual", # ][ "FullContent" ] <> "Done." ] & /@ $tcMarkerOutputs,
     ConstantArray[ { "InlineToolCall", "\nDone." }, Length @ $tcMarkerOutputs ],
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-EndMarker-Textual-GH#314@@Tests/FormattingToolCalls.wlt:1814,1-1819,2"
+    TestID   -> "ToolCalls-EndMarker-Textual-GH#314"
 ]
 
 VerificationTest[
@@ -1824,7 +1824,7 @@ VerificationTest[
     ],
     ConstantArray[ { "InlineToolCall", "\nDone." }, Length @ $tcMarkerOutputs ],
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-EndMarker-Simple-GH#314@@Tests/FormattingToolCalls.wlt:1821,1-1828,2"
+    TestID   -> "ToolCalls-EndMarker-Simple-GH#314"
 ]
 
 (* The stored tool call text, and what parsePartialToolCallString shows for it when the tool result is no longer
@@ -1843,7 +1843,7 @@ VerificationTest[
         "before\nEND\\RESULT(deadbeef)\nsendResult[ 1 ]"
     },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-EndMarker-ToolCallText-GH#314@@Tests/FormattingToolCalls.wlt:1832,1-1847,2"
+    TestID   -> "ToolCalls-EndMarker-ToolCallText-GH#314"
 ]
 
 (* The marker is case-sensitive, so words that contain it in another case don't end a tool call, including in the
@@ -1855,7 +1855,7 @@ VerificationTest[
     },
     { { "InlineToolCall", "\nDone." }, { "InlineToolCall", "\nDone." } },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-EndMarker-Case-Sensitive-GH#314@@Tests/FormattingToolCalls.wlt:1851,1-1859,2"
+    TestID   -> "ToolCalls-EndMarker-Case-Sensitive-GH#314"
 ]
 
 (* Both content strings are updated, and while streaming the split point is the real end marker: *)
@@ -1873,7 +1873,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-EndMarker-DynamicContent-GH#314@@Tests/FormattingToolCalls.wlt:1862,1-1877,2"
+    TestID   -> "ToolCalls-EndMarker-DynamicContent-GH#314"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

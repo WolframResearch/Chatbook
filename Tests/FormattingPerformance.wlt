@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/FormattingPerformance.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/FormattingPerformance.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -26,7 +26,7 @@ VerificationTest[
 VerificationTest[
     Wolfram`Chatbook`Formatting`Private`formatTextString /@ { "**```**", "**```** a", "**a _```_**", "a **```** b" },
     { { }, { " a" }, { StyleBox[ "a ", FontWeight -> Bold ] }, { "a ", "", " b" } },
-    TestID -> "DeferredRules-EmptyEnds@@Tests/FormattingPerformance.wlt:26,1-30,2"
+    TestID -> "DeferredRules-EmptyEnds"
 ]
 
 (* $$mdRow2 matches the same substrings as the old table row pattern, on random strings: *)
@@ -38,7 +38,7 @@ VerificationTest[
         SameQ @@ (Union /@ StringPosition[ strings, #, Overlaps -> All ] & /@ { old, new })
     ],
     True,
-    TestID -> "TableRow-SameMatches@@Tests/FormattingPerformance.wlt:33,1-42,2"
+    TestID -> "TableRow-SameMatches"
 ]
 
 (* A 10 KB line with bold text formats in well under a second (it took about 4 s with the old definitions): *)
@@ -46,7 +46,7 @@ VerificationTest[
     First @ AbsoluteTiming @ FormatChatOutput @ StringRepeat[ "some words **bold** and more words ", 300 ],
     _? (LessThan[ 1 ]),
     SameTest -> MatchQ,
-    TestID   -> "LongLine-Timing@@Tests/FormattingPerformance.wlt:45,1-50,2"
+    TestID   -> "LongLine-Timing"
 ]
 
 (* almostCertainlyWLCodeQ only tests the text before the first "[", whitespace, "-" or ":" as a System name. The old
@@ -73,7 +73,7 @@ VerificationTest[
         Select[ inputs, oldQ @@ # =!= Wolfram`Chatbook`Formatting`Private`almostCertainlyWLCodeQ @@ # & ]
     ],
     { },
-    TestID -> "AlmostCertainlyWLCodeQ-SameAsBefore@@Tests/FormattingPerformance.wlt:54,1-77,2"
+    TestID -> "AlmostCertainlyWLCodeQ-SameAsBefore"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

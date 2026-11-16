@@ -198,7 +198,7 @@ $modelAutoSettings[ "Anthropic", "Claude5" ] =
 (* Cybersecurity refusals from these models are retried on Claude Opus 4.8: *)
 Scan[
     ($modelAutoSettings[ "Anthropic", # ] = <| "RefusalFallbackModel" -> "claude-opus-4-8" |>) &,
-    { "ClaudeFable5", "ClaudeFable51", "ClaudeOpus5", "ClaudeOpus55" }
+    { "ClaudeFable5", "ClaudeFable51", "ClaudeFable52", "ClaudeOpus5", "ClaudeOpus55" }
 ];
 
 (* ::**************************************************************************************************************:: *)

@@ -2,7 +2,7 @@ Graphics[
  {
   Thickness[ 0.05 ],
   {
-   FaceForm @ { color @ "IconsPersonaFromURL_1", Opacity[ 1.0 ] },
+   FaceForm @ { color @ "Gray100_10", Opacity[ 1.0 ] },
    FilledCurve[
     { { { 1, 4, 3 }, { 1, 3, 3 }, { 1, 3, 3 }, { 1, 3, 3 } } },
     {
@@ -25,7 +25,7 @@ Graphics[
    ]
   },
   {
-   FaceForm @ { color @ "IconsPersonaFromURL_2", Opacity[ 1.0 ] },
+   FaceForm @ { LightDarkSwitched[ GrayLevel[ 0.8 ], GrayLevel[ 0.65 ] ], Opacity[ 1.0 ] },
    FilledCurve[
     {
      {
@@ -799,7 +799,7 @@ Graphics[
    ]
   },
   {
-   FaceForm @ { color @ "IconsPersonaFromURL_3", Opacity[ 1.0 ] },
+   FaceForm @ { LightDarkSwitched[ GrayLevel[ 0.4314 ], GrayLevel[ 0.8 ] ], Opacity[ 1.0 ] },
    FilledCurve[
     {
      {

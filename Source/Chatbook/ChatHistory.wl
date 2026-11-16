@@ -12,7 +12,7 @@ Needs[ "Wolfram`Chatbook`Common`"  ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$cellFrameColor = RGBColor[ "#a3c9f2" ];
+$cellFrameColor = color @ "Blue_A3C9F2_5F88B8";
 
 $validChatHistoryProperties = {
     "CellObjects",

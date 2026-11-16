@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/DynamicSplit.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/DynamicSplit.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -167,7 +167,7 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "Definitions@@Tests/DynamicSplit.wlt:30,1-171,2"
+    TestID   -> "Definitions"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -193,7 +193,7 @@ VerificationTest[
     },
     { True, True, True, True, False, False, False, False, False, False, False },
     SameTest -> MatchQ,
-    TestID   -> "DynamicSplitSkipQ@@Tests/DynamicSplit.wlt:176,1-197,2"
+    TestID   -> "DynamicSplitSkipQ"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -229,7 +229,7 @@ VerificationTest[
         { { }, "" }
     },
     SameTest -> MatchQ,
-    TestID   -> "SplitDynamicContent-CheckedContent@@Tests/DynamicSplit.wlt:202,1-233,2"
+    TestID   -> "SplitDynamicContent-CheckedContent"
 ]
 
 (* The checked content is not used after the start of the content changes (e.g. when removeSeverityTag removes a tag): *)
@@ -245,7 +245,7 @@ VerificationTest[
         { "Here is code:\n", "```wl\nx\n```", "\nAnd then more" }
     },
     SameTest -> MatchQ,
-    TestID   -> "SplitDynamicContent-ChangedStart@@Tests/DynamicSplit.wlt:236,1-249,2"
+    TestID   -> "SplitDynamicContent-ChangedStart"
 ]
 
 VerificationTest[
@@ -260,7 +260,7 @@ VerificationTest[
     ],
     { True .. },
     SameTest -> MatchQ,
-    TestID   -> "SplitDynamicContent-Reference@@Tests/DynamicSplit.wlt:251,1-264,2"
+    TestID   -> "SplitDynamicContent-Reference"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -289,7 +289,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "SplitDynamicContent-RandomChunks@@Tests/DynamicSplit.wlt:271,1-293,2"
+    TestID   -> "SplitDynamicContent-RandomChunks"
 ]
 
 (* Most chunks of long prose should not need a full split: *)
@@ -301,7 +301,7 @@ VerificationTest[
     ],
     { 0, True },
     SameTest -> MatchQ,
-    TestID   -> "SplitDynamicContent-SkipsProse@@Tests/DynamicSplit.wlt:296,1-305,2"
+    TestID   -> "SplitDynamicContent-SkipsProse"
 ]
 
 (* The full writeChunk0 results (static parts and final content) are the same as with the reference implementation: *)
@@ -325,7 +325,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "WriteChunk0-Reference@@Tests/DynamicSplit.wlt:308,1-329,2"
+    TestID   -> "WriteChunk0-Reference"
 ]
 
 (* Static parts are actually written while streaming: *)
@@ -341,7 +341,7 @@ VerificationTest[
     ],
     { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "WriteChunk0-StaticParts@@Tests/DynamicSplit.wlt:332,1-345,2"
+    TestID   -> "WriteChunk0-StaticParts"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -390,7 +390,7 @@ VerificationTest[
         { { "The opener:\n", "```xml\n<think>\n```", "\nDone" }, None }
     },
     SameTest -> MatchQ,
-    TestID   -> "SplitDynamicContent-ThinkTags@@Tests/DynamicSplit.wlt:354,1-394,2"
+    TestID   -> "SplitDynamicContent-ThinkTags"
 ]
 
 (* Prose after declined content should not need a full split for every chunk: *)
@@ -402,7 +402,7 @@ VerificationTest[
     ],
     { 0, True },
     SameTest -> MatchQ,
-    TestID   -> "SplitDynamicContent-SkipsDeclined@@Tests/DynamicSplit.wlt:397,1-406,2"
+    TestID   -> "SplitDynamicContent-SkipsDeclined"
 ]
 
 (* While streaming, the static parts that are written never end in the thoughts: *)
@@ -420,7 +420,7 @@ VerificationTest[
     ],
     { True .. },
     SameTest -> MatchQ,
-    TestID   -> "WriteChunk0-ThinkTags@@Tests/DynamicSplit.wlt:409,1-424,2"
+    TestID   -> "WriteChunk0-ThinkTags"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -499,7 +499,7 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "Consistency-Definitions@@Tests/DynamicSplit.wlt:442,1-503,2"
+    TestID   -> "Consistency-Definitions"
 ]
 
 VerificationTest[
@@ -509,7 +509,7 @@ VerificationTest[
     },
     { <| |>, <| |> },
     SameTest -> MatchQ,
-    TestID   -> "SplitDynamicContent-ConsistentParts@@Tests/DynamicSplit.wlt:505,1-513,2"
+    TestID   -> "SplitDynamicContent-ConsistentParts"
 ]
 
 (* See $dynamicSplitRules for why dynamicSplitSkipQ relies on this: *)
@@ -523,7 +523,7 @@ VerificationTest[
     ],
     { _? (GreaterThan[ 15 ]), { } },
     SameTest -> MatchQ,
-    TestID   -> "SplitDynamicContent-MatchEnds@@Tests/DynamicSplit.wlt:516,1-527,2"
+    TestID   -> "SplitDynamicContent-MatchEnds"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

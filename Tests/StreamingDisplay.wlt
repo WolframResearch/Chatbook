@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/StreamingDisplay.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/StreamingDisplay.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -37,7 +37,7 @@ VerificationTest[
     ],
     { HoldComplete[ _Symbol ], True, 0 },
     SameTest -> MatchQ,
-    TestID   -> "CreateDynamicTrigger@@Tests/StreamingDisplay.wlt:28,1-41,2"
+    TestID   -> "CreateDynamicTrigger"
 ]
 
 VerificationTest[
@@ -50,7 +50,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "CreateDynamicTrigger-PerContainer@@Tests/StreamingDisplay.wlt:43,1-54,2"
+    TestID   -> "CreateDynamicTrigger-PerContainer"
 ]
 
 VerificationTest[
@@ -59,7 +59,7 @@ VerificationTest[
     ],
     HoldComplete[ _Symbol ],
     SameTest -> MatchQ,
-    TestID   -> "CreateDynamicTrigger-NoContainer@@Tests/StreamingDisplay.wlt:56,1-63,2"
+    TestID   -> "CreateDynamicTrigger-NoContainer"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -75,7 +75,7 @@ VerificationTest[
     ],
     { Null, <| "DynamicContent" -> "Hello", "FullContent" -> "Hello" |> },
     SameTest -> MatchQ,
-    TestID   -> "UpdateDynamicDisplay-NoTrigger@@Tests/StreamingDisplay.wlt:68,1-79,2"
+    TestID   -> "UpdateDynamicDisplay-NoTrigger"
 ]
 
 VerificationTest[
@@ -94,7 +94,7 @@ VerificationTest[
     ],
     { { 0, 0, 0, 0 }, _Real, False },
     SameTest -> MatchQ,
-    TestID   -> "UpdateDynamicDisplay-FirstVisibleText@@Tests/StreamingDisplay.wlt:81,1-98,2"
+    TestID   -> "UpdateDynamicDisplay-FirstVisibleText"
 ]
 
 VerificationTest[
@@ -115,7 +115,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "UpdateDynamicDisplay-NoPerChunkUpdates@@Tests/StreamingDisplay.wlt:100,1-119,2"
+    TestID   -> "UpdateDynamicDisplay-NoPerChunkUpdates"
 ]
 
 VerificationTest[
@@ -143,7 +143,7 @@ VerificationTest[
     ],
     { { True, True }, { True, False } },
     SameTest -> MatchQ,
-    TestID   -> "UpdateDynamicDisplay-Throttle@@Tests/StreamingDisplay.wlt:121,1-147,2"
+    TestID   -> "UpdateDynamicDisplay-Throttle"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -168,7 +168,7 @@ VerificationTest[
     ],
     { { 0, 0, t_Real, t_Real, t_Real }, "Hello world!", "Hello world!" },
     SameTest -> MatchQ,
-    TestID   -> "WriteChunk0-FirstVisibleText@@Tests/StreamingDisplay.wlt:152,1-172,2"
+    TestID   -> "WriteChunk0-FirstVisibleText"
 ]
 
 VerificationTest[
@@ -210,7 +210,7 @@ VerificationTest[
         { True, False }
     },
     SameTest -> MatchQ,
-    TestID   -> "WriteChunk0-StaticWrite@@Tests/StreamingDisplay.wlt:174,1-214,2"
+    TestID   -> "WriteChunk0-StaticWrite"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -233,7 +233,7 @@ VerificationTest[
     ],
     { DynamicModule, { TrackedSymbols :> { t_Symbol }, UpdateInterval -> 0.5 }, HoldComplete[ t_Symbol ] },
     SameTest -> MatchQ,
-    TestID   -> "ActiveDynamic-TracksTrigger@@Tests/StreamingDisplay.wlt:227,1-237,2"
+    TestID   -> "ActiveDynamic-TracksTrigger"
 ]
 
 (* The display state must be local to each output cell: *)
@@ -249,7 +249,7 @@ VerificationTest[
     ],
     _List? (SubsetQ[ #, { "cachedDynamicOutput", "displayedContentHash", "scrollPending" } ] &),
     SameTest -> MatchQ,
-    TestID   -> "ActiveDynamic-LocalVariables@@Tests/StreamingDisplay.wlt:240,1-253,2"
+    TestID   -> "ActiveDynamic-LocalVariables"
 ]
 
 VerificationTest[
@@ -304,7 +304,7 @@ VerificationTest[
         True
     },
     SameTest -> MatchQ,
-    TestID   -> "ActiveDynamic-UnchangedContent@@Tests/StreamingDisplay.wlt:255,1-308,2"
+    TestID   -> "ActiveDynamic-UnchangedContent"
 ]
 
 VerificationTest[
@@ -328,7 +328,7 @@ VerificationTest[
     ],
     3,
     SameTest -> MatchQ,
-    TestID   -> "ActiveDynamic-FailureNotCached@@Tests/StreamingDisplay.wlt:310,1-332,2"
+    TestID   -> "ActiveDynamic-FailureNotCached"
 ]
 
 (* A Dynamic only updates for a tracked symbol that it reads, so every update must read the trigger: *)
@@ -358,7 +358,7 @@ VerificationTest[
     ],
     3,
     SameTest -> MatchQ,
-    TestID   -> "ActiveDynamic-ReadsTrigger@@Tests/StreamingDisplay.wlt:335,1-362,2"
+    TestID   -> "ActiveDynamic-ReadsTrigger"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

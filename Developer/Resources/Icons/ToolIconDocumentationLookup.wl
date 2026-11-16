@@ -2,7 +2,7 @@ Graphics[
  {
   Thickness[ 0.041667 ],
   {
-   FaceForm @ { color @ "IconsToolIconDocumentationLookup_1", Opacity[ 1.0 ] },
+   FaceForm @ { color @ "Gray39_72", Opacity[ 1.0 ] },
    FilledCurve[
     {
      {
@@ -122,7 +122,7 @@ Graphics[
    ]
   },
   {
-   FaceForm @ { color @ "IconsToolIconDocumentationLookup_2", Opacity[ 1.0 ] },
+   FaceForm @ { color @ "Gray100_10", Opacity[ 1.0 ] },
    FilledCurve[
     {
      {
@@ -168,7 +168,7 @@ Graphics[
    ]
   },
   {
-   FaceForm @ { color @ "IconsToolIconDocumentationLookup_3", Opacity[ 1.0 ] },
+   FaceForm @ { color @ "Red_DD1100_EE1F22", Opacity[ 1.0 ] },
    FilledCurve[
     {
      {
@@ -380,7 +380,7 @@ Graphics[
    ]
   },
   {
-   FaceForm @ { color @ "IconsToolIconDocumentationLookup_3", Opacity[ 1.0 ] },
+   FaceForm @ { color @ "Red_DD1100_EE1F22", Opacity[ 1.0 ] },
    FilledCurve[
     { { { 1, 4, 3 }, { 1, 3, 3 }, { 1, 3, 3 }, { 1, 3, 3 } } },
     {

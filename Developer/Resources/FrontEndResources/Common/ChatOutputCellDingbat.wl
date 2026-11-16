@@ -2,7 +2,7 @@ Graphics[
 	{
 		Thickness @ 0.057971014492753624,
 		{
-			FaceForm @ color @ "IconsChatIconAssistantBackground",
+			FaceForm @ color @ "Blue_E0F2FC_344858",
 			FilledCurve[
 				{
 					{
@@ -46,7 +46,7 @@ Graphics[
 			]
 		},
 		{
-			color @ "IconsChatIconAssistantEdge",
+			color @ "Blue_75C2EB_669CBD",
 			Thickness @ 0.07246376811594203, CapForm @ "Butt", JoinForm @ {"Miter", 1.},
 			JoinedCurve[
 				{

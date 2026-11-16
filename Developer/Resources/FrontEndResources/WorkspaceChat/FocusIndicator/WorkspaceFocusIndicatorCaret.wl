@@ -36,7 +36,7 @@ Graphics[
      }
     ]
    },
-   FaceForm @ color @ "NA_ChatInputFieldFocus_Gray_1"
+   FaceForm @ color @ "Gray54_50"
   ]
  },
  ImageSize -> { 6.0, 4.0 },

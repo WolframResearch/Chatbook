@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName[ $TestFileName ], "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/AutoCorrect.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/AutoCorrect.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -27,14 +27,14 @@ VerificationTest[
     Wolfram`Chatbook`SendChat`Private`replaceUnicodeCharacters[ "\[FreeformPrompt][\"France\"]" ],
     "\\[FreeformPrompt][\"France\"]",
     SameTest -> MatchQ,
-    TestID   -> "ReplaceUnicode-ASCII@@Tests/AutoCorrect.wlt:26,1-31,2"
+    TestID   -> "ReplaceUnicode-ASCII"
 ]
 
 VerificationTest[
     Wolfram`Chatbook`SendChat`Private`replaceUnicodeCharacters[ "\[FreeformPrompt]" ],
     "\\[FreeformPrompt]",
     SameTest -> MatchQ,
-    TestID   -> "ReplaceUnicode-LongName@@Tests/AutoCorrect.wlt:33,1-38,2"
+    TestID   -> "ReplaceUnicode-LongName"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -46,14 +46,14 @@ VerificationTest[
         { "\[FreeformPrompt]", "\[FreeformPrompt][\"France\"]", "no freeform prompt here" },
     { "\[FreeformPrompt]", "\[FreeformPrompt][\"France\"]", "no freeform prompt here" },
     SameTest -> MatchQ,
-    TestID   -> "AutoCorrect-ReplaceUnicode-RoundTrip@@Tests/AutoCorrect.wlt:44,1-50,2"
+    TestID   -> "AutoCorrect-ReplaceUnicode-RoundTrip"
 ]
 
 VerificationTest[
     Wolfram`Chatbook`Common`autoCorrect[ "\\uF351[\"France\", Entity]" ],
     "\[FreeformPrompt][\"France\", Entity]",
     SameTest -> MatchQ,
-    TestID   -> "AutoCorrect-ReplaceUnicode-Entity@@Tests/AutoCorrect.wlt:52,1-57,2"
+    TestID   -> "AutoCorrect-ReplaceUnicode-Entity"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -63,14 +63,14 @@ VerificationTest[
     Wolfram`Chatbook`Common`autoCorrect[ "QuantityMagnitude[EntityValue[\[FreeformPrompt][\"France\", Entity], \"Population\"]]" ],
     "QuantityMagnitude[EntityValue[\[FreeformPrompt][\"France\", Entity], \"Population\"]]",
     SameTest -> MatchQ,
-    TestID   -> "AutoCorrect-Preserve-Valid@@Tests/AutoCorrect.wlt:62,1-67,2"
+    TestID   -> "AutoCorrect-Preserve-Valid"
 ]
 
 VerificationTest[
     Wolfram`Chatbook`Common`autoCorrect[ "{\:ff1d[\"a\", Entity], \:ff1d[\"b\", Entity]}" ],
     "{\[FreeformPrompt][\"a\", Entity], \[FreeformPrompt][\"b\", Entity]}",
     SameTest -> MatchQ,
-    TestID   -> "AutoCorrect-Preserve-Structure@@Tests/AutoCorrect.wlt:69,1-74,2"
+    TestID   -> "AutoCorrect-Preserve-Structure"
 ]
 
 (* Models sometimes over-escape the leading backslash, so any number of them must be accepted *)
@@ -78,7 +78,7 @@ VerificationTest[
     Wolfram`Chatbook`Common`autoCorrect[ "\\\\[FreeformPrompt][\"France\", Entity]" ],
     "\[FreeformPrompt][\"France\", Entity]",
     SameTest -> MatchQ,
-    TestID   -> "AutoCorrect-Extra-Backslashes@@Tests/AutoCorrect.wlt:77,1-82,2"
+    TestID   -> "AutoCorrect-Extra-Backslashes"
 ]
 
 VerificationTest[
@@ -91,21 +91,21 @@ VerificationTest[
     },
     ConstantArray[ "\[FreeformPrompt][\"a\"]", 4 ],
     SameTest -> MatchQ,
-    TestID   -> "AutoCorrect-Freeform-Aliases@@Tests/AutoCorrect.wlt:84,1-95,2"
+    TestID   -> "AutoCorrect-Freeform-Aliases"
 ]
 
 VerificationTest[
     Wolfram`Chatbook`Common`autoCorrect[ "\\[RawEscape][FreeformPrompt][\"France\"]" ],
     "\[FreeformPrompt][\"France\"]",
     SameTest -> MatchQ,
-    TestID   -> "AutoCorrect-RawEscape@@Tests/AutoCorrect.wlt:97,1-102,2"
+    TestID   -> "AutoCorrect-RawEscape"
 ]
 
 VerificationTest[
     Wolfram`Chatbook`Common`autoCorrect[ "\\\:ff1d[\"a\", Entity]" ],
     "\[FreeformPrompt][\"a\", Entity]",
     SameTest -> MatchQ,
-    TestID   -> "AutoCorrect-Backslash-Fullwidth@@Tests/AutoCorrect.wlt:104,1-109,2"
+    TestID   -> "AutoCorrect-Backslash-Fullwidth"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -252,6 +252,78 @@ VerificationTest[
     },
     SameTest -> MatchQ,
     TestID   -> "AutoCorrect-Moonshot-Coverage"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Long Runs*)
+(* The rules that start with a run of spaces or backslashes only match from the first character of the run, and the
+   rule for "/command" only skips horizontal whitespace, so blank lines before it are kept: *)
+VerificationTest[
+    withMoonshotTestHandlerData[
+        Wolfram`Chatbook`Common`autoCorrect /@ {
+            "Text   /wl  \n1+1",
+            "\\\\\\\:ff1d[\"a\"]",
+            "\\\\\\" <> "[FreeformInput][\"a\"]",
+            "Text\n  /command\ncode: 1+1",
+            "Text\n\n/command\ncode: 1+1"
+        }
+    ],
+    {
+        "Text\n/wl\n1+1",
+        "\[FreeformPrompt][\"a\"]",
+        "\[FreeformPrompt][\"a\"]",
+        "Text\n/wl\ncode: 1+1",
+        "Text\n\n/wl\ncode: 1+1"
+    },
+    SameTest -> MatchQ,
+    TestID   -> "AutoCorrect-Runs-Examples-GH#1720"
+]
+
+(* The lookbehinds only make the runs faster to match, so the rules give the same results without them: *)
+VerificationTest[
+    $runReferenceRules = ReplaceAll[
+        Wolfram`Chatbook`SendChat`Private`$llmAutoCorrectRulesNoMoonshot,
+        Alternatives @@ Cases[
+            { Wolfram`Chatbook`SendChat`Private`$$spaces, Wolfram`Chatbook`SendChat`Private`$$backslashes },
+            _RegularExpression,
+            Infinity
+        ] -> Sequence[ ]
+    ];
+
+    $runFragments = {
+        " ", "   ", "\t", "\n", "\n\n", "\r\n", "\\", "\\\\", "x", "abc", "/", "/wl", " /wl\n", "  /wl \n", "/notatool",
+        "/command\ncode:", "\:ff1d", "[FreeformInput]", "[FreeformEntity]", "[FreeformPrompt]",
+        "[RawEscape][FreeformPrompt]", "\\uF351", "```", "<|image_sentinel|>", "\[FreeformPrompt]"
+    };
+
+    $runStrings = BlockRandom[
+        SeedRandom[ 1720 ];
+        Table[ StringJoin @ RandomChoice[ $runFragments, RandomInteger @ { 0, 40 } ], 2000 ]
+    ];
+
+    {
+        (* Make sure the lookbehinds were removed: *)
+        $runReferenceRules =!= Wolfram`Chatbook`SendChat`Private`$llmAutoCorrectRulesNoMoonshot,
+        withMoonshotTestHandlerData @ Select[
+            $runStrings,
+            Wolfram`Chatbook`Common`autoCorrect[ # ] =!= StringReplace[ #, $runReferenceRules ] &
+        ]
+    },
+    { True, { } },
+    SameTest -> MatchQ,
+    TestID   -> "AutoCorrect-Runs-Matches-Reference-GH#1720"
+]
+
+(* Each of these took seconds with the old rules, which scanned the rest of a run from every character in it: *)
+VerificationTest[
+    Max @ Table[
+        First @ AbsoluteTiming @ Wolfram`Chatbook`Common`autoCorrect[ "x" <> StringRepeat[ run, 30000 ] <> "y" ],
+        { run, { " ", "\n", "\r\n", "\\" } }
+    ],
+    _? (LessThan[ 0.5 ]),
+    SameTest -> MatchQ,
+    TestID   -> "AutoCorrect-Runs-Timing-GH#1720"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

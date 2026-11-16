@@ -13,9 +13,11 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Icon*)
-$createNotebookIcon = RawBoxes @ DynamicBox @ FEPrivate`FrontEndResource[ "FEBitmaps", "NotebookIcon" ][
-    LightDarkSwitched[ GrayLevel[ 0.651 ], GrayLevel[ 0.6317181 ] ],
-    LightDarkSwitched[ RGBColor[ 0.86667, 0.066667, 0. ], RGBColor[ 1, 0.4537951, 0.3912115 ] ]
+$createNotebookIcon = With[ { gray = color @ "Gray65_63" },
+    RawBoxes @ DynamicBox @ FEPrivate`FrontEndResource[ "FEBitmaps", "NotebookIcon" ][
+        gray,
+        LightDarkSwitched[ RGBColor[ 0.86667, 0.066667, 0. ], RGBColor[ 1, 0.4537951, 0.3912115 ] ]
+    ]
 ];
 
 (* ::**************************************************************************************************************:: *)

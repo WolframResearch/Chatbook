@@ -293,7 +293,7 @@ Graphics[
        }
       ]
      },
-     FaceForm @ color @ "NA_BlueHueButtonIcon"
+     FaceForm @ color @ "Blue_128ED1_7FC7FB"
     ]
    },
    ImageSize -> { 16.0, 15.0 },

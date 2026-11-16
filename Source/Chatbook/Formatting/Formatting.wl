@@ -91,7 +91,7 @@ $autoOperatorRenderings = <|
  |>;
 
  $expressionURIPlaceholder = "\[LeftSkeleton]\[Ellipsis]\[RightSkeleton]";
- $freeformPromptBox        = StyleBox[ "\[FreeformPrompt]", FontColor -> color @ "NA_ChatOutputFreeFormFont", FontSize -> 9 ];
+ $freeformPromptBox        = StyleBox[ "\[FreeformPrompt]", FontColor -> LightDarkSwitched[ RGBColor[ "#FF6F00" ], RGBColor[ "#FF7B28" ] ], FontSize -> 9 ];
 
 
  $delimiterCell = Cell[
@@ -101,7 +101,7 @@ $autoOperatorRenderings = <|
             AutoDelete      -> False,
             GridBoxDividers -> { "Columns" -> { False, { True }, False }, "Rows" -> { False, { True }, False } },
             GridBoxItemSize -> { "Columns" -> { { Fit } }, "Rows" -> { { Automatic } } },
-            FrameStyle      -> Directive[ color @ "ChatDelimiterCellFrame", AbsoluteThickness[ 1 ] ]
+            FrameStyle      -> Directive[ color @ "Gray80_49", AbsoluteThickness[ 1 ] ]
         ],
         "Grid"
     ],
@@ -197,10 +197,10 @@ formatToolCall0[ string_String, as_Association ] := makeToolCallBoxLabel @ as;
 
 formatToolCall0[ string_String, failed_Failure ] := Framed[
     failed,
-    Background   -> color @ "NA_ChatOutputToolCallFailureBackground",
+    Background   -> color @ "Gray100_28",
     BaseStyle    -> "Output",
     FrameMargins -> 10,
-    FrameStyle   -> color @ "NA_ChatOutputToolCallFailureFrame",
+    FrameStyle   -> LightDarkSwitched[ GrayLevel[ 0.95 ], GrayLevel[ 0.2914 ] ],
     ImageMargins -> { { 0, 0 }, { 10, 10 } }
 ];
 

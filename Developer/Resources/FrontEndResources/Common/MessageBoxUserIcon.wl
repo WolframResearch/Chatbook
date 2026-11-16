@@ -2,7 +2,7 @@ Graphics[
 	{
 		Thickness @ 0.06557377049180328,
 		{
-			FaceForm @ LightDarkSwitched @ RGBColor[1., 1., 1., 1.],
+			FaceForm @ color @ "Gray100_10",
 			FilledCurve[
 				{
 					{

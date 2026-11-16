@@ -66,7 +66,7 @@ wolframscript -f Scripts/BuildPaclet.wls --check=false --snippets=false --instal
 # Run tests (builds first if needed)
 wolframscript -f Scripts/TestPaclet.wls
 
-# Format/unformat source files
+# Format/unformat notebook files
 wolframscript -f Scripts/FormatFiles.wls
 wolframscript -f Scripts/UnformatFiles.wls
 
@@ -136,7 +136,9 @@ Ten built-in personas in `LLMConfiguration/Personas/`: AgentOne, AgentOneCoder, 
 The Chatbook notebook stylesheet (`FrontEnd/StyleSheets/Chatbook.nb`) is generated programmatically:
 1. Edit style definitions in `Developer/Resources/Styles.wl`
 2. Load `Developer/StylesheetBuilder.wl`
-3. Evaluate `BuildChatbookStylesheet[]`
+3. Evaluate `BuildStylesheets[]`, which builds `Chatbook.nb`, `Wolfram/WorkspaceChat.nb` and `FrontEnd/Assets/Extensions/CoreExtensions.nb` (`BuildChatbookStylesheet[]` only builds `Chatbook.nb`)
+
+UI colors are `LightDarkSwitched` pairs looked up by name with `color["Name"]` (`Source/Chatbook/ColorData.wl`). There is one set of stylesheets and front end resources (in `FrontEnd/`) for both light and dark mode. Front end expression resources (`FrontEnd/TextResources/ChatbookResources.tr`) are built from `Developer/Resources/FrontEndResources` and `Developer/Resources/Icons` with `WriteTextResource[All]` from `Developer/FrontEndResourceBuilder.wl`.
 
 ### Assets
 

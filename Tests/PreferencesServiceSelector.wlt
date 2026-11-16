@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/PreferencesServiceSelector.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/PreferencesServiceSelector.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -51,7 +51,7 @@ VerificationTest[
     ,
     Null,
     SameTest -> MatchQ,
-    TestID   -> "Definitions@@Tests/PreferencesServiceSelector.wlt:24,1-55,2"
+    TestID   -> "Definitions"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -62,7 +62,7 @@ VerificationTest[
     { Head @ setterFrom @ $parts, wrapperOptions @ $parts },
     { Function, { OrderlessPatternSequence[ SynchronousUpdating -> False, TrackedSymbols :> { pending } ] } },
     SameTest -> MatchQ,
-    TestID   -> "ServiceSelector-AsynchronousWrapper@@Tests/PreferencesServiceSelector.wlt:60,1-66,2"
+    TestID   -> "ServiceSelector-AsynchronousWrapper"
 ]
 
 (* The popup shows a pending selection immediately, then follows dmPrefCache (e.g. after the Reset button): *)
@@ -77,7 +77,7 @@ VerificationTest[
     },
     { "ServiceB", "ServiceA", "LLMKit", Hold @ { pending, prefCache } },
     SameTest -> MatchQ,
-    TestID   -> "ServiceSelector-DisplayFollowsPrefCache@@Tests/PreferencesServiceSelector.wlt:69,1-81,2"
+    TestID   -> "ServiceSelector-DisplayFollowsPrefCache"
 ]
 
 (* The PopupMenu setter blocks the front end, so it must not download the model list: *)
@@ -110,7 +110,7 @@ VerificationTest[
         <| "Model" -> <| "Service" -> "ServiceA", "Name" -> "a" |> |>
     },
     SameTest -> MatchQ,
-    TestID   -> "ServiceSelector-SetterDoesNotFetchModelList@@Tests/PreferencesServiceSelector.wlt:84,1-114,2"
+    TestID   -> "ServiceSelector-SetterDoesNotFetchModelList"
 ]
 
 VerificationTest[
@@ -125,7 +125,7 @@ VerificationTest[
     ],
     { { "ServiceB" }, "ServiceB", "Loaded", "ServiceB" },
     SameTest -> MatchQ,
-    TestID   -> "ServiceSelector-SetterCachedModelList@@Tests/PreferencesServiceSelector.wlt:116,1-129,2"
+    TestID   -> "ServiceSelector-SetterCachedModelList"
 ]
 
 (* The asynchronous part runs the callback for the pending selection, then clears it: *)
@@ -146,7 +146,7 @@ VerificationTest[
         None
     },
     SameTest -> MatchQ,
-    TestID   -> "ServiceSelector-AsyncRunsCallback@@Tests/PreferencesServiceSelector.wlt:132,1-150,2"
+    TestID   -> "ServiceSelector-AsyncRunsCallback"
 ]
 
 (* A selection made while the previous one is still loading is kept for the next evaluation, which the front end
@@ -167,7 +167,7 @@ VerificationTest[
     ],
     { { { "ServiceA" }, "ServiceB" }, { "ServiceA", "ServiceB" }, None },
     SameTest -> MatchQ,
-    TestID   -> "ServiceSelector-AsyncNewerSelection@@Tests/PreferencesServiceSelector.wlt:154,1-171,2"
+    TestID   -> "ServiceSelector-AsyncNewerSelection"
 ]
 
 (* Picking the same service again while it's loading doesn't fetch it twice: *)
@@ -185,7 +185,7 @@ VerificationTest[
     ],
     { { "ServiceA" }, None },
     SameTest -> MatchQ,
-    TestID   -> "ServiceSelector-AsyncSameSelection@@Tests/PreferencesServiceSelector.wlt:174,1-189,2"
+    TestID   -> "ServiceSelector-AsyncSameSelection"
 ]
 
 VerificationTest[
@@ -202,7 +202,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "ServiceSelector-AsyncNoPendingSelection@@Tests/PreferencesServiceSelector.wlt:191,1-206,2"
+    TestID   -> "ServiceSelector-AsyncNoPendingSelection"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -223,7 +223,7 @@ VerificationTest[
     ],
     { { Missing[ "NoModelList" ], Missing[ "NoModelList" ], Missing[ "NoModelList" ] }, 1 },
     SameTest -> MatchQ,
-    TestID   -> "NoModelListCache-SkipsRepeatedFetch@@Tests/PreferencesServiceSelector.wlt:211,1-227,2"
+    TestID   -> "NoModelListCache-SkipsRepeatedFetch"
 ]
 
 VerificationTest[
@@ -241,7 +241,7 @@ VerificationTest[
     ],
     { 3, 1 },
     SameTest -> MatchQ,
-    TestID   -> "NoModelListCache-Expires@@Tests/PreferencesServiceSelector.wlt:229,1-245,2"
+    TestID   -> "NoModelListCache-Expires"
 ]
 
 VerificationTest[
@@ -255,7 +255,7 @@ VerificationTest[
     ],
     <| |>,
     SameTest -> MatchQ,
-    TestID   -> "NoModelListCache-Invalidate@@Tests/PreferencesServiceSelector.wlt:247,1-259,2"
+    TestID   -> "NoModelListCache-Invalidate"
 ]
 
 VerificationTest[
@@ -271,7 +271,7 @@ VerificationTest[
     ],
     { "OtherTestService" },
     SameTest -> MatchQ,
-    TestID   -> "NoModelListCache-Clear@@Tests/PreferencesServiceSelector.wlt:261,1-275,2"
+    TestID   -> "NoModelListCache-Clear"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -286,7 +286,7 @@ VerificationTest[
     |>,
     Missing[ "NoModelList" ],
     SameTest -> MatchQ,
-    TestID   -> "GetModelListQuietly-NoMessages@@Tests/PreferencesServiceSelector.wlt:282,1-290,2"
+    TestID   -> "GetModelListQuietly-NoMessages"
 ]
 
 (* A suppressed connection dialog is still detected while messages are quieted: *)
@@ -297,7 +297,7 @@ VerificationTest[
     |>,
     Missing[ "NotConnected" ],
     SameTest -> MatchQ,
-    TestID   -> "GetModelListQuietly-NotConnected@@Tests/PreferencesServiceSelector.wlt:293,1-301,2"
+    TestID   -> "GetModelListQuietly-NotConnected"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -333,7 +333,7 @@ VerificationTest[
     ],
     { { Automatic, "m1" }, <| "ServiceDefaultModel" -> <| "QuietTestService" -> "m1" |> |> },
     SameTest -> MatchQ,
-    TestID   -> "GetServiceDefaultModel-RetriesAutomatic@@Tests/PreferencesServiceSelector.wlt:308,1-337,2"
+    TestID   -> "GetServiceDefaultModel-RetriesAutomatic"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -368,7 +368,7 @@ VerificationTest[
         ],
     _,
     SameTest -> MatchQ,
-    TestID   -> "ModelNameSelector-Definitions@@Tests/PreferencesServiceSelector.wlt:342,1-372,2"
+    TestID   -> "ModelNameSelector-Definitions"
 ]
 
 (* Viewing Preferences must not replace a model the service doesn't list (fine-tuned, custom, set in code): *)
@@ -388,7 +388,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "ModelNameSelector-KeepsUnlistedModel@@Tests/PreferencesServiceSelector.wlt:375,1-392,2"
+    TestID   -> "ModelNameSelector-KeepsUnlistedModel"
 ]
 
 VerificationTest[
@@ -399,7 +399,7 @@ VerificationTest[
         { "gpt-3.5-turbo" -> "GPT-3.5", "gpt-4o" -> "GPT-4o" }
     },
     SameTest -> MatchQ,
-    TestID   -> "ModelNameSelector-ListedModel@@Tests/PreferencesServiceSelector.wlt:394,1-403,2"
+    TestID   -> "ModelNameSelector-ListedModel"
 ]
 
 (* A non-string name is shown as a display-only Automatic entry that the setter doesn't store: *)
@@ -420,7 +420,7 @@ VerificationTest[
         Null
     },
     SameTest -> MatchQ,
-    TestID   -> "ModelNameSelector-AutomaticDisplayOnly@@Tests/PreferencesServiceSelector.wlt:406,1-424,2"
+    TestID   -> "ModelNameSelector-AutomaticDisplayOnly"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -448,7 +448,7 @@ VerificationTest[
         |>
     },
     SameTest -> MatchQ,
-    TestID   -> "ModelSelectCallback-NoServiceDefaultModel@@Tests/PreferencesServiceSelector.wlt:431,1-452,2"
+    TestID   -> "ModelSelectCallback-NoServiceDefaultModel"
 ]
 
 VerificationTest[
@@ -465,7 +465,7 @@ VerificationTest[
     ],
     <| "ServiceB" -> "b", "OpenAI" -> "gpt-3.5-turbo" |>,
     SameTest -> MatchQ,
-    TestID   -> "ModelSelectCallback-KeepsOtherServices@@Tests/PreferencesServiceSelector.wlt:454,1-469,2"
+    TestID   -> "ModelSelectCallback-KeepsOtherServices"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -497,7 +497,7 @@ VerificationTest[
     ],
     { "Connect", { "Fetch", False }, { "Callback", "UnreachableTestService" } },
     SameTest -> MatchQ,
-    TestID   -> "ServiceConnectButton-ClearsNoModelListCache@@Tests/PreferencesServiceSelector.wlt:476,1-501,2"
+    TestID   -> "ServiceConnectButton-ClearsNoModelListCache"
 ]
 
 (* A cancelled connection doesn't fetch or change anything: *)
@@ -522,7 +522,7 @@ VerificationTest[
     ],
     { { "Connect" }, <| "UnreachableTestService" -> 0 |> },
     SameTest -> MatchQ,
-    TestID   -> "ServiceConnectButton-Canceled@@Tests/PreferencesServiceSelector.wlt:504,1-526,2"
+    TestID   -> "ServiceConnectButton-Canceled"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -550,7 +550,7 @@ VerificationTest[
     ],
     { { "Preferences", "Cloud", "Services" }, True },
     SameTest -> MatchQ,
-    TestID   -> "DisconnectService-SelectedService@@Tests/PreferencesServiceSelector.wlt:533,1-554,2"
+    TestID   -> "DisconnectService-SelectedService"
 ]
 
 (* Disconnecting another service leaves the panel alone: *)
@@ -574,7 +574,7 @@ VerificationTest[
     ],
     { { "Services" }, <| "Service" -> "OtherTestService", "Name" -> "m" |> },
     SameTest -> MatchQ,
-    TestID   -> "DisconnectService-OtherService@@Tests/PreferencesServiceSelector.wlt:557,1-578,2"
+    TestID   -> "DisconnectService-OtherService"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

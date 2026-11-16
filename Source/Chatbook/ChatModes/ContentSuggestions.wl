@@ -446,8 +446,8 @@ contentSuggestionsCell // beginDefinition;
 contentSuggestionsCell[ Dynamic[ container_Symbol ] ] := Cell[
     BoxData @ ToBoxes @ Framed[
         Dynamic[ container(*, Deinitialization :> Quiet @ Remove @ container*) ],
-        Background     -> color @ "ProgressCellBackground",
-        FrameStyle     -> color @ "ProgressCellFrame",
+        Background     -> LightDarkSwitched[ RGBColor[ "#F9FDFF" ], RGBColor[ "#232A32" ] ],
+        FrameStyle     -> color @ "Blue_D5E6F5_293B4D",
         RoundingRadius -> 5
     ],
     "AttachedContentSuggestions",
@@ -1271,7 +1271,7 @@ formatSuggestions[
                 Column[
                     ReplaceAll[ formatted, Button[ content_, {}, BoxID -> "REPLACEME", rest___ ] :> Button[ formatSuggestionButtonFrame @ content, {}, rest ] ],
                     Dividers   -> { { False }, { False, { True }, False } },
-                    FrameStyle -> color @ "ProgressCellFrame",
+                    FrameStyle -> color @ "Blue_D5E6F5_293B4D",
                     Spacings   -> 0.5
                 ],
                 ImageSize -> Dynamic[ Function[ If[ maxWidth > #, #, Max[ maxWidth, 50 ] ] ][ 0.8*AbsoluteCurrentValue[ { WindowSize, 1 } ] ] ]
@@ -1339,8 +1339,8 @@ formatSuggestionButtonFrame[ content_ ] :=
 Framed[
     content,
     ImageSize      -> Scaled[ 1 ],
-    Background     -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #, Transparent ] ]&[ color @ "ContentSuggestionsBackgroundHover" ]),
-    FrameStyle     -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #, Transparent ] ]&[ color @ "ContentSuggestionsFrameHover" ]),
+    Background     -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #, Transparent ] ]&[ LightDarkSwitched[ RGBColor[ "#F2FAFF" ], RGBColor[ "#344150" ] ] ]),
+    FrameStyle     -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #, Transparent ] ]&[ LightDarkSwitched[ RGBColor[ "#91C7E2" ], RGBColor[ "#5A82AD" ] ] ]),
     RoundingRadius -> 1
 ]
 

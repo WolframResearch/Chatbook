@@ -1161,15 +1161,20 @@ cacheTokenCount // endDefinition;
 (*logUsage*)
 logUsage // beginDefinition;
 
-logUsage[ KeyValuePattern[ "FullContent" -> response_ ] ] :=
-    logUsage @ response;
+logUsage[ container_ ] :=
+    logUsage[ container, $ChatHandlerData ];
 
-logUsage[ $$progressIndicator ] :=
+(* The chat's handler data can be given explicitly, since $ChatHandlerData might belong to another chat by the time a
+   handler runs: *)
+logUsage[ KeyValuePattern[ "FullContent" -> response_ ], data_ ] :=
+    logUsage[ response, data ];
+
+logUsage[ $$progressIndicator, _ ] :=
     Null;
 
-logUsage[ response_String ] := logUsage[
-    $ChatHandlerData[ "ChatNotebookSettings" ],
-    $ChatHandlerData[ "Messages" ],
+logUsage[ response_String, data_ ] := logUsage[
+    data[ "ChatNotebookSettings" ],
+    data[ "Messages" ],
     response
 ];
 

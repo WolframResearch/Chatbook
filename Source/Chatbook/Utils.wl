@@ -656,11 +656,11 @@ basicProgressBarRow[ expr_, p_ ] /; $showProgressBar := {
             {
                 Graphics[
                     {
-                        color @ "ProgressBarActive",
+                        LightDarkSwitched[ RGBColor[ "#449EF7" ], RGBColor[ "#79B1F1" ] ],
                         Rectangle[ ImageScaled @ { 0, 0 }, ImageScaled @ { p, 1 } ]
                     },
                     AspectRatio      -> Full,
-                    Background       -> color @ "ProgressBarBackground",
+                    Background       -> LightDarkSwitched[ GrayLevel[ 0.8196 ], RGBColor[ "#406793" ] ],
                     ImageSize        -> { Full, 3 },
                     PlotRangePadding -> None
                 ],
@@ -767,7 +767,7 @@ $progressCancelButtonLabel := $progressCancelButtonLabel = NotebookTools`Mousedo
                         }
                     ]
                 },
-                FaceForm @ color @ "ProgressClose"
+                FaceForm @ color @ "Blue_469ECB_659FE1"
             ]
         },
         ImageSize -> { 14., 14. },
@@ -804,7 +804,7 @@ $progressCancelButtonLabel := $progressCancelButtonLabel = NotebookTools`Mousedo
                         }
                     ]
                 },
-                FaceForm @ color @ "ProgressCloseBackgroundHover"
+                FaceForm @ LightDarkSwitched[ RGBColor[ "#CEEBFF" ], RGBColor[ "#344150" ] ]
             ],
             Style[
                 {
@@ -844,7 +844,7 @@ $progressCancelButtonLabel := $progressCancelButtonLabel = NotebookTools`Mousedo
                         }
                     ]
                 },
-                FaceForm @ color @ "ProgressClose"
+                FaceForm @ color @ "Blue_469ECB_659FE1"
             ]
         },
         ImageSize -> { 14., 14. },
@@ -881,7 +881,7 @@ $progressCancelButtonLabel := $progressCancelButtonLabel = NotebookTools`Mousedo
                         }
                     ]
                 },
-                FaceForm @ color @ "ProgressCloseBackgroundPressed"
+                FaceForm @ LightDarkSwitched[ RGBColor[ "#469ECB" ], RGBColor[ "#406793" ] ]
             ],
             Style[
                 {
@@ -921,7 +921,7 @@ $progressCancelButtonLabel := $progressCancelButtonLabel = NotebookTools`Mousedo
                         }
                     ]
                 },
-                FaceForm @ color @ "ProgressClosePressed"
+                FaceForm @ LightDarkSwitched[ GrayLevel[ 1 ], RGBColor[ "#79B1F1" ] ]
             ]
         },
         ImageSize -> { 14., 14. },

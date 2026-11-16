@@ -12,7 +12,7 @@ System`ShowChatbar;
 (*Notebook*)
 Cell[
     StyleData[ "Notebook" ],
-    Background             -> color @ "NA_NotebookBackground",
+    Background             -> color @ "Gray100_10",
     CellInsertionPointCell -> None,
     "ClosingSaveDialog"    -> False,
     DefaultNewCellStyle    -> "AutoMoveToChatInputField",
@@ -76,7 +76,7 @@ Cell[
 (*WorkspaceChatToolbarLabel*)
 Cell[
     StyleData[ "WorkspaceChatToolbarButtonLabel", StyleDefinitions -> StyleData[ "Text" ] ],
-    FontColor       -> color @ "NA_BlueHueButtonIcon",
+    FontColor       -> color @ "Blue_128ED1_7FC7FB",
     FontFamily      -> "Source Sans Pro",
     FontSize        -> 13.5,
     FontWeight      -> "DemiBold",
@@ -88,7 +88,7 @@ Cell[
 (*WorkspaceChatToolbarTitle*)
 Cell[
     StyleData[ "WorkspaceChatToolbarTitle", StyleDefinitions -> StyleData[ "WorkspaceChatToolbarButtonLabel" ] ],
-    FontColor -> color @ "NA_ToolbarTitleFont",
+    FontColor -> color @ "Blue_3383AC_BDE4FF",
     FontSize  -> 12
 ]
 
@@ -130,7 +130,7 @@ Cell[
 Cell[
     StyleData[ "ChatInputField" ],
     CellFrame        -> 1,
-    CellFrameColor   -> color @ "NA_ChatInputFieldCellFrame",
+    CellFrameColor   -> LightDarkSwitched[ GrayLevel[ 0.85 ], RGBColor[ "#535C65" ] ],
     CellFrameMargins -> { { 5, 5 }, { 0, 0 } }
 ]
 
@@ -206,9 +206,9 @@ Cell[
                             ImageSize          -> { Scaled[ 1 ], UpTo[ 400 ] },
                             Scrollbars         -> Automatic
                         ],
-                        Background   -> color @ "NA_ChatCodeBlockTemplateBackgroundTop",
+                        Background   -> color @ "Gray100_10",
                         FrameMargins -> { { 10, 10 }, { 6, 6 } },
-                        FrameStyle   -> Directive[ AbsoluteThickness[ 2 ], color @ "NA_ChatCodeBlockTemplateFrame" ],
+                        FrameStyle   -> Directive[ AbsoluteThickness[ 2 ], color @ "Blue_EBF3F7_37424A" ],
                         ImageMargins -> { { 0, 0 }, { 0, 8 } },
                         ImageSize    -> { Full, Automatic }
                     ]
@@ -234,9 +234,9 @@ Cell[
                     FrameBox[
                         #1, (* don't use Pane during active stream-of-thought as it may capture mouse-wheel events *)
                         Alignment    -> { Left, Top },
-                        Background   -> color @ "NA_ChatCodeBlockTemplateBackgroundTop",
+                        Background   -> color @ "Gray100_10",
                         FrameMargins -> { { 10, 10 }, { 6, 6 } },
-                        FrameStyle   -> Directive[ AbsoluteThickness[ 2 ], color @ "NA_ChatCodeBlockTemplateFrame" ],
+                        FrameStyle   -> Directive[ AbsoluteThickness[ 2 ], color @ "Blue_EBF3F7_37424A" ],
                         ImageMargins -> { { 0, 0 }, { 0, 8 } },
                         ImageSize    -> { Scaled[ 1 ], UpTo[ 400 ] }
                     ]
@@ -268,7 +268,7 @@ Cell[
                                 "Welcome to Code Assistance Chat",
                                 FontWeight -> Bold,
                                 FontSize   -> 17,
-                                FontColor  -> color @ "WelcomeToCodeAssistanceSplashTitleFont"
+                                FontColor  -> color @ "Gray25_92"
                             ]
                         },
                         { "Ask me anything using the input field below." },
@@ -281,7 +281,7 @@ Cell[
                             ]
                         }
                     },
-                    BaseStyle -> { "Text", FontSize -> 13, FontColor -> color @ "WelcomeToCodeAssistanceSplashFont", LineBreakWithin -> False },
+                    BaseStyle -> { "Text", FontSize -> 13, FontColor -> color @ "Gray50_75", LineBreakWithin -> False },
                     Spacings  -> { 1, { 0, 1.25, 1.25, 0.75 } }
                 ],
                 Alignment       -> { Center, Automatic },
@@ -289,9 +289,9 @@ Cell[
                 ImageSizeAction -> "ShrinkToFit"
             ],
             Alignment      -> { Center, Automatic },
-            Background     -> color @ "WelcomeToCodeAssistanceSplashBackground",
+            Background     -> LightDarkSwitched[ RGBColor[ "#F9FDFF" ], GrayLevel[ 0.2641 ] ],
             FrameMargins   -> { { 10, 10 }, { 10, 10 } },
-            FrameStyle     -> color @ "WelcomeToCodeAssistanceSplashFrame",
+            FrameStyle     -> color @ "Blue_ECF0F5_48505F",
             ImageSize      -> { Automatic, Automatic },
             RoundingRadius -> 10
         ]

@@ -5,21 +5,21 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName[ $TestFileName ], "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/ToolAvailability.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/ToolAvailability.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`Tools`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadToolsContext@@Tests/ToolAvailability.wlt:18,1-23,2"
+    TestID   -> "LoadToolsContext"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -31,21 +31,21 @@ VerificationTest[
     KeyExistsQ[ Wolfram`Chatbook`$DefaultTools, "FileReader" ],
     True,
     SameTest -> SameQ,
-    TestID   -> "FileReader-DefaultToolDefinition@@Tests/ToolAvailability.wlt:30,1-35,2"
+    TestID   -> "FileReader-DefaultToolDefinition"
 ]
 
 VerificationTest[
     KeyExistsQ[ Wolfram`Chatbook`$ToolFunctions, "FileReader" ],
     True,
     SameTest -> SameQ,
-    TestID   -> "FileReader-ToolFunctionMap@@Tests/ToolAvailability.wlt:37,1-42,2"
+    TestID   -> "FileReader-ToolFunctionMap"
 ]
 
 VerificationTest[
     Wolfram`Chatbook`Tools`Private`$toolNameAliases[ "ReadFile" ],
     "FileReader",
     SameTest -> SameQ,
-    TestID   -> "FileReader-Alias@@Tests/ToolAvailability.wlt:44,1-49,2"
+    TestID   -> "FileReader-Alias"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -55,21 +55,21 @@ VerificationTest[
     Wolfram`Chatbook`$DefaultTools[ "FileReader" ][ "Data" ][ "Enabled" ],
     TrueQ @ ( $VersionNumber >= 15.1 ),
     SameTest -> SameQ,
-    TestID   -> "FileReader-Enabled@@Tests/ToolAvailability.wlt:54,1-59,2"
+    TestID   -> "FileReader-Enabled"
 ]
 
 VerificationTest[
     Wolfram`Chatbook`$DefaultTools[ "FileReader" ][ "Data" ][ "Hidden" ],
     ! TrueQ @ ( $VersionNumber >= 15.1 ),
     SameTest -> SameQ,
-    TestID   -> "FileReader-Hidden@@Tests/ToolAvailability.wlt:61,1-66,2"
+    TestID   -> "FileReader-Hidden"
 ]
 
 VerificationTest[
     MemberQ[ #[ "Name" ] & /@ Wolfram`Chatbook`ToolManager`Private`getFullToolList[ ], "file_reader" ],
     TrueQ @ ( $VersionNumber >= 15.1 ),
     SameTest -> SameQ,
-    TestID   -> "FileReader-ToolManagerListing@@Tests/ToolAvailability.wlt:68,1-73,2"
+    TestID   -> "FileReader-ToolManagerListing"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -91,7 +91,7 @@ VerificationTest[
         "String" -> _String? (StringContainsQ[ #, "1: Alabama" ] && StringContainsQ[ #, "50: Wyoming" ] &)
     },
     SameTest -> MatchQ,
-    TestID   -> "FileReader-ReadTextFile@@Tests/ToolAvailability.wlt:79,1-95,2"
+    TestID   -> "FileReader-ReadTextFile"
 ]
 
 VerificationTest[
@@ -106,7 +106,7 @@ VerificationTest[
         "String" -> _String? (StringFreeQ[ #, "1: Alabama" ] && StringContainsQ[ #, "50: Wyoming" ] &)
     },
     SameTest -> MatchQ,
-    TestID   -> "FileReader-DataOffset@@Tests/ToolAvailability.wlt:97,1-110,2"
+    TestID   -> "FileReader-DataOffset"
 ]
 
 (* Optional parameters may be omitted entirely or arrive as empty strings/Missing (e.g. via the "Simple" tool method)
@@ -123,7 +123,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | KeyValuePattern @ { "String" -> _String? (StringContainsQ[ "50: Wyoming" ]) },
     SameTest -> MatchQ,
-    TestID   -> "FileReader-InvalidOptionalParameters@@Tests/ToolAvailability.wlt:114,1-127,2"
+    TestID   -> "FileReader-InvalidOptionalParameters"
 ]
 
 (* The cell string budget can be Infinity, which must not break the byte budget passed to ReadFile: *)
@@ -136,7 +136,7 @@ VerificationTest[
     ],
     Missing[ "TestSkipped" ] | KeyValuePattern @ { "String" -> _String? (StringContainsQ[ "50: Wyoming" ]) },
     SameTest -> MatchQ,
-    TestID   -> "FileReader-UnboundedBudget@@Tests/ToolAvailability.wlt:130,1-140,2"
+    TestID   -> "FileReader-UnboundedBudget"
 ]
 
 VerificationTest[
@@ -151,7 +151,7 @@ VerificationTest[
         "String" -> _String? (StringStartsQ[ "Failure[" ])
     },
     SameTest -> MatchQ,
-    TestID   -> "FileReader-MissingFile@@Tests/ToolAvailability.wlt:142,1-155,2"
+    TestID   -> "FileReader-MissingFile"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -161,7 +161,7 @@ VerificationTest[
     KeyExistsQ[ Wolfram`Chatbook`$DefaultTools, "NotebookReader" ],
     True,
     SameTest -> SameQ,
-    TestID   -> "NotebookReader-DefaultToolDefinition@@Tests/ToolAvailability.wlt:160,1-165,2"
+    TestID   -> "NotebookReader-DefaultToolDefinition"
 ]
 
 (* Only sidebar and Notebook Assistant window chats have a user notebook to read: *)
@@ -175,7 +175,7 @@ VerificationTest[
     ],
     { { True, True }, { True, False } },
     SameTest -> SameQ,
-    TestID   -> "NotebookReader-Enabled@@Tests/ToolAvailability.wlt:168,1-179,2"
+    TestID   -> "NotebookReader-Enabled"
 ]
 
 VerificationTest[
@@ -185,7 +185,7 @@ VerificationTest[
     },
     { True, False },
     SameTest -> SameQ,
-    TestID   -> "NotebookReader-Hidden@@Tests/ToolAvailability.wlt:181,1-189,2"
+    TestID   -> "NotebookReader-Hidden"
 ]
 
 (* The tool is selected for the Notebook Assistant window and the sidebar, but not for chat notebooks, and not when
@@ -224,6 +224,6 @@ VerificationTest[
     ],
     { True, False, False, True, False },
     SameTest -> SameQ,
-    TestID   -> "NotebookReader-SelectedTools@@Tests/ToolAvailability.wlt:193,1-228,2"
+    TestID   -> "NotebookReader-SelectedTools"
 ]
 (* :!CodeAnalysis::EndBlock:: *)

@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName[ $TestFileName ], "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/Citations.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/Citations.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -36,7 +36,7 @@ VerificationTest[
         ]
     ],
     { False, "Hello world.", "Hello world." },
-    TestID -> "appendCitations-NoneSources-Disabled@@Tests/Citations.wlt:30,1-40,2"
+    TestID -> "appendCitations-NoneSources-Disabled"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -61,5 +61,5 @@ VerificationTest[
         ]
     ],
     { False, "Hello world.", "Hello world." },
-    TestID -> "appendCitations-NoneSources-Enabled@@Tests/Citations.wlt:45,1-65,2"
+    TestID -> "appendCitations-NoneSources-Enabled"
 ]

@@ -1360,7 +1360,14 @@ chatHandlers[ container_, cellObject_, settings_, messages_ ] :=
             emulatedStop  = emulatedStopTokens @ settings,
             responses     = settings[ "RequestMethod" ] === "Responses",
             (* The start of the chat action, since catchTop resets $chatStartTime for handler calls made after it: *)
-            startTime     = Replace[ $chatStartTime, Except[ _Real ] :> AbsoluteTime[ ] ]
+            startTime     = Replace[ $chatStartTime, Except[ _Real ] :> AbsoluteTime[ ] ],
+            (* This chat's settings and messages for logging usage, since an auto-assist chat's handlers can run after
+               another chat action has replaced $ChatHandlerData. An auto-assist chat submits the request for a tool
+               response from inside its handlers, so those handlers pass theirs on: *)
+            usageData     = Replace[
+                $usageData,
+                Except[ _Association ] :> KeyTake[ $ChatHandlerData, { "ChatNotebookSettings", "Messages" } ]
+            ]
         },
         {
             bodyChunkHandler    = Lookup[ handlers, "BodyChunkReceived", None ],
@@ -1380,7 +1387,8 @@ chatHandlers[ container_, cellObject_, settings_, messages_ ] :=
                         $chatStartTime       = startTime,
                         $customToolFormatter = toolFormatter,
                         $dynamicSplit        = dynamicSplit,
-                        $settings            = settings
+                        $settings            = settings,
+                        $usageData           = usageData
                     },
                     (* If an emulated stop token was previously detected, discard any remaining buffered text: *)
                     If[ ! (stopEmulation && $emulatedStopTriggered),
@@ -1407,7 +1415,7 @@ chatHandlers[ container_, cellObject_, settings_, messages_ ] :=
                                     "EventName"             -> "TaskFinished",
                                     "EmulatedStopTriggered" -> True
                                 |>;
-                                logUsage @ container;
+                                logUsage[ container, usageData ];
                                 checkResponse[ $settings, Unevaluated @ container, cellObject, as ]
                             ]
                         ]
@@ -1424,7 +1432,8 @@ chatHandlers[ container_, cellObject_, settings_, messages_ ] :=
                         $chatStartTime       = startTime,
                         $customToolFormatter = toolFormatter,
                         $dynamicSplit        = dynamicSplit,
-                        $settings            = settings
+                        $settings            = settings,
+                        $usageData           = usageData
                     },
                     If[ stopEmulation && $emulatedStopTriggered,
                         (* The response was already processed when the emulated stop token was detected: *)
@@ -1433,7 +1442,7 @@ chatHandlers[ container_, cellObject_, settings_, messages_ ] :=
                         taskFinishedHandler[ #1 ];
                         Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
                         checkFinishReason[ #1 ];
-                        logUsage @ container;
+                        logUsage[ container, usageData ];
                         trimStopTokens[ container, stop ];
                         With[ { refusal = refusalDetails @ logStart },
                             If[ AssociationQ @ refusal,
@@ -2146,9 +2155,17 @@ autoCorrect // endDefinition;
 
 $$specialBoxName = "AudioBox"|"MarkdownImageBox"|"VideoBox";
 
+(* autoCorrect runs on the whole accumulated text for every chunk, so its rules must not start at every character of a
+   long run and scan the rest of it each time, which took 1-6 s for a run of 20K spaces, newlines or backslashes
+   (#1720). These only match a run from its first character: the lookbehind fails when the character before it is the
+   same. It comes after the first character so that it's only tried there, which is cheaper on typical text. *)
+$$spaces      = " "  ~~ RegularExpression[ "(?<! {2})" ] ~~ " "...;
+$$backslashes = "\\" ~~ RegularExpression[ "(?<!\\\\{2})" ] ~~ "\\"...;
+
 $llmAutoCorrectRulesNoMoonshot := $llmAutoCorrectRulesNoMoonshot = Flatten @ {
-    StartOfLine ~~ WhitespaceCharacter... ~~ "/command\ncode:" :> "/wl\ncode:",
-    " ".. ~~ "/" ~~ name: Repeated[ Except[ WhitespaceCharacter ], { 1, 80 } ] ~~ " "... ~~ "\n" /;
+    (* No newlines in the whitespace, since StartOfLine matches at every line in a run of newlines: *)
+    StartOfLine ~~ Except[ "\n", WhitespaceCharacter ]... ~~ "/command\ncode:" :> "/wl\ncode:",
+    $$spaces ~~ "/" ~~ name: Repeated[ Except[ WhitespaceCharacter ], { 1, 80 } ] ~~ " "... ~~ "\n" /;
         toolShortNameQ @ name :>
             "\n/"<>name<>"\n",
     "```" ~~ code: Except[ "\n" ].. ~~ "```" :> "``"<>code<>"``",
@@ -2166,11 +2183,17 @@ $llmAutoCorrectRulesNoMoonshot := $llmAutoCorrectRulesNoMoonshot = Flatten @ {
        character, which should reduce the likelihood of incorrect unicode characters being used instead. *)
     RegularExpression["\\\\u[Ff]351"] -> "\[FreeformPrompt]",
     RegularExpression["\\\\u[Ff][Ff]1[Dd]"] -> "\[FreeformPrompt]",
-    "\\"... ~~ "\:ff1d" -> "\[FreeformPrompt]",
-    "\\".. ~~ "[FreeformInput]" -> "\[FreeformPrompt]",
-    "\\".. ~~ "[FreeformEntity]" -> "\[FreeformPrompt]",
-    "\\".. ~~ "[FreeformPrompt]" -> "\[FreeformPrompt]",
-    "\\".. ~~ "[RawEscape][FreeformPrompt]" -> "\[FreeformPrompt]",
+    (* One rule after the backslashes, so the lookbehind in $$backslashes is only tried once at each backslash. The bare
+       "\:ff1d" is a separate rule, since a rule that can start with an optional run ("\\"... ~~ "\:ff1d") made calls
+       on text over about 2K characters about 1.5 times as slow: *)
+    $$backslashes ~~ Alternatives[
+        "\:ff1d",
+        "[FreeformInput]",
+        "[FreeformEntity]",
+        "[FreeformPrompt]",
+        "[RawEscape][FreeformPrompt]"
+    ] -> "\[FreeformPrompt]",
+    "\:ff1d" -> "\[FreeformPrompt]",
     (* ============================================== *)
     "\n<|image_sentinel|>\n" :> "\n",
     "<|image_sentinel|>" :> "",
@@ -2268,7 +2291,9 @@ writeDynamicChunkAsStatic[ static_String, dynamicBox_BoxObject ] := Enclose[
             throwTop[ removeTask @ $lastTask; Null ]
         ];
 
-        settings = ConfirmBy[ $ChatHandlerData[ "ChatNotebookSettings" ], AssociationQ, "Settings" ];
+        (* The chat's own settings, which its handlers give in $settings, since an auto-assist chat's handlers can run
+           after another chat action has replaced $ChatHandlerData: *)
+        settings = ConfirmBy[ $settings, AssociationQ, "Settings" ];
 
         reformatted = ConfirmMatch[
             If[ TrueQ @ settings[ "AutoFormat" ],

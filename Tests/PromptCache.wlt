@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/PromptCache.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/PromptCache.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -77,14 +77,14 @@ VerificationTest[
     withCacheSettings[ <| |>, $settings[ "PromptCacheOptimization" ] ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "PromptCacheOptimization-Automatic@@Tests/PromptCache.wlt:76,1-81,2"
+    TestID   -> "PromptCacheOptimization-Automatic"
 ]
 
 VerificationTest[
     withCacheSettings[ <| "PromptCacheOptimization" -> False |>, $settings[ "PromptCacheOptimization" ] ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "PromptCacheOptimization-False@@Tests/PromptCache.wlt:83,1-88,2"
+    TestID   -> "PromptCacheOptimization-False"
 ]
 
 (* Turn messages are system messages after the user message, which some services don't handle as needed: *)
@@ -96,7 +96,7 @@ VerificationTest[
     },
     { False, False, False },
     SameTest -> MatchQ,
-    TestID   -> "PromptCacheOptimization-ModelDependent@@Tests/PromptCache.wlt:91,1-100,2"
+    TestID   -> "PromptCacheOptimization-ModelDependent"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -116,7 +116,7 @@ VerificationTest[
         <| "Role" -> "System", "Content" -> "Generated prompt 1" |>
     },
     SameTest -> MatchQ,
-    TestID   -> "TurnMessages-AfterUserMessage@@Tests/PromptCache.wlt:111,1-120,2"
+    TestID   -> "TurnMessages-AfterUserMessage"
 ]
 
 VerificationTest[
@@ -130,7 +130,7 @@ VerificationTest[
         <| "Role" -> "User"  , "Content" -> "Hello"              |>
     },
     SameTest -> MatchQ,
-    TestID   -> "TurnMessages-LegacyPosition@@Tests/PromptCache.wlt:122,1-134,2"
+    TestID   -> "TurnMessages-LegacyPosition"
 ]
 
 (* The ID of the turn's record is sown as chat data, so it can be written to the output cell: *)
@@ -138,7 +138,7 @@ VerificationTest[
     withCacheSettings[ <| |>, Last @ constructWithData[ $settings, $firstMessages ] ],
     KeyValuePattern[ "PromptCacheID" -> _String ],
     SameTest -> MatchQ,
-    TestID   -> "TurnMessages-RecordID@@Tests/PromptCache.wlt:137,1-142,2"
+    TestID   -> "TurnMessages-RecordID"
 ]
 
 VerificationTest[
@@ -148,7 +148,7 @@ VerificationTest[
     ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "TurnMessages-NoRecordIDLegacy@@Tests/PromptCache.wlt:144,1-152,2"
+    TestID   -> "TurnMessages-NoRecordIDLegacy"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -171,7 +171,7 @@ VerificationTest[
     ],
     { 1, True, 2 },
     SameTest -> MatchQ,
-    TestID   -> "TurnMessages-ToolLoopAppendsOnly@@Tests/PromptCache.wlt:159,1-175,2"
+    TestID   -> "TurnMessages-ToolLoopAppendsOnly"
 ]
 
 (* Prompt generators do not run again after a tool call, even if they did not give anything the first time: *)
@@ -187,7 +187,7 @@ VerificationTest[
     ],
     1,
     SameTest -> MatchQ,
-    TestID   -> "TurnMessages-ToolLoopNoRerun@@Tests/PromptCache.wlt:178,1-191,2"
+    TestID   -> "TurnMessages-ToolLoopNoRerun"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -214,7 +214,7 @@ VerificationTest[
     ],
     { True, { "Hi there", "Next", "Generated prompt 2" } },
     SameTest -> MatchQ,
-    TestID   -> "TurnMessages-HistoryPrefix@@Tests/PromptCache.wlt:202,1-218,2"
+    TestID   -> "TurnMessages-HistoryPrefix"
 ]
 
 (* Without a record (e.g. after restarting the kernel), the history is converted from the cells only: *)
@@ -235,7 +235,7 @@ VerificationTest[
     ],
     { "Generated prompt 1" },
     SameTest -> MatchQ,
-    TestID   -> "TurnMessages-HistoryMissingRecord@@Tests/PromptCache.wlt:221,1-239,2"
+    TestID   -> "TurnMessages-HistoryMissingRecord"
 ]
 
 (* Records are only used with the PromptCacheOptimization setting: *)
@@ -259,7 +259,7 @@ VerificationTest[
     ],
     { "Generated prompt 1" },
     SameTest -> MatchQ,
-    TestID   -> "TurnMessages-HistoryLegacy@@Tests/PromptCache.wlt:242,1-263,2"
+    TestID   -> "TurnMessages-HistoryLegacy"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -294,7 +294,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "TurnMessages-HistoryOverBudget@@Tests/PromptCache.wlt:273,1-298,2"
+    TestID   -> "TurnMessages-HistoryOverBudget"
 ]
 
 (* Turns without turn messages don't need a record: *)
@@ -305,7 +305,7 @@ VerificationTest[
     ],
     { True, _Missing },
     SameTest -> MatchQ,
-    TestID   -> "TurnMessages-NoEmptyRecords@@Tests/PromptCache.wlt:301,1-309,2"
+    TestID   -> "TurnMessages-NoEmptyRecords"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -338,7 +338,7 @@ VerificationTest[
     ],
     { False, { "System", "User", "System" }, True },
     SameTest -> MatchQ,
-    TestID   -> "BasePromptHints-NotInSystemPrompt@@Tests/PromptCache.wlt:327,1-342,2"
+    TestID   -> "BasePromptHints-NotInSystemPrompt"
 ]
 
 VerificationTest[
@@ -351,7 +351,7 @@ VerificationTest[
     ],
     { True, 0 },
     SameTest -> MatchQ,
-    TestID   -> "BasePromptHints-Legacy@@Tests/PromptCache.wlt:344,1-355,2"
+    TestID   -> "BasePromptHints-Legacy"
 ]
 
 (* The system prompt doesn't depend on the content of the conversation: *)
@@ -368,7 +368,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "BasePromptHints-SameSystemPrompt@@Tests/PromptCache.wlt:358,1-372,2"
+    TestID   -> "BasePromptHints-SameSystemPrompt"
 ]
 
 (* A hint is sent once per conversation: *)
@@ -392,7 +392,7 @@ VerificationTest[
     ],
     { True, 1, 1 },
     SameTest -> MatchQ,
-    TestID   -> "BasePromptHints-OncePerConversation@@Tests/PromptCache.wlt:375,1-396,2"
+    TestID   -> "BasePromptHints-OncePerConversation"
 ]
 
 (* Components needed after a tool call are sent as a hint with the other turn messages, before the response: *)
@@ -415,7 +415,7 @@ VerificationTest[
     ],
     { True, { "System", "User", "System", "Assistant", "System" }, True, True, 2 },
     SameTest -> MatchQ,
-    TestID   -> "BasePromptHints-ToolLoop@@Tests/PromptCache.wlt:399,1-419,2"
+    TestID   -> "BasePromptHints-ToolLoop"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -442,7 +442,7 @@ VerificationTest[
     ],
     { False, True, 1, True },
     SameTest -> MatchQ,
-    TestID   -> "DisabledPromptHints-AutoAssistant@@Tests/PromptCache.wlt:427,1-446,2"
+    TestID   -> "DisabledPromptHints-AutoAssistant"
 ]
 
 (* Instructions that are meant for one response are scoped to it, and sent again in each turn that needs them: *)
@@ -486,7 +486,7 @@ VerificationTest[
     ],
     { 0, 1, 2 },
     SameTest -> MatchQ,
-    TestID   -> "BasePromptHints-PerTurn@@Tests/PromptCache.wlt:449,1-490,2"
+    TestID   -> "BasePromptHints-PerTurn"
 ]
 
 VerificationTest[
@@ -502,7 +502,7 @@ VerificationTest[
     ],
     { True, 1 },
     SameTest -> MatchQ,
-    TestID   -> "DisabledPromptHints-ToolCallFrequency@@Tests/PromptCache.wlt:492,1-506,2"
+    TestID   -> "DisabledPromptHints-ToolCallFrequency"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -520,7 +520,7 @@ VerificationTest[
     ],
     { True, 1 },
     SameTest -> MatchQ,
-    TestID   -> "ToolCallRetry-SystemPrompt@@Tests/PromptCache.wlt:513,1-524,2"
+    TestID   -> "ToolCallRetry-SystemPrompt"
 ]
 
 VerificationTest[
@@ -533,7 +533,7 @@ VerificationTest[
     ],
     { False, 2 },
     SameTest -> MatchQ,
-    TestID   -> "ToolCallRetry-Legacy@@Tests/PromptCache.wlt:526,1-537,2"
+    TestID   -> "ToolCallRetry-Legacy"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -562,7 +562,7 @@ VerificationTest[
     ],
     { True, False },
     SameTest -> MatchQ,
-    TestID   -> "History-FixedCellStringLength@@Tests/PromptCache.wlt:556,1-566,2"
+    TestID   -> "History-FixedCellStringLength"
 ]
 
 (* The requests of a conversation that grows past the token budget, with answers of different lengths and turn
@@ -617,7 +617,7 @@ VerificationTest[
     ],
     { True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "History-BlockTrimming@@Tests/PromptCache.wlt:602,1-621,2"
+    TestID   -> "History-BlockTrimming"
 ]
 
 (* A history message that doesn't fit is left out with all older ones instead of being shortened, which would give a
@@ -642,7 +642,7 @@ VerificationTest[
     ],
     { True, True, 4 },
     SameTest -> MatchQ,
-    TestID   -> "History-NoShortenedMessages@@Tests/PromptCache.wlt:625,1-646,2"
+    TestID   -> "History-NoShortenedMessages"
 ]
 
 (* Blocks are larger for larger budgets, so that a long history doesn't change more often: *)
@@ -655,7 +655,7 @@ VerificationTest[
     },
     { 8, 8, 32, 8 },
     SameTest -> MatchQ,
-    TestID   -> "History-BlockSize@@Tests/PromptCache.wlt:649,1-659,2"
+    TestID   -> "History-BlockSize"
 ]
 
 (* Cells that are serialized for something other than chat history (e.g. the notebook context) are shortened with the
@@ -677,7 +677,7 @@ VerificationTest[
     ],
     { lengths_, lengths_ },
     SameTest -> MatchQ,
-    TestID   -> "History-OnlyForChatHistory@@Tests/PromptCache.wlt:663,1-681,2"
+    TestID   -> "History-OnlyForChatHistory"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -695,7 +695,7 @@ VerificationTest[
     ],
     KeyValuePattern[ "PromptCacheID" -> "abc" ],
     SameTest -> MatchQ,
-    TestID   -> "Records-TaggingRules@@Tests/PromptCache.wlt:688,1-699,2"
+    TestID   -> "Records-TaggingRules"
 ]
 
 VerificationTest[
@@ -711,7 +711,7 @@ VerificationTest[
     ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "Records-NoTaggingRules@@Tests/PromptCache.wlt:701,1-715,2"
+    TestID   -> "Records-NoTaggingRules"
 ]
 
 (* The number of records kept in memory is bounded: *)
@@ -726,7 +726,7 @@ VerificationTest[
     ],
     _Integer? (# <= 10 &),
     SameTest -> MatchQ,
-    TestID   -> "Records-Bounded@@Tests/PromptCache.wlt:718,1-730,2"
+    TestID   -> "Records-Bounded"
 ]
 
 (* Regenerated responses have pages, which use the other definition: *)
@@ -740,7 +740,7 @@ VerificationTest[
     ],
     KeyValuePattern @ { "PromptCacheID" -> "abc", "PageData" -> KeyValuePattern[ "PageCount" -> 2 ] },
     SameTest -> MatchQ,
-    TestID   -> "Records-TaggingRulesPages@@Tests/PromptCache.wlt:733,1-744,2"
+    TestID   -> "Records-TaggingRulesPages"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -767,7 +767,7 @@ VerificationTest[
     Cases[ secondTurnChatData[ ][ "Data", "Messages" ], KeyValuePattern[ "Content" -> c_String ] :> c ],
     { _String, "Hello", "Hi there", "Next", "Generated prompt 2", "Answer" },
     SameTest -> MatchQ,
-    TestID   -> "ChatData-CurrentTurnMessages@@Tests/PromptCache.wlt:766,1-771,2"
+    TestID   -> "ChatData-CurrentTurnMessages"
 ]
 
 (* Feedback without the chat history includes the user's message and the response, but not the turn messages: *)
@@ -778,7 +778,7 @@ VerificationTest[
     ],
     { { "System", _ }, { "User", "Next" }, { "Assistant", "Answer" } },
     SameTest -> MatchQ,
-    TestID   -> "ChatData-FeedbackWithoutHistory@@Tests/PromptCache.wlt:774,1-782,2"
+    TestID   -> "ChatData-FeedbackWithoutHistory"
 ]
 
 (* Turn messages can have the user role, and only the ones before the user's message are left out: *)
@@ -796,7 +796,7 @@ VerificationTest[
     ],
     { "System prompt", "Hello", "Hi there", "Next", "Current" },
     SameTest -> MatchQ,
-    TestID   -> "ChatData-UserRoleTurnMessages@@Tests/PromptCache.wlt:785,1-800,2"
+    TestID   -> "ChatData-UserRoleTurnMessages"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -815,7 +815,7 @@ VerificationTest[
     ],
     { prompt_, prompt_ },
     SameTest -> MatchQ,
-    TestID   -> "SystemPrompt-BasePromptNone@@Tests/PromptCache.wlt:808,1-819,2"
+    TestID   -> "SystemPrompt-BasePromptNone"
 ]
 
 (* The system prompt doesn't change after a tool call, also when it has instructions that are disabled with a hint: *)
@@ -829,7 +829,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "SystemPrompt-ToolLoop@@Tests/PromptCache.wlt:822,1-833,2"
+    TestID   -> "SystemPrompt-ToolLoop"
 ]
 
 (* The request after a tool call can be made outside the chat state of the first request (e.g. for automatic
@@ -846,7 +846,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "SystemPrompt-OtherChatState@@Tests/PromptCache.wlt:837,1-850,2"
+    TestID   -> "SystemPrompt-OtherChatState"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -864,7 +864,7 @@ VerificationTest[
     ],
     _? (SubsetQ[ #, { "SpecialURI", "SpecialURIAudio" } ] &),
     SameTest -> MatchQ,
-    TestID   -> "HintContents-Dependencies@@Tests/PromptCache.wlt:857,1-868,2"
+    TestID   -> "HintContents-Dependencies"
 ]
 
 (* The notebook assistance instructions are sent in each turn that needs them, along with their heading: *)
@@ -886,7 +886,7 @@ VerificationTest[
     ],
     { 1, 1 },
     SameTest -> MatchQ,
-    TestID   -> "HintContents-NotebookAssistanceHeading@@Tests/PromptCache.wlt:871,1-890,2"
+    TestID   -> "HintContents-NotebookAssistanceHeading"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -929,7 +929,7 @@ VerificationTest[
     ],
     { _, "[2 Cells Excised]", "Next", "Generated prompt 1" },
     SameTest -> MatchQ,
-    TestID   -> "NotebookContext-OrphanImages@@Tests/PromptCache.wlt:898,1-933,2"
+    TestID   -> "NotebookContext-OrphanImages"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

@@ -5,14 +5,14 @@ VerificationTest[
     Needs[ "Wolfram`ChatbookTests`", FileNameJoin @ { DirectoryName @ $TestFileName, "Common.wl" } ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions@@Tests/Context.wlt:4,1-9,2"
+    TestID   -> "GetDefinitions"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext@@Tests/Context.wlt:11,1-16,2"
+    TestID   -> "LoadContext"
 ]
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -57,7 +57,7 @@ VerificationTest[
     ],
     { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "GetContextFromSelection-ExcludesSelectedAndUnselectedCells@@Tests/Context.wlt:24,1-61,2"
+    TestID   -> "GetContextFromSelection-ExcludesSelectedAndUnselectedCells"
 ]
 
 VerificationTest[
@@ -79,7 +79,7 @@ VerificationTest[
     ],
     <| "Before" -> { CellObject[ "included-before-limit" ] }, "Selected" -> { CellObject[ "selected" ] }, "After" -> { } |>,
     SameTest -> MatchQ,
-    TestID   -> "SelectContextCells-FiltersBeforeApplyingLimits@@Tests/Context.wlt:63,1-83,2"
+    TestID   -> "SelectContextCells-FiltersBeforeApplyingLimits"
 ]
 
 VerificationTest[
@@ -111,7 +111,7 @@ VerificationTest[
     ],
     { True, 100 },
     SameTest -> MatchQ,
-    TestID   -> "SelectContextCells-SidebarFiltersBeforeApplyingLimits@@Tests/Context.wlt:85,1-115,2"
+    TestID   -> "SelectContextCells-SidebarFiltersBeforeApplyingLimits"
 ]
 
 VerificationTest[
@@ -121,7 +121,7 @@ VerificationTest[
     },
     <| "Before" -> { }, "Selected" -> { }, "After" -> { CellObject[ "first" ], CellObject[ "second" ] } |>,
     SameTest -> MatchQ,
-    TestID   -> "SelectContextCells-AboveCellIncludesFirstCell@@Tests/Context.wlt:117,1-125,2"
+    TestID   -> "SelectContextCells-AboveCellIncludesFirstCell"
 ]
 
 VerificationTest[
@@ -162,7 +162,7 @@ VerificationTest[
     ],
     { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "SelectContextCells-SidebarSelectionSurvivesToolLoop@@Tests/Context.wlt:127,1-166,2"
+    TestID   -> "SelectContextCells-SidebarSelectionSurvivesToolLoop"
 ]
 
 VerificationTest[
@@ -198,7 +198,7 @@ VerificationTest[
     ],
     { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "SelectContextCells-SidebarContextNotReusedAcrossChats@@Tests/Context.wlt:168,1-202,2"
+    TestID   -> "SelectContextCells-SidebarContextNotReusedAcrossChats"
 ]
 
 VerificationTest[
@@ -245,14 +245,14 @@ VerificationTest[
     ],
     { True, True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "GetContextFromSelection-SidebarDropsRemovedCellsDuringChat@@Tests/Context.wlt:204,1-249,2"
+    TestID   -> "GetContextFromSelection-SidebarDropsRemovedCellsDuringChat"
 ]
 
 VerificationTest[
     Wolfram`Chatbook`ChatModes`ContentSuggestions`Private`$contentSuggestionsOverrides[ "Multimodal" ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "ContentSuggestions-DisablesMultimodalContext@@Tests/Context.wlt:251,1-256,2"
+    TestID   -> "ContentSuggestions-DisablesMultimodalContext"
 ]
 
 VerificationTest[
@@ -283,14 +283,14 @@ VerificationTest[
     ],
     { True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "GetContextFromSelection-AboveFirstCell@@Tests/Context.wlt:258,1-287,2"
+    TestID   -> "GetContextFromSelection-AboveFirstCell"
 ]
 
 VerificationTest[
     Wolfram`Chatbook`Common`chatExcludedQ @ Cell[ "Text", "Text", TaggingRules -> "unexpected" ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "ChatExcludedQ-ToleratesNonKeyValueTaggingRules@@Tests/Context.wlt:289,1-294,2"
+    TestID   -> "ChatExcludedQ-ToleratesNonKeyValueTaggingRules"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -317,7 +317,7 @@ VerificationTest[
     { Length @ $plotMessages, Length @ $plotSaved },
     { 2, 3 },
     SameTest -> MatchQ,
-    TestID   -> "GetContextFromSelection-SelectedGraphics-Setup@@Tests/Context.wlt:299,1-321,2"
+    TestID   -> "GetContextFromSelection-SelectedGraphics-Setup"
 ]
 
 VerificationTest[
@@ -336,7 +336,7 @@ VerificationTest[
         <| "Type" -> "Text", "Data" -> "Describe the selected plot in one short sentence." |>
     },
     SameTest -> MatchQ,
-    TestID   -> "GetContextFromSelection-SelectedGraphicsFoldedIntoUserMessage@@Tests/Context.wlt:323,1-340,2"
+    TestID   -> "GetContextFromSelection-SelectedGraphicsFoldedIntoUserMessage"
 ]
 
 VerificationTest[
@@ -346,7 +346,7 @@ VerificationTest[
     },
     { $plotQuestion, $plotQuestion },
     SameTest -> MatchQ,
-    TestID   -> "GetContextFromSelection-SelectedGraphicsSavedWithoutImages@@Tests/Context.wlt:342,1-350,2"
+    TestID   -> "GetContextFromSelection-SelectedGraphicsSavedWithoutImages"
 ]
 
 VerificationTest[
@@ -369,7 +369,7 @@ VerificationTest[
     ],
     { { "System", "User", "Assistant", "User" }, 1 },
     SameTest -> MatchQ,
-    TestID   -> "GetContextFromSelection-SelectedGraphicsToolLoopSendsImagesOnce@@Tests/Context.wlt:352,1-373,2"
+    TestID   -> "GetContextFromSelection-SelectedGraphicsToolLoopSendsImagesOnce"
 ]
 
 VerificationTest[
@@ -383,7 +383,7 @@ VerificationTest[
     ],
     { { "System", "User" }, True, True },
     SameTest -> MatchQ,
-    TestID   -> "GetContextFromSelection-SelectedGraphicsTextFallback@@Tests/Context.wlt:375,1-387,2"
+    TestID   -> "GetContextFromSelection-SelectedGraphicsTextFallback"
 ]
 
 VerificationTest[
@@ -416,7 +416,7 @@ VerificationTest[
     ],
     { { "System", "User" }, 1, 1, 1, { "System", "User", "User" } },
     SameTest -> MatchQ,
-    TestID   -> "MergeMessages-MergesUserHistoryAcrossContextImage@@Tests/Context.wlt:389,1-420,2"
+    TestID   -> "MergeMessages-MergesUserHistoryAcrossContextImage"
 ]
 
 VerificationTest[
@@ -437,7 +437,7 @@ VerificationTest[
         { "![Image](attachment://content-2)", <| "Type" -> "Image", "Data" -> "img2" |> }
     },
     SameTest -> MatchQ,
-    TestID   -> "ContextImageParts-PairsLinksAndDeduplicates@@Tests/Context.wlt:422,1-441,2"
+    TestID   -> "ContextImageParts-PairsLinksAndDeduplicates"
 ]
 
 VerificationTest[
@@ -478,7 +478,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "SelectContextImages-PrefersSelectedAndNearbyImages@@Tests/Context.wlt:443,1-482,2"
+    TestID   -> "SelectContextImages-PrefersSelectedAndNearbyImages"
 ]
 
 VerificationTest[
@@ -498,7 +498,7 @@ VerificationTest[
     ],
     "![Image](attachment://content-" <> ToString[ # ] <> ")" & /@ Range[ 5 ],
     SameTest -> MatchQ,
-    TestID   -> "SelectContextImages-NoSelectionPreservesNotebookOrder@@Tests/Context.wlt:484,1-502,2"
+    TestID   -> "SelectContextImages-NoSelectionPreservesNotebookOrder"
 ]
 
 VerificationTest[
@@ -513,7 +513,7 @@ VerificationTest[
         <| "Role" -> "User", "Content" -> "input" |>
     },
     SameTest -> MatchQ,
-    TestID   -> "MergeMessageData-KeepsTemporaryMessagesSeparate@@Tests/Context.wlt:504,1-517,2"
+    TestID   -> "MergeMessageData-KeepsTemporaryMessagesSeparate"
 ]
 
 VerificationTest[
@@ -539,7 +539,7 @@ VerificationTest[
         KeyValuePattern @ { "Content" -> "retry", "Temporary" -> True }
     },
     SameTest -> MatchQ,
-    TestID   -> "MergeMessages-MergesOutgoingTemporaryBoundaryAfterSaving@@Tests/Context.wlt:519,1-543,2"
+    TestID   -> "MergeMessages-MergesOutgoingTemporaryBoundaryAfterSaving"
 ]
 
 VerificationTest[
@@ -582,7 +582,7 @@ VerificationTest[
         <| "Role" -> "Assistant", "Content" -> "out" |>
     },
     SameTest -> MatchQ,
-    TestID   -> "FoldContextImageMessage-FoldsIntoNextNonTemporaryUserMessage@@Tests/Context.wlt:545,1-586,2"
+    TestID   -> "FoldContextImageMessage-FoldsIntoNextNonTemporaryUserMessage"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -655,7 +655,7 @@ VerificationTest[
     ],
     { ConstantArray[ { 1, 1, 1, 1 }, 3 ], { False, False, False }, { True, True }, True },
     SameTest -> MatchQ,
-    TestID   -> "AddPrompts-ToolLoopDoesNotRepeatContext@@Tests/Context.wlt:591,1-659,2"
+    TestID   -> "AddPrompts-ToolLoopDoesNotRepeatContext"
 ]
 
 (* The requests after a tool call are rebuilt from the saved messages, so they keep the images of the user's message,
@@ -698,7 +698,7 @@ VerificationTest[
     ],
     { { "System", "User", "Assistant", "User" }, 2, 2, True, True },
     SameTest -> MatchQ,
-    TestID   -> "ToolLoop-KeepsUserMessageImages@@Tests/Context.wlt:663,1-702,2"
+    TestID   -> "ToolLoop-KeepsUserMessageImages"
 ]
 
 VerificationTest[
@@ -723,7 +723,7 @@ VerificationTest[
         }
     },
     SameTest -> MatchQ,
-    TestID   -> "ReplaceAddedPrompts-ReplacesEarlierSection@@Tests/Context.wlt:704,1-727,2"
+    TestID   -> "ReplaceAddedPrompts-ReplacesEarlierSection"
 ]
 
 VerificationTest[
@@ -743,7 +743,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "AddPrompts-NoPromptKeepsMessages@@Tests/Context.wlt:729,1-747,2"
+    TestID   -> "AddPrompts-NoPromptKeepsMessages"
 ]
 
 VerificationTest[
@@ -772,7 +772,7 @@ VerificationTest[
     ],
     { True, True, True, True },
     SameTest -> MatchQ,
-    TestID   -> "PrepareMessagesForLLM-RemovesAddedPromptTags@@Tests/Context.wlt:749,1-776,2"
+    TestID   -> "PrepareMessagesForLLM-RemovesAddedPromptTags"
 ]
 
 VerificationTest[
@@ -796,7 +796,7 @@ VerificationTest[
     ],
     { "GENERATED-DOCS-XYZ", True, True },
     SameTest -> MatchQ,
-    TestID   -> "PrepareMessagesForLLM-StripsAddedPromptsAfterGeneratedLeadingMessage@@Tests/Context.wlt:778,1-800,2"
+    TestID   -> "PrepareMessagesForLLM-StripsAddedPromptsAfterGeneratedLeadingMessage"
 ]
 
 VerificationTest[
@@ -814,7 +814,7 @@ VerificationTest[
         KeyValuePattern @ { "Role" -> "User", "Content" -> "hi" }
     },
     SameTest -> MatchQ,
-    TestID   -> "PrepareMessagesForLLM-StripsAddedPromptsBeforeRoleConversion@@Tests/Context.wlt:802,1-818,2"
+    TestID   -> "PrepareMessagesForLLM-StripsAddedPromptsBeforeRoleConversion"
 ]
 
 VerificationTest[
@@ -832,7 +832,7 @@ VerificationTest[
         KeyValuePattern @ { "role" -> "user", "content" -> "hi" }
     },
     SameTest -> MatchQ,
-    TestID   -> "PrepareMessagesForHTTPRequest-StripsAddedPrompts@@Tests/Context.wlt:820,1-836,2"
+    TestID   -> "PrepareMessagesForHTTPRequest-StripsAddedPrompts"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -927,7 +927,7 @@ VerificationTest[
     ],
     { { "System", "User", "System" }, True, True },
     SameTest -> MatchQ,
-    TestID   -> "PromptCache-NotebookContextTurnMessage@@Tests/Context.wlt:919,1-931,2"
+    TestID   -> "PromptCache-NotebookContextTurnMessage"
 ]
 
 (* It's only sent once, and nothing is added for the next input when nothing changed: *)
@@ -942,7 +942,7 @@ VerificationTest[
     ],
     { True, { "Assistant", "User" }, 1 },
     SameTest -> MatchQ,
-    TestID   -> "PromptCache-NotebookContextOnce@@Tests/Context.wlt:934,1-946,2"
+    TestID   -> "PromptCache-NotebookContextOnce"
 ]
 
 (* When the selection moved, the next input gets a short notice: *)
@@ -958,7 +958,7 @@ VerificationTest[
     ],
     { { "Assistant", "User", "System" }, True, True },
     SameTest -> MatchQ,
-    TestID   -> "PromptCache-NotebookContextSelectionMoved@@Tests/Context.wlt:949,1-962,2"
+    TestID   -> "PromptCache-NotebookContextSelectionMoved"
 ]
 
 (* When the content changed, the next input gets a short notice: *)
@@ -974,7 +974,7 @@ VerificationTest[
     ],
     { { "Assistant", "User", "System" }, True },
     SameTest -> MatchQ,
-    TestID   -> "PromptCache-NotebookContextEdited@@Tests/Context.wlt:965,1-978,2"
+    TestID   -> "PromptCache-NotebookContextEdited"
 ]
 
 (* Images in the notebook context are sent in a separate user message after it: *)
@@ -996,7 +996,7 @@ VerificationTest[
     ],
     { { "System", "User", "System", "User" }, "What is this?", 1 },
     SameTest -> MatchQ,
-    TestID   -> "PromptCache-NotebookContextImages@@Tests/Context.wlt:981,1-1000,2"
+    TestID   -> "PromptCache-NotebookContextImages"
 ]
 
 (* Regenerating the response to the second input gives the notice again, since what the AI last saw comes from the
@@ -1013,7 +1013,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "PromptCache-NotebookContextRegenerate@@Tests/Context.wlt:1004,1-1017,2"
+    TestID   -> "PromptCache-NotebookContextRegenerate"
 ]
 
 (* When nothing changed, prompt generators still get the notebook context for their searches: *)
@@ -1024,7 +1024,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "PromptCache-NotebookContextSearchPrompt@@Tests/Context.wlt:1020,1-1028,2"
+    TestID   -> "PromptCache-NotebookContextSearchPrompt"
 ]
 
 (* When the NotebookReader tool is available, the notice says how to read the notebook, with the tool's name as the
@@ -1049,7 +1049,7 @@ VerificationTest[
     ],
     { { "notebook_reader" }, { "/nb_read" } },
     SameTest -> MatchQ,
-    TestID   -> "PromptCache-NotebookContextReaderNotice@@Tests/Context.wlt:1032,1-1053,2"
+    TestID   -> "PromptCache-NotebookContextReaderNotice"
 ]
 
 (* A notice is only sent once for each change: *)
@@ -1064,7 +1064,7 @@ VerificationTest[
     ],
     1,
     SameTest -> MatchQ,
-    TestID   -> "PromptCache-NotebookContextNoticeOnce@@Tests/Context.wlt:1056,1-1068,2"
+    TestID   -> "PromptCache-NotebookContextNoticeOnce"
 ]
 
 (* Without the NotebookReader tool, the AI can't read the notebook, so the full context is sent again when something
@@ -1083,7 +1083,7 @@ VerificationTest[
     ],
     { 1, True },
     SameTest -> MatchQ,
-    TestID   -> "PromptCache-NotebookContextWithoutReader@@Tests/Context.wlt:1072,1-1087,2"
+    TestID   -> "PromptCache-NotebookContextWithoutReader"
 ]
 
 (* The context is built without relative times, since it is sent again unchanged in later requests: *)
@@ -1103,7 +1103,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "PromptCache-NotebookContextNoRelativeTimes@@Tests/Context.wlt:1090,1-1107,2"
+    TestID   -> "PromptCache-NotebookContextNoRelativeTimes"
 ]
 
 (* After the user turns off notebook content, the content that was sent earlier is not sent again: *)
@@ -1114,7 +1114,7 @@ VerificationTest[
     ],
     0,
     SameTest -> MatchQ,
-    TestID   -> "PromptCache-NotebookContextTurnedOff@@Tests/Context.wlt:1110,1-1118,2"
+    TestID   -> "PromptCache-NotebookContextTurnedOff"
 ]
 
 (* After a change, prompt generators get a smaller context around the current selection for their searches: *)
@@ -1130,7 +1130,7 @@ VerificationTest[
     ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "PromptCache-NotebookContextSearchPromptChanged@@Tests/Context.wlt:1121,1-1134,2"
+    TestID   -> "PromptCache-NotebookContextSearchPromptChanged"
 ]
 
 (* That context is not sent, so the base prompt components it needs are not kept (they would be sent as hints): *)
@@ -1145,7 +1145,7 @@ VerificationTest[
     ],
     False,
     SameTest -> MatchQ,
-    TestID   -> "PromptCache-NotebookContextSearchPromptHints@@Tests/Context.wlt:1137,1-1149,2"
+    TestID   -> "PromptCache-NotebookContextSearchPromptHints"
 ]
 
 (* Other chats don't get the notebook context as turn messages: *)
@@ -1155,7 +1155,7 @@ VerificationTest[
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "PromptCache-NotebookContextOtherChats@@Tests/Context.wlt:1152,1-1159,2"
+    TestID   -> "PromptCache-NotebookContextOtherChats"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1173,7 +1173,7 @@ VerificationTest[
     ],
     { 8192, 8192 },
     SameTest -> MatchQ,
-    TestID   -> "NotebookContextLimits-DownScaledSettings@@Tests/Context.wlt:1166,1-1177,2"
+    TestID   -> "NotebookContextLimits-DownScaledSettings"
 ]
 
 (* Gives the length of a notebook context serialized in a chat with the given state of the chat's token budget: *)
@@ -1215,7 +1215,7 @@ VerificationTest[
     ],
     { True, True },
     SameTest -> MatchQ,
-    TestID   -> "NotebookContextLimits-ChatBudget@@Tests/Context.wlt:1194,1-1219,2"
+    TestID   -> "NotebookContextLimits-ChatBudget"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
