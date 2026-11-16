@@ -44,11 +44,11 @@ createPreferencesContent // beginDefinition;
 createPreferencesContent[ ] := Enclose[
     Module[ { tabs, tabView, reset, allowAICheckbox },
         (* Retrieve the dynamic content for each preferences tab, confirming that it matches the expected types: *)
+        allowAICheckbox = If[ sufficientVersionQ[ 16.0 ], Pane[ allowAISettings[ ], FrameMargins -> { { 10, 10 }, { 0, 0 } } ], Nothing ];
+
         (* buildID makes each rebuild's boxes unique, so the front end replaces the DynamicModule and runs its
            Initialization again instead of keeping the old instance with stale service and model values: *)
         DynamicModule[ { buildID = CreateUUID[ ], tab, dmPrefCache, default, service, model, state, serviceSelector = $loadingPopupMenu, modelNameSelector = $loadingPopupMenu },
-
-            allowAICheckbox = Pane[ allowAISettings[ ], FrameMargins -> { { 10, 10 }, { 0, 0 } } ];
 
             tabs = createTabViewTabs[ $displayedPreferencesPages, dmPrefCache, default, service, model, state, serviceSelector, modelNameSelector ];
 
@@ -70,7 +70,7 @@ createPreferencesContent[ ] := Enclose[
             makeScrollableInCloud @ Grid[
                 {
                     $verticalSpacer,
-                    { allowAICheckbox, SpanFromLeft },
+                    If[ allowAICheckbox === Nothing, Nothing, { allowAICheckbox, SpanFromLeft } ],
                     { tabView, "" },
                     $verticalSpacer,
                     { reset, SpanFromLeft },
@@ -80,7 +80,7 @@ createPreferencesContent[ ] := Enclose[
                 BaseStyle  -> "defaultGrid",  (* Defined in the SystemDialog stylesheet *)
                 AutoDelete -> False,
                 FrameStyle -> { AbsoluteThickness[ 1 ], color @ "Gray90_33" },
-                Dividers   -> { False, { 5 -> True } },
+                Dividers   -> { False, { If[ allowAICheckbox === Nothing, 4, 5 ] -> True } },
                 Spacings   -> { 0, 0.7 }
             ],
 
@@ -162,12 +162,6 @@ allowAISettings // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*AllowExternalLLMConnectivity*)
-(* System`$AllowExternalLLMConnectivity is what LLM services check. Since 16.0 the front end stores the setting as
-   CurrentValue[ $FrontEnd, "AllowExternalLLMConnectivity" ] and pushes it to its kernels after each evaluation.
-   Before 16.0 the symbol comes from a paclet (if it's installed) and there is no front end option, so the value is
-   kept in a PersistentSymbol and restored when Chatbook loads. *)
-$allowExternalLLMConnectivityKey = "Wolfram/Chatbook/AllowExternalLLMConnectivity";
-
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*allowExternalLLMConnectivityQ*)
@@ -183,10 +177,7 @@ allowExternalLLMConnectivityQ // endDefinition;
 setAllowExternalLLMConnectivity // beginDefinition;
 
 setAllowExternalLLMConnectivity[ value: True|False ] := (
-    If[ sufficientVersionQ[ 16.0 ],
-        CurrentValue[ $FrontEnd, "AllowExternalLLMConnectivity" ] = value,
-        PersistentSymbol[ $allowExternalLLMConnectivityKey, "Local" ] = value
-    ];
+    CurrentValue[ $FrontEnd, "AllowExternalLLMConnectivity" ] = value;
     (* The front end would also update the kernel, but only after this evaluation finishes: *)
     setKernelAllowExternalLLMConnectivity @ value;
     updateDynamics[ "Preferences" ];
@@ -209,23 +200,6 @@ setKernelAllowExternalLLMConnectivity[ value: True|False ] :=
     ];
 
 setKernelAllowExternalLLMConnectivity // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*restoreAllowExternalLLMConnectivity*)
-(* Called when Chatbook loads. Since 16.0 the front end sets the value, so this only applies to earlier versions, and
-   only if nothing (e.g. the user) has given the symbol a value already. *)
-restoreAllowExternalLLMConnectivity // beginDefinition;
-
-restoreAllowExternalLLMConnectivity[ ] :=
-    If[ ! sufficientVersionQ[ 16.0 ] && OwnValues @ System`$AllowExternalLLMConnectivity === { },
-        Replace[
-            PersistentSymbol[ $allowExternalLLMConnectivityKey, "Local" ],
-            value: True|False :> setKernelAllowExternalLLMConnectivity @ value
-        ]
-    ];
-
-restoreAllowExternalLLMConnectivity // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -375,7 +349,7 @@ localAIOnly[ ] := Which[
     (* if disabled via Preferences checkbox. Don't read CurrentValue[ $FrontEnd, "AllowExternalLLMConnectivity" ] here:
        this runs while building the preferences content, and that read makes the content rebuild whenever any
        $FrontEnd option changes. *)
-    ! allowExternalLLMConnectivityQ[ ],
+    sufficientVersionQ[ 16.0 ] && ! allowExternalLLMConnectivityQ[ ],
         { True, "User" },
 
     True,

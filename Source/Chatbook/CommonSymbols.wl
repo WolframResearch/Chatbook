@@ -378,7 +378,6 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `resolvePromptGenerators;
 `resolveSkills;
 `resolveTools;
-`restoreAllowExternalLLMConnectivity;
 `restoreReasoningData;
 `revertMultimodalContent;
 `rootEvaluationCell;

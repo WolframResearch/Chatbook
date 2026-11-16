@@ -372,91 +372,50 @@ VerificationTest[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*AllowExternalLLMConnectivity*)
-(* Runs a test with a temporary persistence key, as in a kernel before 16.0 (managed is True for 16.0+), and restores
-   the kernel symbol afterwards: *)
-withAllowExternalLLMSandbox // Attributes = { HoldFirst };
-withAllowExternalLLMSandbox[ eval_ ] := withAllowExternalLLMSandbox[ eval, False ];
-withAllowExternalLLMSandbox[ eval_, managed_ ] :=
-    Module[ { key = "Wolfram/ChatbookTests/" <> CreateUUID[ ], attributes, values },
-        attributes = Attributes @ System`$AllowExternalLLMConnectivity;
-        values     = OwnValues @ System`$AllowExternalLLMConnectivity;
-        WithCleanup[
-            Block[
-                {
-                    Wolfram`Chatbook`PreferencesContent`Private`$allowExternalLLMConnectivityKey = key,
-                    Wolfram`Chatbook`Common`sufficientVersionQ
-                },
-                Wolfram`Chatbook`Common`sufficientVersionQ[ 16.0 ] = managed;
-                Wolfram`Chatbook`Common`sufficientVersionQ[ v_ ] := TrueQ[ $VersionNumber >= v ];
-                eval[ key ]
-            ],
-            Quiet @ DeleteObject @ PersistentObject[ key, "Local" ];
-            Unprotect @ System`$AllowExternalLLMConnectivity;
-            OwnValues @ System`$AllowExternalLLMConnectivity = values;
-            Attributes @ System`$AllowExternalLLMConnectivity = attributes
+VerificationTest[
+    UsingFrontEnd @ Block[ { Wolfram`Chatbook`Common`sufficientVersionQ, Wolfram`Chatbook`PreferencesContent`Private`allowAISettings },
+        Wolfram`Chatbook`PreferencesContent`Private`allowAISettings[ ] := "VersionedCheckboxMarker";
+        Wolfram`Chatbook`Common`sufficientVersionQ[ 16.0 ] = False;
+        With[ { oldBoxes = ToBoxes @ Wolfram`Chatbook`Common`createPreferencesContent[ ] },
+            Wolfram`Chatbook`Common`sufficientVersionQ[ 16.0 ] = True;
+            With[ { newBoxes = ToBoxes @ Wolfram`Chatbook`Common`createPreferencesContent[ ] },
+                { StringFreeQ[ ToString[ oldBoxes, InputForm ], "VersionedCheckboxMarker" ],
+                  ! StringFreeQ[ ToString[ newBoxes, InputForm ], "VersionedCheckboxMarker" ] }
+            ]
         ]
-    ];
-
-VerificationTest[
-    withAllowExternalLLMSandbox @ Function[ key,
-        Unprotect @ System`$AllowExternalLLMConnectivity;
-        System`$AllowExternalLLMConnectivity =.;
-        Protect @ System`$AllowExternalLLMConnectivity;
-        {
-            Wolfram`Chatbook`PreferencesContent`Private`setAllowExternalLLMConnectivity[ False ],
-            System`$AllowExternalLLMConnectivity,
-            MemberQ[ Attributes @ System`$AllowExternalLLMConnectivity, Protected ],
-            PersistentSymbol[ key, "Local" ],
-            Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ[ ]
-        }
     ],
-    { False, False, True, False, False },
+    { True, True },
     SameTest -> MatchQ,
-    TestID   -> "SetAllowExternalLLMConnectivity-UpdatesKernelAndPersists"
+    TestID   -> "CreatePreferencesContent-CheckboxRequires16"
 ]
 
 VerificationTest[
-    withAllowExternalLLMSandbox @ Function[ key,
-        PersistentSymbol[ key, "Local" ] = False;
-        Unprotect @ System`$AllowExternalLLMConnectivity;
-        System`$AllowExternalLLMConnectivity =.;
-        Wolfram`Chatbook`Common`restoreAllowExternalLLMConnectivity[ ];
-        System`$AllowExternalLLMConnectivity
-    ],
-    False,
-    SameTest -> MatchQ,
-    TestID   -> "RestoreAllowExternalLLMConnectivity-AppliesSavedValue"
-]
-
-(* A value already set in the session (by the user or the front end) takes priority over the saved one: *)
-VerificationTest[
-    withAllowExternalLLMSandbox @ Function[ key,
-        PersistentSymbol[ key, "Local" ] = False;
-        Unprotect @ System`$AllowExternalLLMConnectivity;
-        System`$AllowExternalLLMConnectivity = True;
-        Wolfram`Chatbook`Common`restoreAllowExternalLLMConnectivity[ ];
-        System`$AllowExternalLLMConnectivity
-    ],
-    True,
-    SameTest -> MatchQ,
-    TestID   -> "RestoreAllowExternalLLMConnectivity-KeepsSessionValue"
-]
-
-(* Since 16.0 the front end's setting applies, even if an earlier version saved a different value: *)
-VerificationTest[
-    withAllowExternalLLMSandbox[
-        Function[ key,
-            PersistentSymbol[ key, "Local" ] = False;
-            Unprotect @ System`$AllowExternalLLMConnectivity;
-            System`$AllowExternalLLMConnectivity =.;
-            Wolfram`Chatbook`Common`restoreAllowExternalLLMConnectivity[ ];
-            OwnValues @ System`$AllowExternalLLMConnectivity
+    If[ Wolfram`Chatbook`Common`sufficientVersionQ[ 16.0 ],
+        UsingFrontEnd @ Module[ { original, attributes, values },
+            original   = CurrentValue[ $FrontEnd, "AllowExternalLLMConnectivity" ];
+            attributes = Attributes @ System`$AllowExternalLLMConnectivity;
+            values     = OwnValues @ System`$AllowExternalLLMConnectivity;
+            WithCleanup[
+                Unprotect @ System`$AllowExternalLLMConnectivity;
+                System`$AllowExternalLLMConnectivity = True;
+                Protect @ System`$AllowExternalLLMConnectivity;
+                {
+                    Wolfram`Chatbook`PreferencesContent`Private`setAllowExternalLLMConnectivity[ False ],
+                    CurrentValue[ $FrontEnd, "AllowExternalLLMConnectivity" ],
+                    System`$AllowExternalLLMConnectivity,
+                    MemberQ[ Attributes @ System`$AllowExternalLLMConnectivity, Protected ]
+                },
+                CurrentValue[ $FrontEnd, "AllowExternalLLMConnectivity" ] = original;
+                Unprotect @ System`$AllowExternalLLMConnectivity;
+                OwnValues @ System`$AllowExternalLLMConnectivity = values;
+                Attributes @ System`$AllowExternalLLMConnectivity = attributes
+            ]
         ],
-        True
+        { False, False, False, True }
     ],
-    { },
+    { False, False, False, True },
     SameTest -> MatchQ,
-    TestID   -> "RestoreAllowExternalLLMConnectivity-IgnoredWhenManaged"
+    TestID   -> "SetAllowExternalLLMConnectivity-UpdatesFrontEndAndKernel"
 ]
 
 (* Reading the front end option while building the content would make it rebuild whenever any $FrontEnd option changes: *)
