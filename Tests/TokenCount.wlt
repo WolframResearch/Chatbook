@@ -311,9 +311,10 @@ VerificationTest[
 ]
 
 (* An auto-assist chat's handlers run after its own evaluation has ended, possibly in the middle of another chat's
-   evaluation that has replaced $ChatHandlerData. The "TaskFinished" handler still logs the usage of its own chat: *)
+   evaluation that has replaced $ChatHandlerData. The "TaskFinished" handler still logs the usage of its own chat, and
+   so do the handlers of the request that it submits for a tool call: *)
 VerificationTest[
-    Module[ { settings, other, messages, container, handlers, finished = False, expected, actual },
+    Module[ { settings, other, messages, container, handlers, followUp, checked = 0, expected, actual },
 
         settings  = tokenizerSettings[ "gpt-4o" ];
         other     = tokenizerSettings[ "chat-bison" ];
@@ -321,6 +322,7 @@ VerificationTest[
         container = <| "FullContent" -> "Hello there", "DynamicContent" -> "" |>;
 
         expected = Block[ { $ChatHandlerData = <| |> },
+            Wolfram`Chatbook`Common`logUsage[ settings, messages, "Hello there" ];
             Wolfram`Chatbook`Common`logUsage[ settings, messages, "Hello there" ];
             $ChatHandlerData[ "Usage" ]
         ];
@@ -338,7 +340,12 @@ VerificationTest[
                 Wolfram`Chatbook`SendChat`Private`emulatedStopTokens = None &,
                 Wolfram`Chatbook`SendChat`Private`checkFinishReason  = Null &,
                 Wolfram`Chatbook`SendChat`Private`trimStopTokens     = Null &,
-                Wolfram`Chatbook`SendChat`Private`checkResponse      = (finished = True) &
+                (* Stands in for an auto-assist chat's tool evaluation, which submits the next request from inside
+                   the handler: *)
+                Wolfram`Chatbook`SendChat`Private`checkResponse = Function[
+                    checked++;
+                    followUp = Wolfram`Chatbook`SendChat`Private`chatHandlers[ container, None, settings ]
+                ]
             },
             (* The chat's handlers are created after its settings and messages are added to the handler data: *)
             handlers = Wolfram`Chatbook`Common`withChatState[
@@ -351,13 +358,14 @@ VerificationTest[
             (* The other chat has resolved its settings, but hasn't added its messages yet: *)
             actual = Block[ { $ChatHandlerData = <| "ChatNotebookSettings" -> other |> },
                 handlers[ "TaskFinished" ][ <| "StatusCode" -> 200 |> ];
+                followUp[ "TaskFinished" ][ <| "StatusCode" -> 200 |> ];
                 $ChatHandlerData[ "Usage" ]
             ]
         ];
 
-        { finished, actual === expected, expected }
+        { checked, actual === expected, expected }
     ],
-    { True, True, KeyValuePattern @ { "Prompt" -> _Integer, "Completion" -> _Integer, "Requests" -> 1 } },
+    { 2, True, KeyValuePattern @ { "Prompt" -> _Integer, "Completion" -> _Integer, "Requests" -> 2 } },
     SameTest -> MatchQ,
     TestID   -> "LogUsage-Late-Handler-GH#1033"
 ]
