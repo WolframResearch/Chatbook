@@ -2333,7 +2333,8 @@ vectorDBSearch[ dbName: $$dbName, messages0: { __Association }, prop: "Values"|"
             KeyValuePattern[ "Content" -> "" | { } ]
         ];
 
-        If[ messages === { }, Throw @ { } ];
+        (* Nothing to search if no user message has content: *)
+        If[ ! MemberQ[ messages, KeyValuePattern[ "Role" -> "User" ] ], Throw @ { } ];
 
         lastMessage = ConfirmMatch[
             FirstCase[ Reverse @ messages, KeyValuePattern[ "Role" -> "User" ] ],

@@ -405,13 +405,17 @@ toSource // endDefinition;
 relatedDocumentationCatalog // beginDefinition;
 
 relatedDocumentationCatalog[ messages: $$chatMessages, count_ ] := Enclose[
-    Module[ { results, uris, descriptions, listed },
+    Catch @ Module[ { results, uris, descriptions, listed },
 
         results = ConfirmMatch[
             RelatedDocumentation[ messages, "Results", count ],
             { ___Association },
             "Results"
         ] // LogChatTiming[ "RelatedDocumentationResults" ] // withApproximateProgress[ "CheckingDocumentation", 0.2 ];
+
+        (* There are no results when there's no text to search (e.g. the message only has an image), or when the vector
+           databases are skipped (e.g. their download was declined): *)
+        If[ results === { }, Throw[ "" ] ];
 
         uris = ConfirmMatch[ DeleteDuplicates @ Lookup[ results, "Value" ], { ___String }, "URIs" ];
         descriptions = ConfirmMatch[ getSnippetDescriptions @ uris, { (_String|_Missing)... }, "Descriptions" ];
