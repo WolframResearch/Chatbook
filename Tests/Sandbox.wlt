@@ -268,6 +268,55 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Cloud Evaluator Failures*)
+$testCloudEvaluator = CloudObject[ "https://www.wolframcloud.com/obj/user/Chatbook/Tools/WolframLanguageEvaluator/Evaluate" ];
+
+(* A failed request to the cloud evaluator (GH#1564 was a timeout) is reported to the model as the result, without the
+   raw failure, which includes the request: *)
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`Sandbox`Private`getCloudEvaluatorAPI,
+            URLExecute = Failure[
+                "ConnectionFailure",
+                <|
+                    "MessageTemplate"   :> URLExecute::iurl,
+                    "MessageParameters" -> { $testCloudEvaluator },
+                    "URL"               -> $testCloudEvaluator,
+                    "HTTPRequest"       -> #1
+                |>
+            ] &
+        },
+        Wolfram`Chatbook`Sandbox`Private`getCloudEvaluatorAPI[ ] = $testCloudEvaluator;
+        Wolfram`Chatbook`WolframLanguageToolEvaluate[ "1 + 1", All, "Method" -> "Cloud" ]
+    ],
+    KeyValuePattern[ {
+        "String" -> _String? (StringStartsQ[ "Unable to get a result from the cloud evaluator" ]),
+        "Result" -> HoldCompleteForm @ Failure[ "CloudEvaluatorRequestFailed", _ ]
+    } ]? (FreeQ[ _HTTPRequest ]),
+    SameTest -> MatchQ,
+    TestID   -> "ToolResult-CloudRequestFailed-GH#1564"
+]
+
+(* The cloud evaluator could not be deployed: *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Sandbox`Private`getCloudEvaluatorAPI },
+        Wolfram`Chatbook`Sandbox`Private`getCloudEvaluatorAPI[ ] = Failure[
+            "CloudEvaluatorUnavailable",
+            <| "MessageTemplate" -> "No cloud evaluator available.", "MessageParameters" -> { } |>
+        ];
+        Wolfram`Chatbook`WolframLanguageToolEvaluate[ "1 + 1", All, "Method" -> "Cloud" ]
+    ],
+    KeyValuePattern @ {
+        "String" -> _String? (StringStartsQ[ "No cloud evaluator available" ]),
+        "Result" -> HoldCompleteForm @ Failure[ "CloudEvaluatorUnavailable", _ ]
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ToolResult-CloudEvaluatorUnavailable-GH#1564"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Kernel Reuse*)
 
 (* These tests launch a separate sandbox kernel, which isn't possible in every test environment: *)
