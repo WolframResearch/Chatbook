@@ -369,4 +369,140 @@ VerificationTest[
     TestID   -> "PersonaManagerPanel-RemovesUninstalledVisiblePersonas"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*AllowExternalLLMConnectivity*)
+VerificationTest[
+    UsingFrontEnd @ Block[ { Wolfram`Chatbook`Common`sufficientVersionQ, Wolfram`Chatbook`PreferencesContent`Private`allowAISettings },
+        Wolfram`Chatbook`PreferencesContent`Private`allowAISettings[ ] := "VersionedCheckboxMarker";
+        Wolfram`Chatbook`Common`sufficientVersionQ[ 16.0 ] = False;
+        With[ { oldBoxes = ToBoxes @ Wolfram`Chatbook`Common`createPreferencesContent[ ] },
+            Wolfram`Chatbook`Common`sufficientVersionQ[ 16.0 ] = True;
+            With[ { newBoxes = ToBoxes @ Wolfram`Chatbook`Common`createPreferencesContent[ ] },
+                { StringFreeQ[ ToString[ oldBoxes, InputForm ], "VersionedCheckboxMarker" ],
+                  ! StringFreeQ[ ToString[ newBoxes, InputForm ], "VersionedCheckboxMarker" ] }
+            ]
+        ]
+    ],
+    { True, True },
+    SameTest -> MatchQ,
+    TestID   -> "CreatePreferencesContent-CheckboxRequires16"
+]
+
+VerificationTest[
+    If[ Wolfram`Chatbook`Common`sufficientVersionQ[ 16.0 ],
+        UsingFrontEnd @ Module[ { original, attributes, values },
+            original   = CurrentValue[ $FrontEnd, "AllowExternalLLMConnectivity" ];
+            attributes = Attributes @ System`$AllowExternalLLMConnectivity;
+            values     = OwnValues @ System`$AllowExternalLLMConnectivity;
+            WithCleanup[
+                Unprotect @ System`$AllowExternalLLMConnectivity;
+                System`$AllowExternalLLMConnectivity = True;
+                Protect @ System`$AllowExternalLLMConnectivity;
+                {
+                    Wolfram`Chatbook`PreferencesContent`Private`setAllowExternalLLMConnectivity[ False ],
+                    CurrentValue[ $FrontEnd, "AllowExternalLLMConnectivity" ],
+                    System`$AllowExternalLLMConnectivity,
+                    MemberQ[ Attributes @ System`$AllowExternalLLMConnectivity, Protected ]
+                },
+                CurrentValue[ $FrontEnd, "AllowExternalLLMConnectivity" ] = original;
+                Unprotect @ System`$AllowExternalLLMConnectivity;
+                OwnValues @ System`$AllowExternalLLMConnectivity = values;
+                Attributes @ System`$AllowExternalLLMConnectivity = attributes
+            ]
+        ],
+        { False, False, False, True }
+    ],
+    { False, False, False, True },
+    SameTest -> MatchQ,
+    TestID   -> "SetAllowExternalLLMConnectivity-UpdatesFrontEndAndKernel"
+]
+
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`Common`sufficientVersionQ,
+            Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ,
+            ServiceExecute
+        },
+        Wolfram`Chatbook`Common`sufficientVersionQ[ 16.0 ] = True;
+        Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ[ ] = False;
+        ServiceExecute[ ___ ] := (Message[ ServiceExecute::extllm ]; "UnexpectedRequest");
+        Wolfram`Chatbook`Common`getServiceData[ ]
+    ],
+    $Failed,
+    SameTest -> MatchQ,
+    TestID   -> "GetServiceData-DisabledDoesNotRequestOrWarn"
+]
+
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`Common`sufficientVersionQ,
+            Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ,
+            ServiceExecute
+        },
+        Wolfram`Chatbook`Common`sufficientVersionQ[ 16.0 ] = False;
+        Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ[ ] = False;
+        ServiceExecute[ ___ ] := <| "data" -> <| "userHasSubscription" -> True |> |>;
+        Wolfram`Chatbook`Common`getServiceData[ ]
+    ],
+    <| "userHasSubscription" -> True |>,
+    SameTest -> MatchQ,
+    TestID   -> "GetServiceData-Before16NotBlocked"
+]
+
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`Common`sufficientVersionQ,
+            Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ,
+            ServiceExecute
+        },
+        Wolfram`Chatbook`Common`sufficientVersionQ[ 16.0 ] = True;
+        Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ[ ] = True;
+        ServiceExecute[ ___ ] := (Message[ ServiceExecute::extllm ]; <| "data" -> <| "userHasSubscription" -> True |> |>);
+        Wolfram`Chatbook`Common`getServiceData[ ]
+    ],
+    <| "userHasSubscription" -> True |>,
+    SameTest -> MatchQ,
+    TestID   -> "GetServiceData-OnlyQuietsConnectivityWarning"
+]
+
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`Common`sufficientVersionQ,
+            Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ,
+            ServiceExecute
+        },
+        Wolfram`Chatbook`Common`sufficientVersionQ[ 16.0 ] = True;
+        Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ[ ] = True;
+        ServiceExecute[ ___ ] := (Message[ ServiceExecute::other ]; $Failed);
+        Wolfram`Chatbook`Common`getServiceData[ ]
+    ],
+    $Failed,
+    { ServiceExecute::other },
+    SameTest -> MatchQ,
+    TestID   -> "GetServiceData-OtherMessagesRemainVisible"
+]
+
+(* Reading the front end option while building the content would make it rebuild whenever any $FrontEnd option changes: *)
+VerificationTest[
+    UsingFrontEnd @ Module[ { calls = { } },
+        Internal`InheritedBlock[ { MathLink`CallFrontEnd },
+            Unprotect @ MathLink`CallFrontEnd;
+            MathLink`CallFrontEnd[ args___ ] /; ! TrueQ @ $inCall := Block[ { $inCall = True },
+                AppendTo[ calls, HoldComplete @ args ];
+                MathLink`CallFrontEnd @ args
+            ];
+            ToBoxes @ Wolfram`Chatbook`Common`createPreferencesContent[ ]
+        ];
+        FreeQ[ calls, "AllowExternalLLMConnectivity" ]
+    ],
+    True,
+    SameTest -> MatchQ,
+    TestID   -> "CreatePreferencesContent-NoAllowExternalLLMConnectivityDependency"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)
