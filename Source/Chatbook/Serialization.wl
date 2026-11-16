@@ -2431,7 +2431,8 @@ riffleTableString[ rows: { ___String } ] := Enclose[
 
         If[ Total @ lengths <= max, Throw @ StringRiffle[ rows, "\n" ] ];
         a = Max[ LengthWhile[ Accumulate @ lengths, # <= Floor[ 2 * (max / 3) ] & ], 3 ];
-        remaining = ConfirmMatch[ max - Total @ lengths[[ 1;;a ]], $$size, "Remaining" ];
+        (* The first three rows are always kept, so they can use up the whole budget on their own: *)
+        remaining = ConfirmMatch[ Max[ 0, max - Total @ lengths[[ 1;;a ]] ], $$size, "Remaining" ];
         b = LengthWhile[ Accumulate @ Reverse @ lengths, # <= remaining & ];
         removed = ConfirmMatch[ count - (a + b), $$size, "Removed" ];
         If[ removed === 0, Throw @ StringRiffle[ rows, "\n" ] ];
