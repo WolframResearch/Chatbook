@@ -42,12 +42,14 @@ VerificationTest[
     |>;
 
     (* Evaluates `eval` without a front end. Notebook writes are collected in $staticWrites, and the front end parses
-       of Wolfram Language code (one per code block, plus any inline code) are counted in $reparseCount: *)
+       of Wolfram Language code (one per code block, plus any inline code) are counted in $reparseCount. The chat's
+       settings are given to the static writes the same way its handlers give them: *)
     withoutFrontEnd // Attributes = { HoldFirst };
     withoutFrontEnd[ eval_ ] := Block[
         {
             Wolfram`Chatbook`Formatting`Private`reparseBoxStructurePacket = ($reparseCount++; #1) &,
             Wolfram`Chatbook`Common`usingFrontEnd = Identity,
+            Wolfram`Chatbook`SendChat`Private`$settings = $formatSettings,
             Wolfram`Chatbook`$ChatHandlerData = <| "ChatNotebookSettings" -> $formatSettings |>,
             NotebookRead  = Null &,
             NotebookWrite = (Internal`StuffBag[ $staticWrites, #2 ]; Null) &,
@@ -253,6 +255,35 @@ VerificationTest[
     { 5, <| |> },
     SameTest -> MatchQ,
     TestID   -> "StaticCodeBlockCache-Not-Used-While-Streaming"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Static Writes*)
+
+(* An auto-assist chat's handlers run after its own evaluation has ended, possibly after another chat action has reset
+   $ChatHandlerData. The static writes made while streaming use the chat's own settings: *)
+VerificationTest[
+    withoutFrontEnd @ Block[ { Wolfram`Chatbook`Common`$staticCodeBlockCache = <| |> },
+        Module[ { expected, reset, plain },
+            expected = First @ streamResponse @ $codeBlockResponse;
+            $staticWrites = Internal`Bag[ ];
+            reset = Block[ { $ChatHandlerData = <| |> }, First @ streamResponse @ $codeBlockResponse ];
+            $staticWrites = Internal`Bag[ ];
+            plain = Block[ { Wolfram`Chatbook`SendChat`Private`$settings = <| "AutoFormat" -> False |> },
+                First @ streamResponse @ $codeBlockResponse
+            ];
+            {
+                Length @ expected,
+                reset === expected,
+                Count[ expected, Cell[ _, "ChatCodeBlock", ___ ], Infinity ],
+                Count[ plain, Cell[ _, "ChatCodeBlock", ___ ], Infinity ]
+            }
+        ]
+    ],
+    { 5, True, 5, 0 },
+    SameTest -> MatchQ,
+    TestID   -> "StaticWrites-Reset-Handler-Data-GH#1034"
 ]
 
 (* ::**************************************************************************************************************:: *)

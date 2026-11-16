@@ -1360,7 +1360,10 @@ chatHandlers[ container_, cellObject_, settings_, messages_ ] :=
             emulatedStop  = emulatedStopTokens @ settings,
             responses     = settings[ "RequestMethod" ] === "Responses",
             (* The start of the chat action, since catchTop resets $chatStartTime for handler calls made after it: *)
-            startTime     = Replace[ $chatStartTime, Except[ _Real ] :> AbsoluteTime[ ] ]
+            startTime     = Replace[ $chatStartTime, Except[ _Real ] :> AbsoluteTime[ ] ],
+            (* This chat's settings and messages for logging usage, since an auto-assist chat's handlers can run after
+               another chat action has replaced $ChatHandlerData: *)
+            usageData     = KeyTake[ $ChatHandlerData, { "ChatNotebookSettings", "Messages" } ]
         },
         {
             bodyChunkHandler    = Lookup[ handlers, "BodyChunkReceived", None ],
@@ -1407,7 +1410,7 @@ chatHandlers[ container_, cellObject_, settings_, messages_ ] :=
                                     "EventName"             -> "TaskFinished",
                                     "EmulatedStopTriggered" -> True
                                 |>;
-                                logUsage @ container;
+                                logUsage[ container, usageData ];
                                 checkResponse[ $settings, Unevaluated @ container, cellObject, as ]
                             ]
                         ]
@@ -1433,7 +1436,7 @@ chatHandlers[ container_, cellObject_, settings_, messages_ ] :=
                         taskFinishedHandler[ #1 ];
                         Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
                         checkFinishReason[ #1 ];
-                        logUsage @ container;
+                        logUsage[ container, usageData ];
                         trimStopTokens[ container, stop ];
                         With[ { refusal = refusalDetails @ logStart },
                             If[ AssociationQ @ refusal,
@@ -2282,7 +2285,9 @@ writeDynamicChunkAsStatic[ static_String, dynamicBox_BoxObject ] := Enclose[
             throwTop[ removeTask @ $lastTask; Null ]
         ];
 
-        settings = ConfirmBy[ $ChatHandlerData[ "ChatNotebookSettings" ], AssociationQ, "Settings" ];
+        (* The chat's own settings, which its handlers give in $settings, since an auto-assist chat's handlers can run
+           after another chat action has replaced $ChatHandlerData: *)
+        settings = ConfirmBy[ $settings, AssociationQ, "Settings" ];
 
         reformatted = ConfirmMatch[
             If[ TrueQ @ settings[ "AutoFormat" ],
