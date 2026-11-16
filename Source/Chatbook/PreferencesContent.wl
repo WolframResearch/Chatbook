@@ -1520,7 +1520,10 @@ servicesSettingsPanel0 // endDefinition;
 (*getServiceData*)
 getServiceData // beginDefinition;
 
-getServiceData[ ] := With[ { rawData = ServiceExecute[ "LLMKit", "RawAccess", ProgressReporting -> False ] },
+getServiceData[ ] /; sufficientVersionQ[ 16.0 ] && ! allowExternalLLMConnectivityQ[ ] := $Failed;
+
+getServiceData[ ] := With[
+    { rawData = Quiet[ ServiceExecute[ "LLMKit", "RawAccess", ProgressReporting -> False ], ServiceExecute::extllm ] },
     If[ AssociationQ @ rawData && Lookup[ rawData, "data", False, AssociationQ ],
         rawData[ "data" ]
         ,

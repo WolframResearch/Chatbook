@@ -418,6 +418,75 @@ VerificationTest[
     TestID   -> "SetAllowExternalLLMConnectivity-UpdatesFrontEndAndKernel"
 ]
 
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`Common`sufficientVersionQ,
+            Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ,
+            ServiceExecute
+        },
+        Wolfram`Chatbook`Common`sufficientVersionQ[ 16.0 ] = True;
+        Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ[ ] = False;
+        ServiceExecute[ ___ ] := (Message[ ServiceExecute::extllm ]; "UnexpectedRequest");
+        Wolfram`Chatbook`Common`getServiceData[ ]
+    ],
+    $Failed,
+    SameTest -> MatchQ,
+    TestID   -> "GetServiceData-DisabledDoesNotRequestOrWarn"
+]
+
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`Common`sufficientVersionQ,
+            Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ,
+            ServiceExecute
+        },
+        Wolfram`Chatbook`Common`sufficientVersionQ[ 16.0 ] = False;
+        Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ[ ] = False;
+        ServiceExecute[ ___ ] := <| "data" -> <| "userHasSubscription" -> True |> |>;
+        Wolfram`Chatbook`Common`getServiceData[ ]
+    ],
+    <| "userHasSubscription" -> True |>,
+    SameTest -> MatchQ,
+    TestID   -> "GetServiceData-Before16NotBlocked"
+]
+
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`Common`sufficientVersionQ,
+            Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ,
+            ServiceExecute
+        },
+        Wolfram`Chatbook`Common`sufficientVersionQ[ 16.0 ] = True;
+        Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ[ ] = True;
+        ServiceExecute[ ___ ] := (Message[ ServiceExecute::extllm ]; <| "data" -> <| "userHasSubscription" -> True |> |>);
+        Wolfram`Chatbook`Common`getServiceData[ ]
+    ],
+    <| "userHasSubscription" -> True |>,
+    SameTest -> MatchQ,
+    TestID   -> "GetServiceData-OnlyQuietsConnectivityWarning"
+]
+
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`Common`sufficientVersionQ,
+            Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ,
+            ServiceExecute
+        },
+        Wolfram`Chatbook`Common`sufficientVersionQ[ 16.0 ] = True;
+        Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ[ ] = True;
+        ServiceExecute[ ___ ] := (Message[ ServiceExecute::other ]; $Failed);
+        Wolfram`Chatbook`Common`getServiceData[ ]
+    ],
+    $Failed,
+    { ServiceExecute::other },
+    SameTest -> MatchQ,
+    TestID   -> "GetServiceData-OtherMessagesRemainVisible"
+]
+
 (* Reading the front end option while building the content would make it rebuild whenever any $FrontEnd option changes: *)
 VerificationTest[
     UsingFrontEnd @ Module[ { calls = { } },
