@@ -1360,7 +1360,14 @@ chatHandlers[ container_, cellObject_, settings_, messages_ ] :=
             emulatedStop  = emulatedStopTokens @ settings,
             responses     = settings[ "RequestMethod" ] === "Responses",
             (* The start of the chat action, since catchTop resets $chatStartTime for handler calls made after it: *)
-            startTime     = Replace[ $chatStartTime, Except[ _Real ] :> AbsoluteTime[ ] ]
+            startTime     = Replace[ $chatStartTime, Except[ _Real ] :> AbsoluteTime[ ] ],
+            (* This chat's settings and messages for logging usage, since an auto-assist chat's handlers can run after
+               another chat action has replaced $ChatHandlerData. An auto-assist chat submits the request for a tool
+               response from inside its handlers, so those handlers pass theirs on: *)
+            usageData     = Replace[
+                $usageData,
+                Except[ _Association ] :> KeyTake[ $ChatHandlerData, { "ChatNotebookSettings", "Messages" } ]
+            ]
         },
         {
             bodyChunkHandler    = Lookup[ handlers, "BodyChunkReceived", None ],
@@ -1380,7 +1387,8 @@ chatHandlers[ container_, cellObject_, settings_, messages_ ] :=
                         $chatStartTime       = startTime,
                         $customToolFormatter = toolFormatter,
                         $dynamicSplit        = dynamicSplit,
-                        $settings            = settings
+                        $settings            = settings,
+                        $usageData           = usageData
                     },
                     (* If an emulated stop token was previously detected, discard any remaining buffered text: *)
                     If[ ! (stopEmulation && $emulatedStopTriggered),
@@ -1407,7 +1415,7 @@ chatHandlers[ container_, cellObject_, settings_, messages_ ] :=
                                     "EventName"             -> "TaskFinished",
                                     "EmulatedStopTriggered" -> True
                                 |>;
-                                logUsage @ container;
+                                logUsage[ container, usageData ];
                                 checkResponse[ $settings, Unevaluated @ container, cellObject, as ]
                             ]
                         ]
@@ -1424,7 +1432,8 @@ chatHandlers[ container_, cellObject_, settings_, messages_ ] :=
                         $chatStartTime       = startTime,
                         $customToolFormatter = toolFormatter,
                         $dynamicSplit        = dynamicSplit,
-                        $settings            = settings
+                        $settings            = settings,
+                        $usageData           = usageData
                     },
                     If[ stopEmulation && $emulatedStopTriggered,
                         (* The response was already processed when the emulated stop token was detected: *)
@@ -1433,7 +1442,7 @@ chatHandlers[ container_, cellObject_, settings_, messages_ ] :=
                         taskFinishedHandler[ #1 ];
                         Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
                         checkFinishReason[ #1 ];
-                        logUsage @ container;
+                        logUsage[ container, usageData ];
                         trimStopTokens[ container, stop ];
                         With[ { refusal = refusalDetails @ logStart },
                             If[ AssociationQ @ refusal,
@@ -2282,7 +2291,9 @@ writeDynamicChunkAsStatic[ static_String, dynamicBox_BoxObject ] := Enclose[
             throwTop[ removeTask @ $lastTask; Null ]
         ];
 
-        settings = ConfirmBy[ $ChatHandlerData[ "ChatNotebookSettings" ], AssociationQ, "Settings" ];
+        (* The chat's own settings, which its handlers give in $settings, since an auto-assist chat's handlers can run
+           after another chat action has replaced $ChatHandlerData: *)
+        settings = ConfirmBy[ $settings, AssociationQ, "Settings" ];
 
         reformatted = ConfirmMatch[
             If[ TrueQ @ settings[ "AutoFormat" ],

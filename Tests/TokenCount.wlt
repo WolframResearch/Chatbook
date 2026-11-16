@@ -310,6 +310,66 @@ VerificationTest[
     TestID   -> "LogUsage"
 ]
 
+(* An auto-assist chat's handlers run after its own evaluation has ended, possibly in the middle of another chat's
+   evaluation that has replaced $ChatHandlerData. The "TaskFinished" handler still logs the usage of its own chat, and
+   so do the handlers of the request that it submits for a tool call: *)
+VerificationTest[
+    Module[ { settings, other, messages, container, handlers, followUp, checked = 0, expected, actual },
+
+        settings  = tokenizerSettings[ "gpt-4o" ];
+        other     = tokenizerSettings[ "chat-bison" ];
+        messages  = Select[ $textMessages, AssociationQ ];
+        container = <| "FullContent" -> "Hello there", "DynamicContent" -> "" |>;
+
+        expected = Block[ { $ChatHandlerData = <| |> },
+            Wolfram`Chatbook`Common`logUsage[ settings, messages, "Hello there" ];
+            Wolfram`Chatbook`Common`logUsage[ settings, messages, "Hello there" ];
+            $ChatHandlerData[ "Usage" ]
+        ];
+
+        Block[
+            {
+                Wolfram`Chatbook`Common`$lastTask,
+                Wolfram`Chatbook`Common`$lastCellObject,
+                Wolfram`Chatbook`SendChat`Private`$debugLog          = Internal`Bag[ ],
+                Wolfram`Chatbook`Common`getHandlerFunctions          = <| |> &,
+                Wolfram`Chatbook`Common`dynamicSplitQ                = False &,
+                Wolfram`Chatbook`SendChat`Private`feTaskQ            = False &,
+                Wolfram`Chatbook`SendChat`Private`getToolFormatter   = None &,
+                Wolfram`Chatbook`SendChat`Private`makeStopTokens     = None &,
+                Wolfram`Chatbook`SendChat`Private`emulatedStopTokens = None &,
+                Wolfram`Chatbook`SendChat`Private`checkFinishReason  = Null &,
+                Wolfram`Chatbook`SendChat`Private`trimStopTokens     = Null &,
+                (* Stands in for an auto-assist chat's tool evaluation, which submits the next request from inside
+                   the handler: *)
+                Wolfram`Chatbook`SendChat`Private`checkResponse = Function[
+                    checked++;
+                    followUp = Wolfram`Chatbook`SendChat`Private`chatHandlers[ container, None, settings ]
+                ]
+            },
+            (* The chat's handlers are created after its settings and messages are added to the handler data: *)
+            handlers = Wolfram`Chatbook`Common`withChatState[
+                Wolfram`Chatbook`Common`addHandlerArguments @ <|
+                    "ChatNotebookSettings" -> settings,
+                    "Messages"             -> messages
+                |>;
+                Wolfram`Chatbook`SendChat`Private`chatHandlers[ container, None, settings ]
+            ];
+            (* The other chat has resolved its settings, but hasn't added its messages yet: *)
+            actual = Block[ { $ChatHandlerData = <| "ChatNotebookSettings" -> other |> },
+                handlers[ "TaskFinished" ][ <| "StatusCode" -> 200 |> ];
+                followUp[ "TaskFinished" ][ <| "StatusCode" -> 200 |> ];
+                $ChatHandlerData[ "Usage" ]
+            ]
+        ];
+
+        { checked, actual === expected, expected }
+    ],
+    { 2, True, KeyValuePattern @ { "Prompt" -> _Integer, "Completion" -> _Integer, "Requests" -> 2 } },
+    SameTest -> MatchQ,
+    TestID   -> "LogUsage-Late-Handler-GH#1033"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Token Count Estimates*)
