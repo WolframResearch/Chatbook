@@ -115,23 +115,42 @@ This lists the five oldest open issues that:
 - aren't linked to a PR (a PR from an earlier run, or from anyone else, is already handling them),
 - aren't waiting on a reply to a request for details that a run posted in the last 14 days.
 
-Launch one subagent per issue, all at once, and wait until they have all finished. Give each one this prompt:
+Launch one subagent per issue, all at once. Give each one this prompt:
 
 > Read `<this skill's directory>/references/classify-issue.md` and follow it to classify issue #<N> of
 > WolframResearch/Chatbook. A read-only checkout of origin/main is at `<absolute path of ../Chatbook-autonomous>`.
 > Environment facts: <output of the wolframscript command>
 
-The subagents only investigate. They don't write to GitHub. You do the writing, after reading all their
-results, so every change goes through one place where it can be checked. If a close rests on thin evidence, or
-two agents disagree about a duplicate, flag the issue for human review instead.
+As each result comes back, launch a verifier for it if its Comment isn't "none". That covers every close and
+request-info, and every needs-human-review that has a note. Give the verifier this prompt:
 
-Apply each result. In a dry run, skip all of these writes.
+> Read `<this skill's directory>/references/verify-result.md` and follow it to check the triage result below for
+> issue #<N> of WolframResearch/Chatbook. A read-only checkout of origin/main is at
+> `<absolute path of ../Chatbook-autonomous>`. Environment facts: <output of the wolframscript command>
+>
+> <the triage agent's full result>
+
+Verifiers roughly double what triage costs, and that's worth it. The first time they ran, they found a factual
+error in every comment they checked: a wrong version, advice that didn't apply to the reporter's Wolfram version,
+or a promise the code didn't keep. Verification still runs in a dry run, so the report shows the comments that
+would have been posted.
+
+Wait until all the triage agents and verifiers have finished. They only investigate and don't write to GitHub.
+You do the writing, after reading all their results, so every change goes through one place where it can be
+checked. Flag the issue for human review instead of applying the result if:
+
+- the verifier disputes the verdict. Write a note that gives both conclusions and their evidence.
+- a close rests on thin evidence.
+- two agents disagree about a duplicate.
+
+Apply each result. Where the table says "the comment" or "the note", use the verifier's version, which has its
+corrections. In a dry run, skip all of these writes.
 
 | Result | What to do |
 | --- | --- |
-| needs-human-review | Add the `needs human review` label. Post the agent's note as a comment if it records something worth keeping: a cause, code locations, fix options, or the decision that's needed. Skip the comment when the reason is obvious from the issue, as it is for a plain feature request. For a security issue, post a neutral comment or none (see Ground rules). |
-| close | Post the agent's comment, then close the issue: `--reason completed` if it's already fixed, `--duplicate-of <canonical issue>` if it's a duplicate, or `--reason "not planned"` if it lacks information. |
-| request-info | Post the agent's comment. It ends with the `<!-- autonomous:needs-info -->` marker. Don't add a label. If the reporter replies, the issue comes back with the new details. If not, it comes back after 14 days and gets closed. |
+| needs-human-review | Add the `needs human review` label. Post the note as a comment if it records something worth keeping: a cause, code locations, fix options, or the decision that's needed. Skip the comment when the reason is obvious from the issue, as it is for a plain feature request. For a security issue, post a neutral comment or none (see Ground rules). |
+| close | Post the comment, then close the issue: `--reason completed` if it's already fixed, `--duplicate-of <canonical issue>` if it's a duplicate, or `--reason "not planned"` if it lacks information. |
+| request-info | Post the comment. It ends with the `<!-- autonomous:needs-info -->` marker. Don't add a label. If the reporter replies, the issue comes back with the new details. If not, it comes back after 14 days and gets closed. |
 | ready | Nothing yet. |
 
 If any issue is ready, take the oldest one to step 3. If none is, go to step 4. Don't start another batch. Run
@@ -180,6 +199,8 @@ and link everything.
   - flagged, with the decision or resource it needs,
   - details requested,
   - ready.
+
+  Then list what the verifiers caught: each correction to a comment and each verdict they disputed.
 
   If you opened a PR, also give its link, what it changes, how it's tested, the broader fix you didn't take, and
   any follow-up issues you filed.
