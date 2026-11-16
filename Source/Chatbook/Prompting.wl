@@ -55,6 +55,7 @@ $basePromptOrder = {
     "FunctionalStyle",
     "WolframLanguageStyle",
     "Placeholders",
+    "CodeFolding",
     "WolframLanguageEvaluatorTool",
     "WolframLanguageEvaluatorToolInteractive",
     "ExampleDataFiles",
@@ -115,10 +116,16 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "VisibleUserInput"                     -> { },
     "TrivialCode"                          -> { },
     "Placeholders"                         -> { },
+    "CodeFolding"                          -> { },
     "WolframSymbolCapitalization"          -> { },
     "ModernMethods"                        -> { },
     "FunctionalStyle"                      -> { },
-    "WolframLanguageStyle"                 -> { "DocumentationLinkSyntax", "InlineSymbolLinks", "Placeholders" },
+    "WolframLanguageStyle"                 -> {
+        "DocumentationLinkSyntax",
+        "InlineSymbolLinks",
+        "Placeholders",
+        "CodeFolding"
+    },
     "WolframLanguageEvaluatorTool"         -> { "WolframLanguageStyle", "WolframLanguageEvaluatorToolInteractive" },
     "EndTurnToken"                         -> { },
     "ToolCallPreamble"                     -> { },
@@ -368,6 +375,15 @@ For example: ``data = Placeholder[\"your data\"]; DateListPlot[data]``. \
 This will render as an inline input field that replaces itself with the user's input. \
 NEVER use a comment as a stand-in for an expression (e.g. ``data = (* your data *)``), \
 since this is invalid syntax and will not display correctly to the user.";
+
+(* Excluded when the response is not formatted in a notebook (see resolveAutoSettings): *)
+$basePromptComponents[ "CodeFolding" ] = "\
+* Fold code that isn't important to what you're showing the user (e.g. styling options, example data setup) \
+with ``IconizedObject[code, \"label\"]``. \
+It displays as an icon that the user can expand and evaluates the same as the code inside. \
+Use ``Sequence`` to fold multiple arguments: \
+``Plot[Sin[x], {x, 0, 10}, IconizedObject[Sequence[PlotStyle -> Red, Filling -> Axis], \"options\"]]``. \
+Don't fold code that the user asked about.";
 
 $basePromptComponents[ "WolframLanguageEvaluatorTool" ] = "\
 * If the user is asking for a result instead of code to produce that result, use the wolfram_language_evaluator tool";

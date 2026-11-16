@@ -878,6 +878,76 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*Folded Code*)
+
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::PrivateContextSymbol:: *)
+
+(* The chat tool evaluates code with sandboxEvaluate instead of WolframLanguageToolEvaluate: *)
+VerificationTest[
+    chatToolEvaluate[ code_String, method_String: "Session" ] :=
+        Block[
+            {
+                Wolfram`Chatbook`Sandbox`Private`$evaluatorMethod  = method,
+                Wolfram`Chatbook`Sandbox`Private`$returnFullResult = True,
+                $Line                                              = $Line
+            },
+            Wolfram`Chatbook`Common`sandboxEvaluate[ <| "code" -> code |> ][ "Result" ]
+        ];
+    ,
+    Null,
+    SameTest -> MatchQ,
+    TestID   -> "Parsing-FoldedCode-Definitions"
+]
+
+(* Code that the AI folded with IconizedObject is evaluated as if it were written normally, like the front end does for
+   iconized input: *)
+VerificationTest[
+    chatToolEvaluate[ "{1, IconizedObject[Sequence[2, 3], \"more\"], Total[IconizedObject[{4, 5}]]}" ],
+    HoldCompleteForm @ { 1, 2, 3, 9 },
+    SameTest -> MatchQ,
+    TestID   -> "Parsing-FoldedCode"
+]
+
+(* Folded statements are evaluated in order with the rest of the input: *)
+VerificationTest[
+    chatToolEvaluate[ "Module[{a, b}, IconizedObject[a = 2; b = 3, \"setup\"]; a^b]" ],
+    HoldCompleteForm[ 8 ],
+    SameTest -> MatchQ,
+    TestID   -> "Parsing-FoldedCode-Statements"
+]
+
+(* A string as the last argument is the label, and the other arguments are the code, with or without Sequence: *)
+VerificationTest[
+    chatToolEvaluate[
+        "{IconizedObject[1, 2], IconizedObject[3, 4, \"label\"], IconizedObject[\"a\"], IconizedObject[\"b\", \"label\"]}"
+    ],
+    HoldCompleteForm @ { 1, 2, 3, 4, "a", "b" },
+    SameTest -> MatchQ,
+    TestID   -> "Parsing-FoldedCode-MissingSequence"
+]
+
+(* Nested folds are unwrapped too, and nothing is evaluated early: *)
+VerificationTest[
+    chatToolEvaluate[ "Hold[IconizedObject[{IconizedObject[1 + 1, \"inner\"]}, \"outer\"]]" ],
+    HoldCompleteForm @ Hold @ { 1 + 1 },
+    SameTest -> MatchQ,
+    TestID   -> "Parsing-FoldedCode-Held"
+]
+
+(* Other callers of WolframLanguageToolEvaluate (e.g. the MCP server) haven't been told to fold code, so an
+   IconizedObject in their code is evaluated as it was written: *)
+VerificationTest[
+    WolframLanguageToolEvaluate[ "Head[IconizedObject[{1, 2, 3}, \"data\"]]", "Result", Method -> "Session" ],
+    HoldCompleteForm[ IconizedObject ],
+    SameTest -> MatchQ,
+    TestID   -> "Parsing-FoldedCode-NotUnwrapped"
+]
+
+(* :!CodeAnalysis::EndBlock:: *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*Undefined Symbols*)
 VerificationTest[
     WolframLanguageToolEvaluate[ "UndefinedTestFunction1[1]", "String", Method -> "Session", Line -> 1 ],
@@ -1014,6 +1084,16 @@ If[ $localEvaluatorAvailable,
         HoldCompleteForm[ 6 ],
         SameTest -> MatchQ,
         TestID   -> "LocalEvaluator-PreviousOutput"
+    ]
+]
+
+(* Folded code is unwrapped in the evaluator kernel, which doesn't have Chatbook's definitions: *)
+If[ $localEvaluatorAvailable,
+    VerificationTest[
+        chatToolEvaluate[ "{1, IconizedObject[Sequence[2, 3], \"more\"]}", "Local" ],
+        HoldCompleteForm @ { 1, 2, 3 },
+        SameTest -> MatchQ,
+        TestID   -> "LocalEvaluator-FoldedCode"
     ]
 ]
 

@@ -737,6 +737,164 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Code Folding*)
+VerificationTest[
+    (* The code and the label of each fold in formatted boxes: *)
+    foldedCode[ boxes_ ] := Cases[
+        boxes,
+        InterpretationBox[
+            DynamicModuleBox[ _, TemplateBox[ { _, label_, ___ }, "IconizedObject", ___ ], ___ ],
+            code_,
+            ___,
+            BaseStyle -> "FoldedCode",
+            ___
+        ] :> { HoldComplete @ code, label },
+        Infinity
+    ];
+
+    $optionsLabel = StyleBox[ "\"options\"", "IconizedCustomName", ___ ];
+    ,
+    Null,
+    SameTest -> MatchQ,
+    TestID   -> "CodeFolding-Definitions"
+]
+
+(* Code that's folded with IconizedObject is displayed like an iconized selection in a notebook, with the code as its
+   interpretation: *)
+VerificationTest[
+    foldedCode @ StringToBoxes[
+        "Plot[Sin[x], {x, 0, 10}, IconizedObject[Sequence[PlotStyle -> Red, Filling -> Axis], \"options\"]]",
+        "WL"
+    ],
+    { { HoldComplete @ Sequence[ PlotStyle -> Red, Filling -> Axis ], $optionsLabel } },
+    SameTest -> MatchQ,
+    TestID   -> "CodeFolding-Boxes"
+]
+
+(* The label is optional: *)
+VerificationTest[
+    foldedCode @ StringToBoxes[ "Total[IconizedObject[Range[100]]]", "WL" ],
+    { { HoldComplete @ Range[ 100 ], Except[ _StyleBox ] } },
+    SameTest -> MatchQ,
+    TestID   -> "CodeFolding-No-Label"
+]
+
+(* Several arguments are folded together if they weren't wrapped in Sequence, where a string as the last argument is
+   the label: *)
+VerificationTest[
+    foldedCode @ StringToBoxes[
+        "Plot[Sin[x], {x, 0, 10}, IconizedObject[PlotStyle -> Red, Filling -> Axis, \"options\"], IconizedObject[Frame -> True, Axes -> False]]",
+        "WL"
+    ],
+    {
+        { HoldComplete @ Sequence[ PlotStyle -> Red, Filling -> Axis ], $optionsLabel },
+        { HoldComplete @ Sequence[ Frame -> True, Axes -> False ], Except[ _StyleBox ] }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "CodeFolding-Missing-Sequence"
+]
+
+(* The formatted code evaluates the same as the code that was folded, including folds inside of folds and code that's
+   spread over several lines: *)
+VerificationTest[
+    ToExpression[
+        StringToBoxes[
+            "{\n    1,\n    IconizedObject[\n        Sequence[2, 3],\n        \"more\"\n    ],\n    IconizedObject[4, 5],\n    IconizedObject[{IconizedObject[6, \"inner\"]}, \"outer\"]\n}",
+            "WL"
+        ],
+        StandardForm
+    ],
+    { 1, 2, 3, 4, 5, { 6 } },
+    SameTest -> MatchQ,
+    TestID   -> "CodeFolding-Evaluation"
+]
+
+(* Without anything to fold, the code is left as it is: *)
+VerificationTest[
+    StringToBoxes[ "f[IconizedObject[]]", "WL" ],
+    RowBox @ { "f", "[", RowBox @ { "IconizedObject", "[", "]" }, "]" },
+    SameTest -> MatchQ,
+    TestID   -> "CodeFolding-No-Arguments-Unchanged"
+]
+
+(* Code with embedded boxes is not folded: *)
+VerificationTest[
+    foldedCode @ StringToBoxes[ "{IconizedObject[\\!\\(x\\^2\\), \"math\"], IconizedObject[x^2, \"math\"]}", "WL" ],
+    { { HoldComplete[ _^2 ], _ } },
+    SameTest -> MatchQ,
+    TestID   -> "CodeFolding-Embedded-Boxes-Unchanged"
+]
+
+(* The full formatting path folds code in finished chat output: *)
+VerificationTest[
+    foldedCode @ FormatChatOutput[
+        "```wl\nPlot[Sin[x], {x, 0, 10}, IconizedObject[Sequence[PlotStyle -> Red, Filling -> Axis], \"options\"]]\n```\n"
+    ],
+    { { HoldComplete @ Sequence[ PlotStyle -> Red, Filling -> Axis ], $optionsLabel } },
+    SameTest -> MatchQ,
+    TestID   -> "CodeFolding-Formatted-Output"
+]
+
+(* While streaming, everything from the start of a fold is hidden behind an icon, since finding where the fold ends
+   would need the code to be parsed: *)
+VerificationTest[
+    Table[
+        Cases[
+            FormatChatOutput[ "```wl\nPlot[Sin[x], {x, 0, 10}, " <> rest, <| "Status" -> "Streaming" |> ],
+            s_String /; StringStartsQ[ s, "Plot[Sin[x], {x, 0, 10}, " ] :> {
+                StringContainsQ[ s, "TemplateBox" ~~ __ ~~ "\"IconizedObject\"" ],
+                StringFreeQ[ s, "IconizedObject[" | "PlotStyle" | "more" ]
+            },
+            Infinity
+        ],
+        {
+            rest,
+            {
+                "IconizedObject",
+                "IconizedObject[Sequence[PlotStyle -> Red, Fill",
+                "IconizedObject[Sequence[PlotStyle -> Red, Filling -> Axis], \"options\"]];\nmore"
+            }
+        }
+    ],
+    { { { True, True } }, { { True, True } }, { { True, True } } },
+    SameTest -> MatchQ,
+    TestID   -> "CodeFolding-Streaming"
+]
+
+(* Serializing the formatted boxes back to text for the LLM gives the folded code in full: *)
+VerificationTest[
+    CellToString @ Cell[
+        BoxData @ StringToBoxes[
+            "Plot[Sin[x], {x, 0, 10}, IconizedObject[Sequence[PlotStyle -> Red, Filling -> Axis], \"options\"]]",
+            "WL"
+        ],
+        "Input"
+    ],
+    "```wl\nPlot[Sin[x], {x, 0, 10}, IconizedObject[Sequence[PlotStyle -> Red, Filling -> Axis], \"options\"]]\n```",
+    SameTest -> MatchQ,
+    TestID   -> "CodeFolding-Serialization-RoundTrip"
+]
+
+VerificationTest[
+    CellToString @ Cell[
+        BoxData @ StringToBoxes[ "{IconizedObject[Range[100]], IconizedObject[1, 2]}", "WL" ],
+        "Input"
+    ],
+    "```wl\n{IconizedObject[Range[100]], IconizedObject[Sequence[1, 2]]}\n```",
+    SameTest -> MatchQ,
+    TestID   -> "CodeFolding-Serialization-RoundTrip-No-Label"
+]
+
+(* Other iconized expressions can be large, so they are still only summarized: *)
+VerificationTest[
+    CellToString @ Cell[ BoxData @ ToBoxes @ Iconize[ Range[ 100 ], "data" ], "Input" ],
+    "```wl\nIconizedObject[\[LeftGuillemet]data\[RightGuillemet]]\n```",
+    SameTest -> MatchQ,
+    TestID   -> "CodeFolding-Serialization-Other-Iconized-Objects"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Color Swatches*)
 
 (* Color constructors with literal numeric arguments get their StandardForm typesetting, so they display as interactive
