@@ -49,7 +49,7 @@ The `getToolNames` function (`Tools/Common.wl`) determines the initial tool name
 
 Consumed in two places:
 
-1. **`makeLLMConfiguration`** (`SendChat.wl`) — when `ToolMethod` is `"Service"` or `HybridToolMethod` is `True`, tools are passed to `LLMConfiguration` as `"Tools" -> Cases[Flatten @ {as["Tools"]}, _LLMTool]`, enabling the LLM service's native tool calling API. When neither condition holds, tools are omitted from `LLMConfiguration` and tool calling is handled entirely through prompt-based instructions.
+1. **`makeLLMConfiguration`** (`SendChat.wl`) — when `ToolMethod` is `"Service"` or `HybridToolMethod` is `True`, tools are passed to `LLMConfiguration` as `"Tools" -> toCustomTools[as, Cases[Flatten @ {as["Tools"]}, _LLMTool]]` (see [Custom Tools](#custom-tools)), enabling the LLM service's native tool calling API. When neither condition holds, tools are omitted from `LLMConfiguration` and tool calling is handled entirely through prompt-based instructions.
 2. **`constructLLMConfiguration`** (`LLMUtilities.wl`) — tools are read from `settings["Tools"]`, each processed by `addToolPostProcessing`, validated with `ConfirmMatch[..., { ___LLMTool }]`, and passed to the `LLMConfiguration`.
 
 If `WolframLanguageEvaluator` is among the selected tools, `resolveTools` triggers the `"WolframLanguageEvaluatorTool"` base prompt component via `needsBasePrompt`.
@@ -219,7 +219,7 @@ When `Automatic`, resolved by `chooseToolMethod` (`Settings.wl`): if all resolve
 - Non-`"Service"`: Tool definitions are omitted from `LLMConfiguration`; tool calling is handled through prompt-based instructions.
 
 **Tool Prompts** (`makeToolPrompt` in `Tools/Common.wl`):
-- `"Service"`: Returns `Nothing` (no prompt injection).
+- `"Service"`: The pre, listing and post prompts are `Nothing` (the service gets the tool definitions). The example conversations (`"ToolExamplePrompt"`) are still included.
 - `"Simple"`: Uses `$simpleToolPre`/`$simpleToolListing`/`$simpleToolPost`.
 - Other methods: Uses `$toolPre`/`$toolListing`/`$toolPost`.
 
@@ -250,6 +250,21 @@ When `"Service"`, also triggers the `"ServiceToolCallRetry"` base prompt compone
 
 - **`"Service"`**: Anthropic (general), AzureOpenAI, DeepSeek Chat, OpenAI (general), GPT-3.5, GPT-5 through GPT-5.3, gpt-6.1-sol, O1, O3, O4-Mini
 - **`Verbatim @ Automatic`** (keeps prompt-based tools, often paired with `HybridToolMethod -> True`): Claude 2, GPT-4o, GPT-4.1, GPT-5.4 and later (except gpt-6.1-sol), O3-Mini
+
+### Custom Tools
+
+With the `"Service"` method, a tool's arguments are normally written by the model as JSON, which works poorly for code and long text (escaping mistakes, see the [GPT 5.4 case study](../../model-support-examples/gpt-5-4.md)). The responses endpoint (`"RequestMethod" -> "Responses"`) also has "custom" tools, which take plain text as their input instead. For models with `"EnableCustomTools" -> True` in `$modelAutoSettings` (currently `gpt-6.1-sol`), the tools listed in `$customToolParameters` (`Tools/Common.wl`: the Wolfram Language evaluator and the notebook creation tool) are given to the service as custom tools, and the text the model writes becomes the value of the tool's single parameter (`"code"` or `"content"`).
+
+This only changes what is exchanged with the service:
+
+- `toCustomTools` replaces the parameter schema of these tools in the `LLMConfiguration` that is sent (`makeLLMConfiguration`), and adds the description of the parameter to the tool's description.
+- `fromCustomToolRequest` converts a custom tool call to a tool call with named parameters as soon as it is received, so the response text, tool evaluation, formatting and saved chats are the same as for any other service tool call.
+- These calls (and the requests of their responses) are converted back when they are sent as chat history (`prepareMessagesForLLM`): `toolStringSplit` creates the calls of earlier messages in that form (`toCustomToolCallData`) and keeps the objects for the following requests, and `toCustomToolCalls` converts the call that was just evaluated.
+- Tool call examples in the system prompt show plain text input for these tools (`formatToolCallExample`).
+
+The original JSON parameter schema is used whenever the request doesn't go to the responses endpoint (e.g. `"RequestMethod" -> "ChatCompletions"`, or when the installed `Wolfram/LLMFunctions` and `LLMConnections` paclets don't support it), and for all other models and services. For `gpt-6.1-sol` itself that is not a working fallback: the chat completions endpoint rejects its function tools (see the [case study](../../model-support-examples/gpt-6-1-sol.md#finding-out-what-the-model-accepts)), so without the responses endpoint its tools need `"ToolMethod" -> "Simple"`.
+
+The responses endpoint only gets the text of a service tool's output, so for multimodal models, the images in a tool's output are sent in a separate message that follows it (`toolResponseImagesMessage` in `SendChat.wl`). That message is only part of the request that follows the tool call.
 
 ### Integration Points
 

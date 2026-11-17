@@ -469,11 +469,9 @@ $modelAutoSettings[ Automatic, "GPT54Plus" ] = <|
     "Reasoning"                  -> "None", (* Doesn't work with tools in the completions endpoint *)
     "ToolCallExamplePromptStyle" -> Automatic,
     "ToolMethod"                 -> Verbatim @ Automatic
-    (* TODO: We need to use "Service" for the tool method due to lack of stop-token support. However, there are still
-       some blocking issues preventing us from switching yet:
-           * LLMTool outputs always get converted to text, even when model supports images
-           * Custom tools aren't yet supported, so code-based inputs perform poorly due to JSON attention overhead
-    *)
+    (* TODO: We need to use "Service" for the tool method due to lack of stop-token support. What blocked this (tool
+       outputs without images, and JSON arguments for code) is solved for the responses endpoint (see "GPT61Sol"
+       below), so these models can switch once LLMKit supports that endpoint for them. *)
 |>;
 
 $modelAutoSettings[ Automatic, "GPT54Mini" ] = <|
@@ -481,9 +479,11 @@ $modelAutoSettings[ Automatic, "GPT54Mini" ] = <|
 |>;
 
 (* gpt-6.1-sol always reasons (it rejects the "None" and "Minimal" efforts), and the chat completions endpoint doesn't
-   allow function tools together with reasoning, so its tools only work through the responses endpoint, where they are
-   called natively. *)
+   allow function tools together with reasoning, so its tools only work through the responses endpoint. There they are
+   called natively, and the ones that take code or long text are given as custom tools (plain text input instead of
+   JSON, see `toCustomTools`), so the hybrid method isn't needed to avoid JSON syntax errors. *)
 $modelAutoSettings[ Automatic, "GPT61Sol" ] = <|
+    "EnableCustomTools" -> True,
     "HybridToolMethod"  -> False,
     "Reasoning"         -> "Medium",
     "ResponsesRequired" -> True,

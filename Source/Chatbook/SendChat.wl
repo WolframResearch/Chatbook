@@ -588,7 +588,7 @@ prepareMessagesForLLM // endDefinition;
 prepareMessagesForLLM0 // beginDefinition;
 
 prepareMessagesForLLM0[ settings: KeyValuePattern[ "ToolMethod" -> "Service" ], messages: { ___Association } ] :=
-    contentFlatten @ rewriteServiceToolCalls[ settings, messages ];
+    contentFlatten @ toCustomToolCalls[ settings, rewriteServiceToolCalls[ settings, messages ] ];
 
 prepareMessagesForLLM0[ settings_, messages: { ___Association } ] :=
     contentFlatten[
@@ -819,11 +819,11 @@ serviceToolMessageMerge // endDefinition;
 toolStringSplit // beginDefinition;
 
 (* Creating the request and the response of a tool call takes several milliseconds, and every request needs the ones of
-   all earlier tool calls in the chat again, so they are kept. Their text doesn't change, and the only setting that
-   matters is the one for the conversion below. The response's tool is the one that was available when it was created;
-   services only get its request and output. *)
+   all earlier tool calls in the chat again, so they are kept. Their text doesn't change, and the settings only matter
+   for the conversions below. The response's tool is the one that was available when it was created; services only get
+   its request and output. *)
 toolStringSplit[ settings_, req_String, result_String, id_String ] :=
-    With[ { key = { TrueQ @ settings[ "ReplaceUnicodeCharacters" ], req, result, id } },
+    With[ { key = { customToolsQ @ settings, TrueQ @ settings[ "ReplaceUnicodeCharacters" ], req, result, id } },
         Lookup[
             $toolStringSplitCache,
             Key @ key,
@@ -834,9 +834,9 @@ toolStringSplit[ settings_, req_String, result_String, id_String ] :=
 (* Results written without an ID, or with a 5 character ID from before 3eee65a8 (MistralAI only accepts 9 characters),
    get one from the request.
 
-   Special characters are replaced here instead of afterwards (replaceUnicodeCharacters in prepareMessagesForLLM),
-   where the objects would have to be created again for every request. That includes the response's tool, since the
-   descriptions of some tools have special characters. *)
+   Calls of custom tools and special characters are converted here instead of afterwards (toCustomToolCalls and
+   replaceUnicodeCharacters in prepareMessagesForLLM), where the objects would have to be created again for every
+   request. That includes the response's tool, since the descriptions of some tools have special characters. *)
 toolStringSplit[
     settings_,
     { _, req: HoldPattern @ LLMToolRequest[ as_Association, opts___ ] },
@@ -847,7 +847,10 @@ toolStringSplit[
         settings,
         LLMToolRequest @ replaceUnicodeCharacters[
             settings,
-            <| as, "RequestID" -> If[ StringLength @ id === 9, id, tinyHash[ req, 9 ] ] |>
+            toCustomToolCallData[
+                settings,
+                <| as, "RequestID" -> If[ StringLength @ id === 9, id, tinyHash[ req, 9 ] ] |>
+            ]
         ],
         replaceUnicodeCharacters[ settings, result ]
     ];
@@ -861,7 +864,9 @@ toolStringSplit[ settings_, req: HoldPattern[ _LLMToolRequest ], tool: HoldPatte
         LLMToolResponse @ <|
             "Request"                    -> req,
             "Tool"                       -> replaceUnicodeCharacters[ settings, tool ],
-            "InterpretedParameterValues" -> Association @ req[ "ParameterValues" ],
+            (* The input of a custom tool is a string instead of parameter values: *)
+            "InterpretedParameterValues" ->
+                Replace[ req[ "ParameterValues" ], p: Except[ _String ] :> Association @ p ],
             "Output"                     -> result,
             "ResponseString"             -> result,
             (* Without a version, LLMToolResponse runs its legacy updater, which takes about 50 ms: *)
@@ -1270,7 +1275,7 @@ makeLLMConfiguration0[ as_Association ] /; as[ "ToolMethod" ] === "Service" || a
         as,
         DeleteMissing @ Association[
             KeyTake[ as, $llmConfigPassedKeys ],
-            "Tools"      -> Cases[ Flatten @ { as[ "Tools" ] }, _LLMTool ],
+            "Tools"      -> toCustomTools[ as, Cases[ Flatten @ { as[ "Tools" ] }, _LLMTool ] ],
             "StopTokens" -> makeStopTokens @ as,
             "ToolMethod" -> "Service"
         ] // dropModelUnsupportedParameters[ as ]

@@ -508,7 +508,7 @@ extractBodyChunksInBackground // endDefinition;
 (*toolRequestsToStrings*)
 toolRequestsToStrings // beginDefinition;
 toolRequestsToStrings[ requests_List ] := toolRequestsToStrings /@ requests;
-toolRequestsToStrings[ req: HoldPattern[ _LLMToolRequest ] ] := toolRequestToString @ req;
+toolRequestsToStrings[ req: HoldPattern[ _LLMToolRequest ] ] := toolRequestToString @ fromCustomToolRequest @ req;
 toolRequestsToStrings // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
