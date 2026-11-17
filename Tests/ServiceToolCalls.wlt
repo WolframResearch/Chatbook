@@ -248,11 +248,133 @@ VerificationTest[
             |>
         };
         prepareMessages[ "Service", messages ];
-        First @ AbsoluteTiming @ prepareMessages[ "Service", messages ]
+        (* Without the objects that the first call kept: *)
+        Block[ { Wolfram`Chatbook`SendChat`Private`$toolStringSplitCache = <| |> },
+            First @ AbsoluteTiming @ prepareMessages[ "Service", messages ]
+        ]
     ],
     _? (LessThan[ 0.25 ]),
     SameTest -> MatchQ,
     TestID   -> "ServiceToolCalls-History-Timing"
+]
+
+(* Every request needs the tool calls of all earlier messages, so their objects are kept. A repeated request with 10
+   tool calls takes about 4 ms, against about 100 ms for the first one. It would take about 45 ms if special characters
+   were replaced after the objects are created (the description of the evaluator tool has one, and each response has
+   the tool), and more if the objects were not kept or the unchanged ones were created again: *)
+VerificationTest[
+    Module[ { settings, messages, prepare, first, repeated },
+        settings = <| "ToolMethod" -> "Service", "ReplaceUnicodeCharacters" -> True |>;
+        messages = {
+            $userMessage,
+            <|
+                "Role"    -> "Assistant",
+                "Content" -> StringJoin[
+                    Table[ toolCallWithResult[ ToString @ i, ToString @ i, StringPadLeft[ ToString @ i, 9, "y" ] ], { i, 10 } ],
+                    "Done."
+                ]
+            |>
+        };
+        prepare[ ] := Block[ { Wolfram`Chatbook`$ChatHandlerData = <| |> },
+            Wolfram`Chatbook`SendChat`Private`prepareMessagesForLLM[ settings, messages ]
+        ];
+        prepare[ ];
+        (* The time without the kept objects, and the best of three with them: *)
+        first = Block[ { Wolfram`Chatbook`SendChat`Private`$toolStringSplitCache = <| |> },
+            First @ AbsoluteTiming @ prepare[ ]
+        ];
+        repeated = Min @ Table[ First @ AbsoluteTiming @ prepare[ ], 3 ];
+        { repeated < first / 5, Count[ prepare[ ], KeyValuePattern[ "ToolResponses" -> { _ } ] ] }
+    ],
+    { True, 10 },
+    SameTest -> MatchQ,
+    TestID   -> "ServiceToolCalls-History-Timing-Repeated"
+]
+
+(* The kept objects are what the next request gets (shown here by replacing them), and only as many are kept as the
+   cache allows: *)
+VerificationTest[
+    Module[ { messages },
+        messages = {
+            <|
+                "Role"    -> "Assistant",
+                "Content" -> StringJoin @ Table[
+                    toolCallWithResult[ ToString @ i, ToString @ i, StringPadLeft[ ToString @ i, 9, "z" ] ],
+                    { i, 5 }
+                ]
+            |>
+        };
+        {
+            Block[ { Wolfram`Chatbook`SendChat`Private`$toolStringSplitCache = <| |> },
+                prepareMessages[ "Service", messages ];
+                Wolfram`Chatbook`SendChat`Private`$toolStringSplitCache =
+                    { "kept" } & /@ Wolfram`Chatbook`SendChat`Private`$toolStringSplitCache;
+                {
+                    Length @ Wolfram`Chatbook`SendChat`Private`$toolStringSplitCache,
+                    summarize @ prepareMessages[ "Service", messages ]
+                }
+            ],
+            Block[
+                {
+                    Wolfram`Chatbook`SendChat`Private`$toolStringSplitCache     = <| |>,
+                    Wolfram`Chatbook`SendChat`Private`$toolStringSplitCacheSize = 3
+                },
+                {
+                    Length @ Cases[ summarize @ prepareMessages[ "Service", messages ], { "Tool", "", { }, { { _, _ } } } ],
+                    Length @ Wolfram`Chatbook`SendChat`Private`$toolStringSplitCache
+                }
+            ]
+        }
+    ],
+    {
+        { 5, { { "Assistant", _String? (StringCount[ #, "kept" ] === 5 &), { }, { } } } },
+        { 5, _Integer? (LessEqualThan[ 3 ]) }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ServiceToolCalls-History-KeptObjects"
+]
+
+(* Special characters are replaced when the objects are created, so what is kept depends on that setting. The same
+   call must not come back in the form of another setting: *)
+VerificationTest[
+    Module[ { messages, prepare },
+        messages = {
+            <|
+                "Role"    -> "Assistant",
+                "Content" -> StringTrim @ toolCallWithResult[ "\[FreeformPrompt][x]", "Out: \[FreeformPrompt]", "id1111111" ]
+            |>
+        };
+        prepare[ replace_ ] := Block[ { Wolfram`Chatbook`$ChatHandlerData = <| |> },
+            Rest /@ summarize @ Wolfram`Chatbook`SendChat`Private`prepareMessagesForLLM[
+                <| "ToolMethod" -> "Service", "ReplaceUnicodeCharacters" -> replace |>,
+                messages
+            ]
+        ];
+        { prepare @ True, prepare @ False, prepare @ True }
+    ],
+    {
+        { { "", { { "id1111111", "\\[FreeformPrompt][x]" } }, { } }, { "", { }, { { "id1111111", "Out: \\[FreeformPrompt]" } } } },
+        { { "", { { "id1111111", "\[FreeformPrompt][x]" } }, { } }, { "", { }, { { "id1111111", "Out: \[FreeformPrompt]" } } } },
+        { { "", { { "id1111111", "\\[FreeformPrompt][x]" } }, { } }, { "", { }, { { "id1111111", "Out: \\[FreeformPrompt]" } } } }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ServiceToolCalls-History-SpecialCharacters"
+]
+
+(* The same replacement for the tool call that is being evaluated, which is not read from text: *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`$ChatHandlerData = <| |> },
+        summarize @ Wolfram`Chatbook`SendChat`Private`prepareMessagesForLLM[
+            <| "ToolMethod" -> "Service", "ReplaceUnicodeCharacters" -> True |>,
+            { inTurnMessage[ "", "\[FreeformPrompt][x]", "id1111111" ], inTurnMessage[ "", "1+1", "id2222222" ] }
+        ]
+    ],
+    {
+        { "Assistant", "", { { "id1111111", "\\[FreeformPrompt][x]" } }, { } },
+        { "Assistant", "", { { "id2222222", "1+1" } }, { } }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ServiceToolCalls-InTurn-SpecialCharacters"
 ]
 
 (* Earlier tool calls are sent the same way during the response and later in the chat history: *)
