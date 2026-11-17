@@ -75,6 +75,7 @@ Settings that model configurations commonly override, organized by category. See
 | `"Reasoning"` | `"None"` / `"Minimal"` / `"Low"` / `"Medium"` / ... / `Missing["NotSupported"]` | Extended thinking/reasoning mode |
 | `"EnableResponses"` | Boolean | Whether the model can use the responses endpoint (`"RequestMethod"`); only honored for the `"OpenAI"` service |
 | `"ResponsesRequired"` | Boolean | The model's tools only work with the responses endpoint, so it's also used with LLMKit, and the model is not chosen as the LLMKit default when the installed paclets don't support the endpoint |
+| `"EnableCustomTools"` | Boolean | With the responses endpoint, give the tools that take code or long text to the service as custom tools (plain text input instead of JSON; see [Custom Tools](settings/setting-groups/tools.md#custom-tools)) |
 
 **Tool configuration:**
 
