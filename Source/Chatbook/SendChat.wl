@@ -695,8 +695,12 @@ replaceUnicodeCharacters[ data: _List|_Association ] :=
 replaceUnicodeCharacters[ content_String ] :=
     StringReplace[ content, "\[FreeformPrompt]" -> "\\"<>"[FreeformPrompt]" ];
 
-replaceUnicodeCharacters[ HoldPattern[ h: LLMTool|LLMToolRequest|LLMToolResponse ][ as0_Association, opts___ ] ] :=
-    With[ { as = replaceUnicodeCharacters @ as0 }, h[ as, opts ] ];
+(* Creating these objects takes a few milliseconds each, and this runs for every tool and every tool call of the chat
+   before each request, so the ones that don't change are returned as they are: *)
+replaceUnicodeCharacters[
+    object: HoldPattern[ h: LLMTool|LLMToolRequest|LLMToolResponse ][ as0_Association, opts___ ]
+] :=
+    With[ { as = replaceUnicodeCharacters @ as0 }, If[ as === as0, object, h[ as, opts ] ] ];
 
 replaceUnicodeCharacters // endDefinition;
 
@@ -747,7 +751,7 @@ rewriteServiceToolCalls[
                 req: ("TOOLCALL: " ~~ __ ~~ "\nENDARGUMENTS") ~~ "\nENDTOOLCALL\nRESULT\n" ~~ result__ ~~ "\nENDRESULT"
             ],
             ("(" ~~ id: (LetterCharacter|DigitCharacter).. ~~ ")") | ""
-        ] :> toolStringSplit[ req, result, id ]
+        ] :> toolStringSplit[ settings, req, result, id ]
     ]
 ];
 
@@ -814,26 +818,49 @@ serviceToolMessageMerge // endDefinition;
 (*toolStringSplit*)
 toolStringSplit // beginDefinition;
 
-toolStringSplit[ req_String, result_String, id_String ] :=
-    toolStringSplit[ toolRequestParser @ req, result, id ];
-
-(* Results written without an ID, or with a 5 character ID from before 3eee65a8 (MistralAI only accepts 9 characters),
-   get one from the request: *)
-toolStringSplit[ { _, req: HoldPattern @ LLMToolRequest[ as_Association, opts___ ] }, result_String, id_String ] :=
-    toolStringSplit[
-        LLMToolRequest @ <| as, "RequestID" -> If[ StringLength @ id === 9, id, tinyHash[ req, 9 ] ] |>,
-        result
+(* Creating the request and the response of a tool call takes several milliseconds, and every request needs the ones of
+   all earlier tool calls in the chat again, so they are kept. Their text doesn't change, and the only setting that
+   matters is the one for the conversion below. The response's tool is the one that was available when it was created;
+   services only get its request and output. *)
+toolStringSplit[ settings_, req_String, result_String, id_String ] :=
+    With[ { key = { TrueQ @ settings[ "ReplaceUnicodeCharacters" ], req, result, id } },
+        Lookup[
+            $toolStringSplitCache,
+            Key @ key,
+            cacheToolStringSplit[ key, toolStringSplit[ settings, toolRequestParser @ req, result, id ] ]
+        ]
     ];
 
-toolStringSplit[ req: HoldPattern[ _LLMToolRequest ], result_String ] :=
-    toolStringSplit[ req, getToolByName @ req[ "Name" ], result ];
+(* Results written without an ID, or with a 5 character ID from before 3eee65a8 (MistralAI only accepts 9 characters),
+   get one from the request.
 
-toolStringSplit[ req: HoldPattern[ _LLMToolRequest ], tool: HoldPattern[ _LLMTool ], result_String ] :=
+   Special characters are replaced here instead of afterwards (replaceUnicodeCharacters in prepareMessagesForLLM),
+   where the objects would have to be created again for every request. That includes the response's tool, since the
+   descriptions of some tools have special characters. *)
+toolStringSplit[
+    settings_,
+    { _, req: HoldPattern @ LLMToolRequest[ as_Association, opts___ ] },
+    result_String,
+    id_String
+] :=
+    toolStringSplit[
+        settings,
+        LLMToolRequest @ replaceUnicodeCharacters[
+            settings,
+            <| as, "RequestID" -> If[ StringLength @ id === 9, id, tinyHash[ req, 9 ] ] |>
+        ],
+        replaceUnicodeCharacters[ settings, result ]
+    ];
+
+toolStringSplit[ settings_, req: HoldPattern[ _LLMToolRequest ], result_String ] :=
+    toolStringSplit[ settings, req, getToolByName @ req[ "Name" ], result ];
+
+toolStringSplit[ settings_, req: HoldPattern[ _LLMToolRequest ], tool: HoldPattern[ _LLMTool ], result_String ] :=
     {
         req,
         LLMToolResponse @ <|
             "Request"                    -> req,
-            "Tool"                       -> tool,
+            "Tool"                       -> replaceUnicodeCharacters[ settings, tool ],
             "InterpretedParameterValues" -> Association @ req[ "ParameterValues" ],
             "Output"                     -> result,
             "ResponseString"             -> result,
@@ -843,6 +870,23 @@ toolStringSplit[ req: HoldPattern[ _LLMToolRequest ], tool: HoldPattern[ _LLMToo
     };
 
 toolStringSplit // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*cacheToolStringSplit*)
+cacheToolStringSplit // beginDefinition;
+
+(* The cache is emptied when it's full. The next request of a chat then adds its tool calls again, so a single chat
+   with more tool calls than this would get nothing from the cache: *)
+cacheToolStringSplit[ key_List, value_List ] := (
+    If[ Length @ $toolStringSplitCache >= $toolStringSplitCacheSize, $toolStringSplitCache = <| |> ];
+    $toolStringSplitCache[ key ] = value
+);
+
+cacheToolStringSplit // endDefinition;
+
+$toolStringSplitCache     = <| |>;
+$toolStringSplitCacheSize = 200;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
