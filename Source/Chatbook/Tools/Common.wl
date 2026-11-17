@@ -1561,7 +1561,12 @@ toCustomToolCall // endDefinition;
 (*toCustomToolCallData*)
 toCustomToolCallData // beginDefinition;
 
-(* Converts the data of an LLMToolRequest, so that a caller that is creating the request anyway only does it once: *)
+(* Converts the data of an LLMToolRequest, so that a caller that is creating the request anyway only does it once.
+
+   Calls are converted by the tool's name, not by the tools that the request declares. So when the tool isn't declared
+   (e.g. after switching to a persona without the evaluator, or turning it off), its earlier calls are sent as custom
+   tool calls of a tool the request doesn't have. Before custom tools, they were function calls of a tool the request
+   didn't have. Whether the endpoint accepts that hasn't been tested. *)
 toCustomToolCallData[ settings_, as_Association ] :=
     If[ customToolsQ @ settings, toCustomToolCallData @ as, as ];
 

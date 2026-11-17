@@ -29,6 +29,7 @@ VerificationTest[
     $notebookTool   = $DefaultTools[ "CreateNotebook" ];
     $otherTool      = $DefaultTools[ "WolframAlpha" ];
     $description    = StringTrim @ $evaluatorTool[ "Description" ];
+    $evaluatorHelp  = Lookup[ $evaluatorTool[ "Parameters" ], "code" ][ "Help" ];
 
     (* The released LLMFunctions (2.3) rejects tools and tool requests that take plain text, so the conversions are
        tested on inert expressions, and the results are reduced to their data before leaving the Block: *)
@@ -96,7 +97,7 @@ VerificationTest[
             Wolfram`Chatbook`Common`toCustomTools[ $customSettings, { $evaluatorTool } ],
             { HoldPattern[ LLMTool ][ as_Association, ___ ] } :> {
                 StringStartsQ[ as[ "Description" ], $description ],
-                StringEndsQ[ as[ "Description" ], "plain text (not JSON): Wolfram Language code to evaluate" ]
+                StringEndsQ[ as[ "Description" ], $evaluatorHelp ]
             }
         ]
     ],

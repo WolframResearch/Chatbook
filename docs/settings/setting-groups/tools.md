@@ -264,8 +264,6 @@ This only changes what is exchanged with the service:
 
 The original JSON parameter schema is used whenever the request doesn't go to the responses endpoint (e.g. `"RequestMethod" -> "ChatCompletions"`, or when the installed `Wolfram/LLMFunctions` and `LLMConnections` paclets don't support it), and for all other models and services. For `gpt-6.1-sol` itself that is not a working fallback: the chat completions endpoint rejects its function tools (see the [case study](../../model-support-examples/gpt-6-1-sol.md#finding-out-what-the-model-accepts)), so without the responses endpoint its tools need `"ToolMethod" -> "Simple"`.
 
-The responses endpoint only gets the text of a service tool's output, so for multimodal models, the images in a tool's output are sent in a separate message that follows it (`toolResponseImagesMessage` in `SendChat.wl`). That message is only part of the request that follows the tool call.
-
 ### Integration Points
 
 - **Dependencies**: Not in `$autoSettingKeyDependencies` (no dependencies on other settings), but is a dependency of `HybridToolMethod`.

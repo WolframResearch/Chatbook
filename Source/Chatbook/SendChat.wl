@@ -718,13 +718,18 @@ contentFlatten // endDefinition;
 (*rewriteServiceToolCalls*)
 rewriteServiceToolCalls // beginDefinition;
 
+(* customToolsQ is part of the cache key of every earlier tool call (toolStringSplit), so it's checked once here
+   instead of for each call: *)
 rewriteServiceToolCalls[ settings_, messages_List ] :=
-    Flatten[ rewriteServiceToolCalls[ settings, # ] & /@ messages ];
+    With[ { custom = customToolsQ @ settings },
+        Flatten[ rewriteServiceToolCalls[ settings, custom, # ] & /@ messages ]
+    ];
 
 (* The message for a tool call that is being evaluated ends with that call, which is given in "ToolRequests".
    Earlier calls in the same response already have results, so they are split like any other assistant message: *)
 rewriteServiceToolCalls[
     settings_,
+    custom_,
     message: HoldPattern @ KeyValuePattern @ {
         "Content"      -> content_String,
         "ToolRequest"  -> True,
@@ -733,6 +738,7 @@ rewriteServiceToolCalls[
 ] := serviceToolMessageMerge @ Flatten @ {
     rewriteServiceToolCalls[
         settings,
+        custom,
         <| KeyDrop[ message, { "ToolRequest", "ToolRequests" } ], "Content" -> removeLastToolCall @ content |>
     ],
     <| message, "Content" -> { } |>
@@ -741,6 +747,7 @@ rewriteServiceToolCalls[
 (* Tool results end with "ENDRESULT(id)", where id is the request ID the tool call was sent with: *)
 rewriteServiceToolCalls[
     settings_,
+    custom_,
     message: KeyValuePattern @ { "Role" -> "Assistant", "Content" -> content_String }
 ] := serviceToolMessageThread[
     message,
@@ -751,11 +758,11 @@ rewriteServiceToolCalls[
                 req: ("TOOLCALL: " ~~ __ ~~ "\nENDARGUMENTS") ~~ "\nENDTOOLCALL\nRESULT\n" ~~ result__ ~~ "\nENDRESULT"
             ],
             ("(" ~~ id: (LetterCharacter|DigitCharacter).. ~~ ")") | ""
-        ] :> toolStringSplit[ settings, req, result, id ]
+        ] :> toolStringSplit[ settings, custom, req, result, id ]
     ]
 ];
 
-rewriteServiceToolCalls[ settings_, message_Association ] :=
+rewriteServiceToolCalls[ settings_, custom_, message_Association ] :=
     message;
 
 rewriteServiceToolCalls // endDefinition;
@@ -822,8 +829,8 @@ toolStringSplit // beginDefinition;
    all earlier tool calls in the chat again, so they are kept. Their text doesn't change, and the settings only matter
    for the conversions below. The response's tool is the one that was available when it was created; services only get
    its request and output. *)
-toolStringSplit[ settings_, req_String, result_String, id_String ] :=
-    With[ { key = { customToolsQ @ settings, TrueQ @ settings[ "ReplaceUnicodeCharacters" ], req, result, id } },
+toolStringSplit[ settings_, custom_, req_String, result_String, id_String ] :=
+    With[ { key = { custom, TrueQ @ settings[ "ReplaceUnicodeCharacters" ], req, result, id } },
         Lookup[
             $toolStringSplitCache,
             Key @ key,
