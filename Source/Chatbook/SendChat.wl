@@ -2668,8 +2668,10 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 
         roles = ConfirmMatch[ allowedMultimodalRoles @ settings, All | { __String }, "Roles" ];
 
+        (* With the responses endpoint, the images in a tool's output are sent in a user message: the one from
+           toolResponseImagesMessage, or the tool response itself, which is a user message there (chooseToolResponseRole): *)
         response =
-            If[ roles === All || MemberQ[ roles, "System" ],
+            If[ roles === All || MemberQ[ roles, If[ responsesRequestQ @ settings, "User", "System" ] ],
                 expandMultimodalString @ ToString @ output,
                 ToString @ output
             ];
@@ -2851,19 +2853,26 @@ makeToolResponseMessage // beginDefinition;
 makeToolResponseMessage[ settings_, response_, toolResponse_ ] :=
     makeToolResponseMessage[ settings, settings[ "Model" ], response, toolResponse ];
 
-makeToolResponseMessage[ settings_, model_Association, response_, toolResponse_ ] := {
-    makeToolResponseMessage0[
-        If[ settings[ "ToolMethod" ] === "Service", "Tool", settings[ "ToolResponseRole" ] ],
-        settings[ "ToolResponseStyle" ],
-        response,
-        toolResponse
-    ],
-    (* With prompt cache optimization, this is a base prompt component instead (see needsSettingsBasePrompts): *)
-    If[ TrueQ @ settings[ "ToolCallRetryMessage" ] && ! promptCacheOptimizationQ @ settings,
-        $toolCallRetryMessage,
-        Nothing
-    ]
-};
+makeToolResponseMessage[ settings_, model_Association, response_, toolResponse_ ] :=
+    With[ { images = toolResponseImagesMessage[ settings, response ] },
+        {
+            makeToolResponseMessage0[
+                If[ settings[ "ToolMethod" ] === "Service", "Tool", settings[ "ToolResponseRole" ] ],
+                settings[ "ToolResponseStyle" ],
+                (* Images that go into their own message are left out here. The content of this message would not be
+                   sent, but the service connection would still encode its images (about 25 ms each): *)
+                If[ AssociationQ @ images, DeleteCases[ response, KeyValuePattern[ "Type" -> "Image" ] ], response ],
+                toolResponse
+            ],
+            images,
+            lastToolResponseMessage @ settings,
+            (* With prompt cache optimization, this is a base prompt component instead (needsSettingsBasePrompts): *)
+            If[ TrueQ @ settings[ "ToolCallRetryMessage" ] && ! promptCacheOptimizationQ @ settings,
+                $toolCallRetryMessage,
+                Nothing
+            ]
+        }
+    ];
 
 makeToolResponseMessage // endDefinition;
 
@@ -2906,6 +2915,58 @@ makeToolResponseMessage0[ role_, style_, response_, toolResponse_ ] := <|
 |>;
 
 makeToolResponseMessage0 // endDefinition;
+
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*toolResponseImagesMessage*)
+
+(* The responses endpoint gets the output of a service tool call as text only (the content of the tool message is not
+   sent), so a multimodal model would not see the images in it. They are given in a message that follows it instead.
+   Like the tool response's own images, they are only sent in the request that follows the tool call: *)
+toolResponseImagesMessage // beginDefinition;
+
+toolResponseImagesMessage[ settings: KeyValuePattern[ "ToolMethod" -> "Service" ], response_List ] /;
+    responsesRequestQ @ settings :=
+        With[ { images = Cases[ response, KeyValuePattern[ "Type" -> "Image" ] ] },
+            If[ images === { },
+                Nothing,
+                <|
+                    "Role"          -> "User",
+                    "Content"       -> wrapResponse[ "<tool_response_images>", images, "</tool_response_images>" ],
+                    "ToolResponse"  -> True,
+                    "HoldTemporary" -> True
+                |>
+            ]
+        ];
+
+toolResponseImagesMessage[ settings_, response_ ] := Nothing;
+
+toolResponseImagesMessage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*lastToolResponseMessage*)
+
+(* The response to the last tool call that "MaxToolResponses" allows is sent, but the chat ends at the next tool call
+   without sending its response (see sendToolResponseQ), which would leave the user without an answer. So the model is
+   told to respond instead of calling another tool. Services differ in which messages they accept after a tool's
+   output, so this is only done for the responses endpoint: *)
+lastToolResponseMessage // beginDefinition;
+
+lastToolResponseMessage[ settings: KeyValuePattern[ "MaxToolResponses" -> n_Integer ] ] /;
+    $toolCallCount >= n && responsesRequestQ @ settings :=
+        <| "Role" -> "User", "Content" -> $lastToolResponsePrompt, "ToolResponse" -> True, "HoldTemporary" -> True |>;
+
+lastToolResponseMessage[ _ ] := Nothing;
+
+lastToolResponseMessage // endDefinition;
+
+$lastToolResponsePrompt = "\
+<system-hint>
+This was the last tool call available for this response, so do not make any more tool calls. \
+Respond to the user now with the results you have. If the task is not finished, say what is left to do.
+</system-hint>";
 
 
 $toolCallRetryPrompt = "\

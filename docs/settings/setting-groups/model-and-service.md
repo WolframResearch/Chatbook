@@ -159,7 +159,7 @@ When `True`, `makeMessageContent` (`ChatMessages.wl`) processes cell content thr
 
 **Image constraints:**
 
-- `allowedMultimodalRoles` (`ChatMessages.wl`) restricts multimodal content to `"User"` role messages for GPT-4o models and allows `All` roles for other models.
+- `allowedMultimodalRoles` (`ChatMessages.wl`) restricts multimodal content to `"User"` role messages for the responses endpoint with any model (it rejects images in assistant and system messages) and for GPT-4o models, and allows `All` roles otherwise. With the responses endpoint, images in a tool's output are sent in a user message: for `"ToolMethod" -> "Service"`, one that follows the tool's output (`toolResponseImagesMessage` in `SendChat.wl`), since the endpoint only gets that output as text.
 - Images are resized via `resizeMultimodalImage` (`ChatMessages.wl`) to fit within `$maxMMImageSize` dimensions before encoding.
 
 **Serialization:** In `Serialization.wl`, the related `$multimodalImages` variable (derived from `$contentTypes`) controls whether graphics boxes are encoded as image URIs (`toMarkdownImageBox`) or replaced with `"[GRAPHIC]"` placeholders, and whether `"Picture"` style cells are serialized as image URIs. Graphics exceeding `$maxBoxSizeForImages` bytes fall back to non-multimodal serialization.

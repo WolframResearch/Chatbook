@@ -368,6 +368,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `removeToolPreferencePrompt;
 `replaceCellContext;
 `requestMethod;
+`responsesRequestQ;
 `resetReasoningStream;
 `resizeMenuIcon;
 `resizeMultimodalImage;

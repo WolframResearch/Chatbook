@@ -1529,7 +1529,13 @@ makeMessageContent // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*allowedMultimodalRoles*)
 allowedMultimodalRoles // beginDefinition;
+
+(* The responses endpoint only accepts images in user messages. It rejects them in assistant messages (e.g. a plot in an
+   earlier response) and in system messages: *)
+allowedMultimodalRoles[ settings_Association? responsesRequestQ ] := { "User" };
+
 allowedMultimodalRoles[ settings_ ] := allowedMultimodalRoles0 @ toModelName @ settings[ "Model" ];
+
 allowedMultimodalRoles // endDefinition;
 
 

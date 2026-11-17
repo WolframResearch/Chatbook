@@ -1094,6 +1094,21 @@ VerificationTest[
     TestID   -> "AutoStopTokens-Responses"
 ]
 
+(* The responses endpoint only accepts images in user messages, so the image links in assistant messages (e.g. the plot
+   of an earlier response) and system messages are not replaced by images: *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Common`$responsesAPIAvailable = True },
+        Wolfram`Chatbook`Common`allowedMultimodalRoles /@ {
+            <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-5.4" |>, "RequestMethod" -> "Responses" |>,
+            <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-5.4" |>, "RequestMethod" -> "ChatCompletions" |>,
+            <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-4o" |>, "RequestMethod" -> "ChatCompletions" |>
+        }
+    ],
+    { { "User" }, All, { "User" } },
+    SameTest -> MatchQ,
+    TestID   -> "AllowedMultimodalRoles-Responses"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Attachments*)
