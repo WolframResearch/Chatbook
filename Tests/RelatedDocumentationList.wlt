@@ -129,6 +129,41 @@ VerificationTest[
 ]
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Nothing to Search*)
+VerificationTest[
+    RelatedDocumentation[
+        {
+            <| "Role" -> "System", "Content" -> "You are a helpful assistant." |>,
+            <| "Role" -> "User"  , "Content" -> ""                             |>
+        },
+        "CatalogPrompt",
+        20
+    ],
+    "",
+    SameTest -> MatchQ,
+    TestID   -> "RelatedDocumentation-CatalogPrompt-EmptyUserMessage-GH#1582"
+]
+
+(* The default personas use the catalog, so these chats would stop with an internal failure: *)
+VerificationTest[
+    AugmentChatMessages[ { <| "Role" -> "User", "Content" -> " \n" |> }, "WolframAIAssistant" ],
+    { __Association },
+    SameTest -> MatchQ,
+    TestID   -> "RelatedDocumentation-CatalogPrompt-WhitespaceMessage-GH#1582"
+]
+
+VerificationTest[
+    AugmentChatMessages[
+        { <| "Role" -> "User", "Content" -> "\\!\\(\\*MarkdownImageBox[\"![image](attachment://content-abc123)\"]\\)" |> },
+        "NotebookAssistant"
+    ],
+    { __Association },
+    SameTest -> MatchQ,
+    TestID   -> "RelatedDocumentation-CatalogPrompt-ImageOnlyMessage-GH#1849"
+]
+
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*RelatedDocumentationList Prompt Generator*)
 $generatorMessages = { <| "Role" -> "User", "Content" -> $fitQuery |> };
