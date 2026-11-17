@@ -56,6 +56,33 @@ VerificationTest[
     TestID   -> "AutoCorrect-ReplaceUnicode-Entity"
 ]
 
+(* Triple backticks around inline code are corrected, but not the code blocks in the JSON arguments of a service tool
+   call, which are also on a single line: *)
+VerificationTest[
+    With[
+        {
+            toolCall = StringJoin[
+                "TOOLCALL: create_notebook\n{\n\t\"content\":\"",
+                "# Title\\n\\n```wl\\nPlot[Sin[x], {x, 0, 1}]\\n```\\n\\nText\\n\\n```wl\\n1 + 1\\n```",
+                "\"\n}\nENDARGUMENTS"
+            ]
+        },
+        {
+            Wolfram`Chatbook`Common`autoCorrect[ "Use ```Plot[Sin[x], {x, 0, 1}]``` for this." ],
+            (* Inline code can have other backslashes: *)
+            Wolfram`Chatbook`Common`autoCorrect[ "Use ```StringCases[s, RegularExpression[\"\\\\d+\"]]``` for this." ],
+            Wolfram`Chatbook`Common`autoCorrect @ toolCall === toolCall
+        }
+    ],
+    {
+        "Use ``Plot[Sin[x], {x, 0, 1}]`` for this.",
+        "Use ``StringCases[s, RegularExpression[\"\\\\d+\"]]`` for this.",
+        True
+    },
+    SameTest -> MatchQ,
+    TestID   -> "AutoCorrect-TripleBackticks-ToolCallArguments"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Regression Tests*)

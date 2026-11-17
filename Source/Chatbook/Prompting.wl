@@ -229,7 +229,8 @@ $basePromptComponents[ "DoubleBackticks" ] = "\
 * ALWAYS surround inline code with double backticks to avoid ambiguity with context names: ``MyContext`MyFunction[x]``";
 
 $basePromptComponents[ "MathExpressions" ] = "\
-* Write math expressions using LaTeX and surround them with dollar signs: $$x^2 + y^2$$";
+* Write math expressions using LaTeX and surround them with double dollar signs, \
+including math that is inline with text: $$x^2 + y^2$$";
 
 $basePromptComponents[ "EscapedCharacters" ] = "\
 * If your response contains currency in dollars, write with an escaped dollar sign: \\$99.95.
