@@ -91,6 +91,7 @@ System`HoldCompleteForm;
 `inlineTemplateBoxes;
 `sufficientVersionQ;
 `insufficientVersionQ;
+`allowExternalLLMConnectivityQ;
 `addToMXInitialization;
 `mxInitialize;
 
@@ -228,6 +229,7 @@ KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
     "ConnectionFailure"               -> "Server connection failure: `1`. Please try again later.",
     "ConnectionFailure2"              -> "Could not get a valid response from the server: `1`. Please try again later.",
     "ExpectedInstallableResourceType" -> "Expected a resource of type `1` instead of `2`.",
+    "ExternalLLMConnectivityDisabled" -> "AI features have been disabled. \[RightGuillemet]",
     "IntegratedServiceError"          -> "The `1` service returned an error: `2`",
     "IntegratedServiceUnavailable"    -> "The `1` service is currently not available. Please try again in a few minutes.",
     "Internal"                        -> "An unexpected error occurred. `1`",
@@ -1596,6 +1598,16 @@ sufficientVersionQ // endDefinition;
 insufficientVersionQ // beginDefinition;
 insufficientVersionQ[ version_? NumberQ ] := TrueQ[ $VersionNumber < version ];
 insufficientVersionQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*allowExternalLLMConnectivityQ*)
+(* False if LLM requests made through ServiceExecute/LLMServices are blocked by System`$AllowExternalLLMConnectivity
+   (available in 16.0+). This reads only the kernel symbol, so it can be used while building dynamic content without
+   making it depend on front end options: *)
+allowExternalLLMConnectivityQ // beginDefinition;
+allowExternalLLMConnectivityQ[ ] := ! (sufficientVersionQ[ 16.0 ] && System`$AllowExternalLLMConnectivity === False);
+allowExternalLLMConnectivityQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

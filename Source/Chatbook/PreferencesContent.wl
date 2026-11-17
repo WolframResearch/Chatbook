@@ -164,15 +164,6 @@ allowAISettings // endDefinition;
 (*AllowExternalLLMConnectivity*)
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*allowExternalLLMConnectivityQ*)
-(* Reads only the kernel symbol, so it can be used while building dynamic content without making it depend on front
-   end options: *)
-allowExternalLLMConnectivityQ // beginDefinition;
-allowExternalLLMConnectivityQ[ ] := System`$AllowExternalLLMConnectivity =!= False;
-allowExternalLLMConnectivityQ // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*setAllowExternalLLMConnectivity*)
 setAllowExternalLLMConnectivity // beginDefinition;
 
@@ -349,7 +340,7 @@ localAIOnly[ ] := Which[
     (* if disabled via Preferences checkbox. Don't read CurrentValue[ $FrontEnd, "AllowExternalLLMConnectivity" ] here:
        this runs while building the preferences content, and that read makes the content rebuild whenever any
        $FrontEnd option changes. *)
-    sufficientVersionQ[ 16.0 ] && ! allowExternalLLMConnectivityQ[ ],
+    ! allowExternalLLMConnectivityQ[ ],
         { True, "User" },
 
     True,
@@ -1520,7 +1511,7 @@ servicesSettingsPanel0 // endDefinition;
 (*getServiceData*)
 getServiceData // beginDefinition;
 
-getServiceData[ ] /; sufficientVersionQ[ 16.0 ] && ! allowExternalLLMConnectivityQ[ ] := $Failed;
+getServiceData[ ] /; ! allowExternalLLMConnectivityQ[ ] := $Failed;
 
 getServiceData[ ] := With[
     { rawData = Quiet[ ServiceExecute[ "LLMKit", "RawAccess", ProgressReporting -> False ], ServiceExecute::extllm ] },

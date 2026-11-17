@@ -175,6 +175,44 @@ VerificationTest[
     TestID   -> "SendChat-ChatOutputData-Cloud"
 ]
 
+(* When external LLM connectivity is disabled, the chat fails before building messages or sending a request: *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Common`allowExternalLLMConnectivityQ = False & },
+        sendChatEvents @ $baseSettings
+    ],
+    <|
+        "Result" -> Failure[
+            "ExternalLLMConnectivityDisabled",
+            KeyValuePattern[ "MessageTemplate" -> Wolfram`Chatbook`Common`trPaclet[ "ExternalLLMConnectivityDisabled" ] ]
+        ],
+        "Events" -> { }
+    |>,
+    SameTest -> MatchQ,
+    TestID   -> "SendChat-ExternalLLMConnectivityDisabled"
+]
+
+(* The message is defined for every language: *)
+VerificationTest[
+    Select[
+        FileNames[ "ChatbookStrings.tr", FileNameJoin @ { ParentDirectory @ DirectoryName @ $TestFileName, "FrontEnd", "TextResources" }, 2 ],
+        StringFreeQ[ ReadString @ #, "\"ExternalLLMConnectivityDisabled\" ->" ] &
+    ],
+    { },
+    SameTest -> MatchQ,
+    TestID   -> "ExternalLLMConnectivityDisabled-TextResources"
+]
+
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Common`allowExternalLLMConnectivityQ = False &, Wolfram`Chatbook`Common`resolveAutoSettings },
+        Wolfram`Chatbook`Common`resolveAutoSettings[ ___ ] := Throw[ "UnexpectedSettingsResolution" ];
+        Wolfram`Chatbook`AgentEvaluate[ "Hello" ]
+    ],
+    Failure[ "Chatbook`AgentEvaluate::ExternalLLMConnectivityDisabled" | "AgentEvaluate::ExternalLLMConnectivityDisabled", _ ],
+    { AgentEvaluate::ExternalLLMConnectivityDisabled },
+    SameTest -> MatchQ,
+    TestID   -> "AgentEvaluate-ExternalLLMConnectivityDisabled"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Multimodal Messages*)

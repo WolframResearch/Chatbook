@@ -440,4 +440,19 @@ VerificationTest[
     TestID -> "LLMKitInfoRequest-NotSignedIn"
 ]
 
+(* Nothing is sent when external LLM connectivity is disabled, since the request would only issue a message: *)
+VerificationTest[
+    withLLMKitInfoTest @ Block[ { Wolfram`Chatbook`Common`allowExternalLLMConnectivityQ = False & },
+        {
+            Wolfram`Chatbook`Common`startLLMKitInfoRequest[ ],
+            Wolfram`Chatbook`Services`Private`getLLMKitInfo0[ ],
+            sent,
+            updates,
+            Wolfram`Chatbook`Services`Private`$llmKitInfoRequest
+        }
+    ],
+    { Null, None, 0, 0, None },
+    TestID -> "LLMKitInfoRequest-ExternalLLMConnectivityDisabled"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)

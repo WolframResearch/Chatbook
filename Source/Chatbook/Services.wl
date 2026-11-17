@@ -82,12 +82,15 @@ getLLMKitInfo // endDefinition;
 
 getLLMKitInfo0 // beginDefinition;
 
-getLLMKitInfo0[ ] := (
+(* If external LLM connectivity is disabled, the request would be blocked (with a ServiceExecute::extllm message), so
+   there's no info: *)
+getLLMKitInfo0[ ] := If[ ! allowExternalLLMConnectivityQ[ ],
+    None,
     LLMSynthesize;
     (* The response of a request that was sent ahead of time is used instead of sending another one: *)
     If[ ! TrueQ @ finishLLMKitInfoRequest[ ], Wolfram`LLMFunctions`Common`UpdateLLMKitInfo[ ] ];
     Wolfram`LLMFunctions`Common`$LLMKitInfo
-);
+];
 
 getLLMKitInfo0 // endDefinition;
 
@@ -99,9 +102,10 @@ getLLMKitInfo0 // endDefinition;
    unless the user is signed in, so this never opens a sign-in dialog. *)
 startLLMKitInfoRequest // beginDefinition;
 
-(* $CloudUserID is None until the cloud connection has been checked, which $CloudConnected does: *)
+(* $CloudUserID is None until the cloud connection has been checked, which $CloudConnected does. Nothing is sent if
+   external LLM connectivity is disabled, since the request would be blocked: *)
 startLLMKitInfoRequest[ ] :=
-    If[ TrueQ @ $CloudConnected, startLLMKitInfoRequest[ $CloudUserID, $CloudBase ] ];
+    If[ allowExternalLLMConnectivityQ[ ] && TrueQ @ $CloudConnected, startLLMKitInfoRequest[ $CloudUserID, $CloudBase ] ];
 
 startLLMKitInfoRequest[ user_String, cloud_String ] /; ! AssociationQ @ $llmKitInfoRequest := (
     LLMSynthesize;
