@@ -703,4 +703,62 @@ VerificationTest[
     TestID   -> "ToolResponseImagesMessage-OtherEndpoints"
 ]
 
+(* In a chat (with the service replaced by a script), the image that a tool returns is in a user message of the request
+   that follows the tool call, and not in the tool message. This needs toolEvaluation to expand the tool's output into
+   images, which allowedMultimodalRoles alone doesn't allow for the endpoint, since it has no "System" role: *)
+VerificationTest[
+    Module[ { calls = { }, tool, submit, chunks, result, images },
+        tool = LLMTool[ { "make_picture", "Makes a picture." }, { "name" -> "String" }, Function[ Graphics @ Disk[ ] ] ];
+
+        chunks = {
+            {
+                <| "BodyChunkProcessed" -> { <|
+                    "ResponseID"        -> "resp",
+                    "ToolRequestsChunk" -> { LLMToolRequest[ "make_picture", { "name" -> "a" }, "RequestID" -> "call" ] }
+                |> } |>,
+                <| "BodyChunkProcessed" -> { <| "ResponseID" -> "resp", "FinishReason" -> "completed" |> } |>
+            },
+            { <| "BodyChunkProcessed" -> { <| "ResponseID" -> "resp", "ContentChunk" -> "Done", "Type" -> "Text" |> } |> }
+        };
+
+        submit[ messages_, config_, opts___ ] :=
+            Module[ { handlers },
+                handlers = Lookup[ { opts }, HandlerFunctions ];
+                AppendTo[ calls, messages ];
+                Scan[ handlers[ "BodyChunkReceived" ], chunks[[ Length @ calls ]] ];
+                handlers[ "TaskFinished" ][ <| "TaskStatus" -> "Finished", "EventName" -> "TaskFinished", "StatusCode" -> 200 |> ];
+                None
+            ];
+
+        (* See ToolCallLimit-Chat for the Quiet and the tool box: *)
+        result = Quiet[
+            Block[ { Wolfram`Chatbook`Common`$responsesAPIAvailable = True },
+                Internal`InheritedBlock[ { Wolfram`Chatbook`Tools`Private`$toolBox },
+                    Wolfram`Chatbook`AgentEvaluate[
+                        "Hello",
+                        <|
+                            "Model"               -> <| "Service" -> "OpenAI", "Name" -> "gpt-5.2" |>,
+                            "Authentication"      -> Automatic,
+                            "LLMEvaluator"        -> "PlainChat",
+                            "Multimodal"          -> True,
+                            "ToolsEnabled"        -> True,
+                            "Tools"               -> { tool },
+                            "ProcessingFunctions" -> <| "ChatSubmit" -> submit |>
+                        |>
+                    ]
+                ]
+            ],
+            { FrontEndObject::notavail, General::stop }
+        ];
+
+        (* The roles of the messages of the second request that contain images: *)
+        images = #[ "Role" ] & /@ Select[ Last @ calls, ! FreeQ[ #[ "Content" ], KeyValuePattern[ "Type" -> "Image" ] ] & ];
+
+        { Length @ calls, images, StringQ @ result && StringEndsQ[ result, "Done" ] }
+    ],
+    { 2, { "User" }, True },
+    SameTest -> MatchQ,
+    TestID   -> "ToolResponseImagesMessage-Chat"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)

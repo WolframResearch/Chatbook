@@ -2675,8 +2675,10 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 
         roles = ConfirmMatch[ allowedMultimodalRoles @ settings, All | { __String }, "Roles" ];
 
+        (* With the responses endpoint, the images in a tool's output are sent in a user message: the one from
+           toolResponseImagesMessage, or the tool response itself, which is a user message there (chooseToolResponseRole): *)
         response =
-            If[ roles === All || MemberQ[ roles, "System" ],
+            If[ roles === All || MemberQ[ roles, If[ responsesRequestQ @ settings, "User", "System" ] ],
                 expandMultimodalString @ ToString @ output,
                 ToString @ output
             ];

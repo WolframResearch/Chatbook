@@ -266,26 +266,34 @@ VerificationTest[
 (*chooseFirstAvailableModel*)
 
 (* The default LLMKit model is the first preferred model that LLMKit lists. gpt-6.1-sol needs the responses endpoint,
-   so it's skipped when the installed paclets don't support it: *)
+   so it's skipped when the installed paclets don't support it. It isn't a preferred model yet, so it's added here: *)
 VerificationTest[
-    With[
+    Block[
         {
-            old = { <| "model" -> "gpt-5.4", "type" -> "ChatCompletion" |>, <| "model" -> "gpt-5.4-mini", "type" -> "ChatCompletion" |> },
-            new = { <| "model" -> "gpt-5.4", "type" -> "ChatCompletion" |>, <| "model" -> "gpt-6.1-sol", "type" -> "ChatCompletion" |> }
+            Wolfram`Chatbook`Models`Private`$llmKitPreferredModels = <|
+                "Pro"   -> { "gpt-6.1-sol", "gpt-5.4" },
+                "Basic" -> { "gpt-6.1-sol", "gpt-5.4" }
+            |>
         },
-        {
-            Block[ { Wolfram`Chatbook`Common`$responsesAPIAvailable = True },
-                {
-                    Wolfram`Chatbook`Models`Private`chooseFirstAvailableModel[ "Pro", new ],
-                    Wolfram`Chatbook`Models`Private`chooseFirstAvailableModel[ "Pro", old ],
-                    (* Nothing is listed: *)
-                    Wolfram`Chatbook`Models`Private`chooseFirstAvailableModel[ "Basic", { } ]
-                }
-            ],
-            Block[ { Wolfram`Chatbook`Common`$responsesAPIAvailable = False },
-                Wolfram`Chatbook`Models`Private`chooseFirstAvailableModel[ "Pro", new ]
-            ]
-        }
+        With[
+            {
+                old = { <| "model" -> "gpt-5.4", "type" -> "ChatCompletion" |>, <| "model" -> "gpt-5.4-mini", "type" -> "ChatCompletion" |> },
+                new = { <| "model" -> "gpt-5.4", "type" -> "ChatCompletion" |>, <| "model" -> "gpt-6.1-sol", "type" -> "ChatCompletion" |> }
+            },
+            {
+                Block[ { Wolfram`Chatbook`Common`$responsesAPIAvailable = True },
+                    {
+                        Wolfram`Chatbook`Models`Private`chooseFirstAvailableModel[ "Pro", new ],
+                        Wolfram`Chatbook`Models`Private`chooseFirstAvailableModel[ "Pro", old ],
+                        (* Nothing is listed: *)
+                        Wolfram`Chatbook`Models`Private`chooseFirstAvailableModel[ "Basic", { } ]
+                    }
+                ],
+                Block[ { Wolfram`Chatbook`Common`$responsesAPIAvailable = False },
+                    Wolfram`Chatbook`Models`Private`chooseFirstAvailableModel[ "Pro", new ]
+                ]
+            }
+        ]
     ],
     { { "gpt-6.1-sol", "gpt-5.4", "gpt-5.4" }, "gpt-5.4" },
     SameTest -> MatchQ,

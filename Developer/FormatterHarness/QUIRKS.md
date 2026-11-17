@@ -506,11 +506,11 @@ Each item was reproduced against main (375156fb). **[not encoded]** means no tes
 - **Observed:** TeX input "1,000000 + x", serialized as "$$1,000000 + x$$" (re-verified). The $preprocessTeXRules pattern needs exactly 3 digits before the first comma.
 - **Expected:** "1000000 + x", or the number left unchanged.
 
-### Adjacent display math without a space is misparsed [not encoded]
+### Adjacent display math without a space round-trips as one math span [not encoded]
 
-- **Repro:** `FormatChatOutput["$$a$$$$b$$"]; MarkdownRoundTrip["$$a$$$$b$$"]`
-- **Observed:** {math["a$", state Error], math["b"], "$"}; the round trip gives "$$a $b$$\\$" (re-verified).
-- **Expected:** Two math cells, a and b.
+- **Repro:** `MarkdownRoundTrip["$$a$$$$b$$"]`
+- **Observed:** "$$a b$$". Formatting gives two math cells, a and b (Math-Delimiters-Adjacent), but they serialize as one span.
+- **Expected:** "$$a$$$$b$$", or a separator that keeps the two spans apart.
 
 ### Table serialization escapes \| inside math a second time [not encoded]
 
