@@ -521,4 +521,183 @@ VerificationTest[
     TestID   -> "ServiceToolCalls-EndMarker-In-Output-GH#314"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Tool Call Limit*)
+
+(* With the responses endpoint, the response to the last tool call that "MaxToolResponses" allows tells the model to
+   answer instead of calling another tool, since the chat would end at that call without sending its result: *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Common`$responsesAPIAvailable = True },
+        Table[
+            Block[ { Wolfram`Chatbook`Common`$toolCallCount = count },
+                Lookup[
+                    Wolfram`Chatbook`SendChat`Private`makeToolResponseMessage[
+                        <|
+                            "ToolMethod"       -> "Service",
+                            "Model"            -> <| "Service" -> "OpenAI", "Name" -> "gpt-5.2" |>,
+                            "MaxToolResponses" -> 2,
+                            "RequestMethod"    -> method
+                        |>,
+                        "Out[1]= 2",
+                        None
+                    ],
+                    { "Role", "ToolResponse", "HoldTemporary" }
+                ]
+            ],
+            { method, { "Responses", "ChatCompletions" } },
+            { count, 1, 2 }
+        ]
+    ],
+    {
+        { { { "Tool", True, _Missing } }, { { "Tool", True, _Missing }, { "User", True, True } } },
+        { { { "Tool", True, _Missing } }, { { "Tool", True, _Missing } } }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ToolCallLimit-LastToolResponseMessage"
+]
+
+(* In a chat (with the service replaced by a script), the hint is the last thing in the request that follows the last
+   allowed tool call, and it's not sent before that: *)
+VerificationTest[
+    Module[ { calls = { }, tool, submit, chunks, result, lastContent },
+        tool = LLMTool[ { "lookup_value", "Looks up a value." }, { "name" -> "String" }, Function[ "The value is 42." ] ];
+
+        chunks = Join[
+            ConstantArray[
+                {
+                    <| "BodyChunkProcessed" -> { <|
+                        "ResponseID"        -> "resp",
+                        "ToolRequestsChunk" -> { LLMToolRequest[ "lookup_value", { "name" -> "a" }, "RequestID" -> "call" ] }
+                    |> } |>,
+                    <| "BodyChunkProcessed" -> { <| "ResponseID" -> "resp", "FinishReason" -> "completed" |> } |>
+                },
+                2
+            ],
+            { { <| "BodyChunkProcessed" -> { <| "ResponseID" -> "resp", "ContentChunk" -> "Done", "Type" -> "Text" |> } |> } }
+        ];
+
+        submit[ messages_, config_, opts___ ] :=
+            Module[ { handlers },
+                handlers = Lookup[ { opts }, HandlerFunctions ];
+                AppendTo[ calls, messages ];
+                Scan[ handlers[ "BodyChunkReceived" ], chunks[[ Length @ calls ]] ];
+                handlers[ "TaskFinished" ][ <| "TaskStatus" -> "Finished", "EventName" -> "TaskFinished", "StatusCode" -> 200 |> ];
+                None
+            ];
+
+        (* Tool evaluation writes the task to the output cell, which doesn't exist here: *)
+        result = Quiet[
+            Block[ { Wolfram`Chatbook`Common`$responsesAPIAvailable = True },
+                Wolfram`Chatbook`AgentEvaluate[
+                    "Hello",
+                    <|
+                        "Model"               -> <| "Service" -> "OpenAI", "Name" -> "gpt-5.2" |>,
+                        "Authentication"      -> Automatic,
+                        "LLMEvaluator"        -> "PlainChat",
+                        "ToolsEnabled"        -> True,
+                        "Tools"               -> { tool },
+                        "MaxToolResponses"    -> 2,
+                        "ProcessingFunctions" -> <| "ChatSubmit" -> submit |>
+                    |>
+                ]
+            ],
+            { FrontEndObject::notavail, General::stop }
+        ];
+
+        lastContent[ messages_ ] := ToString @ Last[ messages ][ "Content" ];
+
+        {
+            Length @ calls,
+            StringContainsQ[ lastContent @ #, "last tool call available" ] & /@ calls,
+            StringQ @ result && StringEndsQ[ result, "Done" ]
+        }
+    ],
+    { 3, { False, False, True }, True },
+    SameTest -> MatchQ,
+    TestID   -> "ToolCallLimit-Chat"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Tool Response Images*)
+
+(* Settings of a request with native tool calls for each endpoint: *)
+$responsesSettings = <|
+    "Model"         -> <| "Service" -> "OpenAI", "Name" -> "gpt-5.2" |>,
+    "RequestMethod" -> "Responses",
+    "ToolMethod"    -> "Service"
+|>;
+
+$completionsSettings = <| $responsesSettings, "RequestMethod" -> "ChatCompletions" |>;
+
+(* The responses endpoint only gets the text of a service tool's output, so its images follow in another message: *)
+VerificationTest[
+    With[ { image = <| "Type" -> "Image", "Data" -> Image @ { { 0 } } |> },
+        Block[ { Wolfram`Chatbook`Common`$responsesAPIAvailable = True },
+            {
+                Wolfram`Chatbook`SendChat`Private`toolResponseImagesMessage[
+                    $responsesSettings,
+                    { <| "Type" -> "Text", "Data" -> "Out[1]= " |>, image, <| "Type" -> "Text", "Data" -> "\n" |> }
+                ] === <|
+                    "Role"          -> "User",
+                    "Content"       -> { "<tool_response_images>", image, "</tool_response_images>" },
+                    "ToolResponse"  -> True,
+                    "HoldTemporary" -> True
+                |>,
+                (* No images: *)
+                { Wolfram`Chatbook`SendChat`Private`toolResponseImagesMessage[ $responsesSettings, "Out[1]= 2" ] },
+                (* Tool responses of other tool methods and endpoints keep their images: *)
+                { Wolfram`Chatbook`SendChat`Private`toolResponseImagesMessage[ <| $responsesSettings, "ToolMethod" -> "Simple" |>, { image } ] },
+                { Wolfram`Chatbook`SendChat`Private`toolResponseImagesMessage[ $completionsSettings, { image } ] }
+            }
+        ]
+    ],
+    { True, { }, { }, { } },
+    SameTest -> MatchQ,
+    TestID   -> "ToolResponseImagesMessage"
+]
+
+(* The message with the images comes right after the tool's output. It is not taken for the user's input, and is only
+   part of the request that follows the tool call: *)
+VerificationTest[
+    With[ { image = <| "Type" -> "Image", "Data" -> Image @ { { 0 } } |> },
+        Block[ { Wolfram`Chatbook`Common`$responsesAPIAvailable = True, Wolfram`Chatbook`Common`$toolCallCount = 1 },
+            {
+                Lookup[ #1, "Role" ],
+                Wolfram`Chatbook`Common`toolMessageQ /@ #1,
+                Lookup[ #1, "HoldTemporary", False ],
+                (* The image is only in the message that is sent, so that it's not encoded twice: *)
+                Count[ #1, image, Infinity ] & /@ Lookup[ #1, "Content" ]
+            } & @ Wolfram`Chatbook`SendChat`Private`makeToolResponseMessage[
+                <| $responsesSettings, "MaxToolResponses" -> 5 |>,
+                { <| "Type" -> "Text", "Data" -> "Out[1]= " |>, image },
+                None
+            ]
+        ]
+    ],
+    { { "Tool", "User" }, { True, True }, { False, True }, { 0, 1 } },
+    SameTest -> MatchQ,
+    TestID   -> "ToolResponseImagesMessage-MakeToolResponseMessage"
+]
+
+(* Other endpoints get the images in the tool message, as before: *)
+VerificationTest[
+    With[ { image = <| "Type" -> "Image", "Data" -> Image @ { { 0 } } |> },
+        Block[ { Wolfram`Chatbook`Common`$responsesAPIAvailable = True, Wolfram`Chatbook`Common`$toolCallCount = 1 },
+            {
+                Lookup[ #1, "Role" ],
+                Count[ #1, image, Infinity ] & /@ Lookup[ #1, "Content" ]
+            } & @ Wolfram`Chatbook`SendChat`Private`makeToolResponseMessage[
+                <| $completionsSettings, "MaxToolResponses" -> 5 |>,
+                { <| "Type" -> "Text", "Data" -> "Out[1]= " |>, image },
+                None
+            ]
+        ]
+    ],
+    { { "Tool" }, { 1 } },
+    SameTest -> MatchQ,
+    TestID   -> "ToolResponseImagesMessage-OtherEndpoints"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)

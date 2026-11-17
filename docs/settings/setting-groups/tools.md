@@ -608,7 +608,9 @@ Maximum number of tool responses allowed per chat turn before the tool-calling l
 
 During each chat turn, the `$toolCallCount` global variable (`CommonSymbols.wl`) is incremented each time the LLM makes a tool call (`SendChat.wl`), initialized to `0` via `ChatState.wl`. The `sendToolResponseQ` function (`SendChat.wl`) checks whether to continue the tool-calling loop: if `$toolCallCount > n` (where `n` is the `MaxToolResponses` value), it returns `False`, stopping the chat via `throwTop @ StopChat @ cell`.
 
-Note: the comparison uses `>` (not `>=`), so the LLM can make up to `n + 1` tool calls before being stopped.
+Note: the comparison uses `>` (not `>=`), so the LLM can make up to `n + 1` tool calls before being stopped, and the result of the last one is not sent back, which leaves the response without an answer.
+
+With the responses endpoint (`"RequestMethod" -> "Responses"`), the response to the `n`-th tool call is therefore followed by a hint that tells the model to answer with the results it has instead of calling another tool (`lastToolResponseMessage` in `SendChat.wl`, a user role message that is only part of that request). Other endpoints don't get the hint, since services differ in which messages they accept after a tool's output.
 
 ### Model-Specific Overrides
 
