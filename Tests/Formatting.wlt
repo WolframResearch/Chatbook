@@ -1133,16 +1133,15 @@ VerificationTest[
     TestID   -> "DynamicProgressIndicator-EmptyContent"
 ]
 
+(* Block clears the definitions of the two functions and restores them afterwards. (ClearAll inside of
+   Internal`InheritedBlock does not: the definitions given here stayed for the rest of the session, so that no response
+   was taken to have a tool call with the simple method, and every response with the other methods.) *)
 VerificationTest[
-    Internal`InheritedBlock[
+    Block[
         {
             Wolfram`Chatbook`SendChat`Private`simpleToolFreeQ,
             Wolfram`Chatbook`SendChat`Private`toolFreeQ0
         },
-        ClearAll[
-            Wolfram`Chatbook`SendChat`Private`simpleToolFreeQ,
-            Wolfram`Chatbook`SendChat`Private`toolFreeQ0
-        ];
         Wolfram`Chatbook`SendChat`Private`simpleToolFreeQ[ _String ] := True;
         Wolfram`Chatbook`SendChat`Private`toolFreeQ0[ _String ] := False;
         Block[
