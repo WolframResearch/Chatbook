@@ -200,11 +200,12 @@ VerificationTest[
 
 (* Math does not need whitespace around its delimiters: *)
 VerificationTest[
-    mathItems /@ { "a$x$b", "($x$)", "$x$y", "$x$$y$" },
+    mathItems /@ { "a$x$b", "($x$)", "$x$y", "$x$$y$", "$$x$$$$y$$" },
     {
         { "a", MathTeX[ "x", "Boxes" ], "b" },
         { "(", MathTeX[ "x", "Boxes" ], ")" },
         { MathTeX[ "x", "Boxes" ], "y" },
+        { MathTeX[ "x", "Boxes" ], MathTeX[ "y", "Boxes" ] },
         { MathTeX[ "x", "Boxes" ], MathTeX[ "y", "Boxes" ] }
     },
     SameTest -> MatchQ,

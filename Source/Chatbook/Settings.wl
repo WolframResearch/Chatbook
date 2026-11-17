@@ -470,8 +470,9 @@ $modelAutoSettings[ Automatic, "GPT54Plus" ] = <|
     "ToolCallExamplePromptStyle" -> Automatic,
     "ToolMethod"                 -> Verbatim @ Automatic
     (* TODO: We need to use "Service" for the tool method due to lack of stop-token support. What blocked this (tool
-       outputs without images, and JSON arguments for code) is solved for the responses endpoint (see "GPT61Sol"
-       below), so these models can switch once LLMKit supports that endpoint for them. *)
+       outputs without images, and JSON arguments for code) is solved for the responses endpoint with
+       "EnableCustomTools" (see "GPT61Sol" below), so these models can switch once LLMKit supports that endpoint for
+       them. *)
 |>;
 
 $modelAutoSettings[ Automatic, "GPT54Mini" ] = <|

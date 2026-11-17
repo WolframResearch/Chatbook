@@ -13,13 +13,14 @@ Needs[ "Wolfram`Chatbook`UI`"      ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-(* Add additional supported models here as needed. The first one that LLMKit lists as available is used. A model that
-   needs the responses endpoint (gpt-6.1-sol) must only be listed by the server once that endpoint works for it, since
-   there is nothing else to tell from that the server supports the endpoint: *)
+(* Add additional supported models here as needed. The first one that LLMKit lists as available is used.
+   TODO: Add "gpt-6.1-sol" before "gpt-5.4" once it has been tested end to end with LLMKit. It needs the responses
+         endpoint ("ResponsesRequired" in $modelAutoSettings), and nothing tells Chatbook whether the server supports
+         that endpoint, so the default would switch as soon as the server lists the model. *)
 $llmKitPreferredModels = <|
-    "Pro"      -> { "gpt-6.1-sol", "gpt-5.4" },
-    "Research" -> { "gpt-6.1-sol", "gpt-5.4" },
-    "Basic"    -> { "gpt-6.1-sol", "gpt-5.4" }
+    "Pro"      -> { "gpt-5.4" },
+    "Research" -> { "gpt-5.4" },
+    "Basic"    -> { "gpt-5.4" }
 |>;
 
 $$llmKitAccessLevel = Alternatives @@ Keys @ $llmKitPreferredModels;

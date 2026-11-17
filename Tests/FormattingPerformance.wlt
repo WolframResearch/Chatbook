@@ -49,6 +49,20 @@ VerificationTest[
     TestID   -> "LongLine-Timing"
 ]
 
+(* $$...$$ math ends at the next "$$". With a greedy pattern, the condition of the math rules was tested at every "$$"
+   back from the end of the text, which took over a second for 500 inline spans (it now takes a few milliseconds): *)
+VerificationTest[
+    With[ { pattern = Wolfram`Chatbook`Formatting`Private`$$dollarDisplayMath },
+        First @ AbsoluteTiming @ StringSplit[
+            StringRepeat[ "The point $$x_1 + y^2 = 1$$ is on the curve. ", 500 ],
+            pattern /; StringFreeQ[ Wolfram`Chatbook`Formatting`Private`math, "$$" ] :> 0
+        ]
+    ],
+    _? (LessThan[ 0.2 ]),
+    SameTest -> MatchQ,
+    TestID   -> "DisplayMath-Timing"
+]
+
 (* almostCertainlyWLCodeQ only tests the text before the first "[", whitespace, "-" or ":" as a System name. The old
    definition tested every prefix of up to 50 characters: *)
 VerificationTest[
