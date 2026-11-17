@@ -197,8 +197,11 @@ When `Automatic`, resolved via `$modelAutoSettings` lookup (no custom `resolveAu
 ### Model-Specific Overrides
 
 - **GPT-5**: Resolves to `"Minimal"`.
-- **GPT-5.1**: Resolves to `"None"`.
-- No other model families define a `"Reasoning"` override.
+- **GPT-5.1 and later** (including GPT-5.4+): Resolves to `"None"`.
+- **GPT-5.3 Chat**: Resolves to `"Medium"` (it doesn't accept `"None"`).
+- **gpt-6.1-sol**: Resolves to `"Medium"`. This model doesn't accept `"None"` or `"Minimal"` (the lowest effort is `"Low"`).
+- **xAI Grok 3**: `False`; **Grok 4**: `Missing["NotSupported"]`.
+- **OpenRouter DeepSeek Flash and Kimi K2.5**: `<| "effort" -> "none" |>`.
 
 When the `"Responses"` request method is used, plain effort levels are expanded to request reasoning summaries. See [`"RequestMethod"`](model-and-service.md#requestmethod).
 

@@ -263,6 +263,37 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*chooseFirstAvailableModel*)
+
+(* The default LLMKit model is the first preferred model that LLMKit lists. gpt-6.1-sol needs the responses endpoint,
+   so it's skipped when the installed paclets don't support it: *)
+VerificationTest[
+    With[
+        {
+            old = { <| "model" -> "gpt-5.4", "type" -> "ChatCompletion" |>, <| "model" -> "gpt-5.4-mini", "type" -> "ChatCompletion" |> },
+            new = { <| "model" -> "gpt-5.4", "type" -> "ChatCompletion" |>, <| "model" -> "gpt-6.1-sol", "type" -> "ChatCompletion" |> }
+        },
+        {
+            Block[ { Wolfram`Chatbook`Common`$responsesAPIAvailable = True },
+                {
+                    Wolfram`Chatbook`Models`Private`chooseFirstAvailableModel[ "Pro", new ],
+                    Wolfram`Chatbook`Models`Private`chooseFirstAvailableModel[ "Pro", old ],
+                    (* Nothing is listed: *)
+                    Wolfram`Chatbook`Models`Private`chooseFirstAvailableModel[ "Basic", { } ]
+                }
+            ],
+            Block[ { Wolfram`Chatbook`Common`$responsesAPIAvailable = False },
+                Wolfram`Chatbook`Models`Private`chooseFirstAvailableModel[ "Pro", new ]
+            ]
+        }
+    ],
+    { { "gpt-6.1-sol", "gpt-5.4", "gpt-5.4" }, "gpt-5.4" },
+    SameTest -> MatchQ,
+    TestID   -> "ChooseFirstAvailableModel"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*resolveFullModelSpec*)
 VerificationTest[
     withoutServiceCache[

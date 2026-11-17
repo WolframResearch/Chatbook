@@ -1087,6 +1087,52 @@ VerificationTest[
     TestID   -> "ResolveAutoSetting-RequestMethod-Unavailable"
 ]
 
+(* gpt-6.1-sol can't use its tools without the responses endpoint, so it also uses it with LLMKit: *)
+VerificationTest[
+    With[
+        {
+            settings = {
+                <| "Model" -> <| "Service" -> "LLMKit", "Name" -> "gpt-6.1-sol" |> |>,
+                <| "Model" -> <| "Service" -> "LLMKit", "Name" -> "gpt-6.1-sol-2026-11-01" |> |>,
+                (* Other models of the same generation can turn reasoning off: *)
+                <| "Model" -> <| "Service" -> "LLMKit", "Name" -> "gpt-6.1-terra" |> |>
+            }
+        },
+        {
+            Block[ { Wolfram`Chatbook`Common`$responsesAPIAvailable = True },
+                Wolfram`Chatbook`Settings`Private`resolveAutoSetting0[ #1, "RequestMethod" ] & /@ settings
+            ],
+            Block[ { Wolfram`Chatbook`Common`$responsesAPIAvailable = False },
+                Wolfram`Chatbook`Settings`Private`resolveAutoSetting0[ #1, "RequestMethod" ] & /@ settings
+            ]
+        }
+    ],
+    {
+        { "Responses", "Responses", "ChatCompletions" },
+        { "ChatCompletions", "ChatCompletions", "ChatCompletions" }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ResolveAutoSetting-RequestMethod-LLMKit-ResponsesRequired"
+]
+
+(* gpt-6.1-sol rejects the "None" effort that other GPT models default to, and calls its tools natively: *)
+VerificationTest[
+    Function[ name,
+        Wolfram`Chatbook`Settings`Private`resolveAutoSetting0[
+            <| "Model" -> <| "Service" -> "OpenAI", "Name" -> name |> |>,
+            #1
+        ] & /@ { "Reasoning", "ToolMethod", "HybridToolMethod" }
+    ] /@ { "gpt-6.1-sol", "gpt-6.1-sol-2026-11-01", "gpt-6.1-terra", "gpt-5.4" },
+    {
+        { "Medium", "Service", False },
+        { "Medium", "Service", False },
+        { "None", Automatic, True },
+        { "None", Automatic, True }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ResolveAutoSetting-GPT61Sol"
+]
+
 VerificationTest[
     Wolfram`Chatbook`Settings`Private`autoStopTokens @ <| "RequestMethod" -> "Responses", "ToolMethod" -> "Simple" |>,
     Missing[ "NotSupported" ],

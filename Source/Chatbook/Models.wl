@@ -13,11 +13,13 @@ Needs[ "Wolfram`Chatbook`UI`"      ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-(* Add additional supported models here as needed: *)
+(* Add additional supported models here as needed. The first one that LLMKit lists as available is used. A model that
+   needs the responses endpoint (gpt-6.1-sol) must only be listed by the server once that endpoint works for it, since
+   there is nothing else to tell from that the server supports the endpoint: *)
 $llmKitPreferredModels = <|
-    "Pro"      -> { "gpt-5.4" },
-    "Research" -> { "gpt-5.4" },
-    "Basic"    -> { "gpt-5.4" }
+    "Pro"      -> { "gpt-6.1-sol", "gpt-5.4" },
+    "Research" -> { "gpt-6.1-sol", "gpt-5.4" },
+    "Basic"    -> { "gpt-6.1-sol", "gpt-5.4" }
 |>;
 
 $$llmKitAccessLevel = Alternatives @@ Keys @ $llmKitPreferredModels;
@@ -67,12 +69,26 @@ chooseFirstAvailableModel[ level_String, models_ ] := Enclose[
     Module[ { preferred, available },
         preferred = ConfirmMatch[ Lookup[ $llmKitPreferredModels, level ], { __String }, "PreferredModels" ];
         available = ConfirmMatch[ extractModelNames @ models, { ___String }, "AvailableModels" ];
-        FirstCase[ preferred, Alternatives @@ available, First @ preferred ]
+        (* If none of them can be used, choose the last one, which has been supported the longest: *)
+        SelectFirst[ preferred, MemberQ[ available, #1 ] && usableLLMKitModelQ @ #1 &, Last @ preferred ]
     ],
     throwInternalFailure
 ];
 
 chooseFirstAvailableModel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*usableLLMKitModelQ*)
+(* Models that need the responses endpoint can't be the default if the installed paclets don't support it: *)
+usableLLMKitModelQ // beginDefinition;
+
+usableLLMKitModelQ[ name_String ] := Or[
+    ! TrueQ @ autoModelSetting[ <| "Service" -> "OpenAI", "Name" -> name |>, "ResponsesRequired" ],
+    TrueQ @ $responsesAPIAvailable
+];
+
+usableLLMKitModelQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

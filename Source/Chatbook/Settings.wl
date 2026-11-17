@@ -480,6 +480,16 @@ $modelAutoSettings[ Automatic, "GPT54Mini" ] = <|
     "MaxContextTokens" -> 400000
 |>;
 
+(* gpt-6.1-sol always reasons (it rejects the "None" and "Minimal" efforts), and the chat completions endpoint doesn't
+   allow function tools together with reasoning, so its tools only work through the responses endpoint, where they are
+   called natively. *)
+$modelAutoSettings[ Automatic, "GPT61Sol" ] = <|
+    "HybridToolMethod"  -> False,
+    "Reasoning"         -> "Medium",
+    "ResponsesRequired" -> True,
+    "ToolMethod"        -> "Service"
+|>;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*OpenAI reasoning models*)
@@ -1115,11 +1125,17 @@ $autoSettingKeyPriority := Enclose[
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*chooseRequestMethod*)
-(* TODO: This should also choose "Responses" for the "LLMKit" service as soon as the server supports it. *)
+(* TODO: This should also choose "Responses" for every "EnableResponses" model with the "LLMKit" service as soon as
+         the server supports it. *)
 chooseRequestMethod // beginDefinition;
 
-(* LLMKit is also used for OpenAI models when authenticating with LLMKit: *)
-chooseRequestMethod[ as_Association? llmKitQ ] := "ChatCompletions";
+(* LLMKit is also used for OpenAI models when authenticating with LLMKit. For now, it only uses the responses endpoint
+   for models that can't use their tools without it ("ResponsesRequired" in $modelAutoSettings): *)
+chooseRequestMethod[ as_Association? llmKitQ ] :=
+    If[ TrueQ @ autoModelSetting[ as, "ResponsesRequired" ] && TrueQ @ $responsesAPIAvailable,
+        "Responses",
+        "ChatCompletions"
+    ];
 
 chooseRequestMethod[ as_Association ] :=
     chooseRequestMethod[ as, serviceName @ as, TrueQ @ autoModelSetting[ as, "EnableResponses" ] ];

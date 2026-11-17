@@ -248,8 +248,8 @@ When `"Service"`, also triggers the `"ServiceToolCallRetry"` base prompt compone
 
 ### Model-Specific Overrides
 
-- **`"Service"`**: Anthropic (general), AzureOpenAI, DeepSeek Chat, OpenAI (general), GPT-3.5, GPT-5, O1, O3, O4-Mini
-- **`Verbatim @ Automatic`** (keeps prompt-based tools, often paired with `HybridToolMethod -> True`): Claude 2, GPT-4o, GPT-4.1, O3-Mini
+- **`"Service"`**: Anthropic (general), AzureOpenAI, DeepSeek Chat, OpenAI (general), GPT-3.5, GPT-5 through GPT-5.3, gpt-6.1-sol, O1, O3, O4-Mini
+- **`Verbatim @ Automatic`** (keeps prompt-based tools, often paired with `HybridToolMethod -> True`): Claude 2, GPT-4o, GPT-4.1, GPT-5.4 and later (except gpt-6.1-sol), O3-Mini
 
 ### Integration Points
 
@@ -283,8 +283,8 @@ When `False`, the `LLMConfiguration` omits tool definitions and relies solely on
 
 ### Model-Specific Overrides
 
-- **`True`**: GPT-4o, GPT-4.1, O3-Mini (which use `ToolMethod -> Verbatim @ Automatic` to keep prompt-based tools alongside service tools)
-- **`False`**: DeepSeek Reasoner, GPT-5, O1, O3, O4-Mini (which use pure `"Service"` tool method or have limited tool support)
+- **`True`**: GPT-4o, GPT-4.1, GPT-5.4 and later (except gpt-6.1-sol), O3-Mini (which use `ToolMethod -> Verbatim @ Automatic` to keep prompt-based tools alongside service tools)
+- **`False`**: DeepSeek Reasoner, GPT-5 through GPT-5.3, gpt-6.1-sol, O1, O3, O4-Mini (which use pure `"Service"` tool method or have limited tool support)
 
 ### Integration Points
 

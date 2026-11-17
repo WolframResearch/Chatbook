@@ -72,8 +72,9 @@ Settings that model configurations commonly override, organized by category. See
 | `"Multimodal"` | Boolean | Whether the model accepts image inputs |
 | `"ToolsEnabled"` | Boolean | Whether the model supports tool/function calling |
 | `"ForceSynchronous"` | Boolean | Force non-streaming (synchronous) API calls |
-| `"Reasoning"` | `"Minimal"` / `"None"` / `Missing["NotSupported"]` | Extended thinking/reasoning mode |
-| `"EnableResponses"` | Boolean | Whether the model can use the responses endpoint (`"RequestMethod"`); currently only honored for the `"OpenAI"` service |
+| `"Reasoning"` | `"None"` / `"Minimal"` / `"Low"` / `"Medium"` / ... / `Missing["NotSupported"]` | Extended thinking/reasoning mode |
+| `"EnableResponses"` | Boolean | Whether the model can use the responses endpoint (`"RequestMethod"`); only honored for the `"OpenAI"` service |
+| `"ResponsesRequired"` | Boolean | The model's tools only work with the responses endpoint, so it's also used with LLMKit, and the model is not chosen as the LLMKit default when the installed paclets don't support the endpoint |
 
 **Tool configuration:**
 
