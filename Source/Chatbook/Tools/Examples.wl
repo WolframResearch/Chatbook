@@ -367,7 +367,7 @@ $fullExamples0[ "PlotEvaluate" ] := toolExample[
     "assistant" -> {
         "tool" -> {
             "WolframLanguageEvaluator",
-            <| "code" -> "Plot[Sin[x], {x, -5, 5}, AxesLabel -> {\"x\", \"sin(x)\"}" |>
+            <| "code" -> "Plot[Sin[x], {x, -5, 5}, AxesLabel -> {\"x\", \"sin(x)\"}]" |>
         }
     },
     "system" -> "Out[n]= ![image](attachment://content-{id})",

@@ -2212,7 +2212,9 @@ $llmAutoCorrectRulesNoMoonshot := $llmAutoCorrectRulesNoMoonshot = Flatten @ {
     $$spaces ~~ "/" ~~ name: Repeated[ Except[ WhitespaceCharacter ], { 1, 80 } ] ~~ " "... ~~ "\n" /;
         toolShortNameQ @ name :>
             "\n/"<>name<>"\n",
-    "```" ~~ code: Except[ "\n" ].. ~~ "```" :> "``"<>code<>"``",
+    (* Triple backticks used for inline code. The JSON arguments of a service tool call have code blocks on a single
+       line too (e.g. markdown for the notebook creation tool), but those have escaped newlines: *)
+    "```" ~~ code: (Except[ "\n" | "\\" ] | ("\\" ~~ Except[ "n" | "\n" ])).. ~~ "```" :> "``"<>code<>"``",
     "wolfram_language_evaliator" -> "wolfram_language_evaluator",
     "\\!\\(\\*"~~$$specialBoxName~~"[\"" ~~ Shortest[ uri__ ] ~~ "\"]\\)" :> uri,
     "\\!\\("~~$$specialBoxName~~"[\"" ~~ Shortest[ uri__ ] ~~ "\"]\\)" :> uri,

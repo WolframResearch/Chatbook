@@ -269,11 +269,14 @@ VerificationTest[
 (* Each request of a chat starts with a new chat state: *)
 cacheRequest[ extra_, cells_ ] := withCacheSettings[ extra, constructWithData[ $settings, cells ] ];
 
-(* Turn messages in the history that don't fit in the token budget are left out instead of being shortened: *)
+(* Turn messages in the history that don't fit in the token budget are left out instead of being shortened. History
+   is dropped in blocks, so of the 9 turn messages here either 1 (only the current turn), 5 or 9 are sent. The budget
+   is inside the range that gives 5 (6500 to 8000 do, 6000 gives 1 and 9000 gives 9; the range moves with the size of
+   the base prompt). A budget of 4000 only fit the current turn, which shows nothing about the history: *)
 VerificationTest[
-    Module[ { extra, cells, data, messages },
+    Module[ { extra, cells, data, messages, kept },
         extra = <|
-            "MaxContextTokens" -> 4000,
+            "MaxContextTokens" -> 7500,
             "PromptGenerators" -> { LLMPromptGenerator[ StringRepeat[ "generated ", 300 ] &, "Messages" ] }
         |>;
         cells = { };
@@ -287,12 +290,19 @@ VerificationTest[
             { i, 8 }
         ];
         messages = First @ cacheRequest[ extra, Append[ cells, Cell[ "last question", "ChatInput" ] ] ];
+        kept     = Cases[
+            messages,
+            KeyValuePattern @ { "PromptGenerated" -> True, "Content" -> content_ } :>
+                StringTrim @ StringJoin @ Cases[ Flatten @ { content }, _String ]
+        ];
         {
             MatchQ[ messages, { __Association } ],
-            0 < Count[ messages, KeyValuePattern[ "PromptGenerated" -> True ] ] < 9
+            Length @ kept,
+            (* The ones that are sent are complete: *)
+            Union @ kept === { StringTrim @ StringRepeat[ "generated ", 300 ] }
         }
     ],
-    { True, True },
+    { True, 5, True },
     SameTest -> MatchQ,
     TestID   -> "TurnMessages-HistoryOverBudget"
 ]
