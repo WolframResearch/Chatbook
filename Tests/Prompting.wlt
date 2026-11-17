@@ -143,15 +143,40 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Components Enabled for a Model*)
+
+(* A component that is disabled by default stays enabled for the rest of the session once settings that enable it are
+   resolved in a chat state that is not scoped, which some tests do. So the tests of these components start with them
+   disabled: *)
+withDisabledBasePrompts // Attributes = { HoldFirst };
+withDisabledBasePrompts[ eval_ ] := Block[
+    {
+        Wolfram`Chatbook`Common`$disabledBasePrompts = Union[
+            Wolfram`Chatbook`Common`$disabledBasePrompts,
+            {
+                "FunctionRepositoryIntegration",
+                "FunctionRepositoryPreference",
+                "ReasonableAssumptions",
+                "WolframLanguageEvaluatorToolCode"
+            }
+        ]
+    },
+    eval
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Evaluator Tool Code*)
 
 (* gpt-6.1-sol tends to only show the result of code it evaluated, so it's told to include the code. This is only
    enabled for that model: *)
 VerificationTest[
-    StringContainsQ[
-        styleGuidelines @ <| "Model" -> <| "Service" -> "OpenAI", "Name" -> #1 |> |>,
-        "also give the code that produced it in a code block"
-    ] & /@ { "gpt-6.1-sol", "gpt-6.1-terra", "gpt-5.4", "gpt-4o" },
+    withDisabledBasePrompts[
+        StringContainsQ[
+            styleGuidelines @ <| "Model" -> <| "Service" -> "OpenAI", "Name" -> #1 |> |>,
+            "also give the code that produced it in a code block"
+        ] & /@ { "gpt-6.1-sol", "gpt-6.1-terra", "gpt-5.4", "gpt-4o" }
+    ],
     { True, False, False, False },
     SameTest -> MatchQ,
     TestID   -> "BasePrompt-EvaluatorToolCode"
@@ -179,10 +204,12 @@ VerificationTest[
    meant, so it's told to pick a reasonable one and answer. This is a general instruction that is only enabled for that
    model: *)
 VerificationTest[
-    StringContainsQ[
-        styleGuidelines @ <| "Model" -> <| "Service" -> "OpenAI", "Name" -> #1 |> |>,
-        "Only ask first when there is nothing reasonable to assume"
-    ] & /@ { "gpt-6.1-sol", "gpt-6.1-terra", "gpt-5.4", "gpt-4o" },
+    withDisabledBasePrompts[
+        StringContainsQ[
+            styleGuidelines @ <| "Model" -> <| "Service" -> "OpenAI", "Name" -> #1 |> |>,
+            "Only ask first when there is nothing reasonable to assume"
+        ] & /@ { "gpt-6.1-sol", "gpt-6.1-terra", "gpt-5.4", "gpt-4o" }
+    ],
     { True, False, False, False },
     SameTest -> MatchQ,
     TestID   -> "BasePrompt-ReasonableAssumptions"
@@ -195,21 +222,26 @@ VerificationTest[
 (* When documentation for resource functions is found, gpt-6.1-sol is also told to use a function that does what the
    user asks for, since it otherwise works out the answer itself: *)
 VerificationTest[
-    Function[ name,
-        Wolfram`Chatbook`Common`withChatState[
-            Wolfram`Chatbook`Common`resolveAutoSettings @ Wolfram`Chatbook`Common`mergeChatSettings @ {
-                Wolfram`Chatbook`Common`$defaultChatSettings,
-                <| "Model" -> <| "Service" -> "OpenAI", "Name" -> name |>, "PromptGenerators" -> { } |>
-            };
-            Wolfram`Chatbook`Common`withBasePromptBuilder[
-                Wolfram`Chatbook`Common`needsBasePrompt[ "FunctionRepositoryIntegration" ];
-                {
-                    StringContainsQ[ Wolfram`Chatbook`Common`$basePrompt, "first-class citizens" ],
-                    StringContainsQ[ Wolfram`Chatbook`Common`$basePrompt, "instead of working out the answer another way" ]
-                }
+    withDisabledBasePrompts[
+        Function[ name,
+            Wolfram`Chatbook`Common`withChatState[
+                Wolfram`Chatbook`Common`resolveAutoSettings @ Wolfram`Chatbook`Common`mergeChatSettings @ {
+                    Wolfram`Chatbook`Common`$defaultChatSettings,
+                    <| "Model" -> <| "Service" -> "OpenAI", "Name" -> name |>, "PromptGenerators" -> { } |>
+                };
+                Wolfram`Chatbook`Common`withBasePromptBuilder[
+                    Wolfram`Chatbook`Common`needsBasePrompt[ "FunctionRepositoryIntegration" ];
+                    {
+                        StringContainsQ[ Wolfram`Chatbook`Common`$basePrompt, "first-class citizens" ],
+                        StringContainsQ[
+                            Wolfram`Chatbook`Common`$basePrompt,
+                            "instead of working out the answer another way"
+                        ]
+                    }
+                ]
             ]
-        ]
-    ] /@ { "gpt-6.1-sol", "gpt-5.4", "gpt-4o" },
+        ] /@ { "gpt-6.1-sol", "gpt-5.4", "gpt-4o" }
+    ],
     { { True, True }, { True, False }, { False, False } },
     SameTest -> MatchQ,
     TestID   -> "BasePrompt-FunctionRepositoryPreference"
