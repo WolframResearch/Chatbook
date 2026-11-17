@@ -586,20 +586,23 @@ VerificationTest[
                 None
             ];
 
-        (* Tool evaluation writes the task to the output cell, which doesn't exist here: *)
+        (* Tool evaluation writes the task to the output cell, which doesn't exist here. The tool box is restored, since
+           a tool that is given in the settings stays in it for the session: *)
         result = Quiet[
             Block[ { Wolfram`Chatbook`Common`$responsesAPIAvailable = True },
-                Wolfram`Chatbook`AgentEvaluate[
-                    "Hello",
-                    <|
-                        "Model"               -> <| "Service" -> "OpenAI", "Name" -> "gpt-5.2" |>,
-                        "Authentication"      -> Automatic,
-                        "LLMEvaluator"        -> "PlainChat",
-                        "ToolsEnabled"        -> True,
-                        "Tools"               -> { tool },
-                        "MaxToolResponses"    -> 2,
-                        "ProcessingFunctions" -> <| "ChatSubmit" -> submit |>
-                    |>
+                Internal`InheritedBlock[ { Wolfram`Chatbook`Tools`Private`$toolBox },
+                    Wolfram`Chatbook`AgentEvaluate[
+                        "Hello",
+                        <|
+                            "Model"               -> <| "Service" -> "OpenAI", "Name" -> "gpt-5.2" |>,
+                            "Authentication"      -> Automatic,
+                            "LLMEvaluator"        -> "PlainChat",
+                            "ToolsEnabled"        -> True,
+                            "Tools"               -> { tool },
+                            "MaxToolResponses"    -> 2,
+                            "ProcessingFunctions" -> <| "ChatSubmit" -> submit |>
+                        |>
+                    ]
                 ]
             ],
             { FrontEndObject::notavail, General::stop }
