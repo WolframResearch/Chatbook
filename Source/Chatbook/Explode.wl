@@ -81,7 +81,7 @@ explodeCell[ textData_List ] := Enclose[
     Module[ { processed, grouped, post },
         processed = ConfirmMatch[ preprocessExplodedCells @ textData, $$textDataList, "Preprocessing" ];
         grouped = ConfirmMatch[ regroupCells @ processed, $$textDataList, "RegroupCells" ];
-        post = ConfirmMatch[ Flatten[ postProcessExplodedCells /@ grouped ], { __Cell }, "PostProcessing" ];
+        post = ConfirmMatch[ Flatten[ postProcessExplodedCells /@ grouped ], { ___Cell }, "PostProcessing" ];
         SequenceReplace[
             post,
             { Cell[ caption_? captionQ, "Text", a___ ], input: Cell[ __, "Input"|"Code", ___ ] } :>
