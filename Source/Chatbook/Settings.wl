@@ -483,11 +483,21 @@ $modelAutoSettings[ Automatic, "GPT54Mini" ] = <|
    called natively, and the ones that take code or long text are given as custom tools (plain text input instead of
    JSON, see `toCustomTools`), so the hybrid method isn't needed to avoid JSON syntax errors. *)
 $modelAutoSettings[ Automatic, "GPT61Sol" ] = <|
-    "EnableCustomTools" -> True,
-    "HybridToolMethod"  -> False,
-    "Reasoning"         -> "Medium",
-    "ResponsesRequired" -> True,
-    "ToolMethod"        -> "Service"
+    "EnableCustomTools"  -> True,
+    "EnabledBasePrompts" -> {
+        "FunctionRepositoryIntegration",
+        "WolframLanguageEvaluatorToolInteractive",
+        (* This model follows its instructions closely, and without these it works out answers itself when the
+           documentation has a resource function for them, answers a request that leaves something open with only a
+           question, and only shows the result of code it evaluated (which the user can't put in a notebook): *)
+        "FunctionRepositoryPreference",
+        "ReasonableAssumptions",
+        "WolframLanguageEvaluatorToolCode"
+    },
+    "HybridToolMethod"   -> False,
+    "Reasoning"          -> "Medium",
+    "ResponsesRequired"  -> True,
+    "ToolMethod"         -> "Service"
 |>;
 
 (* ::**************************************************************************************************************:: *)

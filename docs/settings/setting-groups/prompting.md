@@ -47,7 +47,7 @@ Part of `$modelInheritedLists` (along with `"BasePrompt"`), which enables specia
 ### Model-Specific Overrides
 
 - **GPT-5.2**: `{ParentList, "EscapedCharacters"}` (because it has improved Unicode handling)
-- The `$defaultConfigSettings` in `LLMUtilities.wl` sets this to `{"Notebooks", "NotebooksPreamble", "CodeFolding"}` for LLM configuration generation (not the regular chat notebook flow).
+- The `$defaultConfigSettings` in `LLMUtilities.wl` sets this to `{"Notebooks", "NotebooksPreamble", "CodeFolding", "WolframLanguageEvaluatorToolCode"}` for LLM configuration generation (not the regular chat notebook flow).
 
 ### Automatic Exclusions
 

@@ -141,4 +141,78 @@ VerificationTest[
     TestID   -> "BasePrompt-CodeFolding-AgentEvaluate"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Evaluator Tool Code*)
+
+(* gpt-6.1-sol tends to only show the result of code it evaluated, so it's told to include the code. This is only
+   enabled for that model: *)
+VerificationTest[
+    StringContainsQ[
+        styleGuidelines @ <| "Model" -> <| "Service" -> "OpenAI", "Name" -> #1 |> |>,
+        "also give the code that produced it in a code block"
+    ] & /@ { "gpt-6.1-sol", "gpt-6.1-terra", "gpt-5.4", "gpt-4o" },
+    { True, False, False, False },
+    SameTest -> MatchQ,
+    TestID   -> "BasePrompt-EvaluatorToolCode"
+]
+
+(* Exported configurations are not used in a chat with collapsed tool calls: *)
+VerificationTest[
+    StringContainsQ[
+        GenerateLLMConfiguration[
+            "CodeAssistant",
+            <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-6.1-sol" |> |>
+        ][ "Prompts" ][[ 1 ]],
+        "also give the code that produced it in a code block"
+    ],
+    False,
+    SameTest -> MatchQ,
+    TestID   -> "BasePrompt-EvaluatorToolCode-GenerateLLMConfiguration"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Reasonable Assumptions*)
+
+(* Asked for something that leaves a detail open ("Compute the weight of a dinosaur"), gpt-6.1-sol only asks which one is
+   meant, so it's told to pick a reasonable one and answer. This is a general instruction that is only enabled for that
+   model: *)
+VerificationTest[
+    StringContainsQ[
+        styleGuidelines @ <| "Model" -> <| "Service" -> "OpenAI", "Name" -> #1 |> |>,
+        "Only ask first when there is nothing reasonable to assume"
+    ] & /@ { "gpt-6.1-sol", "gpt-6.1-terra", "gpt-5.4", "gpt-4o" },
+    { True, False, False, False },
+    SameTest -> MatchQ,
+    TestID   -> "BasePrompt-ReasonableAssumptions"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Function Repository Preference*)
+
+(* When documentation for resource functions is found, gpt-6.1-sol is also told to use a function that does what the
+   user asks for, since it otherwise works out the answer itself: *)
+VerificationTest[
+    Function[ name,
+        Wolfram`Chatbook`Common`withChatState[
+            Wolfram`Chatbook`Common`resolveAutoSettings @ Wolfram`Chatbook`Common`mergeChatSettings @ {
+                Wolfram`Chatbook`Common`$defaultChatSettings,
+                <| "Model" -> <| "Service" -> "OpenAI", "Name" -> name |>, "PromptGenerators" -> { } |>
+            };
+            Wolfram`Chatbook`Common`withBasePromptBuilder[
+                Wolfram`Chatbook`Common`needsBasePrompt[ "FunctionRepositoryIntegration" ];
+                {
+                    StringContainsQ[ Wolfram`Chatbook`Common`$basePrompt, "first-class citizens" ],
+                    StringContainsQ[ Wolfram`Chatbook`Common`$basePrompt, "instead of working out the answer another way" ]
+                }
+            ]
+        ]
+    ] /@ { "gpt-6.1-sol", "gpt-5.4", "gpt-4o" },
+    { { True, True }, { True, False }, { False, False } },
+    SameTest -> MatchQ,
+    TestID   -> "BasePrompt-FunctionRepositoryPreference"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)
