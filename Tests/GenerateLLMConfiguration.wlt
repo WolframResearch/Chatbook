@@ -107,6 +107,37 @@ VerificationTest[
     TestID   -> "Model-Name"
 ]
 
+(* Configurations are used for chat completions requests (e.g. by LLMSynthesize), so their default model is not one
+   that needs the responses endpoint for its tools, even when a chat would use that model. gpt-6.1-sol isn't a
+   preferred LLMKit model yet, so it's added here: *)
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::PrivateContextSymbol:: *)
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`Common`$responsesAPIAvailable = True,
+            Wolfram`Chatbook`Models`Private`$llmKitPreferredModels = <| "Pro" -> { "gpt-6.1-sol", "gpt-5.4" } |>,
+            Wolfram`Chatbook`Common`getLLMKitInfo = Function[
+                <|
+                    "accessLevel"     -> "Pro",
+                    "availableModels" -> {
+                        <| "model" -> "gpt-5.4"    , "type" -> "ChatCompletion" |>,
+                        <| "model" -> "gpt-6.1-sol", "type" -> "ChatCompletion" |>
+                    }
+                |>
+            ]
+        },
+        {
+            Wolfram`Chatbook`Models`Private`defaultLLMKitModelName[ ],
+            GenerateLLMConfiguration[ "NotebookAssistant" ][ "Model" ][ "Name" ]
+        }
+    ],
+    { "gpt-6.1-sol", "gpt-5.4" },
+    SameTest -> MatchQ,
+    TestID   -> "Model-Name-ChatCompletions"
+]
+(* :!CodeAnalysis::EndBlock:: *)
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Error Handling*)

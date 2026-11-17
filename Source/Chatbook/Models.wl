@@ -13,7 +13,10 @@ Needs[ "Wolfram`Chatbook`UI`"      ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-(* Add additional supported models here as needed: *)
+(* Add additional supported models here as needed. The first one that LLMKit lists as available is used.
+   TODO: Add "gpt-6.1-sol" before "gpt-5.4" once it has been tested end to end with LLMKit. It needs the responses
+         endpoint ("ResponsesRequired" in $modelAutoSettings), and nothing tells Chatbook whether the server supports
+         that endpoint, so the default would switch as soon as the server lists the model. *)
 $llmKitPreferredModels = <|
     "Pro"      -> { "gpt-5.4" },
     "Research" -> { "gpt-5.4" },
@@ -67,12 +70,26 @@ chooseFirstAvailableModel[ level_String, models_ ] := Enclose[
     Module[ { preferred, available },
         preferred = ConfirmMatch[ Lookup[ $llmKitPreferredModels, level ], { __String }, "PreferredModels" ];
         available = ConfirmMatch[ extractModelNames @ models, { ___String }, "AvailableModels" ];
-        FirstCase[ preferred, Alternatives @@ available, First @ preferred ]
+        (* If none of them can be used, choose the last one, which has been supported the longest: *)
+        SelectFirst[ preferred, MemberQ[ available, #1 ] && usableLLMKitModelQ @ #1 &, Last @ preferred ]
     ],
     throwInternalFailure
 ];
 
 chooseFirstAvailableModel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*usableLLMKitModelQ*)
+(* Models that need the responses endpoint can't be the default if the installed paclets don't support it: *)
+usableLLMKitModelQ // beginDefinition;
+
+usableLLMKitModelQ[ name_String ] := Or[
+    ! TrueQ @ autoModelSetting[ <| "Service" -> "OpenAI", "Name" -> name |>, "ResponsesRequired" ],
+    TrueQ @ $responsesAPIAvailable
+];
+
+usableLLMKitModelQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
