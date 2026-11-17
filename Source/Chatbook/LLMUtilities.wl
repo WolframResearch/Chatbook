@@ -26,7 +26,7 @@ $backgroundHandlers = False;
 
 $defaultConfigSettings = <|
     "LLMEvaluator"        -> $defaultConfigPersona,
-    "ExcludedBasePrompts" -> { "Notebooks", "NotebooksPreamble", "CodeFolding" },
+    "ExcludedBasePrompts" -> { "Notebooks", "NotebooksPreamble", "CodeFolding", "WolframLanguageEvaluatorToolCode" },
     "ToolPrePrompt"       -> "",
     "ToolListingPrompt"   -> "",
     "ToolPostPrompt"      -> ""
