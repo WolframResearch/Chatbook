@@ -238,6 +238,7 @@ VerificationTest[
                 Wolfram`Chatbook`Common`setCurrentValue                   = Null &,
                 Wolfram`Chatbook`Common`usingFrontEnd                     = Function[ eval, eval, HoldFirst ],
                 Wolfram`Chatbook`Actions`Private`ensureChatOutputCell     = # &,
+                Wolfram`Chatbook`Actions`Private`chatOutputCellQ          = MatchQ[ CellObject[ "TestOutputCell" ] ],
                 Wolfram`Chatbook`SendChat`Private`waitForLastChatOutput   = Null &,
                 (* StopChat sets these while it writes the final cell: *)
                 Wolfram`Chatbook`$ChatHandlerData = <| |>,

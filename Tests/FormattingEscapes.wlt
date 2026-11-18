@@ -15,6 +15,15 @@ VerificationTest[
     TestID   -> "LoadContext"
 ]
 
+(* Formatting reads $ChatHandlerData (e.g. for the tool method and the short names of tools). Chats leave it set
+   globally on purpose, so it can be left over from other test files that ran in the same kernel: *)
+VerificationTest[
+    Wolfram`Chatbook`$ChatHandlerData = <| |>,
+    <| |>,
+    SameTest -> MatchQ,
+    TestID   -> "ResetChatHandlerData"
+]
+
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 
