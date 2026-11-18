@@ -15,6 +15,11 @@ Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 $handoffBlobDuration   = 0.35;
 $handoffSidebarTimeout = 30;
 
+(* How many consecutive polling ticks (0.25 s apart) a phase's cells must look ready and quiet before it writes.
+   The kernel's view of the front end's formatting state is a snapshot, so a single quiet reading can still fall
+   inside the sidebar's first format burst; a state that holds for a second has settled: *)
+$handoffSettleTicks = 4;
+
 (* handoff id -> the handoff's notebook, input, and polling task *)
 If[ ! AssociationQ @ $chatbarHandoffs, $chatbarHandoffs = <| |> ];
 
@@ -61,7 +66,7 @@ $defaultChatTools0[ "NotebookEditHandoff" ] = <|
 (* ::Subsection::Closed:: *)
 (*notebookEditHandoff*)
 (* The chatbar's chat calls this when it classifies its prompt as a notebook-editing request. The tool only records
-   what to hand off; the handoff itself runs in a scheduled task once the chat has stopped ("SendToolResponse" ->
+   what to hand off; the handoff itself runs in a polling task once the chat has stopped ("SendToolResponse" ->
    False below ends it), since it deletes the chat's own input and output cells. *)
 notebookEditHandoff // beginDefinition;
 
@@ -71,10 +76,7 @@ notebookEditHandoff[ as_Association ] := Enclose[
         nbo        = ConfirmMatch[ parentNotebook @ inputCell, _NotebookObject, "Notebook" ];
         outputCell = Replace[ $lastCellObject, Except[ _CellObject ] -> Nothing ];
         input      = handoffInput[ inputCell, as ];
-        SessionSubmit @ ScheduledTask[
-            startChatbarHandoff[ nbo, { inputCell, outputCell }, input ],
-            { 0.1 }
-        ];
+        startChatbarHandoff[ nbo, { inputCell, outputCell }, input ];
         <|
             "String"           -> "The request was handed to the notebook-editing assistant in the sidebar.",
             "SendToolResponse" -> False
@@ -106,18 +108,24 @@ handoffInput // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*startChatbarHandoff*)
-(* The chat has stopped by now: collapse blobs over its input and output cells, remove them, open the sidebar with
-   notebook editing switched on, and poll until the sidebar is ready for the prompt. The sidebar initializes
-   asynchronously on its first open, so the polling task waits for its cell, its settings, and the editing switch: *)
+(* Records the handoff and starts its polling task; the task does the work once the chat has stopped. The handoff
+   runs in two phases, each gated on the front end being done formatting the cells it touches, since a kernel write
+   or delete that lands while a cell's contents are formatting corrupts its boxes (the sidebar submit crashed the
+   front end this way): "RemoveChat" collapses blobs over the chat's cells, removes them, and opens the sidebar
+   with notebook editing requested; "Submit" waits for the sidebar (its first initialization and format take
+   seconds) and enters the prompt: *)
 startChatbarHandoff // beginDefinition;
 
 startChatbarHandoff[ nbo_NotebookObject, cells: { ___CellObject }, input_ ] := Enclose[
     Module[ { id },
-        flashCellBlobs @ cells;
-        NotebookDelete @ cells;
-        ShowNotebookAssistance[ nbo, "Sidebar", "ChatNotebookSettings" -> <| "NotebookEditing" -> True |> ];
         id = ConfirmBy[ createUUID[ ], StringQ, "UUID" ];
-        $chatbarHandoffs[ id ] = <| "Notebook" -> nbo, "Input" -> input, "Started" -> AbsoluteTime[ ] |>;
+        $chatbarHandoffs[ id ] = <|
+            "Notebook" -> nbo,
+            "Cells"    -> cells,
+            "Input"    -> input,
+            "Phase"    -> "RemoveChat",
+            "Started"  -> AbsoluteTime[ ]
+        |>;
         $chatbarHandoffs[ id, "Task" ] = SessionSubmit @ ScheduledTask[ chatbarHandoffStep @ id, 0.25 ];
         id
     ],
@@ -135,31 +143,112 @@ chatbarHandoffStep // beginDefinition;
 chatbarHandoffStep[ id_String ] /; ! KeyExistsQ[ $chatbarHandoffs, id ] := Null;
 
 chatbarHandoffStep[ id_String ] := Enclose[
-    Module[ { data, nbo, sidebarCell },
-        data        = ConfirmBy[ $chatbarHandoffs[ id ], AssociationQ, "Data" ];
-        nbo         = data[ "Notebook" ];
-        sidebarCell = sidebarCellObject @ nbo;
+    Module[ { data },
+        data = ConfirmBy[ $chatbarHandoffs[ id ], AssociationQ, "Data" ];
         Which[
             AbsoluteTime[ ] - data[ "Started" ] > $handoffSidebarTimeout,
                 endChatbarHandoff @ id,
-            ! MatchQ[ sidebarCell, _CellObject ],
-                Null, (* the sidebar is still opening *)
-            CurrentValue[ sidebarCell, { TaggingRules, "ChatNotebookSettings", "SidebarChat" } ] === Inherited,
-                Null, (* the sidebar has not initialized its settings yet *)
+            data[ "Phase" ] === "RemoveChat",
+                handoffRemoveChatStep[ id, data ],
             True,
-                endChatbarHandoff @ id;
-                (* ShowNotebookAssistance requested the editing switch, but only the sidebar's asynchronous
-                   initialization applies it, so make sure here before the prompt goes in: *)
-                If[ ! TrueQ @ CurrentValue[ sidebarCell, { TaggingRules, "ChatNotebookSettings", "NotebookEditing" } ],
-                    CurrentChatSettings[ sidebarCell, "NotebookEditing" ] = True
-                ];
-                submitHandoffInput[ nbo, sidebarCell, data[ "Input" ] ]
+                handoffSubmitStep[ id, data ]
         ]
     ],
     throwInternalFailure
 ];
 
 chatbarHandoffStep // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*handoffRemoveChatStep*)
+(* The chat's own cells go once the front end is done formatting them (the output cell was rewritten when the chat
+   stopped moments ago): *)
+handoffRemoveChatStep // beginDefinition;
+
+handoffRemoveChatStep[ id_String, data_Association ] :=
+    If[ handoffSettledQ @ id,
+        Module[ { cells = handoffDeleteCells @ data[ "Cells" ] },
+            flashCellBlobs @ cells;
+            NotebookDelete @ cells
+        ];
+        ShowNotebookAssistance[ data[ "Notebook" ], "Sidebar", "ChatNotebookSettings" -> <| "NotebookEditing" -> True |> ];
+        $chatbarHandoffs[ id, "Phase" ] = "Submit";
+        $chatbarHandoffs[ id, "ReadyTicks" ] = 0
+    ];
+
+handoffRemoveChatStep // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*handoffDeleteCells*)
+(* The chat's output cell recorded when the tool ran can be stale by now, since the streaming output cell is
+   replaced when the chat stops, so the live output is the chat-output cell right after the input: *)
+handoffDeleteCells // beginDefinition;
+
+handoffDeleteCells[ cells: { inputCell_CellObject, ___ } ] := DeleteDuplicates @ Join[
+    cells,
+    Select[ { NextCell @ inputCell }, chatOutputStyleQ ]
+];
+
+handoffDeleteCells[ cells_List ] := cells;
+
+handoffDeleteCells // endDefinition;
+
+chatOutputStyleQ // beginDefinition;
+chatOutputStyleQ[ cell_CellObject ] := MatchQ[ Quiet @ Developer`CellInformation @ cell, KeyValuePattern[ "Style" -> "ChatOutput" ] ];
+chatOutputStyleQ[ _ ] := False;
+chatOutputStyleQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*handoffSubmitStep*)
+(* The sidebar initializes asynchronously on its first open, so the polling task waits for its cell, its settings,
+   and its formatting to finish before the prompt goes in: *)
+handoffSubmitStep // beginDefinition;
+
+handoffSubmitStep[ id_String, data_Association ] := Module[ { nbo, sidebarCell },
+    nbo         = data[ "Notebook" ];
+    sidebarCell = sidebarCellObject @ nbo;
+    Which[
+        ! MatchQ[ sidebarCell, _CellObject ],
+            handoffNotReady @ id, (* the sidebar is still opening *)
+        CurrentValue[ sidebarCell, { TaggingRules, "ChatNotebookSettings", "SidebarChat" } ] === Inherited,
+            handoffNotReady @ id, (* the sidebar has not initialized its settings yet *)
+        ! handoffSettledQ @ id,
+            Null, (* ready, but not for long enough yet *)
+        True,
+            endChatbarHandoff @ id;
+            (* ShowNotebookAssistance requested the editing switch, but only the sidebar's asynchronous
+               initialization applies it, so make sure here before the prompt goes in: *)
+            If[ ! TrueQ @ CurrentValue[ sidebarCell, { TaggingRules, "ChatNotebookSettings", "NotebookEditing" } ],
+                CurrentChatSettings[ sidebarCell, "NotebookEditing" ] = True
+            ];
+            submitHandoffInput[ nbo, sidebarCell, data[ "Input" ] ]
+    ]
+];
+
+handoffSubmitStep // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*handoffSettledQ*)
+(* True once the phase's gates have held for $handoffSettleTicks consecutive ticks; handoffNotReady resets the
+   count when a gate fails: *)
+handoffSettledQ // beginDefinition;
+
+handoffSettledQ[ id_String ] := With[
+    { ticks = Replace[ $chatbarHandoffs[ id, "ReadyTicks" ], Except[ _Integer ] -> 0 ] + 1 },
+    $chatbarHandoffs[ id, "ReadyTicks" ] = ticks;
+    ticks >= $handoffSettleTicks
+];
+
+handoffSettledQ // endDefinition;
+
+handoffNotReady // beginDefinition;
+handoffNotReady[ id_String ] := ( $chatbarHandoffs[ id, "ReadyTicks" ] = 0; Null );
+handoffNotReady // endDefinition;
+
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
