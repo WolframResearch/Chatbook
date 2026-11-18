@@ -217,7 +217,13 @@ VerificationTest[
         ]
     ],
     {
-        Row[ { ___, Style[ "My Notebook", FontWeight -> Bold ], ___ } ],
+        Dynamic[
+            StringForm[
+                FrontEndResource[ "ChatbookStrings", "FormattingInsertContentAndEvaluateWorkspaceChatTooltip" ],
+                Row[ { ___, Style[ "My Notebook", FontWeight -> Bold ], ___ } ]
+            ],
+            TrackedSymbols :> { }
+        ],
         1
     },
     SameTest -> MatchQ,

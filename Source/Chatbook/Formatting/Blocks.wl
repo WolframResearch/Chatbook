@@ -32,8 +32,10 @@ thoughtsLabel[ _Association ] := (
 thoughtsLabel[ 1 ] :=
     tr[ "FormattingThinkingCompleteSingular" ];
 
+(* This label is saved in chat notebooks, so it's a static string instead of a `trTemplate` that the kernel would need to
+   evaluate whenever the notebook is opened: *)
 thoughtsLabel[ seconds_Integer ] :=
-    trStringTemplate[ "FormattingThinkingComplete" ][ <| "time" -> ToString @ seconds |> ];
+    TemplateApply[ trRaw[ "FormattingThinkingComplete" ], <| "time" -> ToString @ seconds |> ];
 
 thoughtsLabel[ None ] :=
     tr @ "FormattingThinkingCompleteFallback";

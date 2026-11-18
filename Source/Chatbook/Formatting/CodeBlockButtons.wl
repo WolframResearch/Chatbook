@@ -154,15 +154,14 @@ targetNotebookLabel[ nbo_, focused_NotebookObject ] :=
     targetNotebookLabel[ nbo, focused, AbsoluteCurrentValue[ focused, WindowTitle ] ];
 
 targetNotebookLabel[ nbo_, focused_NotebookObject, title_ ] :=
-    Row @ Flatten @ {
-        trExprTemplate[ "FormattingInsertContentAndEvaluateWorkspaceChatTooltip" ][ <|
-            "1" -> {
-                chatbookExpression[ "WorkspaceFocusIndicatorNotebook" ],
-                "\[ThinSpace]",
-                Style[ formatNotebookTitle @ title, FontWeight -> Bold ]
-            }
-        |> ]
-    };
+    trTemplate[
+        "FormattingInsertContentAndEvaluateWorkspaceChatTooltip",
+        Row @ {
+            chatbookExpression[ "WorkspaceFocusIndicatorNotebook" ],
+            "\[ThinSpace]",
+            Style[ formatNotebookTitle @ title, FontWeight -> Bold ]
+        }
+    ];
 
 targetNotebookLabel // endDefinition;
 

@@ -58,8 +58,7 @@ System`HoldCompleteForm;
 
 `tr;
 `trRaw;
-`trStringTemplate;
-`trExprTemplate;
+`trTemplate;
 `trPaclet;
 
 `$catching;
@@ -1378,24 +1377,24 @@ pacletDataRebuild // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*trStringTemplate*)
-(* Templated strings require the kernel *)
-trStringTemplate // beginDefinition;
-trStringTemplate[ name_? StringQ ] := StringTemplate @ trRaw @ name;
-trStringTemplate // endDefinition;
+(*trTemplate*)
+(* Fills in the slots of a templated text resource. Like `tr`, the result is a `Dynamic` that looks up the resource when
+   it's displayed, so it's in the front end's current language. The front end can't fill in slots by itself, so this
+   `Dynamic` is evaluated in the kernel, but it only uses System functions.
+   Positional slots (`1`, `2`, ...) can be filled with any expressions. Named slots (`name`) are filled from a single
+   association, whose values should be strings. *)
+trTemplate // beginDefinition;
 
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*trExprTemplate*)
-(* There might be a better way to implement this, but the rationale is we should avoid placing huge
-    expressions or linear syntax within text resource files.
-    The following is compatible with injection into Row or TextData expressions using numbered sequential slots. *)
-trExprTemplate // beginDefinition;
+trTemplate[ name_? StringQ, as_Association ] /; $CloudEvaluation := TemplateApply[ cloudTextResource @ name, as ];
+trTemplate[ name_? StringQ, args___ ] /; $CloudEvaluation := StringForm[ cloudTextResource @ name, args ];
 
-trExprTemplate[ name_? StringQ ] :=
-    TemplateObject @ Splice @ StringSplit[ trRaw @ name, "`" ~~ d: DigitCharacter.. ~~ "`" :> TemplateSlot @ d ];
+trTemplate[ name_? StringQ, as_Association ] :=
+    Dynamic[ TemplateApply[ FrontEndResource[ "ChatbookStrings", name ], as ], TrackedSymbols :> { } ];
 
-trExprTemplate // endDefinition;
+trTemplate[ name_? StringQ, args___ ] :=
+    Dynamic[ StringForm[ FrontEndResource[ "ChatbookStrings", name ], args ], TrackedSymbols :> { } ];
+
+trTemplate // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

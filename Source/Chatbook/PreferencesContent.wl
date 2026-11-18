@@ -1623,12 +1623,12 @@ Module[ { retryButton, subscribeButton, username, signInButton, manageButton, up
         upgradeToProOrResearchButton =
             Button[
                 Style[
-                    StringReplace[
-                        FrontEndResource[ "ChatbookStrings", "PreferencesContentLLMKitUpgradePro" ],
-                        {
-                            "`SubscriptionLevelPro`"      :> ToString[ Style[ "Pro",      FontWeight -> "Bold" ], StandardForm ],
-                            "`SubscriptionLevelResearch`" :> ToString[ Style[ "Research", FontWeight -> "Bold" ], StandardForm ]
-                        }
+                    trTemplate[
+                        "PreferencesContentLLMKitUpgradePro",
+                        <|
+                            "SubscriptionLevelPro"      -> ToString[ Style[ "Pro",      FontWeight -> "Bold" ], StandardForm ],
+                            "SubscriptionLevelResearch" -> ToString[ Style[ "Research", FontWeight -> "Bold" ], StandardForm ]
+                        |>
                     ],
                     FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
                         color @ "Gray20_94",
@@ -1643,9 +1643,9 @@ Module[ { retryButton, subscribeButton, username, signInButton, manageButton, up
         upgradeToResearchButton =
             Button[
                 Style[
-                    StringReplace[
-                        FrontEndResource[ "ChatbookStrings", "PreferencesContentLLMKitUpgradeResearch" ],
-                        "`SubscriptionLevelResearch`" :> ToString[ Style[ "Research", FontWeight -> "Bold" ], StandardForm ]
+                    trTemplate[
+                        "PreferencesContentLLMKitUpgradeResearch",
+                        <| "SubscriptionLevelResearch" -> ToString[ Style[ "Research", FontWeight -> "Bold" ], StandardForm ] |>
                     ],
                     FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
                         color @ "Gray20_94",
@@ -1718,7 +1718,7 @@ Module[ { retryButton, subscribeButton, username, signInButton, manageButton, up
                                                                 {
                                                                     chatbookExpression[ "CheckmarkGreen" ],
                                                                     Style[
-                                                                        StringReplace[ FrontEndResource[ "ChatbookStrings", "PreferencesContentLLMKitEnabledTitle" ], "`SubscriptionLevel`" :> Typeset`subscriptionLevel ],
+                                                                        trTemplate[ "PreferencesContentLLMKitEnabledTitle", <| "SubscriptionLevel" -> Typeset`subscriptionLevel |> ],
                                                                         FontColor -> titleColor ] },
                                                                 {
                                                                     "",

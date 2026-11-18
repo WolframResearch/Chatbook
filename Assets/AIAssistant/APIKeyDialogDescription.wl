@@ -1,6 +1,6 @@
 RawBoxes @ Cell[
     TextData @ {
-        trExprTemplate["APIKeyDialogCreateKeyTemplate"][<|"1" ->
+        Cell @ BoxData @ ToBoxes @ trTemplate[ "APIKeyDialogCreateKeyTemplate", RawBoxes @
         Cell @ BoxData @ TagBox[
             ButtonBox[
                 StyleBox[ "here", FontFamily -> "Source Sans Pro" ],
@@ -16,9 +16,9 @@ RawBoxes @ Cell[
                 ]
             ],
             MouseAppearanceTag[ "LinkHand" ]
-        ]|>],
+        ] ],
         "\n",
-        trExprTemplate["APIKeyDialogSaveKeyTemplate"][<|"1" ->
+        Cell @ BoxData @ ToBoxes @ trTemplate[ "APIKeyDialogSaveKeyTemplate", RawBoxes @
         Cell[
             BoxData @ RowBox @ {
                 TagBox[
@@ -45,7 +45,7 @@ RawBoxes @ Cell[
             FontFamily           -> "Source Sans Pro",
             ShowStringCharacters -> True,
             FontSize             -> Inherited * 0.9
-        ]|>]
+        ] ]
     },
     "Text",
     FontSize -> 12
