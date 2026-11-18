@@ -61,7 +61,7 @@ VerificationTest[
                         AppendTo[ log, "AttachOverlay" ];
                         CellObject[ "overlay" ]
                     ],
-                    Wolfram`Chatbook`ChatModes`UI`Private`restoreVerticalScrollbar = Function[
+                    Wolfram`Chatbook`ChatModes`Common`restoreVerticalScrollbar = Function[
                         AppendTo[ log, "RestoreScrollbar" ]
                     ],
                     Wolfram`Chatbook`Common`setCurrentValue = Function[ AppendTo[ log, { "setCurrentValue", ## } ] ],
@@ -370,7 +370,7 @@ VerificationTest[
             Wolfram`Chatbook`Common`writeWorkspaceChatMovedToHistoryDockedCell @ nbo;
             results = {
                 subDockedCellTags @ nbo,
-                Wolfram`Chatbook`ChatModes`UI`Private`withLoadingOverlay[ { nbo, None }, Null ];
+                Wolfram`Chatbook`ChatModes`Common`withLoadingOverlay[ { nbo, None }, Null ];
                 subDockedCellTags @ nbo,
                 Cells[ nbo, AttachedCell -> True, CellStyle -> "AttachedOverlayMenu" ]
             },

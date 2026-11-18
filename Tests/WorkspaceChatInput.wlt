@@ -681,18 +681,18 @@ VerificationTest[
                 Wolfram`Chatbook`Common`moveToChatInputField,
                 Wolfram`Chatbook`Common`setCurrentValue,
                 Wolfram`Chatbook`Common`writeWorkspaceChatTitleDockedCell,
-                Wolfram`Chatbook`ChatModes`UI`Private`withLoadingOverlay
+                Wolfram`Chatbook`ChatModes`Common`withLoadingOverlay
             },
             Clear[
                 Wolfram`Chatbook`Common`moveToChatInputField,
                 Wolfram`Chatbook`Common`setCurrentValue,
                 Wolfram`Chatbook`Common`writeWorkspaceChatTitleDockedCell,
-                Wolfram`Chatbook`ChatModes`UI`Private`withLoadingOverlay
+                Wolfram`Chatbook`ChatModes`Common`withLoadingOverlay
             ];
             Wolfram`Chatbook`Common`moveToChatInputField[ ___ ] := Null;
             Wolfram`Chatbook`Common`setCurrentValue[ ___ ] := Null;
             Wolfram`Chatbook`Common`writeWorkspaceChatTitleDockedCell[ ___ ] := Null;
-            Wolfram`Chatbook`ChatModes`UI`Private`withLoadingOverlay[ _ ] := Identity;
+            Wolfram`Chatbook`ChatModes`Common`withLoadingOverlay[ _ ] := Identity;
             Cells[ $testNotebook ] := { };
             Block[
                 {

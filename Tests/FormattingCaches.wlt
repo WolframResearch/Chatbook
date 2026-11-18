@@ -70,7 +70,7 @@ VerificationTest[
             Wolfram`Chatbook`Formatting`Private`$correctedCodeCache,
             Wolfram`Chatbook`Formatting`Private`$maxCorrectedCodeCacheSize
         },
-        Wolfram`Chatbook`Formatting`Private`autoCorrectWLCodeBlock,
+        Wolfram`Chatbook`Common`autoCorrectWLCodeBlock,
         Table[ "x + " <> ToString @ i, { i, 10 } ]
     ],
     $cacheBehavior,
