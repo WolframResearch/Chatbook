@@ -921,10 +921,7 @@ Button[
                 BoxData @ ToBoxes @ chatbarOptionsDisplay @ nbo,
                 "NotebookAssistant`Chatbar`Menu",
                 Evaluator     -> CurrentValue[ chatbarCell, Evaluator ], (* menu evaluator matches the chatbar's evaluator *)
-                Magnification -> Dynamic[
-                    AbsoluteCurrentValue[ nbo, Magnification ]*
-                    AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ]
-                ]
+                Magnification -> chatbarMenuMagnification @ nbo
             ],
             Sequence @@ $chatbarOptionsAttachment[ ],
             RemovalConditions -> { "MouseClickOutside" }
@@ -949,6 +946,26 @@ $chatbarOptionsAttachment[ ] :=
     ]
 
 chatbarOptionsButton // endDefinition;
+
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatbarMenuMagnification*)
+
+(* The menu scales with the notebook, but it is attached to the notebook's right edge, so it must not get wider than
+   the window (#1795). The margin covers the attachment offset, a scroll bar and a small gap on the left. *)
+chatbarMenuMagnification // beginDefinition;
+
+chatbarMenuMagnification[ nbo_NotebookObject ] :=
+    With[ { width = $coWidth, margin = 40 },
+        Dynamic @ Min[
+            AbsoluteCurrentValue[ nbo, Magnification ] *
+                AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" } ],
+            (First @ AbsoluteCurrentValue[ nbo, WindowSize ] - margin) / width
+        ]
+    ];
+
+chatbarMenuMagnification // endDefinition;
 
 
 (* ::**************************************************************************************************************:: *)
