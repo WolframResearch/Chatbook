@@ -55,7 +55,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.7.111.4003303030"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.7.147.4003933787"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -3842,8 +3842,8 @@ Notebook[
           "SuppressMouseDownNinePatchAppearance"
          ]
         ],
-       Evaluator -> Automatic,
-       Method -> "Preemptive"
+       Method -> "Queued",
+       Evaluator -> Automatic
       ]
      ])
    }
