@@ -25,6 +25,10 @@ $handoffSettleTicks = 4;
    cells' blob finish first, since the front end keeps one visual cue at a time: *)
 $handoffFlashTicks = 2;
 
+(* How many ticks the chat cells' blob is retried before they go without it. The front end refuses the blob for a
+   cell it is formatting (CellFlashRect), and the sidebar's docked cell has just reflowed the whole window: *)
+$handoffFlashTries = 8;
+
 (* handoff id -> the handoff's notebook, input, and polling task *)
 If[ ! AssociationQ @ $chatbarHandoffs, $chatbarHandoffs = <| |> ];
 
@@ -236,14 +240,17 @@ handoffSubmitStep[ id_String, data_Association ] := Module[ { nbo, sidebarCell }
             If[ ! TrueQ @ CurrentValue[ sidebarCell, { TaggingRules, "ChatNotebookSettings", "NotebookEditing" } ],
                 CurrentChatSettings[ sidebarCell, "NotebookEditing" ] = True
             ];
-            Module[ { cells = handoffDeleteCells @ data[ "Cells" ] },
-                flashCellBlobs @ cells;
-                NotebookDelete @ cells
-            ];
-            submitHandoffInput[ nbo, sidebarCell, data[ "Input" ] ];
-            $chatbarHandoffs[ id, "Phase" ] = "FlashMessage";
-            $chatbarHandoffs[ id, "SidebarCell" ] = sidebarCell;
-            $chatbarHandoffs[ id, "ReadyTicks" ] = 0
+            Module[ { cells = handoffDeleteCells @ data[ "Cells" ], tries },
+                tries = Replace[ data[ "FlashTries" ], Except[ _Integer ] -> 0 ];
+                If[ ! flashCellBlobs @ cells && tries < $handoffFlashTries,
+                    $chatbarHandoffs[ id, "FlashTries" ] = tries + 1, (* refused while formatting; try again *)
+                    NotebookDelete @ cells;
+                    submitHandoffInput[ nbo, sidebarCell, data[ "Input" ] ];
+                    $chatbarHandoffs[ id, "Phase" ] = "FlashMessage";
+                    $chatbarHandoffs[ id, "SidebarCell" ] = sidebarCell;
+                    $chatbarHandoffs[ id, "ReadyTicks" ] = 0
+                ]
+            ]
     ]
 ];
 
@@ -259,9 +266,10 @@ handoffFlashMessageStep // beginDefinition;
 handoffFlashMessageStep[ id_String, data_Association ] := Module[ { cells },
     cells = lastSidebarUserMessageCells @ data[ "SidebarCell" ];
     Which[
-        cells === { },                              handoffNotReady @ id,
-        handoffSettledQ[ id, $handoffFlashTicks ],  endChatbarHandoff @ id; flashCellBlobs @ cells,
-        True,                                       Null
+        cells === { },                                handoffNotReady @ id,
+        ! handoffSettledQ[ id, $handoffFlashTicks ],  Null,
+        flashCellBlobs @ cells,                       endChatbarHandoff @ id,
+        True,                                         Null (* refused while formatting; try again *)
     ]
 ];
 
@@ -344,12 +352,13 @@ lastSidebarUserMessageCells // endDefinition;
 (* ::Subsection::Closed:: *)
 (*flashCellBlobs*)
 (* The front end's collapsing-blob cue over each cell's contents: the cells' content has gone somewhere else. One
-   call covers all the cells, since the front end keeps only one visual cue at a time. Front ends without the packet
-   just show no blob: *)
+   call covers all the cells, since the front end keeps only one visual cue at a time. True once the blob is up;
+   False when the front end refused it, which it does while it is formatting every given cell (CellFlashRect), and
+   from front ends without the packet, which just show no blob: *)
 flashCellBlobs // beginDefinition;
-flashCellBlobs[ { } ] := Null;
+flashCellBlobs[ { } ] := True;
 flashCellBlobs[ cells: { __CellObject } ] :=
-    Quiet @ FrontEndExecute @ FrontEnd`FlashCellBlob[ cells, "Duration" -> $handoffBlobDuration ];
+    TrueQ @ Quiet @ MathLink`CallFrontEnd @ FrontEnd`FlashCellBlob[ cells, "Duration" -> $handoffBlobDuration ];
 flashCellBlobs // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

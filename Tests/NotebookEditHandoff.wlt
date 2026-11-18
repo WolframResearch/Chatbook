@@ -50,16 +50,16 @@ VerificationTest[
     ];
 
     (* Runs one polling step for a handoff in the given phase, with the front end stubbed, logging each call.
-       safeWrite is whether the front end accepts the probe write (sidebarWriteSafeQ's gate), sidebar is the
-       sidebarCellObject result, and sidebarValues[key] gives the sidebar cell's settings. Gives the log, the
-       remaining handoff ids, and the recorded phase: *)
+       safeWrite is whether the front end accepts calls such as the blob cue (CellFlashRect refuses them while it
+       formats), sidebar is the sidebarCellObject result, and sidebarValues[key] gives the sidebar cell's settings.
+       Gives the log, the remaining handoff ids, and the recorded phase: *)
     runHandoffStep[ phase_, safeWrite_, sidebar_, sidebarValues_, started_: None ] := Module[ { log = { }, id = "test-handoff" },
         Block[
             {
                 CurrentValue,
                 CurrentChatSettings,
                 Wolfram`Chatbook`Tools`Private`$handoffSettleTicks  = 1,
-                MathLink`CallFrontEnd                               = Function[ If[ TrueQ @ safeWrite, True, $Failed ] ],
+                MathLink`CallFrontEnd                               = Function[ ( AppendTo[ log, { "CallFrontEnd", # } ]; If[ TrueQ @ safeWrite, True, $Failed ] ) ],
                 NextCell                                            = Function[ $chatOutput ],
                 Developer`CellInformation                           = Function[ <| "Style" -> "ChatOutput" |> ],
                 FrontEndExecute                                     = Function[ AppendTo[ log, { "FrontEndExecute", # } ] ],
@@ -225,13 +225,58 @@ VerificationTest[
     runHandoffStep[ "Submit", True, $sidebarCell, <| "SidebarChat" -> True, "NotebookEditing" -> True |> ],
     { log_ /; MatchQ[ log, {
             ___,
-            { "FrontEndExecute", FrontEnd`FlashCellBlob[ { $chatInput, $chatOutput }, ___ ] },
+            { "CallFrontEnd", FrontEnd`FlashCellBlob[ { $chatInput, $chatOutput }, ___ ] },
             { "NotebookDelete", { $chatInput, $chatOutput } },
             { "evaluateSidebarChat", $userNotebook, "Delete the first three cells" },
             ___
         } ] && FreeQ[ log, "CurrentChatSettings" ], { "test-handoff" }, "FlashMessage" },
     SameTest -> MatchQ,
     TestID   -> "ChatbarHandoff-SubmitsToSidebar"
+]
+
+(* While the front end refuses the blob (it is formatting the cells), the submit waits and retries; after
+   $handoffFlashTries refusals the cells go without the cue: *)
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`Tools`Private`$handoffSettleTicks = 1,
+            Wolfram`Chatbook`Tools`Private`$handoffFlashTries  = 1,
+            CurrentValue,
+            MathLink`CallFrontEnd                               = Function[ $Failed ],
+            NextCell                                            = Function[ $chatOutput ],
+            Developer`CellInformation                           = Function[ <| "Style" -> "ChatOutput" |> ],
+            NotebookDelete                                      = Function[ Sow[ { "NotebookDelete", # } ] ],
+            Wolfram`Chatbook`ChatModes`Common`sidebarCellObject = $sidebarCell &,
+            Wolfram`Chatbook`Common`evaluateSidebarChat         = Function[ Sow[ { "evaluateSidebarChat", #1, #3 } ] ]
+        },
+        CurrentValue[ _, { ___, key_String } ] := <| "SidebarChat" -> True, "NotebookEditing" -> True |> @ key;
+        Wolfram`Chatbook`Tools`Private`$chatbarHandoffs = <|
+            "retry-test" -> <|
+                "Notebook" -> $userNotebook,
+                "Cells"    -> { $chatInput, $chatOutput },
+                "Input"    -> "Delete the first three cells",
+                "Phase"    -> "Submit",
+                "Started"  -> AbsoluteTime[ ]
+            |>
+        |>;
+        Reap[
+            {
+                Wolfram`Chatbook`Tools`Private`chatbarHandoffStep[ "retry-test" ];
+                Wolfram`Chatbook`Tools`Private`$chatbarHandoffs[ "retry-test", "Phase" ],
+                Wolfram`Chatbook`Tools`Private`chatbarHandoffStep[ "retry-test" ];
+                Wolfram`Chatbook`Tools`Private`$chatbarHandoffs[ "retry-test", "Phase" ]
+            }
+        ]
+    ],
+    {
+        { "Submit", "FlashMessage" },
+        { {
+            { "NotebookDelete", { $chatInput, $chatOutput } },
+            { "evaluateSidebarChat", $userNotebook, "Delete the first three cells" }
+        } }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ChatbarHandoff-RetriesRefusedBlob"
 ]
 
 (* The sidebar's new message cell gets its own blob once it has been in sight for $handoffFlashTicks ticks, and the
@@ -242,7 +287,7 @@ VerificationTest[
             Wolfram`Chatbook`Tools`Private`$handoffFlashTicks = 2,
             Cells                                             = Function[ { $helperCell } ],
             Developer`CellInformation                         = Function[ <| "Style" -> "NotebookAssistant`Sidebar`ChatInput" |> ],
-            FrontEndExecute                                   = Function[ Sow[ { "FrontEndExecute", # } ] ],
+            MathLink`CallFrontEnd                             = Function[ ( Sow[ { "CallFrontEnd", # } ]; True ) ],
             TaskRemove                                        = Function[ Sow[ { "TaskRemove" } ] ]
         },
         Wolfram`Chatbook`Tools`Private`$chatbarHandoffs = <|
@@ -266,7 +311,7 @@ VerificationTest[
     ],
     {
         { { "flash-test" }, { } },
-        { { ___, { "FrontEndExecute", FrontEnd`FlashCellBlob[ { $helperCell }, ___ ] } } }
+        { { ___, { "CallFrontEnd", FrontEnd`FlashCellBlob[ { $helperCell }, ___ ] }, ___ } }
     },
     SameTest -> MatchQ,
     TestID   -> "ChatbarHandoff-FlashesSidebarMessage"
