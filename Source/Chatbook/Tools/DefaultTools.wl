@@ -14,6 +14,7 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 Get[ "Wolfram`Chatbook`Tools`DefaultToolDefinitions`CreateNotebook`"           ];
 Get[ "Wolfram`Chatbook`Tools`DefaultToolDefinitions`DocumentationLookup`"      ];
 Get[ "Wolfram`Chatbook`Tools`DefaultToolDefinitions`DocumentationSearcher`"    ];
+Get[ "Wolfram`Chatbook`Tools`DefaultToolDefinitions`NotebookEditHandoff`"      ];
 Get[ "Wolfram`Chatbook`Tools`DefaultToolDefinitions`NotebookEditor`"           ];
 Get[ "Wolfram`Chatbook`Tools`DefaultToolDefinitions`NotebookReader`"           ];
 Get[ "Wolfram`Chatbook`Tools`DefaultToolDefinitions`FileReader`"               ];

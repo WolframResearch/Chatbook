@@ -12,6 +12,7 @@
         "CreateNotebook",
         "WebFetcher",
         "FileReader",
+        "NotebookEditHandoff", (* offered only while $ChatbarChat is True *)
         ParentList
     }
 |>
