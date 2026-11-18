@@ -1637,7 +1637,7 @@ VerificationTest[
         {
             linearSyntaxQ /@ results,
             ! FreeQ[ #, s_String /; StringContainsQ[ s, "\:fffd" ] ] & /@ results,
-            Wolfram`Chatbook`Formatting`Private`importHTMLEntity /@ { "&#xF7C1;", "&#63432;", "&#x41;", "&#66;" }
+            Wolfram`Chatbook`Formatting`Private`importHTMLEntities /@ { "&#xF7C1;", "&#63432;", "&#x41;", "&#66;" }
         }
     ],
     {

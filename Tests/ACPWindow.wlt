@@ -279,7 +279,9 @@ VerificationTest[
                 Wolfram`Chatbook`ChatModes`Common`moveChatInputToBottom = logCall[ "MoveInputToBottom", ## ] &,
                 Wolfram`Chatbook`Common`setCurrentValue             = logCall[ "SetCurrentValue", ## ] &,
                 Wolfram`Chatbook`Common`createUUID                  = "test-uuid" &,
-                Wolfram`Chatbook`ChatCellEvaluate                   = (logCall[ "ChatCellEvaluate", ## ]; Null) &
+                Wolfram`Chatbook`ChatCellEvaluate                   = (logCall[ "ChatCellEvaluate", ## ]; Null) &,
+                (* whether the chat gave no answer, which would look for the input cell: *)
+                Wolfram`Chatbook`ChatModes`Evaluate`Private`unansweredChatInputQ = False &
             },
             result = evaluate[ $testNB, Dynamic @ input ];
             { result, input, $callLog }
