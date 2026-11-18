@@ -892,6 +892,7 @@ resolveAutoSettings0[ settings_Association ] := Enclose[
             If[ override[ "Assistance"    ], $AutomaticAssistance = True ];
             If[ override[ "WorkspaceChat" ], $WorkspaceChat       = True ];
             If[ override[ "SidebarChat"   ], $SidebarChat         = True ];
+            If[ override[ "ServiceCaller" ] === "Chatbar", $ChatbarChat = True ];
         ];
         (* Skills are resolved first, since they determine whether the skill tool is included: *)
         result = ConfirmBy[ resolveSkills @ KeySort @ override, AssociationQ, "ResolveSkills" ];

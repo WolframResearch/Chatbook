@@ -32,6 +32,14 @@ $SidebarChat = False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*$ChatbarChat*)
+GeneralUtilities`SetUsage[ "\
+$ChatbarChat gives True when the chat was submitted from a notebook's chatbar and False otherwise." ];
+
+$ChatbarChat = False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Load Subcontexts*)
 $subcontexts = {
     "Wolfram`Chatbook`ChatModes`Common`",

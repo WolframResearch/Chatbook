@@ -11,6 +11,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$ChatAbort;
 `$ChatbookContexts;
 `$ChatbookFilesDirectory;
+`$ChatbarChat;
 `$ChatbookNames;
 `$ChatbookProtectedNames;
 `$ChatEvaluationCell;

@@ -74,6 +74,7 @@ withChatState[ eval_ ] :=
             $enableLLMServices            = Automatic,
             $WorkspaceChat                = False,
             $SidebarChat                  = False,
+            $ChatbarChat                  = False,
             withChatState                 = # &,
             $contextPrompt                = $contextPrompt,
             $selectionPrompt              = $selectionPrompt,
