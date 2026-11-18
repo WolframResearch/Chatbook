@@ -195,7 +195,9 @@ Text cells are wrapped in (* *); inside them \\ is written \\\\, a literal *) is
 is \:3014StyleBox[...]\:3015. Wolfram's named characters are written \\[Name] (e.g. \\[DifferentialD], \\[Rule]), \
 never as raw characters; other Unicode characters (Greek letters, \:2192) as they are. Content that would run code \
 when shown (dynamic boxes, button functions) is refused. Keep a notebook's typesetting when you rewrite it: write new \
-math as formulas, never as plain text such as dq/dt, and keep displayed equations in DisplayFormula cells.";
+math as formulas, never as plain text such as dq/dt, and keep displayed equations in DisplayFormula cells. Spend the \
+tokens the math needs: write every formula and every structure out in full, as exactly what it means, never \
+shortened, simplified or left as plain text to save output.";
 (* :!CodeAnalysis::EndBlock:: *)
 
 $acpNotebookWorkflow = "\
@@ -206,7 +208,7 @@ Workflow: OpenNotebook (by its file when the user names one; otherwise ListNoteb
 notebook's cells too (for a long notebook, an outline of its headings: then read the sections you change with \
 ReadCells, as ranges of cells) -> EditInCell, SetCells, InsertCells, DeleteCells -> ShowChanges, which saves the snapshot and \
 shows the user their notebook as a diff against it, to accept or reject change by change (when OpenNotebook says that \
-the chat window shows the changes, end your turn instead). CloseNotebook discards a snapshot instead. Work quickly: each of your turns takes seconds, and an edit's time is mostly the text you write. Edit \
+the chat window shows the changes, end your turn instead). CloseNotebook discards a snapshot instead. Edit \
 independent cells in one turn: one SetCells call for all the cells you rewrite (its delete deletes the outputs they \
 make stale in the same call), parallel calls for the rest. For a \
 cell that changes only in part, use EditInCell with short oldText and newText instead of rewriting the cell. A \
