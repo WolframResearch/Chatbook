@@ -114,6 +114,7 @@ $colorData = <|
     "Gray0_0"              -> LightDarkSwitched[ GrayLevel[ 0 ], GrayLevel[ 0 ] ],
     "Gray0_100"            -> LightDarkSwitched[ GrayLevel[ 0 ], GrayLevel[ 1 ] ],
     "Red_DD1100_EE1F22"    -> LightDarkSwitched[ RGBColor[ "#DD1100" ], RGBColor[ "#EE1F22" ] ],
+    "Red_DD1100_FF7464"    -> LightDarkSwitched[ RGBColor[ "#DD1100" ], RGBColor[ "#FF7464" ] ],
     "Red_ED6541_A72F1E"    -> LightDarkSwitched[ RGBColor[ "#ED6541" ], RGBColor[ "#A72F1E" ] ], (* pressed: ErrorMessageFatalCloseButtonBackgroundPressed, ErrorMessageFatalCloseButtonFramePressed, ErrorMessageFatalLabelButtonBackgroundPressed *)
     "Red_F1DEDE_804840"    -> LightDarkSwitched[ RGBColor[ "#F1DEDE" ], RGBColor[ "#804840" ] ], (* hover: AssistantOutputErrorMenuButtonBackgroundHover *)
     "Red_FF8A7A_A74436"    -> LightDarkSwitched[ RGBColor[ "#FF8A7A" ], RGBColor[ "#A74436" ] ],
@@ -167,6 +168,7 @@ $colorData = <|
     "Blue_E9F7FF_405A6E"   -> LightDarkSwitched[ RGBColor[ "#E9F7FF" ], RGBColor[ "#405A6E" ] ],
     "Blue_EBF3F7_37424A"   -> LightDarkSwitched[ RGBColor[ "#EBF3F7" ], RGBColor[ "#37424A" ] ],
     "Blue_ECF0F5_48505F"   -> LightDarkSwitched[ RGBColor[ "#ECF0F5" ], RGBColor[ "#48505F" ] ],
+    "Blue_EDF7FC_244357"   -> LightDarkSwitched[ RGBColor[ "#EDF7FC" ], RGBColor[ "#244357" ] ],
     "Blue_EEF9FF_263541"   -> LightDarkSwitched[ RGBColor[ "#EEF9FF" ], RGBColor[ "#263541" ] ], (* hover: NA_ChatbarMinimizedButtonBackgroundHover *)
     "Blue_F1F8FF_474747"   -> LightDarkSwitched[ RGBColor[ "#F1F8FF" ], RGBColor[ "#474747" ] ], (* inline reference chip background; its hover is Gray100_31 *)
     "Blue_F2F7FC_2D3646"   -> LightDarkSwitched[ RGBColor[ "#F2F7FC" ], RGBColor[ "#2D3646" ] ],

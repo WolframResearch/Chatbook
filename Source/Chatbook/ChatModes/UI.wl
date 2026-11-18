@@ -272,7 +272,7 @@ sidebarSwitch[ on_, label_, tooltip_, action_ ] := Tooltip[
         action,
         Alignment        -> Left,
         Appearance       -> "Suppressed",
-        BaseStyle        -> { "Text", FontSize -> 12.35, FontColor -> color @ "NA_ChatInputFieldFocusFont" },
+        BaseStyle        -> { "Text", FontSize -> 12.35, FontColor -> color @ "Blue_128ED1_7FC7FB" },
         BaselinePosition -> Baseline,
         ImageMargins     -> { { 4, 0 }, { 2, 4 } },
         Method           -> "Queued"
@@ -293,7 +293,7 @@ sidebarEditingSettingsButton[ Dynamic[ cell_ ] ] := Dynamic @ If[ MatchQ[ cell, 
 
 sidebarEditingSettingsButton[ cell_CellObject ] := Tooltip[
     Button[
-        blueHueButtonAppearance[ chatbookIcon[ "SidebarSettingsGearIcon", False, color @ "NA_ChatInputFieldFocusFont" ], { 24, 20 } ],
+        blueHueButtonAppearance[ chatbookIcon[ "SidebarSettingsGearIcon", False, color @ "Blue_128ED1_7FC7FB" ], { 24, 20 } ],
         AttachCell[
             EvaluationBox[ ],
             Cell[
@@ -401,12 +401,12 @@ your next message.",
             }
         },
         Alignment -> { Left, Center },
-        BaseStyle -> { "Text", FontSize -> 12.35, FontColor -> color @ "NA_ChatInputFieldFocusFont" },
+        BaseStyle -> { "Text", FontSize -> 12.35, FontColor -> color @ "Blue_128ED1_7FC7FB" },
         Spacings  -> { 0.8, 0.8 }
     ],
-    Background     -> color @ "NA_RaftMenuBackground",
+    Background     -> color @ "Gray100_23",
     FrameMargins   -> { { 10, 10 }, { 8, 8 } },
-    FrameStyle     -> color @ "NA_RaftMenuFrame",
+    FrameStyle     -> color @ "Gray90_36",
     RoundingRadius -> 4
 ];
 
@@ -443,7 +443,7 @@ $switchBaseline = Scaled[ 0.18 ];
 
 switchGraphic[ on_ ] := Graphics[
     {
-        If[ TrueQ @ on, color @ "NA_ChatInputFieldFocusFont", LightDarkSwitched @ GrayLevel[ 0.72 ] ],
+        If[ TrueQ @ on, color @ "Blue_128ED1_7FC7FB", LightDarkSwitched @ GrayLevel[ 0.72 ] ],
         Rectangle[ { 0, 0 }, { 2, 1 }, RoundingRadius -> 0.5 ],
         White,
         Disk[ { If[ TrueQ @ on, 1.5, 0.5 ], 0.5 }, 0.36 ]

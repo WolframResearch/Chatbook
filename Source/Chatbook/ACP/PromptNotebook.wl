@@ -208,7 +208,7 @@ acpPromptNotebookButton // beginDefinition;
 acpPromptNotebookButton[ nbo_NotebookObject ] := Tooltip[
     acpActionButton[
         blueHueButtonAppearance[
-            chatbookIcon[ "WorkspaceToolbarIconOpenAsChatbook", False, color @ "NA_BlueHueButtonIcon" ],
+            chatbookIcon[ "WorkspaceToolbarIconOpenAsChatbook", False, color @ "Blue_128ED1_7FC7FB" ],
             { 24.5, 24.5 }
         ],
         { "OpenPromptNotebook", nbo },
@@ -547,14 +547,14 @@ promptButton // endDefinition;
 
 (* The front end's notebook icon (as the attach menu shows notebooks; the colors are put into the front end's Dynamic
    as values) *)
-$promptNotebookIcon := With[ { gray = color @ "NA_OverlayMenuNotebookIcon_Gray", red = color @ "NA_OverlayMenuNotebookIcon_Red" },
+$promptNotebookIcon := With[ { gray = color @ "Gray65_63", red = color @ "Red_DD1100_FF7464" },
     RawBoxes @ DynamicBox[ FEPrivate`FrontEndResource[ "FEBitmaps", "NotebookIcon" ][ gray, red ] ]
 ];
 
-$promptBackground := color @ "NA_Toolbar";
-$promptDivider    := color @ "NA_OverlayMenuFrame";
-$promptFont       := color @ "NA_OverlayMenuFont";
-$promptAccent     := color @ "NA_BlueHueButtonIcon";
+$promptBackground := color @ "Blue_EEF9FF_263541";
+$promptDivider    := color @ "Gray82_28";
+$promptFont       := color @ "Gray20_94";
+$promptAccent     := color @ "Blue_128ED1_7FC7FB";
 $promptMuted      := acpColor[ "Muted" ];
 
 (* ::**************************************************************************************************************:: *)

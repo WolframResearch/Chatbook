@@ -338,7 +338,7 @@ acpAttachButton // beginDefinition;
 acpAttachButton[ nbo_NotebookObject ] := Tooltip[
     acpActionButton[
         blueHueButtonAppearance[
-            chatbookIcon[ "WorkspaceToolbarIconSources", False, color @ "NA_BlueHueButtonIcon" ],
+            chatbookIcon[ "WorkspaceToolbarIconSources", False, color @ "Blue_128ED1_7FC7FB" ],
             { 24.5, 24.5 }
         ],
         { "AttachMenu", nbo },
@@ -542,8 +542,8 @@ menuNote // endDefinition;
 $menuWidth      = 280;
 $menuBackground := LightDarkSwitched[ GrayLevel[ 1 ], GrayLevel[ 0.16 ] ];
 $menuFrame      := LightDarkSwitched[ GrayLevel[ 0.8 ], GrayLevel[ 0.35 ] ];
-$menuHover      := color @ "NA_OverlayMenuItemBackgroundHover";
-$menuFont       := color @ "NA_OverlayMenuFont";
+$menuHover      := color @ "Blue_EDF7FC_244357";
+$menuFont       := color @ "Gray20_94";
 $menuMuted      := acpColor[ "Muted" ];
 
 (* ::**************************************************************************************************************:: *)
@@ -735,7 +735,7 @@ iconPane // endDefinition;
 
 (* The front end's notebook icon (as the Notebook Assistant's Sources show it; the colors are put into the front end's
    Dynamic as values) and a page for "File..." *)
-$notebookIcon := With[ { gray = color @ "NA_OverlayMenuNotebookIcon_Gray", red = color @ "NA_OverlayMenuNotebookIcon_Red" },
+$notebookIcon := With[ { gray = color @ "Gray65_63", red = color @ "Red_DD1100_FF7464" },
     RawBoxes @ DynamicBox[ FEPrivate`FrontEndResource[ "FEBitmaps", "NotebookIcon" ][ gray, red ] ]
 ];
 
@@ -743,7 +743,7 @@ $fileIcon := RawBoxes @ acpFileIcon @ { "ExtFile" };
 
 $plainText = PrivateFontOptions -> { "OperatorSubstitution" -> False };
 
-$chipFont := color @ "NA_OverlayMenuFont";
+$chipFont := color @ "Gray20_94";
 
 $chipFrameOptions := Sequence[
     Background     -> LightDarkSwitched[ GrayLevel[ 0.95 ], GrayLevel[ 0.22 ] ],

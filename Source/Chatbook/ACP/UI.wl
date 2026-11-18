@@ -1296,8 +1296,8 @@ makeACPChatDockedCell[ nbo_NotebookObject ] := Framed[
             Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "ACP", "InitializeWindow", nbo ]
         )
     ],
-    Background   -> color @ "NA_Toolbar",
-    FrameStyle   -> color @ "NA_Toolbar",
+    Background   -> color @ "Blue_EEF9FF_263541",
+    FrameStyle   -> color @ "Blue_EEF9FF_263541",
     FrameMargins -> { { 2, 4 }, { 1, 1 } },
     ImageMargins -> 0,
     ImageSize    -> Scaled[ 1 ]
@@ -1351,8 +1351,8 @@ acpPlaceholderDockedCell[ nbo_NotebookObject ] := (
                 Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "ACP", "InitializeWindow", nbo ]
             )
         ],
-        Background   -> color @ "NA_Toolbar",
-        FrameStyle   -> color @ "NA_Toolbar",
+        Background   -> color @ "Blue_EEF9FF_263541",
+        FrameStyle   -> color @ "Blue_EEF9FF_263541",
         FrameMargins -> { { 2, 4 }, { 1, 1 } },
         ImageMargins -> 0,
         ImageSize    -> Scaled[ 1 ]
@@ -1482,7 +1482,7 @@ acpToolbarButtonLabel // endDefinition;
 toolbarButtonGrid // beginDefinition;
 
 toolbarButtonGrid[ iconName_String, label_ ] := Grid[
-    { { chatbookIcon[ iconName, False, color @ "NA_BlueHueButtonIcon" ], If[ label === None, Nothing, label ] } },
+    { { chatbookIcon[ iconName, False, color @ "Blue_128ED1_7FC7FB" ], If[ label === None, Nothing, label ] } },
     Alignment        -> { Left, Baseline },
     BaselinePosition -> { 1, If[ label === None, 1, 2 ] },
     BaseStyle        -> "NotebookAssistant`Sidebar`ToolbarButtonLabel",
@@ -1940,7 +1940,7 @@ acpMenu[ label_, items_List, tooltip_, enabled_, boxID_String ] := Tooltip[
                         FontColor          -> If[ TrueQ @ enabled, Inherited, GrayLevel[ 0.6 ] ],
                         PrivateFontOptions -> { "OperatorSubstitution" -> False }
                     ],
-                    Style[ "\:25be", FontColor -> color @ "NA_BlueHueButtonIcon", FontSize -> 9 ]
+                    Style[ "\:25be", FontColor -> color @ "Blue_128ED1_7FC7FB", FontSize -> 9 ]
                 } },
                 Alignment        -> { Left, Baseline },
                 BaselinePosition -> { 1, 1 },
@@ -2146,8 +2146,8 @@ folderControlAppearance // beginDefinition;
 folderControlAppearance[ dir_String, window_, width_, True ] := blueHueButtonAppearance[
     {
         folderLabel[ dir, window, width, Inherited ],
-        folderLabel[ dir, window, width, color @ "NA_BlueHueButtonIcon" ],
-        folderLabel[ dir, window, width, color @ "NA_BlueHueButtonIcon" ]
+        folderLabel[ dir, window, width, color @ "Blue_128ED1_7FC7FB" ],
+        folderLabel[ dir, window, width, color @ "Blue_128ED1_7FC7FB" ]
     },
     { Automatic, 22 },
     { { 5, 5 }, { 0, 0 } }
@@ -2416,7 +2416,7 @@ homeAbbreviation // endDefinition;
 
 $acpFolderIcon := $acpFolderIcon = Graphics[
     {
-        color @ "NA_BlueHueButtonIcon",
+        color @ "Blue_128ED1_7FC7FB",
         Polygon @ { { 0, 0 }, { 1, 0 }, { 1, 0.72 }, { 0.48, 0.72 }, { 0.38, 0.86 }, { 0, 0.86 } }
     },
     AspectRatio      -> 0.8,
@@ -2610,7 +2610,7 @@ acpSendStopButton[ nbo_NotebookObject ] := PaneSelector[
        UpdateInterval does not make it redraw; another change of the flag does (see settleBusyFlag). *)
     Dynamic[ CurrentValue[ FrontEnd`EvaluationNotebook[ ], { TaggingRules, "ACP", "Busy" } ], UpdateInterval -> 1 ],
     acpActionButton[
-        blueHueButtonAppearance[ chatbookIcon[ "SendChatArrow", False, color @ "NA_BlueHueButtonIcon", 13 ], { 24.5, 24.5 } ],
+        blueHueButtonAppearance[ chatbookIcon[ "SendChatArrow", False, color @ "Blue_128ED1_7FC7FB", 13 ], { 24.5, 24.5 } ],
         { "Send", nbo },
         BoxID        -> "ACPSendChatButton",
         FrameMargins -> 0

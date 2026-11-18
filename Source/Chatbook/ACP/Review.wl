@@ -1875,7 +1875,7 @@ reviewStyleSheet[ icons_List ] := Notebook[
             PrivateFontOptions -> { "OperatorSubstitution" -> False }
         ],
         Cell[ StyleData[ "ACPReviewHeader", StyleDefinitions -> StyleData[ "ACPReviewBase" ] ],
-            Background       -> color @ "NA_Toolbar",
+            Background       -> color @ "Blue_EEF9FF_263541",
             CellFrame        -> { { 0, 0 }, { 1, 0 } },
             CellFrameColor   -> LightDarkSwitched[ GrayLevel[ 0.85 ], GrayLevel[ 0.3 ] ],
             CellFrameMargins -> { { 14, 10 }, { 6, 8 } },
@@ -1898,7 +1898,7 @@ reviewStyleSheet[ icons_List ] := Notebook[
         Cell[ StyleData[ "ACPReviewButtonLabel" ],
             FontFamily -> $reviewTextFont,
             FontSize   -> 13,
-            FontColor  -> color @ "NA_BlueHueButtonIcon"
+            FontColor  -> color @ "Blue_128ED1_7FC7FB"
         ],
         iconStyle /@ icons
     },

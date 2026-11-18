@@ -1919,7 +1919,7 @@ With[ { font1 = color[ "Gray47_78" ] },
 (* Thoughts that are a single short line (e.g. the title of a reasoning summary part) are shown as that line in the font
    of the "Thought for ..." labels, without an opener. Same arguments as ThoughtsOpener ({ thoughts, label, meta }), but
    the label (a duration) is not shown. Small vertical margins, so consecutive short thoughts read as a list: *)
-With[ { font1 = color[ "ThinkingOpenerFont" ] },
+With[ { font1 = color[ "Gray47_78" ] },
     Cell[
         StyleData[ "ShortThoughts" ],
         TemplateBoxOptions -> {

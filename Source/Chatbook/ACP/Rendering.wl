@@ -65,17 +65,17 @@ $workContentFontSize  = 14;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Colors*)
-$labelColor        := color @ "ThinkingOpenerFont";
-$labelHoverColor   := color @ "ThinkingOpenerFontHover";
-$toolLabelColor    := color @ "NA_ChatOutputToolCallLabelFont";
-$cardBackground    := color @ "NA_ChatOutputToolCallOpenerBackground";
-$cardFrame         := color @ "NA_ChatOutputToolCallOpenerFrame";
-$amberBackground   := color @ "ErrorMessageNonFatalBackground";
-$amberFrame        := color @ "ErrorMessageNonFatalFrame";
-$amberFont         := color @ "ErrorMessageNonFatalFont";
-$errorBackground   := color @ "ErrorMessageFatalBackground";
-$errorFrame        := color @ "ErrorMessageFatalFrame";
-$errorFont         := color @ "ErrorMessageFatalFont";
+$labelColor        := color @ "Gray47_78";
+$labelHoverColor   := color @ "Gray39_83";
+$toolLabelColor    := color @ "Blue_3383AC_58BBEA";
+$cardBackground    := LightDarkSwitched[ RGBColor[ "#E5F7FF" ], RGBColor[ "#1F262E" ] ];
+$cardFrame         := LightDarkSwitched[ RGBColor[ "#9CCBE3" ], RGBColor[ "#2C3D50" ] ];
+$amberBackground   := LightDarkSwitched[ RGBColor[ "#FFFAF2" ], RGBColor[ "#453112" ] ];
+$amberFrame        := LightDarkSwitched[ RGBColor[ "#FFD8AB" ], RGBColor[ "#8C611C" ] ];
+$amberFont         := color @ "Gray20_94";
+$errorBackground   := LightDarkSwitched[ RGBColor[ "#FFF3F1" ], RGBColor[ "#471F18" ] ];
+$errorFrame        := LightDarkSwitched[ RGBColor[ "#FFC4BA" ], RGBColor[ "#843629" ] ];
+$errorFont         := color @ "Gray20_94";
 $sectionLabelColor := LightDarkSwitched[ GrayLevel[ 0.45 ], GrayLevel[ 0.7 ] ];
 $mutedColor        := LightDarkSwitched[ GrayLevel[ 0.45 ], GrayLevel[ 0.68 ] ];
 $amberText         := LightDarkSwitched[ RGBColor[ 0.70, 0.42, 0.0 ], RGBColor[ 0.96, 0.72, 0.32 ] ];
@@ -3764,7 +3764,7 @@ workOpenerContent[ inner_Cell ] := PaneBox[
             {
                 {
                     PaneBox[
-                        Cell[ TextData @ { inner }, "Text", FontColor -> color @ "ThinkingContentFont", FontSize -> 12, Background -> None, Editable -> True ],
+                        Cell[ TextData @ { inner }, "Text", FontColor -> color @ "Gray35_86", FontSize -> 12, Background -> None, Editable -> True ],
                         Alignment    -> Left,
                         ImageMargins -> { { 5, 5 }, { 5, 5 } },
                         ImageSize    -> { Scaled[ 1 ], Automatic }
@@ -3772,10 +3772,10 @@ workOpenerContent[ inner_Cell ] := PaneBox[
                 }
             },
             AutoDelete        -> False,
-            GridBoxBackground -> { "Columns" -> { { color @ "ThinkingContentBackground" } } },
+            GridBoxBackground -> { "Columns" -> { { color @ "Gray100_26" } } },
             GridBoxItemSize   -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
             GridBoxDividers   -> {
-                "ColumnsIndexed" -> { 1 -> Directive[ color @ "ThinkingContentDivider", AbsoluteThickness[ 2 ] ] },
+                "ColumnsIndexed" -> { 1 -> Directive[ color @ "Gray82_46", AbsoluteThickness[ 2 ] ] },
                 "Rows"           -> { { False } }
             }
         ],

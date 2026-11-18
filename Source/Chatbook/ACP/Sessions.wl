@@ -2165,15 +2165,15 @@ sessionsBoxes // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*Colors*)
-$sessionsBackground := color @ "NA_NotebookBackground";
-$sessionsFont       := color @ "NA_OverlayMenuFont";
+$sessionsBackground := color @ "Gray100_10";
+$sessionsFont       := color @ "Gray20_94";
 $sessionsMuted      := acpColor[ "Muted" ];
-$sessionsAccent     := color @ "NA_BlueHueButtonIcon";
-$sessionsInactive   := color @ "NA_BlueHueButtonIconInactive";
-$sessionsHover      := color @ "NA_OverlayMenuItemBackgroundHover";
+$sessionsAccent     := color @ "Blue_128ED1_7FC7FB";
+$sessionsInactive   := LightDarkSwitched[ GrayLevel[ 0.651 ], GrayLevel[ 0.651 ] ];
+$sessionsHover      := color @ "Blue_EDF7FC_244357";
 $sessionsCurrent    := LightDarkSwitched[ RGBColor[ 0.89, 0.95, 0.99 ], RGBColor[ 0.12, 0.22, 0.29 ] ];
-$sessionsHeader     := color @ "NA_Toolbar";
-$sessionsDivider    := color @ "NA_OverlayMenuFrame";
+$sessionsHeader     := color @ "Blue_EEF9FF_263541";
+$sessionsDivider    := color @ "Gray82_28";
 $sessionsDanger     := LightDarkSwitched[ RGBColor[ 0.80, 0.17, 0.13 ], RGBColor[ 0.70, 0.20, 0.17 ] ];
 $sessionsDangerHover := LightDarkSwitched[ RGBColor[ 0.68, 0.12, 0.09 ], RGBColor[ 0.80, 0.27, 0.23 ] ];
 $sessionsButton      := LightDarkSwitched[ GrayLevel[ 1.0 ], GrayLevel[ 0.22 ] ];
