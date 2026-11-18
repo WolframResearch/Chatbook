@@ -167,7 +167,7 @@ VerificationTest[
             "Notebook" -> $userNotebook,
             "Cells"    -> { $chatInput, $chatOutput },
             "Input"    -> "Delete the first three cells",
-            "Phase"    -> "RemoveChat"
+            "Phase"    -> "OpenSidebar"
         } }
     },
     SameTest -> MatchQ,
@@ -178,17 +178,15 @@ VerificationTest[
 (* ::Section::Closed:: *)
 (*Handoff*)
 
-(* Once the front end is done formatting the chat's cells, the handoff flashes one blob cue over them, removes
-   them, and opens the sidebar with notebook editing switched on, in that order: *)
+(* Once the front end is done formatting the chat's cells, the handoff opens the sidebar first, leaving the chat's
+   cells in place so the prompt visibly moves from them into the open sidebar: *)
 VerificationTest[
-    runHandoffStep[ "RemoveChat", True, $Failed, <| |> ],
+    runHandoffStep[ "OpenSidebar", True, $Failed, <| |> ],
     { {
-        { "FrontEndExecute", FrontEnd`FlashCellBlob[ { $chatInput, $chatOutput }, ___ ] },
-        { "NotebookDelete", { $chatInput, $chatOutput } },
         { "ShowNotebookAssistance", $userNotebook, "Sidebar", "ChatNotebookSettings" -> KeyValuePattern[ "NotebookEditing" -> True ] }
     }, { "test-handoff" }, "Submit" },
     SameTest -> MatchQ,
-    TestID   -> "ChatbarHandoff-BlobsThenDeletesThenOpensSidebar"
+    TestID   -> "ChatbarHandoff-OpensSidebarFirst"
 ]
 
 (* While the sidebar is still opening, initializing, or formatting, a polling step submits nothing and keeps
@@ -216,18 +214,78 @@ VerificationTest[
         ___,
         { "evaluateSidebarChat", $userNotebook, "Delete the first three cells" },
         ___
-    }, { }, _Missing },
+    }, { "test-handoff" }, "FlashMessage" },
     SameTest -> MatchQ,
     TestID   -> "ChatbarHandoff-SwitchesOnEditing"
 ]
 
-(* Once the sidebar is ready with editing on, the same prompt goes into the sidebar's chat and the handoff ends: *)
+(* Once the sidebar is ready with editing on, the chat's cells collapse under one blob cue, they are removed, and
+   the same prompt goes into the sidebar's chat, in that order: *)
 VerificationTest[
     runHandoffStep[ "Submit", True, $sidebarCell, <| "SidebarChat" -> True, "NotebookEditing" -> True |> ],
-    { log_ /; MatchQ[ log, { ___, { "evaluateSidebarChat", $userNotebook, "Delete the first three cells" }, ___ } ] &&
-        FreeQ[ log, "CurrentChatSettings" ], { }, _Missing },
+    { log_ /; MatchQ[ log, {
+            ___,
+            { "FrontEndExecute", FrontEnd`FlashCellBlob[ { $chatInput, $chatOutput }, ___ ] },
+            { "NotebookDelete", { $chatInput, $chatOutput } },
+            { "evaluateSidebarChat", $userNotebook, "Delete the first three cells" },
+            ___
+        } ] && FreeQ[ log, "CurrentChatSettings" ], { "test-handoff" }, "FlashMessage" },
     SameTest -> MatchQ,
     TestID   -> "ChatbarHandoff-SubmitsToSidebar"
+]
+
+(* The sidebar's new message cell gets its own blob once it has been in sight for $handoffFlashTicks ticks, and the
+   handoff then ends: *)
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`Tools`Private`$handoffFlashTicks = 2,
+            Cells                                             = Function[ { $helperCell } ],
+            Developer`CellInformation                         = Function[ <| "Style" -> "NotebookAssistant`Sidebar`ChatInput" |> ],
+            FrontEndExecute                                   = Function[ Sow[ { "FrontEndExecute", # } ] ],
+            TaskRemove                                        = Function[ Sow[ { "TaskRemove" } ] ]
+        },
+        Wolfram`Chatbook`Tools`Private`$chatbarHandoffs = <|
+            "flash-test" -> <|
+                "Notebook"    -> $userNotebook,
+                "Cells"       -> { $chatInput, $chatOutput },
+                "Input"       -> "Delete the first three cells",
+                "Phase"       -> "FlashMessage",
+                "SidebarCell" -> $sidebarCell,
+                "Started"     -> AbsoluteTime[ ]
+            |>
+        |>;
+        Reap[
+            {
+                Wolfram`Chatbook`Tools`Private`chatbarHandoffStep[ "flash-test" ];
+                Keys @ Wolfram`Chatbook`Tools`Private`$chatbarHandoffs,
+                Wolfram`Chatbook`Tools`Private`chatbarHandoffStep[ "flash-test" ];
+                Keys @ Wolfram`Chatbook`Tools`Private`$chatbarHandoffs
+            }
+        ]
+    ],
+    {
+        { { "flash-test" }, { } },
+        { { ___, { "FrontEndExecute", FrontEnd`FlashCellBlob[ { $helperCell }, ___ ] } } }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ChatbarHandoff-FlashesSidebarMessage"
+]
+
+(* A step that interrupts a main link evaluation's front end work does nothing (rule R9): *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`ACP`State`Private`$mainLinkFrontEndCall = True },
+        Wolfram`Chatbook`Tools`Private`$chatbarHandoffs = <|
+            "r9-test" -> <| "Phase" -> "Submit", "Started" -> AbsoluteTime[ ] - 60 |>
+        |>;
+        {
+            Wolfram`Chatbook`Tools`Private`chatbarHandoffStep[ "r9-test" ],
+            Keys @ Wolfram`Chatbook`Tools`Private`$chatbarHandoffs
+        }
+    ],
+    { Null, { "r9-test" } },
+    SameTest -> MatchQ,
+    TestID   -> "ChatbarHandoff-SkipsDuringMainLinkFrontEndCall"
 ]
 
 (* A phase acts only once its gates have held for $handoffSettleTicks consecutive ticks, and a failed gate
@@ -247,7 +305,7 @@ VerificationTest[
                 "Notebook" -> $userNotebook,
                 "Cells"    -> { $chatInput },
                 "Input"    -> "x",
-                "Phase"    -> "RemoveChat",
+                "Phase"    -> "OpenSidebar",
                 "Started"  -> AbsoluteTime[ ]
             |>
         |>;
@@ -258,7 +316,7 @@ VerificationTest[
             Wolfram`Chatbook`Tools`Private`$chatbarHandoffs[ "settle-test", "Phase" ]
         }
     ],
-    { "RemoveChat", "Submit" },
+    { "OpenSidebar", "Submit" },
     SameTest -> MatchQ,
     TestID   -> "ChatbarHandoff-SettlesBeforeActing"
 ]
