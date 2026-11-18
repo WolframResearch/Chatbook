@@ -3048,8 +3048,9 @@ workspaceChatInputCell // endDefinition;
 (*workspaceAppName*)
 workspaceAppName // beginDefinition;
 
+(* A window whose setting can't be read (no front end) is the notebook assistance window: *)
 workspaceAppName[ nbo_NotebookObject ] := Replace[
-    AbsoluteCurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings", "AppName" } ],
+    Quiet[ AbsoluteCurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings", "AppName" } ], FrontEndObject::notavail ],
     Except[ _String? StringQ ] -> "NotebookAssistance"
 ];
 
@@ -3550,25 +3551,20 @@ attachAssistantMessageButtons // beginDefinition;
 attachAssistantMessageButtons[ cell_ ] /; $dynamicText || MatchQ[ $ChatEvaluationCell, _CellObject ] := Null;
 
 attachAssistantMessageButtons[ cell_CellObject ] :=
-    attachAssistantMessageButtons[
-        cell,
-        workspaceOrSidebarChatQ @ cell,
-        (* Agent (ACP) messages cannot be regenerated and are not sent as feedback: *)
-        ! TrueQ @ AbsoluteCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "ACPWindow" } ]
-    ];
+    attachAssistantMessageButtons[ cell, workspaceOrSidebarChatQ @ cell ];
 
-attachAssistantMessageButtons[ cell_CellObject, workspaceQ_ ] :=
-    attachAssistantMessageButtons[ cell, workspaceQ, True ];
-
-attachAssistantMessageButtons[ cell0_CellObject, True, chatbookCellQ_ ] := Enclose[
-    Catch @ Module[ { cell, includeFeedback, attached, sidebarCellQ },
+attachAssistantMessageButtons[ cell0_CellObject, True ] := Enclose[
+    Catch @ Module[ { cell, includeFeedback, includeRegenerate, attached, sidebarCellQ },
 
         cell = topParentCell @ cell0;
         If[ ! MatchQ[ cell, _CellObject ], Throw @ Null ];
         sidebarCellQ = cellTaggedQ[ cell, "SidebarTopCell" ];
 
         (* If chat has been reloaded from history, it no longer has the necessary metadata for feedback: *)
-        includeFeedback = TrueQ @ chatbookCellQ && chatDataQ @ cell;
+        includeFeedback = chatDataQ @ cell;
+
+        (* An agent's (ACP) message has no chat data, and it cannot be regenerated: *)
+        includeRegenerate = includeFeedback || ! agentMessageQ @ cell;
 
         (* Remove existing attached cell, if any: *)
         NotebookDelete @ Cells[ cell, AttachedCell -> True, CellStyle -> "ChatOutputTrayButtons" ];
@@ -3577,7 +3573,7 @@ attachAssistantMessageButtons[ cell0_CellObject, True, chatbookCellQ_ ] := Enclo
         attached = AttachCell[
             cell,
             Cell[
-                BoxData @ assistantMessageButtons[ includeFeedback, sidebarCellQ, TrueQ @ chatbookCellQ ],
+                BoxData @ assistantMessageButtons[ includeFeedback, sidebarCellQ, includeRegenerate ],
                 "ChatOutputTrayButtons",
                 Magnification -> AbsoluteCurrentValue[ cell, Magnification ]
             ],
@@ -3591,7 +3587,7 @@ attachAssistantMessageButtons[ cell0_CellObject, True, chatbookCellQ_ ] := Enclo
     throwInternalFailure
 ];
 
-attachAssistantMessageButtons[ cell_CellObject, _, _ ] :=
+attachAssistantMessageButtons[ cell_CellObject, _ ] :=
     Null;
 
 attachAssistantMessageButtons // endDefinition;
@@ -3613,6 +3609,14 @@ workspaceOrSidebarChatQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*agentMessageQ*)
+(* Messages of an agent (the ACP window's, and the sidebar's with Notebook editing on) are marked in their own cell: *)
+agentMessageQ // beginDefinition;
+agentMessageQ[ cell_CellObject ] := TrueQ @ CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "ACPWindow" } ];
+agentMessageQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*chatDataQ*)
 chatDataQ // beginDefinition;
 
@@ -3630,17 +3634,26 @@ chatDataQ // endDefinition;
 (*assistantMessageButtons*)
 assistantMessageButtons // beginDefinition;
 
-assistantMessageButtons[ includeFeedback_, sidebarCellQ_ ] :=
-    assistantMessageButtons[ includeFeedback, sidebarCellQ, True ];
-
 (*
     The boxes are cached instead of rerunning ToBoxes on every hover. Besides the arguments, they only depend on
     $CloudEvaluation (through tr, mouseDown and chatbookIcon), which doesn't change
     during a desktop session. Everything else in them is resolved by the front end (front end resources and
     LightDarkSwitched colors), so anything else they start to depend on has to be part of the cache key.
 *)
-assistantMessageButtons[ includeFeedback_, sidebarCellQ_, includeRegenerate_ ] :=
-    assistantMessageButtons[ includeFeedback, sidebarCellQ, includeRegenerate ] =
+assistantMessageButtons[ includeFeedback_, sidebarCellQ_ ] := assistantMessageButtons[ includeFeedback, sidebarCellQ ] =
+    makeAssistantMessageButtons[ includeFeedback, sidebarCellQ, True ];
+
+(* Without Regenerate, for an agent's message: *)
+assistantMessageButtons[ includeFeedback_, sidebarCellQ_, True ] := assistantMessageButtons[ includeFeedback, sidebarCellQ ];
+assistantMessageButtons[ includeFeedback_, sidebarCellQ_, False ] := assistantMessageButtons[ includeFeedback, sidebarCellQ, False ] =
+    makeAssistantMessageButtons[ includeFeedback, sidebarCellQ, False ];
+
+assistantMessageButtons // endDefinition;
+
+
+makeAssistantMessageButtons // beginDefinition;
+
+makeAssistantMessageButtons[ includeFeedback_, sidebarCellQ_, includeRegenerate_ ] :=
     ToBoxes @ DynamicModule[ { Typeset`cell },
         Grid[
             { {
@@ -3694,7 +3707,7 @@ assistantMessageButtons[ includeFeedback_, sidebarCellQ_, includeRegenerate_ ] :
         Initialization :> (Typeset`cell = ParentCell @ EvaluationCell[ ])
     ];
 
-assistantMessageButtons // endDefinition;
+makeAssistantMessageButtons // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

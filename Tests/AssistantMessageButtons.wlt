@@ -50,7 +50,14 @@ VerificationTest[
                     ],
                     CurrentValue = Function[
                         AppendTo[ calls, { "CV", #2 } ];
-                        Replace[ #2, { { TaggingRules, key_ } :> Lookup[ rules, key, Inherited ], _ -> Inherited } ]
+                        Replace[
+                            #2,
+                            {
+                                { TaggingRules, key_ } :> Lookup[ rules, key, Inherited ],
+                                { TaggingRules, key_, sub_ } :> Lookup[ Lookup[ rules, key, <| |> ], sub, Inherited ],
+                                _ -> Inherited
+                            }
+                        ]
                     ],
                     Wolfram`Chatbook`CurrentChatSettings = Function[ AppendTo[ calls, "CurrentChatSettings" ]; settings ],
                     Wolfram`Chatbook`Common`topParentCell = Identity,
@@ -407,6 +414,8 @@ VerificationTest[
             { "ACV", { TaggingRules, "ChatNotebookSettings", "SidebarChat" } },
             { "CV", { TaggingRules, "HasChatData" } },
             { "CV", { TaggingRules, "ChatData" } },
+            (* a message without chat data might be an agent's (agentMessageQ): *)
+            { "CV", { TaggingRules, "ChatNotebookSettings", "ACPWindow" } },
             "Cells",
             "NotebookDelete",
             { "ACV", Magnification },
@@ -425,6 +434,32 @@ VerificationTest[
     },
     SameTest -> MatchQ,
     TestID   -> "AttachAssistantMessageButtons-Sidebar"
+]
+
+(* An agent's message (the ACP window's, or the sidebar's with Notebook editing on) gets no Regenerate button: *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`$ChatEvaluationCell = None, Wolfram`Chatbook`Common`$dynamicText = False },
+        hoverTestStubs[
+            <|
+                "Inherited"    -> <| "WorkspaceChat" -> True |>,
+                "TaggingRules" -> <| "ChatNotebookSettings" -> <| "ACPWindow" -> True |> |>
+            |>,
+            Wolfram`Chatbook`Common`attachAssistantMessageButtons @ CellObject[ "test" ]
+        ]
+    ],
+    {
+        CellObject[ "attached" ],
+        {
+            ___,
+            {
+                "AttachCell",
+                { CellObject[ "test" ], Cell[ BoxData[ b_ ], "ChatOutputTrayButtons", ___ ], ___ }
+            } /; b === Wolfram`Chatbook`ChatModes`UI`Private`assistantMessageButtons[ False, False, False ] &&
+                FreeQ[ b, "NARegenerateAssistantMessageButton" ]
+        }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "AttachAssistantMessageButtons-AgentMessage"
 ]
 
 (* Regular chat notebooks don't get hover buttons: *)

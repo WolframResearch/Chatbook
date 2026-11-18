@@ -147,7 +147,7 @@ evaluateSidebarChat // beginDefinition;
 
 (* With the sidebar's Notebook editing switch on, the conversation is the notebook agent's *)
 evaluateSidebarChat[ nbo_NotebookObject, sidebarCell_CellObject, input_, Dynamic[ cellObject_ ], field_: None ] /;
-    TrueQ @ CurrentChatSettings[ sidebarCell, "NotebookEditing" ] :=
+    TrueQ @ CurrentValue[ sidebarCell, { TaggingRules, "ChatNotebookSettings", "NotebookEditing" } ] :=
         WithCleanup[ evaluateSidebarAgent[ nbo, sidebarCell, input ], releaseSidebarSelections @ sidebarCell ];
 
 (* The input field is optional, since the sidebar input cell of a front end session that started with an older version
