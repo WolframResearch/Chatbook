@@ -169,7 +169,7 @@ Notebook[
   Cell[
    StyleData["WorkspaceChatStyleSheetInformation"],
    TaggingRules -> <|
-    "WorkspaceChatStyleSheetVersion" -> "2.7.111.4003303030"
+    "WorkspaceChatStyleSheetVersion" -> "2.7.139.4003953563"
    |>
   ],
   Cell[

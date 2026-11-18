@@ -4371,8 +4371,7 @@ U/I18EI9e64fzqgY8g==
         AutoAction->False,
         DefaultDuration->0.2,
         DisplayAllSteps->True],
-       ImageSize->{0, 0},
-       ScrollPosition->{0., 0.}], 
+       ImageSize->{0, 0}], 
       PaneSelectorBox[{1->
        GraphicsBox[
         TagBox[RasterBox[CompressedData["
@@ -6641,7 +6640,7 @@ Uf2NCCeIP8TQwkkGjY8IZ5g5qOZhqgMAZ0tZ5g==
     InterpretationBox[
      DynamicBox[FEPrivate`FrontEndResource[
       "FEExpressions", "NecklaceAnimator"][6],
-      ImageSizeCache->{6., {3.0029297490837052`, 8.168945250916295}}],
+      ImageSizeCache->{6., {3.0029296875, 8.1689453125}}],
      ProgressIndicator[Appearance -> "Necklace", ImageSize -> 6],
      BaseStyle->{"Deploy"}], ImageScaled[{0.525, 0.35}]]},
   AspectRatio->Automatic,
@@ -9732,12 +9731,80 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
     TaggingRules-><|"ProgressIndicator" -> False|>,
     Background->LightDarkSwitched[
       RGBColor[0.07058823529411765, 0.5568627450980392, 0.8196078431372549], 
-      RGBColor[0.4980392156862745, 0.7803921568627451, 0.984313725490196]],
-    ExpressionUUID->"09e9f0b4-2579-4032-92d9-aecddcdc3f40"], Cell[BoxData[
+      RGBColor[0.4980392156862745, 0.7803921568627451, 0.984313725490196]], 
+    ExpressionUUID->"5d26cfd7-2cd3-4dee-bfd0-959a66f3adc3"], Cell[BoxData[
     DynamicModuleBox[{Typeset`sidebarDockedCell$$, Typeset`thisNotebook$$, 
      Typeset`sidebarCell$$}, 
      FrameBox[
       TagBox[GridBox[{
+         {
+          ItemBox[
+           PaneSelectorBox[{True->
+            DynamicBox[ToBoxes[
+              If[
+               MatchQ[Typeset`sidebarCell$$, 
+                Blank[CellObject]], 
+               With[{Wolfram`Chatbook`ChatModes`UI`Private`editing$ = TrueQ[
+                   CurrentValue[
+                   Typeset`sidebarCell$$, {
+                    TaggingRules, "ChatNotebookSettings", 
+                    "NotebookEditing"}]]}, 
+                Wolfram`Chatbook`ChatModes`UI`Private`sidebarSwitch[
+                Wolfram`Chatbook`ChatModes`UI`Private`editing$, 
+                 "Notebook editing", 
+                 "The assistant can change the notebook's cells. You review \
+its changes before they're kept.", 
+                 Wolfram`Chatbook`CurrentChatSettings[
+                  Typeset`sidebarCell$$, "NotebookEditing"] = 
+                 Not[Wolfram`Chatbook`ChatModes`UI`Private`editing$]]], ""], 
+              StandardForm]]}, Dynamic[
+             FEPrivate`MatchQ[Typeset`sidebarCell$$, 
+              Blank[CellObject]]], 
+            DynamicModuleBox[{Typeset`t$$ = 0}, 
+             TagBox[
+              TooltipBox[
+               PaneBox[
+                TemplateBox[{
+                  PaneBox[
+                   InterpretationBox[
+                    DynamicBox[
+                    FEPrivate`FrontEndResource[
+                    "FEExpressions", "NecklaceAnimator"][{22, 11}]], 
+                    ProgressIndicator[
+                    Appearance -> "Necklace", ImageSize -> {22, 11}], 
+                    BaseStyle -> {"Deploy"}], ImageSize -> {22, 11}, 
+                   ImageSizeAction -> "ShrinkToFit", Alignment -> Center, 
+                   BaselinePosition -> Scaled[0.18]], 
+                  AnimatorBox[
+                   Dynamic[Typeset`t$$], {0, 
+                    DirectedInfinity[1]}, AppearanceElements -> {}, 
+                   ImageSize -> {1, 1}], 
+                  TemplateBox[{4}, "Spacer1"], 
+                  StyleBox[
+                  "\"Notebook editing\"", FontColor -> LightDarkSwitched[
+                    GrayLevel[0.6]], FontOpacity -> 
+                   Dynamic[0.6 + 0.4 Cos[5.235987755982989 Typeset`t$$]], 
+                   StripOnInput -> False]},
+                 "RowDefault"],
+                BaseStyle->{"Text", FontSize -> 12.35},
+                BaselinePosition->Baseline,
+                ImageMargins->{{4, 0}, {2, 4}}],
+               "\"Notebook editing is loading.\"",
+               TooltipDelay->0.3,
+               TooltipStyle->"TextStyling"],
+              Annotation[#, "Notebook editing is loading.", "Tooltip"]& ],
+             DynamicModuleValues:>{}],
+            ImageSize->Automatic],
+           Alignment->Left,
+           StripOnInput->False], "\[SpanFromLeft]", "\[SpanFromLeft]", 
+          "\[SpanFromLeft]", "\[SpanFromLeft]", 
+          DynamicBox[ToBoxes[
+            If[
+             MatchQ[Typeset`sidebarCell$$, 
+              Blank[CellObject]], 
+             
+             Wolfram`Chatbook`ChatModes`UI`Private`\
+sidebarEditingSettingsButton[Typeset`sidebarCell$$], ""], StandardForm]]},
          {
           ButtonBox[
            DynamicModuleBox[{Typeset`down$$ = False}, 
@@ -9760,12 +9827,15 @@ VX/aMEEQzrerjFhhelYAzofFB3r8AgApYdcE
                     0.984313725490196]]],
                     
                     ImageSizeCache->{
-                    13.132499999999999`, {1.967171875, 9.971078125}}], 
+                    13.132499999999999`, {1.8897709045410167`, 
+                    10.048479095458983`}}], 
                     DynamicBox[ToBoxes[
                     FEPrivate`FrontEndResource[
                     "ChatbookStrings", "WorkspaceToolbarButtonLabelNew"], 
                     StandardForm],
-                    ImageSizeCache->{46.32421875, {0.140625, 7.9453125}}]}
+                    
+                    ImageSizeCache->{
+                    47.299949999999995`, {0.1377, 8.10135}}]}
                    },
                    AutoDelete->False,
                    BaseStyle->"NotebookAssistant`Sidebar`ToolbarButtonLabel",
@@ -9967,12 +10037,15 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                     0.984313725490196]]],
                     
                     ImageSizeCache->{
-                    10.497499999999999`, {1.2467968749999994`, 9.250703125}}], 
+                    10.497499999999999`, {1.169395904541016, 
+                    9.328104095458983}}], 
                     DynamicBox[ToBoxes[
                     FEPrivate`FrontEndResource[
                     "ChatbookStrings", "WorkspaceToolbarButtonLabelSources"], 
                     StandardForm],
-                    ImageSizeCache->{38.47265625, {0.140625, 7.48828125}}]}
+                    
+                    ImageSizeCache->{
+                    39.278925, {0.1377, 7.6423499999999995`}}]}
                    },
                    AutoDelete->False,
                    BaseStyle->"NotebookAssistant`Sidebar`ToolbarButtonLabel",
@@ -10158,12 +10231,12 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                     0.984313725490196]]],
                     
                     ImageSizeCache->{
-                    9.5455, {0.7707968750000003, 8.774703125}}], 
+                    9.5455, {0.693395904541017, 8.852104095458984}}], 
                     DynamicBox[ToBoxes[
                     FEPrivate`FrontEndResource[
                     "ChatbookStrings", "WorkspaceToolbarButtonLabelHistory"], 
                     StandardForm],
-                    ImageSizeCache->{35.2265625, {2.2734375, 7.96875}}]}
+                    ImageSizeCache->{35.96265, {2.3179499999999997`, 8.1243}}]}
                    },
                    AutoDelete->False,
                    BaseStyle->"NotebookAssistant`Sidebar`ToolbarButtonLabel",
@@ -10345,7 +10418,9 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                     RGBColor[
                     0.4980392156862745, 0.7803921568627451, 
                     0.984313725490196]]],
-                  ImageSizeCache->{9.5625, {1.875, 7.6875}}],
+                  
+                  ImageSizeCache->{
+                   9.5625, {0.6051269531250014, 8.957373046874999}}],
                  DynamicBox[
                   ToBoxes[
                    FEPrivate`FrontEndResource[
@@ -10603,8 +10678,8 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                     0.984313725490196]]],
                   
                   ImageSizeCache->{
-                   7.6499999999999995`, {0.9187500000000002, 
-                    6.731249999999999}}],
+                   7.6499999999999995`, {-0.3511230468749984, 
+                    8.001123046874998}}],
                  DynamicBox[
                   ToBoxes[
                    FEPrivate`FrontEndResource[
@@ -10755,7 +10830,9 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
         Typeset`sidebarCell$$, TaggingRules, <|
          "ChatNotebookSettings" -> 
           Wolfram`Chatbook`NotebookAssistanceSidebarSettings[], 
-          "ConversationTitle" -> ""|>]]; If[
+          "ConversationTitle" -> ""|>]]; 
+      Wolfram`Chatbook`ChatModes`Common`applyRequestedSidebarSettings[
+       Typeset`thisNotebook$$, Typeset`sidebarCell$$]; If[
         Not[
          TrueQ[
          Wolfram`Chatbook`ChatModes`UI`Private`$workspaceChatInitialized]], 
@@ -10767,8 +10844,8 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
     CellFrameMargins->0,
     Magnification->Dynamic[0.85 AbsoluteCurrentValue[
         FrontEnd`EvaluationNotebook[], Magnification]],
-    CellTags->"SidebarDockedCell",ExpressionUUID->
-    "4cc0146b-8d26-4261-a518-d831c9057412"], Cell[BoxData[
+    CellTags->"SidebarDockedCell", ExpressionUUID->
+    "8993bd31-2d12-4f12-aeba-470bfa7b6f37"], Cell[BoxData[
     DynamicModuleBox[{Typeset`chatInputFieldCell$$, 
      Typeset`chatEvalCell$$ = {}, Typeset`nbo$$, Typeset`sidebarCell$$, 
      Typeset`fieldContent$$ = "", Typeset`returnKeyDownQ$$ = False, 
@@ -10810,8 +10887,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                     False, StripOnInput -> False]}}, 
                     GridBoxAlignment -> {
                     "Columns" -> {{Left}}, "Rows" -> {{Center}}}, AutoDelete -> 
-                    False, 
-                    GridBoxItemSize -> {
+                    False, GridBoxItemSize -> {
                     "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
                     GridBoxSpacings -> {"Columns" -> {{10}}, "Rows" -> {{0}}},
                      BaselinePosition -> {1, 2}], "Grid"], ""],
@@ -10838,10 +10914,9 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                     RGBColor[
                     0.4980392156862745, 0.7803921568627451, 
                     0.984313725490196]], 13],
-                    
                     ImageSizeCache->{
-                    12.07353401223291, {2.6187500000000004`, 
-                    8.431249999999999}}],
+                    12.07353401223291, {1.3488769531250018`, 
+                    9.701123046874997}}],
                     Alignment->{Center, Center},
                     Background->None,
                     FrameMargins->0,
@@ -11105,6 +11180,7 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                     
                     Appearance->FEPrivate`FrontEndResource[
                     "FEExpressions", "SuppressMouseDownNinePatchAppearance"],
+                    
                     ButtonFunction:>(Needs["Wolfram`Chatbook`" -> None]; 
                     Symbol["Wolfram`Chatbook`ChatbookAction"]["StopChatIn", 
                     ParentCell[
@@ -11129,7 +11205,6 @@ removeSidebarChatSubDockedCell[Typeset`thisNotebook$$, Typeset`sidebarCell$$];
                },
                AutoDelete->False,
                GridBoxAlignment->{"Columns" -> {{Left}}, "Rows" -> {{Center}}},
-               
                GridBoxItemSize->{
                 "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
               "Grid"],
@@ -11185,13 +11260,18 @@ workspaceChatInitialized]],
                 Typeset`chatEvalCell$$, Typeset`nbo$$]]],
             
             ImageSizeCache->{
-             976.9374999999999, {14.285937500000001`, 14.6140625}},
+             976.4375, {14.356304931640626`, 14.543695068359375`}},
             SynchronousUpdating->False,
             TrackedSymbols:>{Typeset`returnKeyDownQ$$}], ""},
           {
            ItemBox[
-            DynamicBox[ToBoxes[Typeset`focusArea$$, StandardForm],
-             ImageSizeCache->{9.515625, {0.75, 1.5}}],
+            DynamicBox[ToBoxes[
+              If[
+               TrueQ[
+                CurrentValue[
+                Typeset`sidebarCell$$, {
+                 TaggingRules, "ChatNotebookSettings", "NotebookEditing"}]], 
+               Spacer[0], Typeset`focusArea$$], StandardForm]],
             Alignment->Left,
             StripOnInput->False], "\[SpanFromLeft]"}
          },
@@ -11229,8 +11309,8 @@ workspaceChatInitialized]],
       RGBColor[0.9333333333333333, 0.9764705882352941, 1.], 
       RGBColor[
       0.14901960784313725`, 0.20784313725490197`, 0.2549019607843137]],
-    CellTags->"SidebarChatInputCell",ExpressionUUID->
-    "6a793355-b75d-4bbe-a25b-ed6fc81c2389"]}],
+    CellTags->"SidebarChatInputCell", ExpressionUUID->
+    "b9c0e4f6-ac49-44a8-b31b-dd628e0b34eb"]}],
   "NotebookSelectionSnapshotExclusionZone"]], \
 "NotebookAssistant`Sidebar`NotebookAssistantSidebarCell",
  Editable->True,
@@ -11246,8 +11326,8 @@ workspaceChatInitialized]],
    RGBColor[0.9333333333333333, 0.9764705882352941, 1.], 
    RGBColor[0.14901960784313725`, 0.20784313725490197`, 0.2549019607843137]],
  CellTags->
-  "NotebookAssistantSidebarCell",ExpressionUUID->"27a9c41b-9c24-4254-956e-\
-7c6a885d1718"],
+  "NotebookAssistantSidebarCell", \
+ExpressionUUID->"4c6afba2-e5e9-4b73-958c-a0576320919c"],
 
 "SidebarIconHide" -> (GraphicsBox[{
    Thickness[0.125], 
@@ -11366,8 +11446,8 @@ ad5a-1ce3075a0f97"],
  LineIndent->0,
  Magnification->1.,
  CellTags->
-  "NotebookAssistantChatbarCell",ExpressionUUID->"a4b3aac9-7a4e-3a49-829e-\
-8e23cec0bd37"],
+  "NotebookAssistantChatbarCell", \
+ExpressionUUID->"ea23e633-aace-4313-be59-dd1e388b248a"],
 
 "ChatbarSettingsIcon" -> (GraphicsBox[{
    Thickness[0.09090909090909091], 
@@ -14205,7 +14285,51 @@ OP/0Qtdtn2s1Hdy2fQbqZHcA8/8qw+UhtCycD3L298sycPMh7pR0ABkbuIPX
   Automatic, BaselinePosition -> Scaled[0.28888888888888886`], ImagePadding -> 
   0, ImageSize -> {18, 18}, 
   PlotRange -> {{-1.5274999999999999`, 19.4725}, {-0.5040000000000013, 
-   20.496}}]& )
+   20.496}}]& ),
+
+"SidebarSettingsGearIcon" -> (GraphicsBox[{
+   AbsoluteThickness[1.], 
+   CapForm["Butt"], 
+   JoinForm[{"Miter", 1.}], #, 
+   JoinedCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0,
+      1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 
+     3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0,
+      1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 
+     3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1,
+      3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+     0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0,
+      1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {0, 1, 
+     0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}}, {{1, 4, 3}, {
+     1, 3, 3}, {1, 3, 3}, {1, 3, 3}}}, {CompressedData["
+1:eJxdVWlIVGEUnawsy5yxlJzJyaYZ6xU8X5sFWXy3nRZbLEVKLKWiRZKKFqSF
+dsSixIY2U1ukaDErS7MyS2mTtFJ/lJiTJpVpP8ptcqHvzXQ+sYHhcd677373
+nnPufabo2JA1LhqNZj3/q9f3iRGdM+LMpO8V5iHfqWW/ppWsLf9qoqvP50+K
+n9bJPGzyibRWo8CLaFBUQalBxGe/03xyiTcQBUbmznWvdmI3A2kcPxsL9j46
+r+6gXmBDdfjg7CVd+GuG/5cDQ/UUkjP00I8lNlZ8raQ8rN6HmqWI48+abCx9
+oXqg7l98M+PZek3w1FFjR9nO7yNaWH31REP+Ci0tq0k/VzjsD+s79Vxo6nUt
+2RYdO7VpYAdrUB6O1Pb3pIuz7v/uKHOjsWdG+1j51d91n3UGv580uUfwwQEd
+7Nacz3FeGVoKX3H7SX1KO4sdeCD/9QUt+e6KGhc6pp2VtCzlJ2jpc7Jn+uOn
+bQK3Ff18VTDdLvCeow82utmb2UkflSAdZdVtvefd1sRa1ceFOhq3Qzb5NdqY
+KXPLusQGH7I2u648vaCS+fHuc1L0ZMvzSB5/0cb68PISYgwUGjIyLT6zljnr
+N1CEWt6UThZV+3Z4hd0ocHLhsMwt30wi/ucuFhjJdUW+KVWckAyzOE+ptLju
+87aIehzPN1lEvQVNXID9kuhnWxJvqFgS/RZdUAuSBB/A4AsYfJor7Hs2tEuC
+79LgaF24XRJ63PBdvjpopUTQS3XX+djRBD0d9UyXqZveaTLBD05/BBD88iTV
+wFsMIPhpjNpvuULw2+Ssl9vzqhSCHx3xXxSCX4Hh526Y+/0TT2ctUAjzsJvT
+nRuvEOZlRx5/wSgT5gkY84b466uWccXMIp/xVS27XGUW5y1V5TRZBI4Lvxr4
+JqgLD1IPCLWIfvwaY8J2cx3R75V+s/23cR3Bx133zTcSKiTBV5HuRW7OgFGC
+z+zovR+mcl3Ad8+zfYekREpCj5sJFes0/Aq9HPl5HPTkwaOKFssEvZ3vywQ/
+1FnvuG+O6cKOfh524ZZTlUlHegcQ/HYpa1LrM143/Hh4eemjmjKFMtR55X3O
+/NPwI9+uOOfby0L9eTkuHxWC38se1XgZOc+Yh+Kghe8SfWXCvABjnhCPeUM+
+zCPOc/Cdqhf1YJ5RL+Yd/WAfoF/sC/ABDL6AwSf2EfjGvoIe2GfQC/sOemIf
+dtOb70v4AfsUfsG+hZ+wj+E37Gv4EfscfgWGn4Hhd3wv/v/+/AWxSdmu
+     "], {{5.6128, 8.223}, {5.6128, 6.784000000000001}, {6.7838, 5.613}, {
+     8.222800000000001, 5.613}, {9.661800000000001, 5.613}, {10.8328, 
+     6.784000000000001}, {10.8328, 8.223}, {10.8328, 9.662}, {
+     9.661800000000001, 10.833}, {8.222800000000001, 10.833}, {6.7838, 
+     10.833}, {5.6128, 9.662}, {5.6128, 8.223}}}, CurveClosed -> {1, 1}]}, 
+  AspectRatio -> Automatic, BaselinePosition -> (Center -> Center), 
+  ImageSize -> {15, 15}, 
+  PlotRange -> {{-0.5, 16.945600509643555`}, {-0.5, 16.94700050354004}}]& )
 
 }
 @|

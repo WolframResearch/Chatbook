@@ -166,7 +166,7 @@ Notebook[
   ],
   Cell[
    StyleData["ACPChatStyleSheetInformation"],
-   TaggingRules -> <|"ACPChatStyleSheetVersion" -> "2.7.29.4000581897"|>
+   TaggingRules -> <|"ACPChatStyleSheetVersion" -> "2.7.139.4003953563"|>
   ],
   Cell[
    StyleData["ChatInput"],
