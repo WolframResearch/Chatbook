@@ -2832,7 +2832,8 @@ $downloadTextKeys = {
 
 readTextResources[ file_ ] := Association @ ToExpression @ First @ StringCases[
     ReadString @ file,
-    "@@resource ChatbookStrings" ~~ WhitespaceCharacter... ~~ rules: Shortest[ "{" ~~ ___ ~~ "}" ] :> rules,
+    (* the list ends at the resource's terminator, since strings may contain braces: *)
+    "@@resource ChatbookStrings" ~~ WhitespaceCharacter... ~~ rules: Shortest[ "{" ~~ ___ ~~ "}" ] ~~ WhitespaceCharacter... ~~ "@|" :> rules,
     1
 ];
 
