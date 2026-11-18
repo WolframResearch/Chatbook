@@ -1151,7 +1151,8 @@ VerificationTest[
         "The text of item 2 includes a marker line (* ::Style:: #id *): give the content of one cell, without its marker line.",
         "Item 1 of cells has no text.",
         "s1 has no cell \"c99\". Cell ids come from OpenNotebook, GetOutline, ReadCells and SearchNotebook.",
-        "The parameter cells must be a list of cells {cell, text, style, tags}, e.g. [{\"cell\": \"c3\", \"text\": \"(*New words*)\"}].",
+        (* 16.0's LLMTool refuses a value of the wrong type before the tool runs, so there is no text: *)
+        "The parameter cells must be a list of cells {cell, text, style, tags}, e.g. [{\"cell\": \"c3\", \"text\": \"(*New words*)\"}]." | _Missing,
         _Failure, (* LLMTool refuses a call without a required parameter *)
         {
             { { "Set", CellObject[ "fake-1-4" ], Automatic, "L = T - V" }, { "Set", CellObject[ "fake-1-3" ], Automatic, "(*The Lagrangian:*)" } },
@@ -1463,7 +1464,8 @@ VerificationTest[
         "Inserted 2 cells after #c4 of s1:\n(* ::Text:: #c8 *)\n(*The Lagrangian:*)\n(* ::Input:: #c9 *)\nL = T - V",
         "Inserted 1 cell before #c1 of s1:\n(* ::Text:: #c10 *)\n(*First*)",
         "Inserted 1 cell at the end of s1:\n(* ::Text:: #c11 *)\n(*Last*)",
-        "The parameter newCells must be a list of cells {style, text}, e.g. [{\"style\": \"Input\", \"text\": \"x = 1\"}].",
+        (* 16.0's LLMTool refuses a value of the wrong type before the tool runs, so there is no text: *)
+        "The parameter newCells must be a list of cells {style, text}, e.g. [{\"style\": \"Input\", \"text\": \"x = 1\"}]." | _Missing,
         11,
         { "#c10", "#c1", "#c2", "#c3", "#c4", "#c8", "#c9", "#c5", "#c6", "#c7", "#c11" },
         { { CellObject[ "fake-1-4" ], "After", 2 }, { CellObject[ "fake-1-1" ], "Before", 1 }, { None, "After", 1 } }
