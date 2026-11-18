@@ -384,10 +384,16 @@ sidebarAgentStep[ id_String ] := Module[ { msg = $sidebarAgentMessages[ id ], wi
             (* the window drops a turn's record once the turn is finalized: the last one seen is kept for the view *)
             turn = acpTurnGet @ msg[ "TurnID" ];
             If[ AssociationQ @ turn, $sidebarAgentMessages[ id, "Turn" ] = turn ];
+            (* once the turn and the window's show job are over, one more step for the notice the show may set (a
+               scheduled call) before the message is written for the last time *)
             If[ (! AssociationQ @ turn || turn[ "Status" ] =!= "Running") &&
                     acpWindowGet[ window, "CurrentTurn", None ] === None &&
                     Wolfram`Chatbook`ACP`MCP`Private`$mcpJobs === { },
-                sidebarAgentFinish[ id, None ]
+                If[ TrueQ @ msg[ "Settled" ],
+                    $sidebarAgentMessages[ id, "Notice" ] = acpWindowGet[ window, "Notice", None ];
+                    sidebarAgentFinish[ id, None ],
+                    $sidebarAgentMessages[ id, "Settled" ] = True
+                ]
             ]
     ]
 ];
@@ -496,6 +502,11 @@ sidebarAgentView // endDefinition;
 
 
 sidebarAgentStatus // beginDefinition;
+(* The window's notice says why the changes could not be shown (e.g. no notebook comparison): *)
+sidebarAgentStatus[ msg_, turn_Association ] /; msg[ "State" ] === "Done" && turn[ "Error" ] === None &&
+    MatchQ[ Lookup[ msg, "Notice", None ], _String | KeyValuePattern[ "Text" -> _String ] ] :=
+        "Done (" <> sidebarAgentDuration @ msg <> "). " <> Replace[ msg[ "Notice" ], KeyValuePattern[ "Text" -> t_ ] :> t ];
+
 sidebarAgentStatus[ msg_, turn_Association ] /; msg[ "State" ] === "Done" := Replace[
     turn[ "Error" ],
     {
