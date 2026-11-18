@@ -58,8 +58,7 @@ System`HoldCompleteForm;
 
 `tr;
 `trRaw;
-`trStringTemplate;
-`trExprTemplate;
+`trTemplate;
 `trPaclet;
 
 `$catching;
@@ -1378,24 +1377,54 @@ pacletDataRebuild // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*trStringTemplate*)
-(* Templated strings require the kernel *)
-trStringTemplate // beginDefinition;
-trStringTemplate[ name_? StringQ ] := StringTemplate @ trRaw @ name;
-trStringTemplate // endDefinition;
+(*trTemplate*)
+(* Fills in the slots of a templated text resource, such as "Page `1` of `2`" or "Thought for `time` seconds". Like `tr`,
+   the result is a `Dynamic` that looks up the resource when it's displayed, so it's in the front end's current language.
+   The front end can't fill in slots by itself, so this `Dynamic` is evaluated by the front end's "System" kernel, which
+   is always running, so it needs neither the main kernel nor Chatbook (e.g. when a saved chat is opened). It only uses
+   System functions and has no tracked symbols, so it's evaluated once when displayed.
+   Slots are filled with positional arguments (`1`, `2`, ...) or with the values of an association (`name`). Values can
+   be any expressions, including Dynamic expressions with DynamicModule variables. They're given to the front end as a
+   list of rules, since DynamicModule doesn't localize variables inside an association. *)
+trTemplate // beginDefinition;
 
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*trExprTemplate*)
-(* There might be a better way to implement this, but the rationale is we should avoid placing huge
-    expressions or linear syntax within text resource files.
-    The following is compatible with injection into Row or TextData expressions using numbered sequential slots. *)
-trExprTemplate // beginDefinition;
+trTemplate[ name_? StringQ, as_Association ] :=
+    trTemplate0[ name, KeyValueMap[ ToString @ #1 -> #2 &, as ] ];
 
-trExprTemplate[ name_? StringQ ] :=
-    TemplateObject @ Splice @ StringSplit[ trRaw @ name, "`" ~~ d: DigitCharacter.. ~~ "`" :> TemplateSlot @ d ];
+trTemplate[ name_? StringQ, args___ ] :=
+    trTemplate0[ name, MapIndexed[ ToString @ First @ #2 -> #1 &, { args } ] ];
 
-trExprTemplate // endDefinition;
+trTemplate // endDefinition;
+
+
+trTemplate0 // beginDefinition;
+
+(* The template is split at backticks, so the slot names are at the even positions. The label is saved in notebooks, so
+   it only uses System symbols (the variables are in the Typeset context). Its arguments are the resource name,
+   the slot rules and the template, so it can be matched by these (see Serialization.wl). If the front end doesn't have
+   the resource (e.g. an older Chatbook opening a newer notebook), only the slot values are shown: *)
+$trTemplateFunction = Function[
+    { Typeset`name, Typeset`rules, Typeset`template },
+    Style[
+        If[ StringQ @ Typeset`template,
+            Row @ MapIndexed[
+                If[ EvenQ @ First @ #2, Replace[ #1, Append[ Typeset`rules, _ -> "" ] ], #1 ] &,
+                StringSplit[ Typeset`template, "`", All ]
+            ],
+            Row[ Last /@ Typeset`rules, " " ]
+        ],
+        ShowStringCharacters -> False
+    ]
+];
+
+trTemplate0[ name_String, rules_List ] /; $CloudEvaluation :=
+    $trTemplateFunction[ name, rules, cloudTextResource @ name ];
+
+trTemplate0[ name_String, rules_List ] := With[ { f = $trTemplateFunction },
+    Dynamic[ f[ name, rules, FrontEndResource[ "ChatbookStrings", name ] ], Evaluator -> "System", TrackedSymbols :> { } ]
+];
+
+trTemplate0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

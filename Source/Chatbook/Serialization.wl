@@ -3020,6 +3020,20 @@ boxToString[ DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", "Clo
 boxToString[ DynamicBox[ ToBoxes[ FEPrivate`FrontEndResource[ "ChatbookStrings", name_String ], _ ], ___ ] ] :=
     With[ { str = trRaw @ name }, str /; StringQ @ str ];
 
+(* A `trTemplate` label, filled in with the English text: *)
+boxToString[
+    DynamicBox[ ToBoxes[ _Function[ name_String, rules_List, FrontEndResource[ "ChatbookStrings", name_String ] ], _ ], ___ ]
+] := With[ { str = trPaclet @ name },
+    StringJoin @ MapIndexed[
+        If[ EvenQ @ First @ #2, templateSlotString @ Replace[ #1, Append[ rules, _ -> "" ] ], #1 ] &,
+        StringSplit[ str, "`", All ]
+    ] /; StringQ @ str
+];
+
+templateSlotString[ s_String ] := s;
+templateSlotString[ Style[ s_String, ___ ] ] := s;
+templateSlotString[ expr_ ] := boxToString @ ToBoxes @ expr;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Other FE Resources*)

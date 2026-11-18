@@ -1434,7 +1434,7 @@ chatbarWarningStripe[ tier: "Basic" | "Pro", usage_, daysToReset_ ] :=
             { {
                 Pane[ chatbookIcon[ "ChatbarMenuAlert", False ], BaselinePosition -> Scaled[ 0.2 ] ],
                 tr @ "ChatbarOptionsLimit",
-                Style[ StringTemplate[ trRaw @ "ChatbarOptionsLimitReset" ][ daysToReset ], FontColor -> StandardGray ]
+                Style[ trTemplate[ "ChatbarOptionsLimitReset", daysToReset ], FontColor -> StandardGray ]
             } },
             BaseStyle -> { FontColor -> $cutRed }
         ],
@@ -1460,8 +1460,8 @@ chatbarUpgradeStripe[ userdata_, tier: "Basic", usage_, url_, creditsOptions_ ] 
         Button[
             Mouseover[
                 Row[ {
-                    StringForm[
-                        FrontEndResource[ "ChatbookStrings", "ChatbarOptionsUpgradeTwoTemplate" ],
+                    trTemplate[
+                        "ChatbarOptionsUpgradeTwoTemplate",
                         Style[ "Pro", FontColor -> $cutBlue, FontWeight -> "DemiBold" ],
                         Style[ "Research", FontColor -> $cutBlue, FontWeight -> "DemiBold" ]
                     ],
@@ -1469,8 +1469,8 @@ chatbarUpgradeStripe[ userdata_, tier: "Basic", usage_, url_, creditsOptions_ ] 
                 }, BaseStyle -> { FontColor -> $coBodyColor } ]
                 ,
                 Row[ {
-                    StringForm[
-                        FrontEndResource[ "ChatbookStrings", "ChatbarOptionsUpgradeTwoTemplate" ],
+                    trTemplate[
+                        "ChatbarOptionsUpgradeTwoTemplate",
                         Style[ "Pro", FontColor -> $cutBlueHover, FontWeight -> "DemiBold" ],
                         Style[ "Research", FontColor -> $cutBlueHover, FontWeight -> "DemiBold" ]
                     ],
@@ -1497,16 +1497,16 @@ chatbarUpgradeStripe[ userdata_, tier: "Pro", usage_, url_, creditsOptions_ ] :=
                 Button[
                     Mouseover[
                         Row[ {
-                            StringForm[
-                                FrontEndResource[ "ChatbookStrings", "ChatbarOptionsUpgradeTemplate" ],
+                            trTemplate[
+                                "ChatbarOptionsUpgradeTemplate",
                                 Style[ "Research", FontColor -> $cutBlue, FontWeight -> "DemiBold" ]
                             ],
                             Style[ "\[ThickSpace]\[RightGuillemet]", FontColor -> $cutBlue, FontWeight -> "DemiBold" ]
                         }, BaseStyle -> { FontColor -> $coBodyColor } ]
                         ,
                         Row[ {
-                            StringForm[
-                                FrontEndResource[ "ChatbookStrings", "ChatbarOptionsUpgradeTemplate" ],
+                            trTemplate[
+                                "ChatbarOptionsUpgradeTemplate",
                                 Style[ "Research", FontColor -> $cutBlueHover, FontWeight -> "DemiBold" ]
                             ],
                             Style[ "\[ThickSpace]\[RightGuillemet]", FontColor -> $cutBlueHover, FontWeight -> "DemiBold" ]
@@ -2566,11 +2566,10 @@ writeWorkspaceChatMovedToHistoryDockedCell[ nbo_NotebookObject ] :=
         Button[
             MouseAppearance[
                 Style[
-                    Row @ {
-                        trExprTemplate[ "WorkspaceToolbarSourcesSubTitleMoved" ][
-                            <| "1" -> chatbookIcon[ "WorkspaceToolbarIconHistorySmall", False ] |>
-                        ]
-                    },
+                    trTemplate[
+                        "WorkspaceToolbarSourcesSubTitleMoved",
+                        chatbookIcon[ "WorkspaceToolbarIconHistorySmall", False ]
+                    ],
                     "WorkspaceChatToolbarTitle",
                     FontSlant  -> Italic,
                     FontWeight -> Plain
@@ -4191,7 +4190,7 @@ historyPagination[ Dynamic[ searching_ ], Dynamic[ page_ ], Dynamic[ totalPages_
                                     Function[ page = # ] ],
                                 If[ IntegerQ @ totalPages && totalPages > 0, Range @ totalPages, { } ],
                                 Style[
-                                    Row[ { trExprTemplate[ "WorkspaceHistoryPageTemplate" ][ <| "1" -> Dynamic[ page ], "2" -> Dynamic[ totalPages ] |> ] } ], (* This is what's actually displayed *)
+                                    trTemplate[ "WorkspaceHistoryPageTemplate", Dynamic[ page ], Dynamic[ totalPages ] ], (* This is what's actually displayed *)
                                     FontColor -> c2 ],
                                 Appearance       -> None,
                                 BaseStyle        -> { FontSize -> 12 },
@@ -4204,7 +4203,7 @@ historyPagination[ Dynamic[ searching_ ], Dynamic[ page_ ], Dynamic[ totalPages_
                                     Function[ page = # ] ],
                                 If[ IntegerQ @ totalPages && totalPages > 0, Range @ totalPages, { } ],
                                 Style[
-                                    Row[ { trExprTemplate[ "WorkspaceHistoryPageTemplate" ][ <| "1" -> Dynamic[ page ], "2" -> Dynamic[ totalPages ] |> ] } ], (* This is what's actually displayed *)
+                                    trTemplate[ "WorkspaceHistoryPageTemplate", Dynamic[ page ], Dynamic[ totalPages ] ], (* This is what's actually displayed *)
                                     FontColor -> c1 ],
                                 Appearance       -> None,
                                 BaseStyle        -> { FontSize -> 12 },

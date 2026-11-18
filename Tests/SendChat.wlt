@@ -337,8 +337,8 @@ VerificationTest[
         },
         stopChatTaggingRules @ Wolfram`Chatbook`Common`$defaultChatSettings;
         {
-            FreeQ[ $stopChatWrittenCells, FEPrivate`FrontEndResource[ "ChatbookStrings", "FormattingToolCancelled" ] ],
-            FreeQ[ $stopChatWrittenCells, FEPrivate`FrontEndResource[ "ChatbookStrings", "FormattingToolUsing" ] ],
+            FreeQ[ $stopChatWrittenCells, HoldPattern @ FrontEndResource[ "ChatbookStrings", "FormattingToolCancelledTemplate" ] ],
+            FreeQ[ $stopChatWrittenCells, HoldPattern @ FrontEndResource[ "ChatbookStrings", "FormattingToolUsingTemplate" ] ],
             FreeQ[ $stopChatWrittenCells, "ChatbookActiveToolProgress" ]
         }
     ],

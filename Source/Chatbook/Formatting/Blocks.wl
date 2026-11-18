@@ -33,7 +33,7 @@ thoughtsLabel[ 1 ] :=
     tr[ "FormattingThinkingCompleteSingular" ];
 
 thoughtsLabel[ seconds_Integer ] :=
-    trStringTemplate[ "FormattingThinkingComplete" ][ <| "time" -> ToString @ seconds |> ];
+    trTemplate[ "FormattingThinkingComplete", <| "time" -> ToString @ seconds |> ];
 
 thoughtsLabel[ None ] :=
     tr @ "FormattingThinkingCompleteFallback";

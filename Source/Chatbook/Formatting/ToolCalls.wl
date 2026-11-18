@@ -288,27 +288,23 @@ makeToolCallBoxLabel // endDefinition;
 
 makeToolCallBoxLabel0 // beginDefinition;
 
-makeToolCallBoxLabel0[ as: KeyValuePattern[ "Result" -> "" ], string_String, icon_ ] /; toolCallCancelledQ @ as :=
-    Flatten @ {
-        toolCallIconPane @ icon,
-        tr[ "FormattingToolCancelled" ],
-        Style[ string, FontWeight -> "Plain" ]
-    };
-
-makeToolCallBoxLabel0[ KeyValuePattern[ "Result" -> "" ], string_String, icon_ ] /; TrueQ @ $dynamicText :=
-With[ { col = $fakeOpenerColor },
-    Flatten @ {
-        toolCallIconPane @ icon,
-        Style[ tr[ "FormattingToolUsing" ], FontColor -> col ],
-        Style[ string, FontWeight -> "Plain", FontColor -> col ],
-        activeToolProgressIndicator[ ]
-    }
-];
-
-makeToolCallBoxLabel0[ as_, string_String, icon_ ] := Flatten @ {
+(* The labels are templates such as "Used `1`", so each language can put the tool name where it reads best. Saved chats
+   from earlier versions use the "FormattingToolUsed" and "FormattingToolUsing" prefixes instead, so those resources
+   need to stay. *)
+makeToolCallBoxLabel0[ as: KeyValuePattern[ "Result" -> "" ], string_String, icon_ ] /; toolCallCancelledQ @ as := {
     toolCallIconPane @ icon,
-    tr[ "FormattingToolUsed" ],
-    Style[ string, FontWeight -> "Plain" ]
+    trTemplate[ "FormattingToolCancelledTemplate", Style[ string, FontWeight -> "Plain" ] ]
+};
+
+makeToolCallBoxLabel0[ KeyValuePattern[ "Result" -> "" ], string_String, icon_ ] /; TrueQ @ $dynamicText := {
+    toolCallIconPane @ icon,
+    Style[ trTemplate[ "FormattingToolUsingTemplate", Style[ string, FontWeight -> "Plain" ] ], FontColor -> $fakeOpenerColor ],
+    activeToolProgressIndicator[ ]
+};
+
+makeToolCallBoxLabel0[ as_, string_String, icon_ ] := {
+    toolCallIconPane @ icon,
+    trTemplate[ "FormattingToolUsedTemplate", Style[ string, FontWeight -> "Plain" ] ]
 };
 
 makeToolCallBoxLabel0 // endDefinition;
