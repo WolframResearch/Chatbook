@@ -87,4 +87,29 @@ VerificationTest[
     TestID   -> "WidgetSend-AutomaticAssistanceScoped"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Button Method*)
+
+(* The first chat in a kernel can take longer than the preemptive evaluation timeout, which would abort it, so the
+   widget button in the built stylesheets must be queued: *)
+VerificationTest[
+    Module[ { dir, methods },
+        dir = PacletObject[ "Wolfram/Chatbook" ][ "Location" ];
+        methods[ file_ ] := Cases[
+            ReadList[ FileNameJoin @ Prepend[ file, dir ], HoldComplete @ Expression ],
+            cell: Cell[ StyleData[ "ChatWidgetButton" ], ___ ] :>
+                Cases[ cell, ButtonBox[ ___, Method -> m_, ___ ] :> m, Infinity ],
+            Infinity
+        ];
+        methods /@ {
+            { "FrontEnd", "StyleSheets", "Chatbook.nb" },
+            { "FrontEnd", "Assets", "Extensions", "CoreExtensions.nb" }
+        }
+    ],
+    { { { "Queued" } }, { { "Queued" } } },
+    SameTest -> SameQ,
+    TestID   -> "WidgetSend-QueuedButton-GH#1718"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)
