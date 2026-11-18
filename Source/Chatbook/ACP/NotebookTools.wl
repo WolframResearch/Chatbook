@@ -79,9 +79,9 @@ $maxPictures       = 4;     (* pictures in one result at most *)
 $acpNotebookEditTools = { "ShowChanges" };
 
 (* The notebook comparison of CellDiff (FrontEnd docs/CellDiff/CellDiffNotebookDiff.wl), which defines
-   CellDiffNotebookDiff`ShowNotebookDiff; the environment variable CELLDIFF_NOTEBOOKDIFF_FILE names another copy. It
-   loads CellDiffControlStyles.wl from its own directory. A development path until the comparison is part of a
-   release. *)
+   CellDiffNotebookDiff`ShowNotebookDiff: the environment variable CELLDIFF_NOTEBOOKDIFF_FILE names a copy, else the one
+   of the development front end that runs (notebookDiffFile), else this one. It loads CellDiffControlStyles.wl from its
+   own directory. A development path until the comparison is part of a release. *)
 $defaultNotebookDiffFile = "/System/Volumes/Data/Development/WRI/FE_diff2/FrontEnd_diff2/docs/CellDiff/CellDiffNotebookDiff.wl";
 $notebookDiffFunction    = "CellDiffNotebookDiff`ShowNotebookDiff";
 
@@ -1529,10 +1529,37 @@ showNotebookDiff // endDefinition;
 notebookDiffFile // beginDefinition;
 
 notebookDiffFile[ ] := With[ { file = Environment[ "CELLDIFF_NOTEBOOKDIFF_FILE" ] },
-    If[ StringQ @ file && StringTrim @ file =!= "", file, $defaultNotebookDiffFile ]
+    Which[
+        StringQ @ file && StringTrim @ file =!= "", file,
+        StringQ @ frontEndNotebookDiffFile[ ], frontEndNotebookDiffFile[ ],
+        True, $defaultNotebookDiffFile
+    ]
 ];
 
 notebookDiffFile // endDefinition;
+
+
+(* The comparison must match the front end's packets, so a development front end (FE_<name>/build/.../
+   Mathematica_<name>.app) uses the one of its own checkout, FE_<name>/FrontEnd_<name>/docs/CellDiff: a fixed path goes
+   stale when that checkout moves to another branch. None for any other front end. Kept once found. *)
+frontEndNotebookDiffFile // beginDefinition;
+
+frontEndNotebookDiffFile[ ] := Replace[
+    Quiet @ ProcessObject[ MathLink`CallFrontEnd @ FrontEnd`Value @ FEPrivate`$ProcessID ][ "Path" ],
+    {
+        path_String :> Replace[
+            StringCases[ path, root__ ~~ "/FE_" ~~ env: Except[ "/" ].. ~~ "/build/" :> { root, env }, 1 ],
+            {
+                { { root_, env_ } } /; FileExistsQ @ FileNameJoin @ { root, "FE_" <> env, "FrontEnd_" <> env, "docs", "CellDiff", "CellDiffNotebookDiff.wl" } :>
+                    (frontEndNotebookDiffFile[ ] = FileNameJoin @ { root, "FE_" <> env, "FrontEnd_" <> env, "docs", "CellDiff", "CellDiffNotebookDiff.wl" }),
+                _ -> None
+            }
+        ],
+        _ -> None
+    }
+];
+
+frontEndNotebookDiffFile // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
