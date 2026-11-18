@@ -471,7 +471,7 @@ $modelAutoSettings[ Automatic, "GPT54Plus" ] = <|
     "ToolMethod"                 -> Verbatim @ Automatic
     (* TODO: We need to use "Service" for the tool method due to lack of stop-token support. What blocked this (tool
        outputs without images, and JSON arguments for code) is solved for the responses endpoint with
-       "EnableCustomTools" (see "GPT61Sol" below), so these models can switch once LLMKit supports that endpoint for
+       "EnableCustomTools" (see "GPT6Plus" below), so these models can switch once LLMKit supports that endpoint for
        them. *)
 |>;
 
@@ -479,18 +479,25 @@ $modelAutoSettings[ Automatic, "GPT54Mini" ] = <|
     "MaxContextTokens" -> 400000
 |>;
 
-(* gpt-6.1-sol always reasons (it rejects the "None" and "Minimal" efforts), and the chat completions endpoint doesn't
-   allow function tools together with reasoning, so its tools only work through the responses endpoint. There they are
-   called natively, and the ones that take code or long text are given as custom tools (plain text input instead of
-   JSON, see `toCustomTools`), so the hybrid method isn't needed to avoid JSON syntax errors. *)
-$modelAutoSettings[ Automatic, "GPT61Sol" ] = <|
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*gpt-6*)
+
+(* The gpt-6 models reason by default, and several always do (gpt-6.1-sol, gpt-6.2-sol and the "astra" models reject
+   the "None" and "Minimal" efforts). The chat completions endpoint doesn't allow function tools together with
+   reasoning, so their tools only work through the responses endpoint. There they are called natively, and the ones
+   that take code or long text are given as custom tools (plain text input instead of JSON, see `toCustomTools`), so
+   the hybrid method isn't needed to avoid JSON syntax errors. Every gpt-6 model accepts these settings, so a new one
+   doesn't need an entry of its own. *)
+$modelAutoSettings[ Automatic, "GPT6Plus" ] = <|
+    $modelAutoSettings[ Automatic, "GPT54Plus" ],
     "EnableCustomTools"  -> True,
     "EnabledBasePrompts" -> {
         "FunctionRepositoryIntegration",
         "WolframLanguageEvaluatorToolInteractive",
-        (* This model follows its instructions closely, and without these it works out answers itself when the
-           documentation has a resource function for them, answers a request that leaves something open with only a
-           question, and only shows the result of code it evaluated (which the user can't put in a notebook): *)
+        (* These models follow their instructions closely, and without these they work out answers themselves when
+           the documentation has a resource function for them, answer a request that leaves something open with only
+           a question, and only show the result of code they evaluated (which the user can't put in a notebook): *)
         "FunctionRepositoryPreference",
         "ReasonableAssumptions",
         "WolframLanguageEvaluatorToolCode"

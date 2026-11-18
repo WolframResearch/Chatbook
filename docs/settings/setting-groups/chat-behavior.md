@@ -198,7 +198,7 @@ When `Automatic`, resolves via `autoModelSetting` to the model-specific default.
 
 ### Model-Specific Overrides
 
-- **`True`**: All Anthropic models (service-level default in `$modelAutoSettings["Anthropic", Automatic]`); GPT-5.2 and later (set on the `GPT52` family and inherited by `GPT53`, `GPT53Chat`, and `GPT54`)
+- **`True`**: All Anthropic models (service-level default in `$modelAutoSettings["Anthropic", Automatic]`); GPT-5.2 and later (set on the `GPT52` family and inherited by `GPT53`, `GPT53Chat`, `GPT54Plus` and `GPT6Plus`)
 - **`False`**: Global default (from `$modelAutoSettings[Automatic, Automatic]`), including GPT-5.1 and earlier
 
 ### Implementation

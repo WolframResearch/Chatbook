@@ -602,7 +602,8 @@ All model families currently defined in `chooseModelFamily0` (`Models.wl`):
 | `"GPT52"` | `{ "GPT", "5.2", ___ }` | `Automatic` (inherits from GPT51) |
 | `"GPT53"` | `{ "GPT", "5.3", ___ }` | `Automatic` (inherits from GPT52) |
 | `"GPT53Chat"` | `{ "GPT", "5.3", "Chat", ___ }` | `Automatic` (inherits from GPT53) |
-| `"GPT54"` | `{ "GPT", "5.4", ___ }` | `Automatic` (inherits from GPT53) |
+| `"GPT54Plus"` | `{ "GPT", version, ___ }` with version 5.4 or later (below 6), and `gpt-6-sol`, `gpt-6-luna`, `gpt-6.1-terra` | `Automatic` (inherits from GPT53) |
+| `"GPT6Plus"` | `{ "GPT", version, ___ }` with version 6 or later | `Automatic` (inherits from GPT54Plus) |
 | `"Claude2"` | `{ "Claude", "2.0"\|"2.1" }` | `Anthropic` |
 | `"Claude3"` | `{ "Claude", "3", ___ }` | `Anthropic` |
 | `"Claude4"` | `{ "Claude", "Haiku"\|"Sonnet"\|"Opus", "4", ___ }` | `Anthropic` |

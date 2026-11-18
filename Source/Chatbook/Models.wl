@@ -14,9 +14,9 @@ Needs[ "Wolfram`Chatbook`UI`"      ];
 (* ::Section::Closed:: *)
 (*Configuration*)
 (* Add additional supported models here as needed. The first one that LLMKit lists as available is used.
-   TODO: Add "gpt-6.1-sol" before "gpt-5.4" once it has been tested end to end with LLMKit. It needs the responses
-         endpoint ("ResponsesRequired" in $modelAutoSettings), and nothing tells Chatbook whether the server supports
-         that endpoint, so the default would switch as soon as the server lists the model. *)
+   TODO: Add "gpt-6.2-sol" (or "gpt-6.1-sol") before "gpt-5.4" once it has been tested end to end with LLMKit. These
+         need the responses endpoint ("ResponsesRequired" in $modelAutoSettings), and nothing tells Chatbook whether
+         the server supports that endpoint, so the default would switch as soon as the server lists the model. *)
 $llmKitPreferredModels = <|
     "Pro"      -> { "gpt-5.4" },
     "Research" -> { "gpt-5.4" },
@@ -531,6 +531,12 @@ chooseModelFamily0[ wordsPattern[ { "GPT", "5.2", ___ } ] ] := "GPT52";
 chooseModelFamily0[ wordsPattern[ { "GPT", "5.3", "Chat", ___ } ] ] := "GPT53Chat";
 chooseModelFamily0[ wordsPattern[ { "GPT", "5.3", ___ } ] ] := "GPT53";
 chooseModelFamily0[ wordsPattern[ { "GPT", "5.4", ___ } ] ] := "GPT54Plus";
+(* These gpt-6 models can turn reasoning off, so they also work without the responses endpoint, as gpt-5.4 does.
+   TODO: Move them to "GPT6Plus" when they no longer need to work without that endpoint (the released paclets don't
+         support it). With it, they repeat tool calls with the hybrid method and do better with native tool calls. *)
+chooseModelFamily0[ wordsPattern[ { "GPT", "6", "Sol"|"Luna", ___ } ] ] := "GPT54Plus";
+chooseModelFamily0[ wordsPattern[ { "GPT", "6.1", "Terra", ___ } ] ] := "GPT54Plus";
+chooseModelFamily0[ wordsPattern[ { "GPT", v: NumberString /; ToExpression[ v ] >= 6, ___ } ] ] := "GPT6Plus";
 chooseModelFamily0[ wordsPattern[ { "GPT", v: NumberString /; ToExpression[ v ] >= 5.4, ___ } ] ] := "GPT54Plus";
 chooseModelFamily0[ wordsPattern[ { "GPT", "5", ___ } ] ] := "GPT5";
 
