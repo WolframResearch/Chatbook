@@ -1033,37 +1033,71 @@ $$sandboxInput = KeyValuePattern @ { "Segments" -> { __Association }, "Definitio
    for at most cellSeconds, and stops starting cells after seconds. Gives for each cell that ran <| "Result" -> what it
    gave as InputForm (at most 100 characters; "" for Null, graphics and the like), "Messages" -> their names,
    "Aborted" |>, or a Failure ("NoSandboxKernel", "TimedOut": the kernel is closed and the next use starts another one,
-   "KernelQuit"). Nothing that the kernel gives back is evaluated here but that list of strings. *)
+   "KernelQuit"). With the positions of cells to evaluate for their outputs (evaluated), each of those also gets
+   "Boxes" -> for each of the cell's statements with a result other than Null (the front end's outputs: one each), its
+   StandardForm boxes as InputForm text (graphics made static: their DynamicBoxes, such as a plot's highlighting, are
+   left out), "" for boxes over $sandboxOutputLength characters; None for no such result or $Aborted. Nothing that the
+   kernel gives back is evaluated here but those strings. *)
 sandboxCheckCells // beginDefinition;
 
-sandboxCheckCells[ boxes_List, cellSeconds_? Positive, seconds_? Positive ] := Catch @ Module[ { kernel, context, packet },
+sandboxCheckCells[ boxes_List, cellSeconds_? Positive, seconds_? Positive ] := sandboxCheckCells[ boxes, cellSeconds, seconds, { } ];
+
+sandboxCheckCells[ boxes_List, cellSeconds_? Positive, seconds_? Positive, evaluated: { ___Integer } ] := Catch @ Module[
+    { kernel, context, packet },
     kernel = Quiet @ getSandboxKernel[ ];
     If[ ! MatchQ[ kernel, _LinkObject ], Throw @ Failure[ "NoSandboxKernel", <| |> ] ];
     context = "CodeCheck" <> StringDelete[ createUUID[ ], "-" ] <> "`";
-    With[ { cells = boxes, ctx = context, cs = cellSeconds, s = seconds },
-        LinkWrite[ kernel, Unevaluated @ EvaluatePacket @ Module[ { end, results, result, shown },
+    With[ { cells = boxes, ctx = context, cs = cellSeconds, s = seconds, out = evaluated, max = $sandboxOutputLength },
+        LinkWrite[ kernel, Unevaluated @ EvaluatePacket @ Module[ { end, results, result, values, shown, outBoxes },
             end = AbsoluteTime[ ] + s;
             results = Block[ { $Context = ctx, $ContextPath = { "System`" }, $Messages = { } },
                 Table[
                     If[ AbsoluteTime[ ] > end,
                         Nothing,
                         Block[ { $MessageList = { } },
-                            result = CheckAbort[ Catch @ TimeConstrained[ ToExpression[ cell, StandardForm ], cs, $Aborted ], $Aborted ];
+                            (* the cell's statements in order, each one's value: the boxes give HoldComplete[ s1, s2, ... ], or a
+                               list of those for a list of boxes (lines), and List evaluates the held statements *)
+                            result = CheckAbort[
+                                Catch @ TimeConstrained[
+                                    Catenate[
+                                        Replace[ #, { HoldComplete[ e___ ] :> { e }, other_ :> { other } } ] & /@
+                                            Flatten @ { ToExpression[ cells[[ i ]], StandardForm, HoldComplete ] }
+                                    ],
+                                    cs,
+                                    $Aborted
+                                ],
+                                $Aborted
+                            ];
+                            values = Replace[ result, { list_List :> DeleteCases[ list, Null ], $Aborted -> { }, other_ :> { other } } ];
                             shown  = Replace[
-                                result /. g: (_Graphics | _Graphics3D | _Image | _Legended | _DynamicModule | _Manipulate) :> Skeleton @ Head @ g,
-                                list_List :> DeleteCases[ list, Null ]
+                                values /. g: (_Graphics | _Graphics3D | _Image | _Legended | _DynamicModule | _Manipulate) :> Skeleton @ Head @ g,
+                                { one_ } :> one
                             ];
                             <|
-                                "Result"   -> If[ MatchQ[ shown, Null | $Aborted | { } | Skeleton[ _ ] | { Skeleton[ _ ] } ],
+                                "Result"   -> If[ MatchQ[ shown, { } | Skeleton[ _ ] | { Skeleton[ _ ].. } ],
                                     "",
                                     StringReplace[ StringTake[ ToString[ shown, InputForm ], UpTo[ 100 ] ], "\n" -> " " ]
                                 ],
                                 "Messages" -> DeleteDuplicates[ ToString /@ $MessageList ],
-                                "Aborted"  -> result === $Aborted
+                                "Aborted"  -> result === $Aborted,
+                                If[ MemberQ[ out, i ],
+                                    "Boxes" -> If[ values === { },
+                                        None,
+                                        Function[ value,
+                                            outBoxes = Quiet @ ToString[
+                                                ToBoxes[ value, StandardForm ] /. g: (_GraphicsBox | _Graphics3DBox) :> RuleCondition[ g /. _DynamicBox -> { } ],
+                                                InputForm,
+                                                CharacterEncoding -> "PrintableASCII"
+                                            ];
+                                            If[ StringQ @ outBoxes && StringLength @ outBoxes <= max, outBoxes, "" ]
+                                        ] /@ values
+                                    ],
+                                    Nothing
+                                ]
                             |>
                         ]
                     ],
-                    { cell, cells }
+                    { i, Length @ cells }
                 ]
             ];
             Quiet @ Remove[ ctx <> "*" ];
@@ -1074,13 +1108,17 @@ sandboxCheckCells[ boxes_List, cellSeconds_? Positive, seconds_? Positive ] := C
     Replace[ packet, {
         $TimedOut :> (Quiet @ LinkClose @ kernel; Failure[ "TimedOut", <| |> ]),
         (* held, the associations are Association[...] expressions: only this form is evaluated *)
-        HoldComplete[ ReturnPacket[ list: { Association[ "Result" -> _String, "Messages" -> { ___String }, "Aborted" -> True | False ] ... } ] ] :> list,
+        HoldComplete[ ReturnPacket[ list: { Association[
+            "Result" -> _String, "Messages" -> { ___String }, "Aborted" -> True | False, Repeated[ "Boxes" -> { __String } | None, { 0, 1 } ]
+        ] ... } ] ] :> list,
         HoldComplete[ _ReturnPacket ] :> Failure[ "KernelQuit", <| |> ],
         _ :> (Quiet @ LinkClose @ kernel; Failure[ "KernelQuit", <| |> ])
     } ]
 ];
 
 sandboxCheckCells // endDefinition;
+
+$sandboxOutputLength = 2000000;
 
 
 (* The next ReturnPacket of the kernel, held, or $Failed once the link is gone (the code quit the kernel) *)

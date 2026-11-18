@@ -212,7 +212,7 @@ VerificationTest[
                                     op[[ 3 ]] === "Before"                       , fakePosition[ cells, op[[ 2 ]], i ],
                                     True                                         , fakePosition[ cells, op[[ 2 ]], i ] + 1
                                 ];
-                                new = fakeCell[ "fake-new-" <> ToString[ ++$fakeCount ], #[[ 1 ]], #[[ 2 ]], 2 ] & /@ op[[ 4 ]];
+                                new = fakeCell[ "fake-new-" <> ToString[ ++$fakeCount ], First @ Flatten @ { #[[ 1 ]] }, #[[ 2 ]], 2 ] & /@ op[[ 4 ]];
                                 cells = Join[ Take[ cells, at - 1 ], new, Drop[ cells, at - 1 ] ];
                                 inserted = Join[ inserted, Lookup[ new, "Cell" ] ]
                             ],
@@ -327,9 +327,9 @@ VerificationTest[
             "GetOutline"     -> { "object", { "notebook", "preview", "offset", "limit" }, { "notebook" } },
             "ReadCells"      -> { "object", { "notebook", "cells", "full" }, { "notebook" } },
             "SearchNotebook" -> { "object", { "notebook", "query", "regex", "cells", "styles", "limit" }, { "notebook", "query" } },
-            "EditInCell"     -> { "object", { "notebook", "cell", "edits" }, { "notebook", "cell", "edits" } },
-            "SetCells"       -> { "object", { "notebook", "cells", "delete" }, { "notebook", "cells" } },
-            "InsertCells"    -> { "object", { "notebook", "newCells", "cell", "position" }, { "notebook", "newCells" } },
+            "EditInCell"     -> { "object", { "notebook", "cell", "edits", "evaluate" }, { "notebook", "cell", "edits" } },
+            "SetCells"       -> { "object", { "notebook", "cells", "delete", "evaluate" }, { "notebook", "cells" } },
+            "InsertCells"    -> { "object", { "notebook", "newCells", "cell", "position", "evaluate" }, { "notebook", "newCells" } },
             "DeleteCells"    -> { "object", { "notebook", "cells" }, { "notebook", "cells" } },
             "SaveNotebook"   -> { "object", { "notebook" }, { "notebook" } },
             "ShowChanges"    -> { "object", { "notebook" }, { "notebook" } },
@@ -1612,6 +1612,60 @@ VerificationTest[
     },
     SameTest -> MatchQ,
     TestID   -> "ACPNotebookTools-CodeCheck"
+]
+
+(* With evaluate, the Input cells an edit writes and the Input cells after the first of them are evaluated with the
+   code check, and their outputs replaced by the results' boxes from the sandbox kernel (made up here): the Output cells
+   after each are deleted and one for each of its statements' results inserted; boxes that would run code when shown
+   are not written (a legend's InterpretationFunction would not), and the old outputs stay; the new cells are named, not
+   read. Output cells are never written by hand. *)
+VerificationTest[
+    withFakeFE @ Block[
+        {
+            $fakeCodeCells = True,
+            $checkArgs     = { },
+            $checkResults  = { },
+            Wolfram`Chatbook`Common`sandboxCheckCells = (AppendTo[ $checkArgs, { ## } ]; $checkResults) &
+        },
+        Module[ { edited, dynamic, ops },
+            nbtCall[ "OpenNotebook", <| "notebook" -> "abcdef11" |> ];
+            $checkResults = {
+                <| "Result" -> "p + q", "Messages" -> { }, "Aborted" -> False, "Boxes" -> { "RowBox[{\"p\", \"+\", \"q\"}]", "\"2\"", "GraphicsBox[{}]" } |>,
+                <| "Result" -> "", "Messages" -> { }, "Aborted" -> False |>
+            };
+            edited = nbtCall[ "EditInCell", <| "notebook" -> "s1", "cell" -> "c4", "edits" -> { <| "oldText" -> "Cos", "newText" -> "Sin" |> }, "evaluate" -> True |> ];
+            $checkResults = {
+                <| "Result" -> "", "Messages" -> { }, "Aborted" -> False |>,
+                <| "Result" -> "x", "Messages" -> { }, "Aborted" -> False, "Boxes" -> { "TemplateBox[{}, \"Legend\", InterpretationFunction :> (x &)]", "DynamicBox[x]" } |>
+            };
+            dynamic = nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c7", "text" -> "sol = 1" |> }, "evaluate" -> True |> ];
+            ops = Cases[ $fakeCalls, { "Edit", _, o_ } :> o ];
+            {
+                StringContainsQ[ edited, "Evaluated #c4, #c7: new Output cells #c8 and #c9 and #c10 after #c4 (their results are in the code check)." ],
+                StringContainsQ[ dynamic, "Evaluated #c7: no new outputs.\nNot written, so the old outputs are kept: #c7 (it would run code when shown)." ],
+                ops,
+                $checkArgs[[ All, 4 ]],
+                nbtText @ nbtCall[ "SetCells", <| "notebook" -> "s1", "cells" -> { <| "cell" -> "c8", "text" -> "2" |> } |> ],
+                nbtText @ nbtCall[ "InsertCells", <| "notebook" -> "s1", "newCells" -> { <| "style" -> "Output", "text" -> "2" |> } |> ],
+                nbtText @ nbtCall[ "EditInCell", <| "notebook" -> "s1", "cell" -> "c8", "edits" -> { <| "oldText" -> "p", "newText" -> "r" |> } |> ]
+            }
+        ]
+    ],
+    {
+        True,
+        True,
+        {
+            { { "Edit", CellObject[ "fake-1-4" ], { { "Cos", "Sin", 1 } } } },
+            { { "Delete", { CellObject[ "fake-1-5" ] } }, { "Insert", CellObject[ "fake-1-4" ], "After", { { { "Output", "EvaluationUnmatched" }, "\:3014RowBox[{\"p\", \"+\", \"q\"}]\:3015" }, { { "Output", "EvaluationUnmatched" }, "\:3014\"2\"\:3015" }, { { "Output", "EvaluationUnmatched" }, "\:3014GraphicsBox[{}]\:3015" } } } },
+            { { "Set", CellObject[ "fake-1-7" ], Automatic, "sol = 1" } }
+        },
+        { { 1, 2 }, { 2 } },
+        $outputText,
+        $outputText,
+        $outputText
+    } /. $outputText -> "Output cells are never written by hand: they hold the real results. Give evaluate: true with the edit of the Input cell, which replaces its outputs and those of the Input cells after it with their results, or delete outputs that become stale.",
+    SameTest -> MatchQ,
+    TestID   -> "ACPNotebookTools-EvaluateOutputs"
 ]
 
 (* ::**************************************************************************************************************:: *)

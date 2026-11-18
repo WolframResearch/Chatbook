@@ -91,17 +91,25 @@ $$linearSyntaxText = RegularExpression[
     "[\\x{f7c0}-\\x{f7cd}]|(?<!\\\\)(?:\\\\\\\\)*\\\\(?:[!*]|:[fF]7[cC][0-9a-dA-D]|\\|00[fF]7[cC][0-9a-dA-D])"
 ];
 
-(* Inside a box wrapper (strings left out): boxes that run code when shown, and options that hold code *)
-$$codeInWrapper = RegularExpression[ StringJoin[
+(* Inside a box wrapper (strings left out): boxes that run code when shown, and options that hold code; an evaluated
+   output may hold an InterpretationFunction ($$codeShownInWrapper) *)
+codeInWrapperPattern[ options_List ] := RegularExpression[ StringJoin[
     "(?<![\\w`$])(?:",
     "(?:DynamicBox|DynamicModuleBox|DynamicWrapperBox|ActionMenuBox|EventHandlerTag|Dynamic|DynamicModule|DynamicWrapper)",
     "\\s*\\[",
     "|",
-    "(?:ButtonFunction|CellDynamicExpression|CellEpilog|CellEvaluationFunction|CellEventActions|CellProlog|",
-    "Deinitialization|Initialization|InterpretationFunction|NotebookDynamicExpression|NotebookEventActions)",
+    "(?:", StringRiffle[ options, "|" ], ")",
     "\\s*(?:->|:>|\\\\\\[Rule\\]|\\\\\\[RuleDelayed\\])",
     ")"
 ] ];
+
+$codeOptions = {
+    "ButtonFunction", "CellDynamicExpression", "CellEpilog", "CellEvaluationFunction", "CellEventActions", "CellProlog",
+    "Deinitialization", "Initialization", "InterpretationFunction", "NotebookDynamicExpression", "NotebookEventActions"
+};
+
+$$codeInWrapper      = codeInWrapperPattern @ $codeOptions;
+$$codeShownInWrapper = codeInWrapperPattern @ DeleteCases[ $codeOptions, "InterpretationFunction" ];
 
 $$wrapper = "\:3014" ~~ Except[ "\:3015" ]... ~~ "\:3015";
 
@@ -214,7 +222,10 @@ make stale in the same call), parallel calls for the rest. For a \
 cell that changes only in part, use EditInCell with short oldText and newText instead of rewriting the cell. A \
 notebook edit needs no todo list. SetCells, EditInCell and InsertCells check the notebook's code themselves: after an \
 edit of code, their result ends with a code check of every Input cell, evaluated in order in a fresh context (results \
-and messages), so the code needs no other check. WolframLanguageContext is not needed for notebook edits.";
+and messages), so the code needs no other check. Output cells hold real results and are never written by hand: with \
+evaluate: true, SetCells, EditInCell and InsertCells evaluate the Input cells they write and every Input cell after \
+them, and replace their outputs with the results: code that needs no change is not rewritten to update its outputs. \
+WolframLanguageContext is not needed for notebook edits.";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -374,6 +385,12 @@ omit it for a new, empty notebook",
                 "\
 The edits, applied in order: {oldText, newText, count}; oldText must occur exactly count times (default 1)",
                 True
+            ],
+            parameter[
+                "evaluate",
+                "Boolean",
+                "Evaluate the Input cells this call writes and every Input cell after them, and replace their outputs with the results (Output cells are never written by hand)",
+                False
             ]
         }
     |>,
@@ -395,6 +412,12 @@ The cells, in order: {cell, text, style}, e.g. {cell: \"c3\", text: \"(*New word
                 "String",
                 "The ids of cells to delete in the same edit, separated by commas, such as outputs that the new cells make stale",
                 False
+            ],
+            parameter[
+                "evaluate",
+                "Boolean",
+                "Evaluate the Input cells this call writes and every Input cell after them, and replace their outputs with the results (Output cells are never written by hand)",
+                False
             ]
         }
     |>,
@@ -411,7 +434,13 @@ The cells, in order: {cell, text, style}, e.g. {cell: \"c3\", text: \"(*New word
                 True
             ],
             parameter[ "cell", "String", "The id of the cell to insert after or before; omit it for the end", False ],
-            parameter[ "position", "String", "\"after\" (the default) or \"before\" the cell", False ]
+            parameter[ "position", "String", "\"after\" (the default) or \"before\" the cell", False ],
+            parameter[
+                "evaluate",
+                "Boolean",
+                "Evaluate the Input cells this call writes and every Input cell after them, and replace their outputs with the results (Output cells are never written by hand)",
+                False
+            ]
         }
     |>,
     "DeleteCells" -> <|
@@ -810,6 +839,7 @@ newCellArgument[ cell_Association, i_Integer ] := Module[ { style, text },
     text  = Lookup[ cell, "text", Missing[ "NoInput" ] ];
     If[ ! StringQ @ style || StringTrim @ style === "", toolError[ "New cell `1` has no style.", i ] ];
     If[ ! StringQ @ text, toolError[ "New cell `1` has no text.", i ] ];
+    If[ outputStyleQ @ StringTrim @ style, toolError @ $outputCellText ];
     text = texFormulas[ text, "The text of new cell " <> ToString @ i ];
     requireCellText[ text, "The text of new cell " <> ToString @ i ];
     { StringTrim @ style, text }
@@ -841,7 +871,10 @@ setCellArgument[ handle_String, item_Association, i_Integer ] := Module[ { cell,
     If[ ! StringQ @ text, toolError[ "Item `1` of cells has no text.", i ] ];
     text = texFormulas[ text, "The text of item " <> ToString @ i ];
     requireCellText[ text, "The text of item " <> ToString @ i ];
-    { "Set", cell, styleArgument[ Lookup[ item, "style", Missing[ "NoInput" ] ], "style" ], text }
+    With[ { style = styleArgument[ Lookup[ item, "style", Missing[ "NoInput" ] ], "style" ] },
+        If[ outputStyleQ @ style, toolError @ $outputCellText ];
+        { "Set", cell, style, text }
+    ]
 ];
 
 setCellArgument // endDefinition;
@@ -1246,7 +1279,9 @@ markerQ // endDefinition;
    in a code cell is not run by showing it, so it is allowed. *)
 requireInertText // beginDefinition;
 
-requireInertText[ text_String, what_String ] := Module[ { found },
+requireInertText[ text_String, what_String ] := requireInertText[ text, what, $$codeInWrapper ];
+
+requireInertText[ text_String, what_String, code_ ] := Module[ { found },
     found = First[ StringCases[ text, $$linearSyntaxText, 1 ], None ];
     If[ StringQ @ found,
         toolError[
@@ -1263,7 +1298,7 @@ requireInertText[ text_String, what_String ] := Module[ { found },
         (* an inline formula's wrapper, \:3014$boxes\:3015, holds its boxes after the $ *)
         Flatten @ StringCases[
             withoutStrings @ StringReplace[ #, StartOfString ~~ "\:3014$" -> "\:3014" ] & /@ StringCases[ text, $$wrapper ],
-            $$codeInWrapper,
+            code,
             1
         ],
         None
@@ -2358,7 +2393,7 @@ editInCell[ args_Association ] := Module[ { handle, cell, edits, result },
         "Edited #", $snapshots[ handle, "IDs", cell ], " of ", handle,
         " (", ToString @ Length @ edits, If[ Length @ edits === 1, " edit", " edits" ], "). It now reads:\n",
         cellBlocks[ handle, { cell } ],
-        codeCheck[ handle, { cell } ]
+        codeCheck[ handle, { cell }, booleanArgument[ args[ "evaluate" ], "evaluate", False ] ]
     ]
 ];
 
@@ -2374,6 +2409,7 @@ cellEditOperation[ handle_String, cell_, edits_List ] := Module[ { entry, text, 
     entry = notebookFrontEnd[ "CellText", $snapshots[ handle, "Notebook" ], { cell }, All, True ];
     (* a cell that can't be read is the front end's to report *)
     If[ ! MatchQ[ entry, { KeyValuePattern[ "Text" -> _String ] } ], Return[ { "Edit", cell, edits }, Module ] ];
+    If[ outputStyleQ @ First[ entry ][ "Style" ], toolError @ $outputCellText ];
     text = First[ entry ][ "Text" ];
     read = First @ texReadTexts @ { text };
     If[ read === text, Return[ { "Edit", cell, edits }, Module ] ];
@@ -2420,6 +2456,7 @@ setCells // beginDefinition;
 setCells[ args_Association ] := Module[ { handle, ops, deleted, deletedIDs, cells },
     handle     = resolveSnapshot @ args[ "notebook" ];
     ops        = setCellsArgument[ handle, args[ "cells" ] ];
+    requireNoOutputCells[ handle, Cases[ ops, { "Set", cell_, Automatic, _ } :> cell ] ];
     deleted    = Replace[ cellIDsArgument[ args[ "delete" ], "delete" ], { None -> { }, ids_ :> resolveCells[ handle, ids ] } ];
     deletedIDs = Lookup[ $snapshots[ handle, "IDs" ], deleted ];
     cells      = changedCells[
@@ -2433,7 +2470,7 @@ setCells[ args_Association ] := Module[ { handle, ops, deleted, deletedIDs, cell
         StringRiffle[ "#" <> $snapshots[ handle, "IDs", # ] & /@ cells, ", " ],
         If[ deleted === { }, "", "; deleted " <> StringRiffle[ "#" <> # & /@ deletedIDs, ", " ] ],
         ". ReadCells shows their new content.",
-        codeCheck[ handle, cells ]
+        codeCheck[ handle, cells, booleanArgument[ args[ "evaluate" ], "evaluate", False ] ]
     ]
 ];
 
@@ -2461,7 +2498,7 @@ insertCells[ args_Association ] := Module[ { handle, cells, anchor, position, re
         "Inserted ", ToString @ Length @ inserted, If[ Length @ inserted === 1, " cell ", " cells " ], where, " of ", handle,
         ":\n",
         cellBlocks[ handle, inserted ],
-        codeCheck[ handle, inserted ]
+        codeCheck[ handle, inserted, booleanArgument[ args[ "evaluate" ], "evaluate", False ] ]
     ]
 ];
 
@@ -2495,17 +2532,144 @@ deleteCells // endDefinition;
    its messages, so that the agent needs no evaluator to check its code. "" otherwise. *)
 codeCheck // beginDefinition;
 
-codeCheck[ handle_String, changed_List ] := Module[ { code, results },
+codeCheck[ handle_String, changed_List ] := codeCheck[ handle, changed, False ];
+
+codeCheck[ handle_String, changed_List, evaluate_ ] := Module[ { code, cells, targets, results },
     code = notebookFrontEnd[ "CodeCells", $snapshots[ handle, "Notebook" ] ];
     If[ ! MatchQ[ code, { __Association } ] || ! IntersectingQ[ Lookup[ code, "Cell" ], changed ], Return[ "", Module ] ];
-    results = sandboxCheckCells[ Lookup[ code, "Boxes" ], $cellCheckSeconds, $codeCheckSeconds ];
+    cells   = Lookup[ code, "Cell" ];
+    (* the cells written and every one after the first of them, whose results may depend on it *)
+    targets = If[ TrueQ @ evaluate, Range[ First @ FirstPosition[ cells, Alternatives @@ changed, { 1 }, { 1 }, Heads -> False ], Length @ cells ], { } ];
+    results = If[ targets === { },
+        sandboxCheckCells[ Lookup[ code, "Boxes" ], $cellCheckSeconds, $codeCheckSeconds ],
+        sandboxCheckCells[ Lookup[ code, "Boxes" ], $cellCheckSeconds, $codeCheckSeconds, targets ]
+    ];
     If[ ! ListQ @ results,
         Return[ "\n\nCode check: the code could not be checked (" <> codeCheckFailureText @ results <> ").", Module ]
     ];
-    codeCheckText[ Lookup[ $snapshots[ handle, "IDs" ], Lookup[ code, "Cell" ], "?" ], results ]
+    targets = Select[ targets, # <= Length @ results & ];
+    StringJoin[
+        codeCheckText[ Lookup[ $snapshots[ handle, "IDs" ], cells, "?" ], results ],
+        If[ targets === { }, "", evaluatedOutputs[ handle, cells[[ targets ]], results[[ targets ]] ] ]
+    ]
 ];
 
 codeCheck // endDefinition;
+
+
+(* The outputs of evaluated Input cells, replaced in one edit: for each cell with a result to show, the Output, Print,
+   Message and Echo cells right after it are deleted and an Output cell with the result's boxes (from the sandbox kernel,
+   checked like the agent's text) is inserted after it; a cell whose result is Null loses its outputs. A cell whose
+   result can't be written (aborted, too large, or content that would run code when shown) keeps its old outputs, and
+   the result says so. *)
+evaluatedOutputs // beginDefinition;
+
+evaluatedOutputs[ handle_String, cells_List, results_List ] := Module[ { entries, plans, deleted, inserts, kept, result, inserted },
+    entries = notebookFrontEnd[ "CellText", $snapshots[ handle, "Notebook" ], All, 1, True ];
+    If[ ! MatchQ[ entries, { KeyValuePattern[ "Cell" -> _CellObject ]... } ], Return[ "", Module ] ];
+    plans   = MapThread[ outputPlan, { cells, results } ];
+    deleted = Catenate[ MapThread[ If[ #2[[ 1 ]] === "Kept", { }, followingOutputs[ entries, #1 ] ] &, { cells, plans } ] ];
+    inserts = Cases[ plans, { "Insert", op_ } :> op ];
+    kept    = Cases[ Transpose @ { cells, plans }, { cell_, { "Kept", why_ } } :> "#" <> $snapshots[ handle, "IDs", cell ] <> " (" <> why <> ")" ];
+    result  = If[ inserts === { } && deleted === { },
+        <| |>,
+        applyEdit[ handle, Join[ If[ deleted === { }, { }, { { "Delete", deleted } } ], inserts ] ]
+    ];
+    inserted = Cases[ Lookup[ result, "Inserted", { } ], _CellObject ];
+    forgetCells[ handle, deleted ];
+    numberCells[ handle, inserted ];
+    StringJoin[
+        "\n\nEvaluated ", StringRiffle[ "#" <> $snapshots[ handle, "IDs", # ] & /@ cells, ", " ], ": ",
+        If[ inserted === { },
+            "no new outputs.",
+            "new Output cells " <> outputIDs[ handle, inserts, inserted ] <> " (their results are in the code check)."
+        ],
+        If[ kept === { }, "", "\nNot written, so the old outputs are kept: " <> StringRiffle[ kept, ", " ] <> "." ]
+    ]
+];
+
+evaluatedOutputs // endDefinition;
+
+
+(* The new Output cells by the cell they follow, e.g. #c115 after #c10, #c116 and #c117 after #c16. The tools don't read
+   them: the front end would first have to typeset every new cell, which takes seconds for plots, and the code check
+   already shows each result. *)
+outputIDs // beginDefinition;
+
+outputIDs[ handle_String, inserts_List, inserted_List ] /; Total[ Length /@ inserts[[ All, 4 ]] ] === Length @ inserted :=
+    StringRiffle[
+        MapThread[
+            StringRiffle[ "#" <> $snapshots[ handle, "IDs", # ] & /@ #2, " and " ] <> " after #" <> $snapshots[ handle, "IDs", #1 ] &,
+            { inserts[[ All, 2 ]], TakeList[ inserted, Length /@ inserts[[ All, 4 ]] ] }
+        ],
+        ", "
+    ];
+
+outputIDs[ handle_String, _List, inserted_List ] := StringRiffle[ "#" <> $snapshots[ handle, "IDs", # ] & /@ inserted, ", " ];
+
+outputIDs // endDefinition;
+
+
+(* The output cells right after a cell *)
+followingOutputs // beginDefinition;
+
+followingOutputs[ entries_List, cell_ ] := Module[ { pos = FirstPosition[ Lookup[ entries, "Cell" ], cell, None, { 1 } ] },
+    If[ pos === None, Return[ { }, Module ] ];
+    Lookup[ TakeWhile[ Drop[ entries, First @ pos ], outputStyleQ @ Lookup[ #, "Style", None ] & ], "Cell" ]
+];
+
+followingOutputs // endDefinition;
+
+
+(* What to do with a cell's outputs: { "Insert", op } for results to show (an Output cell for each of the cell's
+   statements with a result), { "Delete" } for none (the stale outputs go), { "Kept", why } for results that can't be
+   written. Outputs are checked for code that runs when shown; an InterpretationFunction (a plot legend's) runs only
+   when an output is evaluated as input, as with the Input cell's own code. The new Output cells also have the style
+   "EvaluationUnmatched", the front end's graying of an output that its input in the user's session did not give: they
+   come from the sandbox kernel, and evaluating the input replaces them. *)
+outputPlan // beginDefinition;
+
+outputPlan[ cell_, result_Association ] := With[ { boxes = Lookup[ result, "Boxes", None ] },
+    Which[
+        TrueQ @ result[ "Aborted" ],
+            { "Kept", "aborted after " <> ToString @ $cellCheckSeconds <> " s" },
+        boxes === None,
+            { "Delete" },
+        MemberQ[ boxes, "" ],
+            { "Kept", "too large" },
+        AnyTrue[ boxes, StringQ @ Catch[ requireInertText[ "\:3014" <> # <> "\:3015", "The output", $$codeShownInWrapper ]; Null, $toolErrorTag ] & ],
+            { "Kept", "it would run code when shown" },
+        True,
+            { "Insert", { "Insert", cell, "After", { $evaluatedOutputStyles, "\:3014" <> # <> "\:3015" } & /@ boxes } }
+    ]
+];
+
+outputPlan // endDefinition;
+
+$evaluatedOutputStyles = { "Output", "EvaluationUnmatched" };
+
+
+outputStyleQ // beginDefinition;
+outputStyleQ[ style_ ] := MemberQ[ { "Output", "Print", "Message", "Echo" }, style ];
+outputStyleQ // endDefinition;
+
+
+(* Hand-written outputs are refused: the outputs are the real results *)
+requireNoOutputCells // beginDefinition;
+
+requireNoOutputCells[ _String, { } ] := Null;
+
+requireNoOutputCells[ handle_String, cells_List ] := With[
+    { entries = notebookFrontEnd[ "CellText", $snapshots[ handle, "Notebook" ], cells, 1, True ] },
+    If[ MatchQ[ entries, { __Association } ] && AnyTrue[ Lookup[ entries, "Style", None ], outputStyleQ ], toolError @ $outputCellText ]
+];
+
+requireNoOutputCells // endDefinition;
+
+$outputCellText = "\
+Output cells are never written by hand: they hold the real results. Give evaluate: true with the edit of the Input \
+cell, which replaces its outputs and those of the Input cells after it with their results, or delete outputs that \
+become stale.";
 
 
 (* results: one <| "Result" -> what the cell gave as InputForm ("" for nothing worth showing), "Messages", "Aborted" |>

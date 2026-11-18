@@ -390,4 +390,36 @@ VerificationTest[
     TestID   -> "TeXBoxes"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Check Cells*)
+
+(* A cell evaluated for its outputs gives the boxes of each of its statements with a result other than Null, as the
+   front end makes an Output cell for each, whether its boxes are one RowBox or a list of lines; a plot's boxes come
+   without their DynamicBoxes, a legend's included *)
+VerificationTest[
+    Lookup[
+        Wolfram`Chatbook`Common`sandboxCheckCells[
+            {
+                RowBox[ { RowBox[ { RowBox[ { "f", "[", "x_", "]" } ], ":=", RowBox[ { "x", "^", "2" } ] } ], "\n", RowBox[ { "f", "[", "3", "]" } ], "\n", RowBox[ { "f", "[", "4", "]" } ] } ],
+                RowBox[ { RowBox[ { "y", "=", "1" } ], ";" } ],
+                { RowBox[ { "y", "=", "2" } ], "\n", RowBox[ { "y", "+", "1" } ] },
+                RowBox[ { "Plot", "[", RowBox[ { RowBox[ { "{", RowBox[ { "x", ",", RowBox[ { "x", "^", "2" } ] } ], "}" } ], ",", RowBox[ { "{", RowBox[ { "x", ",", "0", ",", "1" } ], "}" } ], ",", RowBox[ { "PlotLegends", "->", "Automatic" } ] } ], "]" } ]
+            },
+            20,
+            60,
+            { 1, 2, 3, 4 }
+        ],
+        { "Result", "Boxes" }
+    ],
+    {
+        { "{9, 16}", { "\"9\"", "\"16\"" } },
+        { "", None },
+        { "{2, 3}", { "\"2\"", "\"3\"" } },
+        { "", { s_String /; StringContainsQ[ s, "GraphicsBox" ] && ! StringContainsQ[ s, "DynamicBox" ] } }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "CheckCells-Outputs"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)
