@@ -295,6 +295,7 @@ VerificationTest[
             {
                 Wolfram`Chatbook`Common`$lastTask,
                 Wolfram`Chatbook`Common`$lastCellObject,
+                Wolfram`Chatbook`SendChat`Private`$debugLog            = Internal`Bag[ ],
                 Wolfram`Chatbook`Common`getHandlerFunctions            = <| |> &,
                 Wolfram`Chatbook`Common`dynamicSplitQ                  = False &,
                 Wolfram`Chatbook`Common`logUsage                       = Null &,
@@ -341,6 +342,7 @@ VerificationTest[
                 Wolfram`Chatbook`Common`$lastTask,
                 Wolfram`Chatbook`Common`$lastCellObject,
                 Wolfram`Chatbook`SendChat`Private`$emulatedStopTriggered  = False,
+                Wolfram`Chatbook`SendChat`Private`$debugLog               = Internal`Bag[ ],
                 Wolfram`Chatbook`Common`getHandlerFunctions               = <| |> &,
                 Wolfram`Chatbook`Common`dynamicSplitQ                     = False &,
                 Wolfram`Chatbook`Common`logUsage                          = Null &,
