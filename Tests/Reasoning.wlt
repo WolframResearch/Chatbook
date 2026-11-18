@@ -140,14 +140,11 @@ VerificationTest[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Formatting*)
-
-(* A summary of a single short line is shown as that line, without an opener ("ShortThoughts", which takes the same
-   arguments as "ThoughtsOpener"): *)
 VerificationTest[
     withReasoningData[
         FirstCase[
             FormatChatOutput[ "<think type='summary' id='abc123'>\nSome **summary** text\n</think>\n\nThe answer is 391." ],
-            TemplateBox[ { text_, _, meta_Association }, "ShortThoughts" ] :> { thoughtsText @ text, meta },
+            TemplateBox[ { text_, _, meta_Association }, "ThoughtsOpener" ] :> { thoughtsText @ text, meta },
             $Failed,
             Infinity
         ],
@@ -167,67 +164,6 @@ VerificationTest[
     },
     SameTest -> MatchQ,
     TestID   -> "Format-Summary"
-]
-
-VerificationTest[
-    withReasoningData[
-        FirstCase[
-            FormatChatOutput[ "<think type='summary' id='abc123'>\n**Multiplying**\n\nI need to multiply 17 by 23.\n</think>\n\nThe answer is 391." ],
-            TemplateBox[ { text_, _, meta_Association }, "ThoughtsOpener" ] :> { thoughtsText @ text, meta },
-            $Failed,
-            Infinity
-        ],
-        $storedReasoning
-    ],
-    {
-        "**Multiplying**\n\nI need to multiply 17 by 23.",
-        KeyValuePattern @ { "Type" -> "Summary", "ID" -> "abc123", "Signature" -> $signature, "Duration" -> 3.2 }
-    },
-    SameTest -> MatchQ,
-    TestID   -> "Format-Summary-Opener"
-]
-
-(* Bold that covers the whole line is removed (the template has its own font); the label (the duration) and the
-   metadata with the signature are kept in the template's arguments: *)
-VerificationTest[
-    withReasoningData[
-        FirstCase[
-            FormatChatOutput[ "<think type='summary' id='abc123'>\n**Planning TOML import/export wrappers**\n</think>\n\nDone." ],
-            TemplateBox[ { text_, label_, meta_ }, name_String ] /; StringContainsQ[ name, "Thought" ] :>
-                { name, thoughtsText @ text, FreeQ[ text, _StyleBox ], label, meta },
-            $Failed,
-            Infinity
-        ],
-        $storedReasoning
-    ],
-    {
-        "ShortThoughts",
-        "Planning TOML import/export wrappers",
-        True,
-        s_String /; StringContainsQ[ s, " 3 " ],
-        KeyValuePattern @ { "Type" -> "Summary", "ID" -> "abc123", "Signature" -> $signature, "CallID" -> "rs_123" }
-    },
-    SameTest -> MatchQ,
-    TestID   -> "Format-Short-Summary-Title"
-]
-
-(* A single line that is too long for one line of the window still gets an opener: *)
-VerificationTest[
-    withReasoningData[
-        Cases[
-            FormatChatOutput @ StringJoin[
-                "<think type='summary' id='abc123'>\n", StringRepeat[ "word ", 15 ], "\n</think>\n",
-                "<think type='summary' id='def456'>\n", StringRepeat[ "word ", 16 ], "\n</think>\n",
-                "Done."
-            ],
-            TemplateBox[ _, name: "ShortThoughts" | "ThoughtsOpener" ] :> name,
-            Infinity
-        ],
-        $storedReasoning
-    ],
-    { "ShortThoughts", "ThoughtsOpener" },
-    SameTest -> MatchQ,
-    TestID   -> "Format-Long-Line-Summary"
 ]
 
 (* Without a summary, only the label is shown (no opener): *)
@@ -308,7 +244,7 @@ VerificationTest[
 VerificationTest[
     FirstCase[
         FormatChatOutput[ "<think>\nLiteral thoughts\n</think>\nThe answer is 391." ],
-        TemplateBox[ { text_, _, meta_Association }, "ShortThoughts" ] :> { thoughtsText @ text, meta },
+        TemplateBox[ { text_, _, meta_Association }, "ThoughtsOpener" ] :> { thoughtsText @ text, meta },
         $Failed,
         Infinity
     ],
@@ -338,7 +274,7 @@ VerificationTest[
                 "<think type='summary' id='def456'>\nSecond\n</think>\n",
                 "The answer is 391."
             ],
-            TemplateBox[ { text_, _, KeyValuePattern[ "ID" -> id_ ] }, "ShortThoughts" ] :> { thoughtsText @ text, id },
+            TemplateBox[ { text_, _, KeyValuePattern[ "ID" -> id_ ] }, "ThoughtsOpener" ] :> { thoughtsText @ text, id },
             Infinity
         ],
         $storedReasoning
@@ -348,14 +284,14 @@ VerificationTest[
     TestID   -> "Format-Multiple-Summaries"
 ]
 
-(* Each summary shows its own duration (in the label of its opener, so these summaries are not a single short line): *)
+(* Each summary shows its own duration: *)
 VerificationTest[
     withReasoningData[
         Cases[
             FormatChatOutput @ StringJoin[
-                "<think type='summary' id='abc'>\n**First**\n\nThoughts\n</think>\n",
-                "<think type='summary' id='def'>\n**Second**\n\nThoughts\n</think>\n",
-                "<think type='summary' id='ghi'>\n**Third**\n\nThoughts\n</think>\n",
+                "<think type='summary' id='abc'>\nFirst\n</think>\n",
+                "<think type='summary' id='def'>\nSecond\n</think>\n",
+                "<think type='summary' id='ghi'>\nThird\n</think>\n",
                 "Done"
             ],
             TemplateBox[ { _, label_, _ }, "ThoughtsOpener" ] :> label,
@@ -397,7 +333,7 @@ VerificationTest[
 VerificationTest[
     withReasoningData @ FirstCase[
         FormatChatOutput[ "<think type='summary' id='abc123'>\nI should use the wolfram_language_evaluator tool.\n</think>\nDone." ],
-        TemplateBox[ { text_TextData, _, _ }, "ShortThoughts" ] :> { FreeQ[ text, _StyleBox ], thoughtsText @ text },
+        TemplateBox[ { text_TextData, _, _ }, "ThoughtsOpener" ] :> { FreeQ[ text, _StyleBox ], thoughtsText @ text },
         $Failed,
         Infinity
     ],
@@ -431,55 +367,29 @@ VerificationTest[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Serialization*)
-
-(* These summaries have more than one line, so they are shown with "ThoughtsOpener" (see
-   Short-Summary-Cell-Message-Restores-Signature and Serialize-Literal-Short for "ShortThoughts"): *)
 VerificationTest[
     withReasoningData[
-        Module[ { cell },
-            cell = Cell[
-                FormatChatOutput[ "<think type='summary' id='abc123'>\n**Multiplying**\n\nI need to multiply 17 by 23.\n</think>\n\nThe answer is 391." ][[ 1, 1 ]],
-                "ChatOutput"
-            ];
-            { thoughtsTemplateNames @ cell, CellToString @ cell }
+        CellToString @ Cell[
+            FormatChatOutput[ "<think type='summary' id='abc123'>\nSome summary\n</think>\n\nThe answer is 391." ][[ 1, 1 ]],
+            "ChatOutput"
         ],
         $storedReasoning
     ],
-    {
-        { "ThoughtsOpener" },
-        s_String /; StringMatchQ[
-            s,
-            "<think type='summary' id='abc123'>\n**Multiplying**\n\nI need to multiply 17 by 23.\n</think>" ~~ WhitespaceCharacter... ~~ "The answer is 391."
-        ]
-    },
+    s_String /; StringMatchQ[
+        s,
+        "<think type='summary' id='abc123'>\nSome summary\n</think>" ~~ WhitespaceCharacter... ~~ "The answer is 391."
+    ],
     SameTest -> MatchQ,
     TestID   -> "Serialize-Summary"
 ]
 
 VerificationTest[
-    withReasoningData @ Module[ { cell },
-        cell = Cell[ FormatChatOutput[ "<think>\nLiteral thoughts\n\nMore thoughts\n</think>\nThe answer is 391." ][[ 1, 1 ]], "ChatOutput" ];
-        { thoughtsTemplateNames @ cell, CellToString @ cell }
+    withReasoningData[
+        CellToString @ Cell[ FormatChatOutput[ "<think>\nLiteral thoughts\n</think>\nThe answer is 391." ][[ 1, 1 ]], "ChatOutput" ]
     ],
-    {
-        { "ThoughtsOpener" },
-        s_String /; StringMatchQ[ s, "<think>\nLiteral thoughts\n\nMore thoughts\n</think>" ~~ WhitespaceCharacter... ~~ "The answer is 391." ]
-    },
+    s_String /; StringMatchQ[ s, "<think>\nLiteral thoughts\n</think>" ~~ WhitespaceCharacter... ~~ "The answer is 391." ],
     SameTest -> MatchQ,
     TestID   -> "Serialize-Literal"
-]
-
-VerificationTest[
-    withReasoningData @ Module[ { cell },
-        cell = Cell[ FormatChatOutput[ "<think>\nLiteral thoughts\n</think>\nThe answer is 391." ][[ 1, 1 ]], "ChatOutput" ];
-        { thoughtsTemplateNames @ cell, CellToString @ cell }
-    ],
-    {
-        { "ShortThoughts" },
-        s_String /; StringMatchQ[ s, "<think>\nLiteral thoughts\n</think>" ~~ WhitespaceCharacter... ~~ "The answer is 391." ]
-    },
-    SameTest -> MatchQ,
-    TestID   -> "Serialize-Literal-Short"
 ]
 
 VerificationTest[
@@ -499,15 +409,12 @@ VerificationTest[
 VerificationTest[
     Module[ { cell },
         cell = withReasoningData[
-            Cell[
-                FormatChatOutput[ "<think type='summary' id='abc123'>\n**Multiplying**\n\nI need to multiply 17 by 23.\n</think>\nAnswer" ][[ 1, 1 ]],
-                "ChatOutput"
-            ],
+            Cell[ FormatChatOutput[ "<think type='summary' id='abc123'>\nSome summary\n</think>\nAnswer" ][[ 1, 1 ]], "ChatOutput" ],
             $storedReasoning
         ];
-        withReasoningData @ { thoughtsTemplateNames @ cell, CellToString @ cell; Wolfram`Chatbook`Common`$reasoningData }
+        withReasoningData[ CellToString @ cell; Wolfram`Chatbook`Common`$reasoningData ]
     ],
-    { { "ThoughtsOpener" }, $storedReasoning },
+    $storedReasoning,
     SameTest -> MatchQ,
     TestID   -> "Serialize-Restores-Signature"
 ]
@@ -515,7 +422,7 @@ VerificationTest[
 (* A chat output cell from a previous kernel session still produces a message with the signature: *)
 VerificationTest[
     Module[ { string, cell },
-        string = "<think type='summary' id='abc123'>\n**Multiplying**\n\nI need to multiply 17 by 23.\n</think>\nThe answer is 391.";
+        string = "<think type='summary' id='abc123'>\nSome summary\n</think>\nThe answer is 391.";
         cell = withReasoningData[
             Cell[
                 FormatChatOutput[ string ][[ 1, 1 ]],
@@ -524,68 +431,22 @@ VerificationTest[
             ],
             $storedReasoning
         ];
-        {
-            thoughtsTemplateNames @ cell,
-            withReasoningData @ Wolfram`Chatbook`Common`convertReasoningMessages[
-                $openAISettings,
-                { CellToChatMessage @ cell }
-            ]
-        }
+        withReasoningData @ Wolfram`Chatbook`Common`convertReasoningMessages[
+            $openAISettings,
+            { CellToChatMessage @ cell }
+        ]
     ],
     {
-        { "ThoughtsOpener" },
-        {
-            <|
-                "Role"    -> "Assistant",
-                "Content" -> {
-                    <| "Type" -> "Reasoning", "Signature" -> $signature, "CallID" -> "rs_123" |>,
-                    <| "Type" -> "Text", "Data" -> "The answer is 391." |>
-                }
-            |>
-        }
+        <|
+            "Role"    -> "Assistant",
+            "Content" -> {
+                <| "Type" -> "Reasoning", "Signature" -> $signature, "CallID" -> "rs_123" |>,
+                <| "Type" -> "Text", "Data" -> "The answer is 391." |>
+            }
+        |>
     },
     SameTest -> MatchQ,
     TestID   -> "ChatOutput-Cell-Message-Restores-Signature"
-]
-
-(* A short summary ("ShortThoughts") is serialized like the other thoughts boxes, so its signature is sent when the chat
-   output is from a previous kernel session, and the string gives the same box again: *)
-VerificationTest[
-    Module[ { cell, string },
-        cell = withReasoningData[
-            Cell[
-                FormatChatOutput[ "<think type='summary' id='abc123'>\n**Multiplying**\n</think>\nThe answer is 391." ][[ 1, 1 ]],
-                "ChatOutput"
-            ],
-            $storedReasoning
-        ];
-        withReasoningData @ {
-            thoughtsTemplateNames @ cell,
-            string = CellToString @ cell,
-            Wolfram`Chatbook`Common`convertReasoningMessages[ $openAISettings, { CellToChatMessage @ cell } ],
-            Cases[
-                FormatChatOutput @ string,
-                TemplateBox[ { text_, _, meta_ }, "ShortThoughts" ] :> { thoughtsText @ text, meta[ "Signature" ] },
-                Infinity
-            ]
-        }
-    ],
-    {
-        { "ShortThoughts" },
-        s_String /; StringMatchQ[ s, "<think type='summary' id='abc123'>\nMultiplying\n</think>" ~~ WhitespaceCharacter... ~~ "The answer is 391." ],
-        {
-            <|
-                "Role"    -> "Assistant",
-                "Content" -> {
-                    <| "Type" -> "Reasoning", "Signature" -> $signature, "CallID" -> "rs_123" |>,
-                    <| "Type" -> "Text", "Data" -> "The answer is 391." |>
-                }
-            |>
-        },
-        { { "Multiplying", $signature } }
-    },
-    SameTest -> MatchQ,
-    TestID   -> "Short-Summary-Cell-Message-Restores-Signature"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -1286,6 +1147,103 @@ VerificationTest[
     { _Success, $storedReasoning, $storedReasoning },
     SameTest -> MatchQ,
     TestID   -> "SaveChat-LoadChat-Reasoning"
+]
+
+VerificationTest[
+    withReasoningData[
+        FirstCase[
+            FormatChatOutput[ "<think type='summary' id='abc123'>\n**Multiplying**\n\nI need to multiply 17 by 23.\n</think>\n\nThe answer is 391." ],
+            TemplateBox[ { text_, _, meta_Association }, "ThoughtsOpener" ] :> { thoughtsText @ text, meta },
+            $Failed,
+            Infinity
+        ],
+        $storedReasoning
+    ],
+    {
+        "**Multiplying**\n\nI need to multiply 17 by 23.",
+        KeyValuePattern @ { "Type" -> "Summary", "ID" -> "abc123", "Signature" -> $signature, "Duration" -> 3.2 }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Format-Summary-Opener"
+]
+
+(* Chatbook's own output keeps the opener for a single line; the ACP window shows such a line with the ShortThoughts
+   template (ACP/Rendering.wl), as decided by shortThoughtsText: bold that covers the whole line is removed (the
+   template has its own font), and a line too long for one line of the window, or more than one line, gives None: *)
+VerificationTest[
+    {
+        withReasoningData[
+            Cases[
+                FormatChatOutput[ "<think type='summary' id='abc123'>\n**Planning TOML import/export wrappers**\n</think>\n\nDone." ],
+                TemplateBox[ _, name: "ShortThoughts" | "ThoughtsOpener" ] :> name,
+                Infinity
+            ],
+            $storedReasoning
+        ],
+        Wolfram`Chatbook`Common`shortThoughtsText /@ {
+            "\n**Planning TOML import/export wrappers**\n",
+            StringRepeat[ "word ", 15 ],
+            StringRepeat[ "word ", 16 ],
+            "two\nlines"
+        }
+    },
+    { { "ThoughtsOpener" }, { "Planning TOML import/export wrappers", _String, None, None } },
+    SameTest -> MatchQ,
+    TestID   -> "Short-Summary-Lines"
+]
+
+VerificationTest[
+    withReasoningData @ Module[ { cell },
+        (* the ACP window writes single-line thoughts with the ShortThoughts template: *)
+        cell = Cell[ FormatChatOutput[ "<think>\nLiteral thoughts\n</think>\nThe answer is 391." ][[ 1, 1 ]] /. TemplateBox[ args_, "ThoughtsOpener" ] :> TemplateBox[ args, "ShortThoughts" ], "ChatOutput" ];
+        { thoughtsTemplateNames @ cell, CellToString @ cell }
+    ],
+    {
+        { "ShortThoughts" },
+        s_String /; StringMatchQ[ s, "<think>\nLiteral thoughts\n</think>" ~~ WhitespaceCharacter... ~~ "The answer is 391." ]
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Serialize-Literal-Short"
+]
+
+(* A short summary (the ACP window's "ShortThoughts") is serialized like the other thoughts boxes, so its signature is sent when the chat
+   output is from a previous kernel session, and the string gives the same box again: *)
+VerificationTest[
+    Module[ { cell, string },
+        cell = withReasoningData[
+            Cell[
+                FormatChatOutput[ "<think type='summary' id='abc123'>\nMultiplying\n</think>\nThe answer is 391." ][[ 1, 1 ]] /. TemplateBox[ args_, "ThoughtsOpener" ] :> TemplateBox[ args, "ShortThoughts" ],
+                "ChatOutput"
+            ],
+            $storedReasoning
+        ];
+        withReasoningData @ {
+            thoughtsTemplateNames @ cell,
+            string = CellToString @ cell,
+            Wolfram`Chatbook`Common`convertReasoningMessages[ $openAISettings, { CellToChatMessage @ cell } ],
+            Cases[
+                FormatChatOutput @ string,
+                TemplateBox[ { text_, _, meta_ }, "ThoughtsOpener" ] :> { thoughtsText @ text, meta[ "Signature" ] },
+                Infinity
+            ]
+        }
+    ],
+    {
+        { "ShortThoughts" },
+        s_String /; StringMatchQ[ s, "<think type='summary' id='abc123'>\nMultiplying\n</think>" ~~ WhitespaceCharacter... ~~ "The answer is 391." ],
+        {
+            <|
+                "Role"    -> "Assistant",
+                "Content" -> {
+                    <| "Type" -> "Reasoning", "Signature" -> $signature, "CallID" -> "rs_123" |>,
+                    <| "Type" -> "Text", "Data" -> "The answer is 391." |>
+                }
+            |>
+        },
+        { { "Multiplying", $signature } }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Short-Summary-Cell-Message-Restores-Signature"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

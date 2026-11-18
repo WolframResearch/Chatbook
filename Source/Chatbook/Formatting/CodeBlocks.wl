@@ -95,11 +95,9 @@ makeInteractiveCodeCell[ language_, code_String ] /; linearSyntaxQ @ code :=
     makeInteractiveCodeCell[ language, neutralizeLinearSyntax @ code ];
 
 (* TODO: define template boxes for these *)
-(* ShowStringCharacters as in the finished "ChatCode" cell: the chat output templates hide string characters, which
-   would hide the quotes of the code's strings *)
 makeInteractiveCodeCell[ language_, code_String ] /; $dynamicText :=
     If[ TrueQ @ wolframLanguageQ @ language,
-        codeBlockFrame[ Cell[ BoxData @ wlStringToBoxes @ code, "ChatCodeActive", ShowStringCharacters -> True ], code, language ],
+        codeBlockFrame[ Cell[ BoxData @ wlStringToBoxes @ code, "ChatCodeActive" ], code, language ],
         codeBlockFrame[ Cell[ code, "ChatPreformatted" ], code, language ]
     ];
 

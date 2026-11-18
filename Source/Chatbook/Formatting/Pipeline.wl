@@ -73,14 +73,11 @@ importHTMLEntities // beginDefinition;
 importHTMLEntities[ string_String ] /; $htmlEntitiesDecoded := string;
 
 (* Named entities (case-sensitive, as in HTML) and numeric ones are decoded in a single pass, so "&amp;lt;" gives
-   "&lt;". Anything else is left as it is. Code is kept as it is written: a code block (also one that is not closed yet)
-   and inline code, with the formatter's own rules for where they start and end ($textDataFormatRules), so that code
-   such as `StringReplace[html, "&amp;" -> "&"]` keeps its meaning. Numeric entities can give the characters of linear
-   syntax (&#xF7C1;), which are replaced (see neutralizeLinearSyntax): *)
+   "&lt;". Anything else is left as it is. Numeric entities can give the characters of linear syntax (&#xF7C1;), which
+   are replaced (see neutralizeLinearSyntax): *)
 importHTMLEntities[ string_String ] := StringReplace[
     string,
     {
-        code: $$htmlEntityFreeCode :> code,
         e: ("&#" ~~ ("x"|"X") ~~ hex: HexadecimalCharacter.. ~~ ";") :>
             neutralizeLinearSyntax @ codePointString[ FromDigits[ hex, 16 ], e ],
         e: ("&#" ~~ decimal: CharacterRange[ "0", "9" ].. ~~ ";") :>
@@ -90,16 +87,6 @@ importHTMLEntities[ string_String ] := StringReplace[
 ];
 
 importHTMLEntities // endDefinition;
-
-$$htmlEntityFreeCode = Alternatives[
-    StringExpression[
-        Longest[ "```" ~~ Except[ "\n" ]... ] ~~ (" "...) ~~ "\n",
-        Shortest[ __ ],
-        ("```"|EndOfString)
-    ],
-    "``" ~~ Shortest[ __ ] ~~ "``",
-    "`" ~~ Except[ "`"|"\n" ].. ~~ "`"
-];
 
 $htmlEntitiesDecoded = False;
 
@@ -264,16 +251,11 @@ makeResultCell0[ thoughtsOpener[ thoughts_String, attributes_String ] ] :=
     makeResultCell0 @ thoughtsOpener[ thoughts, reasoningMetadata @ attributes ];
 
 makeResultCell0[ thoughtsOpener[ thoughts_String, meta_Association ] ] :=
-    Module[ { label, short, box },
+    Module[ { label, box },
         label = ToBoxes @ thoughtsLabel @ meta;
-        short = shortThoughtsText @ thoughts;
-        box = Which[
-                  StringTrim @ thoughts === "",
-                      templateBox[ { "", label, meta }, "EmptyThoughts" ], (* no summary available, so only show label *)
-                  StringQ @ short,
-                      templateBox[ { formatThoughts @ short, label, meta }, "ShortThoughts" ], (* one line, no opener *)
-                  True,
-                      templateBox[ { formatThoughts @ thoughts, label, meta }, "ThoughtsOpener" ]
+        box = If[ StringTrim @ thoughts === "",
+                  templateBox[ { "", label, meta }, "EmptyThoughts" ], (* no summary available, so only show label *)
+                  templateBox[ { formatThoughts @ thoughts, label, meta }, "ThoughtsOpener" ]
               ];
         {
             Cell[ BoxData @ box, "ThoughtsOpener", Background -> None ],

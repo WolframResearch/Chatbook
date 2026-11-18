@@ -429,7 +429,7 @@ VerificationTest[
 VerificationTest[
     FirstCase[
         FormatChatOutput[ "<THINKING>fish &amp; chips /\\\\_/\\\\</THINKING>" ],
-        TemplateBox[ { text_, _, ___ }, "ShortThoughts" ] :> CellToString @ Cell[ text, "Text" ],
+        TemplateBox[ { text_, _, ___ }, "ThoughtsOpener" ] :> CellToString @ Cell[ text, "Text" ],
         $Failed,
         Infinity
     ],
@@ -438,7 +438,7 @@ VerificationTest[
     TestID   -> "Thinking-Escapes-Ignore-Case-And-Import-HTML"
 ]
 
-(* Thoughts of a single short line are shown as that line (ShortThoughts), without bold that covers the whole line. An
+(* Thoughts of a single short line are shown in the ACP window as that line (ShortThoughts), without bold that covers the whole line. An
    unterminated bold title (a thought cut off by a stop) keeps the opener, and full-width characters count as 2.5: *)
 VerificationTest[
     Wolfram`Chatbook`Common`shortThoughtsText /@ {
@@ -487,21 +487,6 @@ VerificationTest[
     },
     SameTest -> MatchQ,
     TestID   -> "ShortThoughtsText"
-]
-
-VerificationTest[
-    Cases[
-        FormatChatOutput[ "<think>\n**Planning the answer**\n</think>\n<think>\nA longer thought.\n\nIt has two paragraphs.\n</think>\nDone." ],
-        TemplateBox[ { text_, _, meta_ }, name: "ShortThoughts" | "ThoughtsOpener" ] :>
-            { name, CellToString @ Cell[ text, "Text" ], FreeQ[ text, FontWeight -> Bold ], meta },
-        Infinity
-    ],
-    {
-        { "ShortThoughts", "Planning the answer", True, <| "Type" -> "Literal" |> },
-        { "ThoughtsOpener", s_String /; StringStartsQ[ s, "A longer thought." ] && StringEndsQ[ s, "It has two paragraphs." ], True, <| "Type" -> "Literal" |> }
-    },
-    SameTest -> MatchQ,
-    TestID   -> "Thinking-Short-Line"
 ]
 
 (* The thoughts templates are in the generated files (Developer/Resources/Styles.wl, built with
@@ -803,15 +788,26 @@ VerificationTest[
     TestID   -> "Placeholder-Streaming-Partial"
 ]
 
-(* While streaming, Wolfram Language code is a string in a "ChatCodeActive" cell, which shows the quotes of its strings
-   like the finished "ChatCode" cell (the chat output templates hide string characters): *)
+(* While streaming, Wolfram Language code is a string in a "ChatCodeActive" cell, whose style shows the quotes of its
+   strings like the finished "ChatCode" cell (the chat output templates hide string characters): *)
 VerificationTest[
-    Cases[
-        FormatChatOutput[ "```wl\nx = \"a\"\n```\n", <| "Status" -> "Streaming" |> ],
-        Cell[ BoxData[ _String ], "ChatCodeActive", opts___ ] :> { opts },
-        Infinity
-    ],
-    { { ShowStringCharacters -> True } },
+    {
+        Cases[
+            FormatChatOutput[ "```wl\nx = \"a\"\n```\n", <| "Status" -> "Streaming" |> ],
+            Cell[ BoxData[ _String ], "ChatCodeActive", opts___ ] :> { opts },
+            Infinity
+        ],
+        Cases[
+            ToExpression[
+                ReadString @ FileNameJoin @ { DirectoryName[ $TestFileName, 2 ], "FrontEnd", "StyleSheets", "Chatbook.nb" },
+                InputForm,
+                HoldComplete
+            ],
+            Cell[ StyleData[ "ChatCodeActive", ___ ], ___, ShowStringCharacters -> show_, ___ ] :> show,
+            Infinity
+        ]
+    },
+    { { { } }, { True } },
     SameTest -> MatchQ,
     TestID   -> "Streaming-WL-Code-ShowsStringCharacters"
 ]
@@ -1504,34 +1500,6 @@ VerificationTest[
     },
     SameTest -> MatchQ,
     TestID   -> "ImportHTMLEntity-Real-Entities-Only"
-]
-
-(* Code keeps its HTML entities as they are written, in code blocks (also one that is not closed yet) and inline code,
-   while the same entities in the text around it are decoded: *)
-VerificationTest[
-    {
-        Wolfram`Chatbook`Formatting`Private`importHTMLEntities[
-            "Use &lt;b&gt;:\n```wl\nStringReplace[html, {\"&lt;\" -> \"<\", \"&amp;\" -> \"&\"}]\n```\nthen `a &amp;&amp; b` and ``x &lt; y`` &amp; more"
-        ],
-        Wolfram`Chatbook`Formatting`Private`importHTMLEntities[ "Streaming &amp;\n```python\nhtml.replace('&amp;', '&')" ],
-        Cases[
-            FormatChatOutput[ "```python\nhtml.replace('&amp;', '&')\n```", <| "Status" -> "Finished" |> ],
-            s_String /; StringContainsQ[ s, "html.replace" ] :> StringContainsQ[ s, "'&amp;'" ],
-            Infinity
-        ],
-        ! FreeQ[
-            FormatChatOutput[ "```wl\nStringReplace[html, \"&lt;\" -> \"<\"]\n```", <| "Status" -> "Streaming" |> ],
-            s_String /; StringContainsQ[ s, "&lt;" ]
-        ]
-    },
-    {
-        "Use <b>:\n```wl\nStringReplace[html, {\"&lt;\" -> \"<\", \"&amp;\" -> \"&\"}]\n```\nthen `a &amp;&amp; b` and ``x &lt; y`` & more",
-        "Streaming &\n```python\nhtml.replace('&amp;', '&')",
-        { __? TrueQ },
-        True
-    },
-    SameTest -> MatchQ,
-    TestID   -> "ImportHTMLEntity-Code-Kept-Verbatim"
 ]
 
 (* The untrusted-content switch keeps the formatter from importing markdown images (they become links to their source)

@@ -522,11 +522,14 @@ Cell[
 (*ChatCodeActive*)
 
 
+(* ShowStringCharacters as in the finished "ChatCode" cell: the chat output templates hide string characters, which
+   would hide the quotes of the code's strings while it streams *)
 Cell[
     StyleData[ "ChatCodeActive", StyleDefinitions -> StyleData[ "Input" ] ],
-    CodeAssistOptions -> { "AutoDetectHyperlinks" -> False },
-    FontSize          -> 13,
-    ShowAutoStyles    -> False
+    CodeAssistOptions    -> { "AutoDetectHyperlinks" -> False },
+    FontSize             -> 13,
+    ShowAutoStyles       -> False,
+    ShowStringCharacters -> True
 ]
 
 

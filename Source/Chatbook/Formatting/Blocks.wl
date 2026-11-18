@@ -64,8 +64,8 @@ formatThoughts // endDefinition;
 (*shortThoughtsText*)
 
 (* Thoughts that are a single short line, such as the titles that OpenAI's reasoning summaries are often made of
-   ("**Planning the tests**"), are shown as that line with the "ShortThoughts" template instead of an opener that
-   reveals one line. Chatbook's own chat output and the ACP window (ACP/Rendering.wl) both decide with this. Gives the
+   ("**Planning the tests**"), are shown in the ACP window (ACP/Rendering.wl) as that line with the "ShortThoughts"
+   template instead of an opener that reveals one line. Chatbook's own chat output keeps the opener. Gives the
    line to show (trimmed, without a bold wrapper that covers the whole line, since the template has its own font) or
    None. The length limit keeps the line on one line in an ACP window of the default width (480 points at
    Magnification 0.85, measured with the template's italic Source Sans Pro, 13.5 points, whose characters are 0.40 to

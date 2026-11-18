@@ -14,8 +14,8 @@ Needs[ "Wolfram`Chatbook`CodeCheck`" ];
 wlStringToBoxes // beginDefinition;
 
 (* While streaming, the code from the start of a fold is hidden behind an icon until the code block is complete, since
-   finding where the fold ends would need bracket matching: *)
-(* While streaming, the string is shown as it is (with no reparse that would replace linear syntax): *)
+   finding where the fold ends would need bracket matching. The string is shown as it is, with no reparse that would
+   replace linear syntax, so its linear syntax characters are replaced first (see neutralizeLinearSyntax): *)
 wlStringToBoxes[ string_String ] /; $dynamicText :=
     formatSpecialBoxes @ neutralizeLinearSyntax @ StringReplace[
         string,
