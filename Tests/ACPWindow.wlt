@@ -1247,6 +1247,70 @@ VerificationTest[
     TestID   -> "Attachments-PreparedFailure@@Tests/ACPWindow.wlt:1209,1-1246,2"
 ]
 
+(* A send whose user cell write the front end refused (no cell is there afterwards) is retried instead of given
+   back: the preparation is re-armed with the same token and the prepared prompt scheduled again. Retries that run
+   out give the message back like a failed preparation. *)
+VerificationTest[
+    {
+        withACPMocks[
+            Block[
+                {
+                    Cells = { } &, (* the refused write leaves no cell behind *)
+                    SelectionMove = Null &,
+                    Wolfram`Chatbook`Common`setCurrentValue = Null &,
+                    Wolfram`Chatbook`ChatModes`Common`moveChatInputToBottom = Null &
+                },
+                Wolfram`Chatbook`ACP`Common`acpPreparedPrompt[ $testNB, "t1", <| "Attachments" -> $preparedAttachments |> ]
+            ];
+            {
+                Wolfram`Chatbook`ACP`Common`acpWindowGet[ $testNB, { "Preparing", "CurrentTurn", "Notice" } ],
+                calledQ[ "SendPrompt" ],
+                Cases[ $callLog, { "Schedule", HoldForm @ Wolfram`Chatbook`ACP`Common`acpPreparedPrompt[ _, "t1", _ ], ___ } :> "Retry" ]
+            },
+            <| "Windows" -> <| $testNB -> preparingWindow[ "t1", "Review this" ] |> |>
+        ],
+        withACPMocks[
+            Block[
+                {
+                    Cells = { } &,
+                    SelectionMove = Null &,
+                    Wolfram`Chatbook`Common`setCurrentValue = Null &,
+                    Wolfram`Chatbook`ChatModes`Common`moveChatInputToBottom = Null &
+                },
+                Wolfram`Chatbook`ACP`Common`acpPreparedPrompt[ $testNB, "t1", <| "Attachments" -> $preparedAttachments |> ]
+            ];
+            {
+                Wolfram`Chatbook`ACP`Common`acpWindowGet[ $testNB, { "Preparing", "CurrentTurn" } ],
+                $feFlags[ { $testNB, "Input" } ],
+                Cases[ $callLog, { "Schedule", HoldForm @ Wolfram`Chatbook`ACP`Common`acpPreparedPrompt[ ___ ], ___ } :> "Retry" ]
+            },
+            <| "Windows" -> <| $testNB -> preparingWindow[ "t1", "Review this",
+                "Preparing" -> <|
+                    "Token"       -> "t1",
+                    "StartedAt"   -> AbsoluteTime[ ],
+                    "Input"       -> "Review this",
+                    "Text"        -> "Review this",
+                    "Attachments" -> { $nbRef },
+                    "SendRetries" -> Wolfram`Chatbook`ACP`UI`Private`$acpSendRetries
+                |> ] |> |>
+        ]
+    },
+    {
+        {
+            { KeyValuePattern @ { "Token" -> "t1", "SendRetries" -> 1 }, None, None },
+            False,
+            { "Retry" }
+        },
+        {
+            { None, None },
+            "Review this",
+            { }
+        }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Attachments-RefusedSendRetries@@Tests/ACPWindow.wlt:1250,1-1251,2"
+]
+
 (* Stop (no turn runs), New and housekeeping's timeout cancel a preparation: the message goes back to the input field *)
 VerificationTest[
     {

@@ -44,6 +44,8 @@ $acpFolderLabelMaxLength = 200; (* the folder row's label in the kernel (the fro
 $acpQueuedPreviewSize = 80;
 $acpPrepareTimeout    = 180;  (* seconds after which housekeeping cancels a preparation of attachments (Attachments.wl),
                                  also of a prompt notebook's message (PromptNotebook.wl) *)
+$acpSendRetries       = 30;   (* times a prepared message's failed send is tried again (acpRetrySend) *)
+$acpSendRetryDelay    = Quantity[ 400, "Milliseconds" ]; (* the pause before each of those tries *)
 
 (* UI-owned keys in window records (in addition to the ones described in docs/acp-window.md, "State model"):
      "Settings"     -> explicit ShowNotebookAssistance settings ("ACPAgent", "ACPAgentCommandLine", "ACPModel", ...)
@@ -3073,12 +3075,40 @@ acpPreparedPrompt[ nbo_NotebookObject, token_String, result_ ] := Catch @ Module
                 ],
                 (acpLog[ "PreparedPromptFailed", <| "Value" -> #1, "Tag" -> #2 |> ]; $Failed) &
             ];
-            If[ ! StringQ @ turnID && ! acpRunningQ @ acpWindowGet @ nbo, preparationFailed[ nbo, prep, None ] ];
+            If[ ! StringQ @ turnID && ! acpRunningQ @ acpWindowGet @ nbo, acpRetrySend[ nbo, prep, result ] ];
             turnID
     ]
 ];
 
 acpPreparedPrompt // endDefinition;
+
+
+(* The send failed although the window is ready and idle. The usual cause is transient: the front end drops the
+   user cell's addressed write while it is formatting (the same refusal as acpReplaceCellRefusedQ, but a location
+   write gives no result), which passes once the format is done, so the preparation is re-armed with the same token
+   and the send tried again shortly; housekeeping's PreparationTimeout still bounds the whole message. A send that
+   keeps failing gives the message back like any failed preparation. *)
+acpRetrySend // beginDefinition;
+
+acpRetrySend[ nbo_NotebookObject, prep_Association, result_ ] := Module[ { retries, claimed = False },
+    retries = Replace[ Lookup[ prep, "SendRetries", 0 ], Except[ _Integer ] -> 0 ];
+    If[ retries >= $acpSendRetries, Return[ preparationFailed[ nbo, prep, None ], Module ] ];
+    acpWindowUpdate[
+        nbo,
+        Function[ w,
+            If[ KeyExistsQ[ w, "Status" ] && ! AssociationQ @ Lookup[ w, "Preparing", None ],
+                claimed = True; <| w, "Preparing" -> <| prep, "SendRetries" -> retries + 1 |> |>,
+                Missing[ "NotClaimed" ] (* closed meanwhile, or another preparation started *)
+            ]
+        ]
+    ];
+    If[ ! claimed, Return[ preparationFailed[ nbo, prep, None ], Module ] ];
+    acpLog[ "PreparedPromptRetry", <| "Retries" -> retries + 1 |> ];
+    acpFESet[ nbo, "PreparingPrompt", KeyTake[ prep, { "Input", "Text", "Attachments" } ] ];
+    With[ { token = prep[ "Token" ] }, acpSchedule[ acpPreparedPrompt[ nbo, token, result ], $acpSendRetryDelay ] ]
+];
+
+acpRetrySend // endDefinition;
 
 
 preparationNotice // beginDefinition;

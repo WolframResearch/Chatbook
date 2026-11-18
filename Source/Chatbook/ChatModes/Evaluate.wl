@@ -223,6 +223,9 @@ releaseSidebarSelections // endDefinition;
    notebook as a diff when the turn ends. *)
 $sidebarAgentCommand = { "/opt/homebrew/bin/opencode", "acp" };
 $sidebarAgentTimeout = 1800;
+(* consecutive step ticks (0.25 s) the window may sit idle with the turn still unsent before the message gives up:
+   longer than acpRetrySend's pause, so retried sends are not cut short *)
+$sidebarAgentIdleTicks = 12;
 (* True while sidebarAgentFinish draws the static view, whose agent text gets finished (not streaming) formatting *)
 $sidebarAgentFinal = False;
 (* the development checkouts the speed trials use: AgentTools (the notebook tools' MCP server), ACPLink, and the folder
@@ -396,7 +399,8 @@ sidebarAgentStep[ id_String ] := Module[ { msg = $sidebarAgentMessages[ id ], wi
                     $sidebarAgentMessages[ id, "State" ] = "Working\[Ellipsis]"
             ],
         msg[ "TurnID" ] === "pending",
-            $sidebarAgentMessages[ id, "TurnID" ] = Replace[ acpWindowGet[ window, "CurrentTurn", None ], Except[ _String ] -> "pending" ],
+            $sidebarAgentMessages[ id, "TurnID" ] = Replace[ acpWindowGet[ window, "CurrentTurn", None ], Except[ _String ] -> "pending" ];
+            If[ $sidebarAgentMessages[ id, "TurnID" ] === "pending", sidebarAgentCheckSendFailed[ id, window ] ],
         True,
             (* the window drops a turn's record once the turn is finalized: the last one seen is kept for the view *)
             turn = acpTurnGet @ msg[ "TurnID" ];
@@ -416,6 +420,34 @@ sidebarAgentStep[ id_String ] := Module[ { msg = $sidebarAgentMessages[ id ], wi
 ];
 
 sidebarAgentStep // endDefinition;
+
+
+(* The window never got the turn although nothing is working on it any more: the prompt's send failed for good (its
+   preparation was given back, see UI.wl's acpRetrySend), which only the window's notice records, so the message
+   reports it instead of showing "Working" until the timeout. The idle state must hold for $sidebarAgentIdleTicks
+   consecutive ticks, since single reads can land in the gaps of a send that is still being retried. *)
+sidebarAgentCheckSendFailed // beginDefinition;
+
+sidebarAgentCheckSendFailed[ id_String, window_NotebookObject ] := Module[ { w, idle, ticks },
+    w = acpWindowGet @ window;
+    idle = AssociationQ @ w &&
+        ! StringQ @ Lookup[ w, "CurrentTurn", None ] &&
+        ! acpRestoringQ @ w &&
+        ! AssociationQ @ Lookup[ w, "Preparing", None ] &&
+        Lookup[ w, "QueuedPrompt", None ] === None &&
+        Wolfram`Chatbook`ACP`MCP`Private`$mcpJobs === { };
+    If[ ! idle, $sidebarAgentMessages[ id, "IdleTicks" ] = 0; Return[ Null, Module ] ];
+    ticks = Replace[ $sidebarAgentMessages[ id, "IdleTicks" ], Except[ _Integer ] -> 0 ] + 1;
+    $sidebarAgentMessages[ id, "IdleTicks" ] = ticks;
+    If[ ticks >= $sidebarAgentIdleTicks,
+        sidebarAgentFinish[
+            id,
+            Replace[ Lookup[ w, "Notice", None ], Except[ _String ] -> "The message could not be sent." ]
+        ]
+    ]
+];
+
+sidebarAgentCheckSendFailed // endDefinition;
 
 
 (* The prompt as the agent gets it: the user's words, then a note for each switch that needs one: with Re-evaluate off

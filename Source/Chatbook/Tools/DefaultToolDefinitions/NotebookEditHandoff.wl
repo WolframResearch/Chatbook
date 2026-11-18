@@ -29,6 +29,10 @@ $handoffFlashTicks = 2;
    cell it is formatting (CellFlashRect), and the sidebar's docked cell has just reflowed the whole window: *)
 $handoffFlashTries = 8;
 
+(* How many ticks the "FlashMessage" phase gets to find and blob the sidebar's new message cell before the handoff
+   ends without the cue, so the polling (and its front end calls) cannot run on for the whole timeout: *)
+$handoffMessageTicks = 20;
+
 (* handoff id -> the handoff's notebook, input, and polling task *)
 If[ ! AssociationQ @ $chatbarHandoffs, $chatbarHandoffs = <| |> ];
 
@@ -263,7 +267,10 @@ handoffSubmitStep // endDefinition;
    with the cell in sight: the front end lays the cell out meanwhile, and the chat cells' blob finishes first: *)
 handoffFlashMessageStep // beginDefinition;
 
-handoffFlashMessageStep[ id_String, data_Association ] := Module[ { cells },
+handoffFlashMessageStep[ id_String, data_Association ] := Module[ { ticks, cells },
+    ticks = Replace[ data[ "MessageTicks" ], Except[ _Integer ] -> 0 ] + 1;
+    $chatbarHandoffs[ id, "MessageTicks" ] = ticks;
+    If[ ticks > $handoffMessageTicks, Return[ endChatbarHandoff @ id, Module ] ];
     cells = lastSidebarUserMessageCells @ data[ "SidebarCell" ];
     Which[
         cells === { },                                handoffNotReady @ id,
