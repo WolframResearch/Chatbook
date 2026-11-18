@@ -1087,13 +1087,15 @@ VerificationTest[
     TestID   -> "ResolveAutoSetting-RequestMethod-Unavailable"
 ]
 
-(* gpt-6.1-sol can't use its tools without the responses endpoint, so it also uses it with LLMKit: *)
+(* The models of the "GPT6Plus" family can't use their tools without the responses endpoint, so they also use it with
+   LLMKit: *)
 VerificationTest[
     With[
         {
             settings = {
                 <| "Model" -> <| "Service" -> "LLMKit", "Name" -> "gpt-6.1-sol" |> |>,
                 <| "Model" -> <| "Service" -> "LLMKit", "Name" -> "gpt-6.1-sol-2026-11-01" |> |>,
+                <| "Model" -> <| "Service" -> "LLMKit", "Name" -> "gpt-6.2-sol" |> |>,
                 (* Other models of the same generation can turn reasoning off: *)
                 <| "Model" -> <| "Service" -> "LLMKit", "Name" -> "gpt-6.1-terra" |> |>
             }
@@ -1108,8 +1110,8 @@ VerificationTest[
         }
     ],
     {
-        { "Responses", "Responses", "ChatCompletions" },
-        { "ChatCompletions", "ChatCompletions", "ChatCompletions" }
+        { "Responses", "Responses", "Responses", "ChatCompletions" },
+        { "ChatCompletions", "ChatCompletions", "ChatCompletions", "ChatCompletions" }
     },
     SameTest -> MatchQ,
     TestID   -> "ResolveAutoSetting-RequestMethod-LLMKit-ResponsesRequired"
@@ -1131,6 +1133,62 @@ VerificationTest[
     },
     SameTest -> MatchQ,
     TestID   -> "ResolveAutoSetting-GPT61Sol"
+]
+
+(* Every gpt-6 model accepts the settings of gpt-6.1-sol, so they are the settings of the "GPT6Plus" family, which also
+   covers models that are released later (gpt-6.2-sol failed with the settings of gpt-5.4 when it was released). The
+   three that can turn reasoning off keep the settings of gpt-5.4, which work without the responses endpoint: *)
+VerificationTest[
+    Function[ name,
+        Join[
+            Wolfram`Chatbook`Settings`Private`resolveAutoSetting0[
+                <| "Model" -> <| "Service" -> "OpenAI", "Name" -> name |> |>,
+                #1
+            ] & /@ { "Reasoning", "ToolMethod", "HybridToolMethod" },
+            Wolfram`Chatbook`Common`autoModelSetting[
+                <| "Service" -> "OpenAI", "Name" -> name |>,
+                #1
+            ] & /@ { "EnableCustomTools", "ResponsesRequired", "EnabledBasePrompts", "MaxContextTokens" }
+        ]
+    ] /@ {
+        "gpt-6.1-sol", "gpt-6.2-sol", "gpt-6.2-sol-2026-11-17", "gpt-6-astra", "gpt-6.2-astra", "gpt-6.3-sol",
+        "gpt-6-sol", "gpt-6-luna", "gpt-6.1-terra"
+    },
+    {
+        family: {
+            "Medium",
+            "Service",
+            False,
+            True,
+            True,
+            {
+                "FunctionRepositoryIntegration",
+                "WolframLanguageEvaluatorToolInteractive",
+                "FunctionRepositoryPreference",
+                "ReasonableAssumptions",
+                "WolframLanguageEvaluatorToolCode"
+            },
+            1050000
+        },
+        family_,
+        family_,
+        family_,
+        family_,
+        family_,
+        gpt54: {
+            "None",
+            Automatic,
+            True,
+            _Missing,
+            _Missing,
+            { "FunctionRepositoryIntegration", "WolframLanguageEvaluatorToolInteractive" },
+            1050000
+        },
+        gpt54_,
+        gpt54_
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ResolveAutoSetting-GPT6Plus"
 ]
 
 VerificationTest[

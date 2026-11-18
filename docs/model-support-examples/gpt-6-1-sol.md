@@ -14,12 +14,15 @@ This is a companion to [How to Add Support for a New Model](../adding-model-supp
 
 ## Part 1: Model Settings
 
-### Settings keyed by model, not by family
+### A family for gpt-6 models
 
-Model names such as `gpt-6.1-sol` resolve to the `"GPT54Plus"` family (any GPT version from 5.4 on), which sets `"Reasoning" -> "None"`. gpt-6.1-sol rejects that value, but other models of the same generation don't (`gpt-6.1-terra`, `gpt-6-sol` and `gpt-6-luna` accept `"None"`), so a new family for "6.1" would have been wrong for them. `$modelAutoSettings` is also looked up by the model's base ID, which covers dated snapshots of the same model, so the settings are keyed by `"GPT61Sol"` (`Settings.wl`):
+Model names such as `gpt-6.1-sol` used to resolve to the `"GPT54Plus"` family (any GPT version from 5.4 on), which sets `"Reasoning" -> "None"`. gpt-6.1-sol rejects that value, but other models of the same generation don't (`gpt-6.1-terra`, `gpt-6-sol` and `gpt-6-luna` accept `"None"`). So the settings were first keyed by the model's base ID (`"GPT61Sol"`), which `$modelAutoSettings` is also looked up by and which covers dated snapshots of the same model.
+
+That left the next model without them: gpt-6.2-sol was released right after this was merged, with the same constraints, and failed with the settings of `"GPT54Plus"` (see [Follow-up: gpt-6.2-sol](#follow-up-gpt-62-sol)). The same requests were then sent to all seven gpt-6 models. They differ in whether reasoning can be turned off, but every one of them accepts the settings below. So models from gpt-6 on now have their own family, `"GPT6Plus"` (`chooseModelFamily0` in `Models.wl`), and a new model works without an entry of its own (`Settings.wl`):
 
 ```wl
-$modelAutoSettings[ Automatic, "GPT61Sol" ] = <|
+$modelAutoSettings[ Automatic, "GPT6Plus" ] = <|
+    $modelAutoSettings[ Automatic, "GPT54Plus" ],
     "EnableCustomTools"  -> True,
     "EnabledBasePrompts" -> {
         "FunctionRepositoryIntegration",
@@ -35,7 +38,9 @@ $modelAutoSettings[ Automatic, "GPT61Sol" ] = <|
 |>;
 ```
 
-Everything else falls through to `"GPT54Plus"`.
+Everything else is inherited from `"GPT54Plus"`.
+
+The three models that can turn reasoning off (`gpt-6-sol`, `gpt-6-luna` and `gpt-6.1-terra`) stay in `"GPT54Plus"` for now. Its settings (no reasoning, hybrid tool calls) work with the chat completions endpoint, while the settings of `"GPT6Plus"` need the responses endpoint for tools, which the released paclets don't support yet (see below). They should move when chats no longer need to work without that endpoint (see [Follow-up: gpt-6.2-sol](#checking-the-whole-generation)).
 
 | Setting | Value | Why |
 |---------|-------|-----|
@@ -43,7 +48,7 @@ Everything else falls through to `"GPT54Plus"`.
 | `"ToolMethod"` / `"HybridToolMethod"` | `"Service"` / `False` | The model never used the text-based tool call format in testing (neither did GPT 5.4), so the hybrid method only added prompt text. With native calls, the reasoning that led to a tool call is also sent back with it. |
 | `"EnableCustomTools"` | `True` | See [Part 3](#part-3-custom-tools). |
 | `"ResponsesRequired"` | `True` | See [Part 2](#part-2-the-default-model-and-the-responses-endpoint). |
-| `"EnabledBasePrompts"` | adds three components | See [Issue 5](#issue-5-instructions-are-followed-literally). The entry replaces the list of the family, so it repeats the two components that `"GPT54Plus"` enables. |
+| `"EnabledBasePrompts"` | adds three components | See [Issue 5](#issue-5-instructions-are-followed-literally). The entry replaces the inherited list, so it repeats the two components that `"GPT54Plus"` enables. |
 
 ### Finding out what the model accepts
 
@@ -65,7 +70,7 @@ Without the responses endpoint (for example the `"OpenAI"` service with older pa
 
 The default model is `<| "Service" -> "LLMKit", "Name" -> Automatic |>`, and the name is chosen from `$llmKitPreferredModels` (`Models.wl`). Three things are released independently: this version of Chatbook, the paclets that support the responses endpoint, and the LLMKit server's support for the model and the endpoint.
 
-- **The model isn't offered by LLMKit yet.** `$llmKitPreferredModels` lists `gpt-6.1-sol` before `gpt-5.4`, and `chooseFirstAvailableModel` takes the first one that LLMKit lists as available for the user, so the default switches when the server starts to offer the model. If none can be used, the last entry is chosen.
+- **The model isn't offered by LLMKit yet.** `chooseFirstAvailableModel` takes the first entry of `$llmKitPreferredModels` that LLMKit lists as available for the user, so with the model listed before `gpt-5.4`, the default switches when the server starts to offer it. If none can be used, the last entry is chosen. The model was taken out of the list again before the release: the default would switch as soon as the server lists it, and the LLMKit path with the responses endpoint has not been run against a server (see below). Adding it back is a one-line change.
 - **The installed paclets don't support the responses endpoint** (`$responsesAPIAvailable` is `False`). A model with `"ResponsesRequired"` is skipped (`usableLLMKitModelQ`), so the default stays `gpt-5.4` with its existing behavior.
 - **LLMKit and the responses endpoint.** `chooseRequestMethod` used to give `"ChatCompletions"` for everything that goes through LLMKit. It now gives `"Responses"` for models with `"ResponsesRequired"`, and still `"ChatCompletions"` for the other models.
 
@@ -130,7 +135,7 @@ Most of these come from using native tool calls and the responses endpoint for a
 
 **Problem:** When the chat history is built from notebook cells, image links in a message are replaced by the images for multimodal models, in assistant messages too. The responses endpoint rejects images in assistant messages (`Invalid value: 'input_image'. Supported values are: 'output_text' and 'refusal'.`), so after a response that showed a plot, every later message in that chat failed. An assistant message with images was also not split into its tool calls (`rewriteServiceToolCalls` only handles text).
 
-**Solution:** `allowedMultimodalRoles` gives `{ "User", "System" }` for the responses endpoint, so assistant messages keep the image links as text.
+**Solution:** `allowedMultimodalRoles` gives `{ "User" }` for the responses endpoint, so assistant messages keep the image links as text (the endpoint rejects images in system messages too).
 
 ### Issue 3: Broken code cells in created notebooks
 
@@ -154,7 +159,7 @@ The model does what the prompt says, and not what earlier models did on their ow
 
 - **Questions instead of answers.** Asked to "Compute the weight of a dinosaur", the model only asked which dinosaur was meant, where GPT 5.4 picked one and showed how to change it. The `"ReasonableAssumptions"` component tells it to make a reasonable choice, say what it chose, and answer, and to ask first only when there is nothing reasonable to assume. With it the model answered for Tyrannosaurus rex in 2 of 2 runs, and still asked what to plot when the request was just "Plot it".
 
-The first two and the last are disabled by default and enabled for this model with `"EnabledBasePrompts"` (the same mechanism as in the [GPT 5.4 case study](gpt-5-4.md#the-on-demand-base-prompt-mechanism)).
+The first two and the last are disabled by default and enabled for the `"GPT6Plus"` family with `"EnabledBasePrompts"` (the same mechanism as in the [GPT 5.4 case study](gpt-5-4.md#the-on-demand-base-prompt-mechanism)).
 
 ### Issue 6: Every earlier tool call made requests slower
 
@@ -188,14 +193,55 @@ Things that made this useful:
 
 ---
 
+## Follow-up: gpt-6.2-sol
+
+gpt-6.2-sol was released right after the changes above were merged. With the settings keyed by `"GPT61Sol"`, it got the settings of `"GPT54Plus"`, and every request failed because the service rejects the `"None"` effort (the first of the two error messages in [Part 1](#finding-out-what-the-model-accepts), or its counterpart from the chat completions endpoint).
+
+### Checking the whole generation
+
+Instead of adding a second entry, the same 17 requests (reasoning efforts on both endpoints, function tools on both, custom tools on the responses endpoint, sampling parameters) were sent to each of the seven gpt-6 models that the service lists:
+
+| | `gpt-6-sol`, `gpt-6-luna`, `gpt-6.1-terra` | `gpt-6-astra`, `gpt-6.1-sol`, `gpt-6.2-sol`, `gpt-6.2-astra` |
+|---|---|---|
+| Reasoning effort `"None"` | accepted | rejected |
+| Reasoning effort `"Medium"` (also what the service uses when none is given) | accepted | accepted |
+| Function tools with reasoning, chat completions endpoint | rejected | rejected |
+| Function tools without reasoning, chat completions endpoint | accepted | not possible |
+| Function and custom tools with reasoning, responses endpoint | accepted | accepted |
+| `temperature`, `presence_penalty`, `stop` | rejected | rejected |
+
+The settings of gpt-6.1-sol are valid for all of them, which is what made the `"GPT6Plus"` family possible. With it, `gpt-6-astra` and `gpt-6.2-astra` work too (they failed the same way as gpt-6.2-sol), and a model that is released later gets settings that work whether or not it can turn reasoning off.
+
+The models in the first column are the ones that stay in `"GPT54Plus"`: without the responses endpoint, the family's settings ask for what the third row rejects, while their current settings use the fourth row.
+
+With the responses endpoint it is the other way around. On 12 prompts, each of the three repeated tool calls it had already made under its current settings (5 to 7 of about 20 evaluator calls, up to five calls for "Plot a sine wave"), and none with the family's settings. The cause is the hybrid tool method and not the missing reasoning: with native tool calls and reasoning turned off (tried with two of the three) there were no repeated calls either, and the median answer took about 8.5 s instead of 10.3 s. So these models should get the family's settings, possibly with `"Reasoning" -> "None"`, once they no longer need to work without that endpoint.
+
+### Does it need its own settings?
+
+gpt-6.2-sol and gpt-6.1-sol answered the 76 prompts of [Part 5](#part-5-evaluation) with the same settings, and the transcripts were judged blind as before. Of the 75 that were judged, gpt-6.2-sol was preferred in 26 and gpt-6.1-sol in 23, with 26 ties, almost all by a slight margin (mean scores 4.29 and 4.20). The median total time was 10.5 s against 10.8 s, with more tool calls (1.76 per prompt against 1.53). The judges' notes show the same kinds of problems for both, with two shifts: gpt-6.2-sol looks up documentation it doesn't need more often, and its answers are shorter.
+
+The three base prompt components of [Issue 5](#issue-5-instructions-are-followed-literally) were tested again by running gpt-6.2-sol without them:
+
+| Component | With | Without |
+|-----------|------|---------|
+| `"WolframLanguageEvaluatorToolCode"` | The answer has the evaluated code in 8 of 8 prompts where code was evaluated | 2 of 8 |
+| `"FunctionRepositoryPreference"` | The resource function is used and shown in 3 of 3 runs of the resistor prompt | Used in 1 of 3, shown in none |
+| `"ReasonableAssumptions"` | Answers for Tyrannosaurus rex and says so in 3 of 3 runs | Also answers for it in 3 of 3, but ends by asking which dinosaur was meant |
+
+So the first two are still needed, and the third matters less than for gpt-6.1-sol. Nothing in the results called for settings of its own.
+
+Chats that other models had started were continued with gpt-6.2-sol: it called its tools natively in 8 of 8 chats written by GPT 5.4 (text tool calls in the history) and in 8 of 8 written by gpt-6.1-sol (custom tool calls in the history).
+
+---
+
 ## Summary
 
 ### Files Changed
 
 | File | Changes |
 |------|---------|
-| `Source/Chatbook/Settings.wl` | `"GPT61Sol"` settings, `chooseRequestMethod` for LLMKit |
-| `Source/Chatbook/Models.wl` | `$llmKitPreferredModels`, `usableLLMKitModelQ` |
+| `Source/Chatbook/Settings.wl` | `"GPT6Plus"` settings, `chooseRequestMethod` for LLMKit |
+| `Source/Chatbook/Models.wl` | `"GPT6Plus"` family, `$llmKitPreferredModels`, `usableLLMKitModelQ` |
 | `Source/Chatbook/Tools/Common.wl` | Custom tools section, plain text tool call examples |
 | `Source/Chatbook/SendChat.wl` | Tools and history conversion calls, kept objects of earlier tool calls, tool response images, tool call limit hint, `autoCorrect` rule |
 | `Source/Chatbook/Reasoning.wl` | `responsesRequestQ` |
@@ -208,7 +254,7 @@ Things that made this useful:
 ### Key Takeaways
 
 - **Check a new model's constraints against the service first.** Two error messages decided the endpoint, the tool method and the reasoning default.
-- **Key settings by base ID when a family is not uniform.** Models of the same generation can differ in what they accept.
+- **Look for settings that every model of a generation accepts, and make them the family's.** Models of the same generation differ in what they accept, and settings keyed by one model's base ID left the next model without them. Sending the same requests to all of them showed which settings work for every one.
 - **Convert at the boundary.** A new wire format for some tool calls did not need a new internal representation.
 - **Measure a new default against what the previous default did, not against the same code path before the change.** Native tool calls had a cost for every earlier tool call that prompt-based tool calls never had. Comparing the path with itself showed no difference; comparing the two defaults showed 300 ms against 4 ms.
 - **A new default exercises code paths the old one didn't.** Native tool calls and the responses endpoint had been available for other models, but their problems only became visible with a default model that uses them for everything.

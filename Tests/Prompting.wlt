@@ -169,15 +169,15 @@ withDisabledBasePrompts[ eval_ ] := Block[
 (*Evaluator Tool Code*)
 
 (* gpt-6.1-sol tends to only show the result of code it evaluated, so it's told to include the code. This is only
-   enabled for that model: *)
+   enabled for the "GPT6Plus" family: *)
 VerificationTest[
     withDisabledBasePrompts[
         StringContainsQ[
             styleGuidelines @ <| "Model" -> <| "Service" -> "OpenAI", "Name" -> #1 |> |>,
             "also give the code that produced it in a code block"
-        ] & /@ { "gpt-6.1-sol", "gpt-6.1-terra", "gpt-5.4", "gpt-4o" }
+        ] & /@ { "gpt-6.1-sol", "gpt-6.2-sol", "gpt-6.1-terra", "gpt-5.4", "gpt-4o" }
     ],
-    { True, False, False, False },
+    { True, True, False, False, False },
     SameTest -> MatchQ,
     TestID   -> "BasePrompt-EvaluatorToolCode"
 ]
@@ -201,16 +201,16 @@ VerificationTest[
 (*Reasonable Assumptions*)
 
 (* Asked for something that leaves a detail open ("Compute the weight of a dinosaur"), gpt-6.1-sol only asks which one is
-   meant, so it's told to pick a reasonable one and answer. This is a general instruction that is only enabled for that
-   model: *)
+   meant, so it's told to pick a reasonable one and answer. This is a general instruction that is only enabled for the
+   "GPT6Plus" family: *)
 VerificationTest[
     withDisabledBasePrompts[
         StringContainsQ[
             styleGuidelines @ <| "Model" -> <| "Service" -> "OpenAI", "Name" -> #1 |> |>,
             "Only ask first when there is nothing reasonable to assume"
-        ] & /@ { "gpt-6.1-sol", "gpt-6.1-terra", "gpt-5.4", "gpt-4o" }
+        ] & /@ { "gpt-6.1-sol", "gpt-6.2-sol", "gpt-6.1-terra", "gpt-5.4", "gpt-4o" }
     ],
-    { True, False, False, False },
+    { True, True, False, False, False },
     SameTest -> MatchQ,
     TestID   -> "BasePrompt-ReasonableAssumptions"
 ]
@@ -240,9 +240,9 @@ VerificationTest[
                     }
                 ]
             ]
-        ] /@ { "gpt-6.1-sol", "gpt-5.4", "gpt-4o" }
+        ] /@ { "gpt-6.1-sol", "gpt-6.2-sol", "gpt-5.4", "gpt-4o" }
     ],
-    { { True, True }, { True, False }, { False, False } },
+    { { True, True }, { True, True }, { True, False }, { False, False } },
     SameTest -> MatchQ,
     TestID   -> "BasePrompt-FunctionRepositoryPreference"
 ]

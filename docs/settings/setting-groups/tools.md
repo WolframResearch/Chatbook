@@ -248,12 +248,12 @@ When `"Service"`, also triggers the `"ServiceToolCallRetry"` base prompt compone
 
 ### Model-Specific Overrides
 
-- **`"Service"`**: Anthropic (general), AzureOpenAI, DeepSeek Chat, OpenAI (general), GPT-3.5, GPT-5 through GPT-5.3, gpt-6.1-sol, O1, O3, O4-Mini
-- **`Verbatim @ Automatic`** (keeps prompt-based tools, often paired with `HybridToolMethod -> True`): Claude 2, GPT-4o, GPT-4.1, GPT-5.4 and later (except gpt-6.1-sol), O3-Mini
+- **`"Service"`**: Anthropic (general), AzureOpenAI, DeepSeek Chat, OpenAI (general), GPT-3.5, GPT-5 through GPT-5.3, GPT-6 and later (the `"GPT6Plus"` family), O1, O3, O4-Mini
+- **`Verbatim @ Automatic`** (keeps prompt-based tools, often paired with `HybridToolMethod -> True`): Claude 2, GPT-4o, GPT-4.1, GPT-5.4 through GPT-5.6 (the `"GPT54Plus"` family, which also has gpt-6-sol, gpt-6-luna and gpt-6.1-terra), O3-Mini
 
 ### Custom Tools
 
-With the `"Service"` method, a tool's arguments are normally written by the model as JSON, which works poorly for code and long text (escaping mistakes, see the [GPT 5.4 case study](../../model-support-examples/gpt-5-4.md)). The responses endpoint (`"RequestMethod" -> "Responses"`) also has "custom" tools, which take plain text as their input instead. For models with `"EnableCustomTools" -> True` in `$modelAutoSettings` (currently `gpt-6.1-sol`), the tools listed in `$customToolParameters` (`Tools/Common.wl`: the Wolfram Language evaluator and the notebook creation tool) are given to the service as custom tools, and the text the model writes becomes the value of the tool's single parameter (`"code"` or `"content"`).
+With the `"Service"` method, a tool's arguments are normally written by the model as JSON, which works poorly for code and long text (escaping mistakes, see the [GPT 5.4 case study](../../model-support-examples/gpt-5-4.md)). The responses endpoint (`"RequestMethod" -> "Responses"`) also has "custom" tools, which take plain text as their input instead. For models with `"EnableCustomTools" -> True` in `$modelAutoSettings` (the `"GPT6Plus"` family, e.g. `gpt-6.2-sol`), the tools listed in `$customToolParameters` (`Tools/Common.wl`: the Wolfram Language evaluator and the notebook creation tool) are given to the service as custom tools, and the text the model writes becomes the value of the tool's single parameter (`"code"` or `"content"`).
 
 This only changes what is exchanged with the service:
 
@@ -262,7 +262,7 @@ This only changes what is exchanged with the service:
 - These calls (and the requests of their responses) are converted back when they are sent as chat history (`prepareMessagesForLLM`): `toolStringSplit` creates the calls of earlier messages in that form (`toCustomToolCallData`) and keeps the objects for the following requests, and `toCustomToolCalls` converts the call that was just evaluated.
 - Tool call examples in the system prompt show plain text input for these tools (`formatToolCallExample`).
 
-The original JSON parameter schema is used whenever the request doesn't go to the responses endpoint (e.g. `"RequestMethod" -> "ChatCompletions"`, or when the installed `Wolfram/LLMFunctions` and `LLMConnections` paclets don't support it), and for all other models and services. For `gpt-6.1-sol` itself that is not a working fallback: the chat completions endpoint rejects its function tools (see the [case study](../../model-support-examples/gpt-6-1-sol.md#finding-out-what-the-model-accepts)), so without the responses endpoint its tools need `"ToolMethod" -> "Simple"`.
+The original JSON parameter schema is used whenever the request doesn't go to the responses endpoint (e.g. `"RequestMethod" -> "ChatCompletions"`, or when the installed `Wolfram/LLMFunctions` and `LLMConnections` paclets don't support it), and for all other models and services. For the models of the `"GPT6Plus"` family themselves that is not a working fallback: the chat completions endpoint rejects their function tools (see the [case study](../../model-support-examples/gpt-6-1-sol.md#finding-out-what-the-model-accepts)), so without the responses endpoint their tools need `"ToolMethod" -> "Simple"`.
 
 ### Integration Points
 
@@ -296,8 +296,8 @@ When `False`, the `LLMConfiguration` omits tool definitions and relies solely on
 
 ### Model-Specific Overrides
 
-- **`True`**: GPT-4o, GPT-4.1, GPT-5.4 and later (except gpt-6.1-sol), O3-Mini (which use `ToolMethod -> Verbatim @ Automatic` to keep prompt-based tools alongside service tools)
-- **`False`**: DeepSeek Reasoner, GPT-5 through GPT-5.3, gpt-6.1-sol, O1, O3, O4-Mini (which use pure `"Service"` tool method or have limited tool support)
+- **`True`**: GPT-4o, GPT-4.1, GPT-5.4 through GPT-5.6 (the `"GPT54Plus"` family, which also has gpt-6-sol, gpt-6-luna and gpt-6.1-terra), O3-Mini (which use `ToolMethod -> Verbatim @ Automatic` to keep prompt-based tools alongside service tools)
+- **`False`**: DeepSeek Reasoner, GPT-5 through GPT-5.3, GPT-6 and later (the `"GPT6Plus"` family), O1, O3, O4-Mini (which use pure `"Service"` tool method or have limited tool support)
 
 ### Integration Points
 

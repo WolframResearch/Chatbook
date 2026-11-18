@@ -1029,7 +1029,8 @@ VerificationTest[
 (* ::Section::Closed:: *)
 (*gpt-6*)
 
-(* gpt-6 models get the same settings as gpt-5.4 and later, which do not support stop tokens: *)
+(* gpt-6 models have their own family, which starts from the settings of gpt-5.4 and later (no stop tokens). The three
+   that can turn reasoning off stay in the family of gpt-5.4, since they also work without the responses endpoint: *)
 VerificationTest[
     Wolfram`Chatbook`Models`Private`chooseModelFamily /@ {
         "gpt-6",
@@ -1037,12 +1038,26 @@ VerificationTest[
         "GPT-6.0",
         "gpt-6.1-mini",
         "gpt-6-2026-09-01",
+        "gpt-6.1-sol",
+        "gpt-6.2-sol-2026-11-17",
+        "gpt-6-astra",
+        "gpt-7",
+        "gpt-6-sol",
+        "gpt-6-luna-2026-09-01",
+        "gpt-6.1-terra",
         "gpt-5.6",
         "gpt-5"
     },
     {
-        "GPT54Plus",
-        "GPT54Plus",
+        "GPT6Plus",
+        "GPT6Plus",
+        "GPT6Plus",
+        "GPT6Plus",
+        "GPT6Plus",
+        "GPT6Plus",
+        "GPT6Plus",
+        "GPT6Plus",
+        "GPT6Plus",
         "GPT54Plus",
         "GPT54Plus",
         "GPT54Plus",
@@ -1077,7 +1092,8 @@ VerificationTest[
     TestID   -> "StopTokensSupportedQ-GPT6"
 ]
 
-(* No "stop" parameter is sent for gpt-6, so the stop tokens are emulated instead: *)
+(* No "stop" parameter is sent for gpt-6, so the stop tokens of prompt-based tool calls are emulated instead. The
+   models of the "GPT6Plus" family call their tools natively by default, which needs no stop tokens: *)
 VerificationTest[
     Block[ { $AutomaticAssistance = False },
         Function[
@@ -1088,10 +1104,11 @@ VerificationTest[
             }
         ] @ Wolfram`Chatbook`Common`resolveAutoSettings @ <|
             Wolfram`Chatbook`Common`$defaultChatSettings,
-            "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-6.0" |>
-        |>
+            "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-6.0" |>,
+            #1
+        |> & /@ { <| "ToolMethod" -> "Simple" |>, <| |> }
     ],
-    { _Missing, { "\n/exec" } },
+    { { _Missing, { "\n/exec" } }, { _Missing, None } },
     SameTest -> MatchQ,
     TestID   -> "StopTokens-GPT6-NotSent"
 ]

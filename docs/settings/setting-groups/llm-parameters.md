@@ -197,9 +197,9 @@ When `Automatic`, resolved via `$modelAutoSettings` lookup (no custom `resolveAu
 ### Model-Specific Overrides
 
 - **GPT-5**: Resolves to `"Minimal"`.
-- **GPT-5.1 and later** (including GPT-5.4+): Resolves to `"None"`.
+- **GPT-5.1 through GPT-5.6** (including the `"GPT54Plus"` family): Resolves to `"None"`.
 - **GPT-5.3 Chat**: Resolves to `"Medium"` (it doesn't accept `"None"`).
-- **gpt-6.1-sol**: Resolves to `"Medium"`. This model doesn't accept `"None"` or `"Minimal"` (the lowest effort is `"Low"`).
+- **GPT-6 and later** (the `"GPT6Plus"` family): Resolves to `"Medium"`. Several of these models don't accept `"None"` (gpt-6.1-sol, gpt-6.2-sol and the "astra" models; their lowest effort is `"Low"`), and none accepts `"Minimal"`. The three that can turn reasoning off (gpt-6-sol, gpt-6-luna, gpt-6.1-terra) are in the `"GPT54Plus"` family and resolve to `"None"`.
 - **xAI Grok 3**: `False`; **Grok 4**: `Missing["NotSupported"]`.
 - **OpenRouter DeepSeek Flash and Kimi K2.5**: `<| "effort" -> "none" |>`.
 
