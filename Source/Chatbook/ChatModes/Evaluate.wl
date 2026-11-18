@@ -227,7 +227,24 @@ $sidebarAgentTimeout = 1800;
 $sidebarAgentFinal = False;
 (* the development checkouts the speed trials use: AgentTools (the notebook tools' MCP server), ACPLink, and the folder
    the agent works in *)
-$sidebarAgentLLMEditing = "/System/Volumes/Data/Development/WRI/LLMEditing";
+$sidebarAgentLLMEditing = "/Users/jason/Development/WRI/LLMEditing";
+
+(* A Chatbook checkout in such a folder (an FE environment's <env>/LLMEditing/chatbook, beside its agenttools and
+   acplink) uses that folder, so each environment runs its own versions; any other Chatbook uses $sidebarAgentLLMEditing,
+   and without that folder the agent works in the home directory (AgentTools and ACPLink then come from the installed
+   paclets, since their *_DIRECTORY variables name no paclet) *)
+sidebarAgentLLMEditing // beginDefinition;
+
+sidebarAgentLLMEditing[ ] := sidebarAgentLLMEditing[ ] = With[
+    { dir = Quiet @ FileNameDrop[ $thisPaclet[ "Location" ], -1 ] },
+    Which[
+        StringQ @ dir && AllTrue[ { "agenttools", "acplink" }, DirectoryQ @ FileNameJoin @ { dir, # } & ], dir,
+        DirectoryQ @ $sidebarAgentLLMEditing, $sidebarAgentLLMEditing,
+        True, $HomeDirectory
+    ]
+];
+
+sidebarAgentLLMEditing // endDefinition;
 
 If[ ! AssociationQ @ $sidebarAgentWindows , $sidebarAgentWindows  = <| |> ]; (* user notebook -> hidden ACP window *)
 If[ ! AssociationQ @ $sidebarAgentMessages, $sidebarAgentMessages = <| |> ]; (* agent cell UUID -> its turn's state *)
@@ -304,7 +321,7 @@ sidebarAgentWindow[ nbo_NotebookObject, model_, docs_ ] := Replace[
             sidebarAgentSetup[ ];
             If[ docs, acpEnsureDocumentationServer[ ] ];
             window = ShowNotebookAssistance[ None, "ACPWindow", "ChatNotebookSettings" -> <|
-                "ProjectDirectory"       -> $sidebarAgentLLMEditing,
+                "ProjectDirectory"       -> sidebarAgentLLMEditing[ ],
                 "ACPModel"               -> model,
                 "ACPAgentCommandLine"    -> $sidebarAgentCommand,
                 "ACPMCPServer"           -> True,
@@ -329,8 +346,8 @@ sidebarAgentSetup // beginDefinition;
 
 sidebarAgentSetup[ ] := sidebarAgentSetup[ ] = (
     SetEnvironment @ {
-        "AGENTTOOLS_DIRECTORY" -> FileNameJoin @ { $sidebarAgentLLMEditing, "agenttools" },
-        "ACPLINK_DIRECTORY"    -> FileNameJoin @ { $sidebarAgentLLMEditing, "acplink", "ACPLink" }
+        "AGENTTOOLS_DIRECTORY" -> FileNameJoin @ { sidebarAgentLLMEditing[ ], "agenttools" },
+        "ACPLINK_DIRECTORY"    -> FileNameJoin @ { sidebarAgentLLMEditing[ ], "acplink", "ACPLink" }
     };
     acpMCPAvailableQ[ ];
     NotebookMCPServer[ ];
