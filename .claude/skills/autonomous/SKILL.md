@@ -4,8 +4,9 @@ description: >-
   Make one unit of autonomous progress on Chatbook's GitHub backlog: review the oldest open PR labeled
   "autonomous" that isn't labeled "needs human review" yet (fix minor problems, recommend merging or not), or,
   if there is none, triage the five oldest unreviewed issues (flag them for human review, close them, or ask for
-  details) and open a PR for the oldest one that's ready for autonomous work. Runs only when the user invokes
-  /autonomous. Accepts "dry-run" (read-only) and specific issue numbers.
+  details) and open a PR for the oldest one that's ready for autonomous work. Skips issues and PRs labeled
+  "in progress" by a run on another machine. Runs only when the user invokes /autonomous. Accepts "dry-run"
+  (read-only) and specific issue numbers.
 disable-model-invocation: true
 argument-hint: "[dry-run] [issue numbers]"
 ---
@@ -15,7 +16,8 @@ argument-hint: "[dry-run] [issue numbers]"
 One run of this skill makes one unit of progress without the user telling it what to work on. It either reviews
 one PR that an earlier run opened, or triages a batch of issues and opens one PR. Each run is deliberately small:
 the user reviews everything this skill produces and review is the bottleneck, so a run leaves behind at most one
-PR review or one new PR, plus a summary that makes it quick to check.
+PR review or one new PR, plus a summary that makes it quick to check. Runs on different machines can go at once
+(see Several runs at once).
 
 Arguments: $ARGUMENTS
 
@@ -42,7 +44,21 @@ Arguments: $ARGUMENTS
 - **Pass text with `--body-file`.** Write comments and PR descriptions to a file first. Wolfram Language code is
   full of backticks and quotes that the shell mangles.
 
-The labels `autonomous`, `needs human review` and `merge recommended` already exist in the repository.
+The labels `autonomous`, `needs human review`, `merge recommended` and `in progress` already exist in the
+repository.
+
+## Several runs at once
+
+A run labels the PR it reviews, or the issues it triages, `in progress` before it starts on them, and removes the
+label when it's done with each (the steps say when). The queries of steps 1 and 2 leave out what's labeled
+`in progress`.
+
+A run that's interrupted leaves its labels behind, and later runs skip those items until someone removes the
+label. So step 4's summary lists what's labeled `in progress`, for the user to decide. Don't remove another run's
+label yourself: that run may still be going.
+
+The label isn't a lock: GitHub's search takes a few seconds to show a new label, so two runs whose queries in
+step 1 or 2 come within seconds of each other can still pick the same item.
 
 ## Step 0: Set up
 
@@ -62,11 +78,12 @@ released. Pass it to them as the environment facts.
 Skip this step if the arguments name issues.
 
 ```bash
-gh pr list --state open --label autonomous --search 'sort:created-asc -label:"needs human review"' --limit 1 --json number,title,url,headRefName
+gh pr list --state open --label autonomous --search 'sort:created-asc -label:"needs human review" -label:"in progress"' --limit 1 --json number,title,url,headRefName
 ```
 
-If nothing comes back, go to step 2. Otherwise review that PR. An earlier run opened it, so you're seeing it
-fresh. Review it as critically as you would review someone else's work.
+If nothing comes back, go to step 2. Otherwise run `gh pr edit <N> --add-label "in progress"` and review the PR.
+An earlier run opened it, so you're seeing it fresh. Review it as critically as you would review someone else's
+work.
 
 1. Read the PR description, the issue it closes, the whole diff and the CI results (`gh pr checks <N>`).
 2. Check out the PR with `gh pr checkout <N> --worktree ../Chatbook-review/pr-<N>`. If git says the branch is
@@ -94,17 +111,19 @@ fresh. Review it as critically as you would review someone else's work.
 5. Add the `merge recommended` label if, with your fixes, you would merge the PR as it is: it fixes the issue,
    the tests pass, and CI passed. If you pushed fixes, run the affected tests locally instead of waiting for CI
    to run again. The person who merges will see the new CI result. Always add the `needs human review` label,
-   whatever the outcome, so the next run doesn't review the same PR.
+   whatever the outcome, so the next run doesn't review the same PR, and remove `in progress` with it:
+   `gh pr edit <N> --add-label "needs human review" --remove-label "in progress"`.
 
 Findings go in the summary, not in a PR comment. Then go to step 4.
 
 ## Step 2: Triage issues
 
-If the arguments name issues, triage those. Otherwise:
+If the arguments name issues, triage those. Unless it's a dry run, leave out any that are already labeled
+`in progress` (`gh issue view <N> --json labels`), and say so in the summary: another run has them. Otherwise:
 
 ```bash
 gh issue list --state open --limit 30 \
-  --search 'sort:created-asc -label:"needs human review" -linked:pr' \
+  --search 'sort:created-asc -label:"needs human review" -label:"in progress" -linked:pr' \
   --json number,title,createdAt,comments \
   --jq '[.[] | select(((.comments[-1].body // "") | contains("<!-- autonomous:needs-info -->")) and ((.comments[-1].createdAt | fromdateiso8601) > (now - 14*86400)) | not)] | .[:5] | map({number, title})'
 ```
@@ -112,10 +131,12 @@ gh issue list --state open --limit 30 \
 This lists the five oldest open issues that:
 
 - aren't labeled `needs human review`,
+- aren't labeled `in progress` (a run on another machine is working on them),
 - aren't linked to a PR (a PR from an earlier run, or from anyone else, is already handling them),
 - aren't waiting on a reply to a request for details that a run posted in the last 14 days.
 
-Launch one subagent per issue, all at once. Give each one this prompt:
+Label the issues you triage `in progress` (`gh issue edit <N> <N> <N> <N> <N> --add-label "in progress"`). Then
+launch one subagent per issue, all at once. Give each one this prompt:
 
 > Read `<this skill's directory>/references/classify-issue.md` and follow it to classify issue #<N> of
 > WolframResearch/Chatbook. A read-only checkout of origin/main is at `<absolute path of ../Chatbook-autonomous>`.
@@ -144,7 +165,9 @@ checked. Flag the issue for human review instead of applying the result if:
 - two agents disagree about a duplicate.
 
 Apply each result. Where the table says "the comment" or "the note", use the verifier's version, which has its
-corrections. In a dry run, skip all of these writes.
+corrections. Then remove `in progress` from each issue that isn't ready, flagged ones included. Do it after the
+issue's other labels and comment: a request-info issue drops out of the query only once its comment is posted. A
+ready issue keeps the label until step 3 is done with it. In a dry run, skip all of these writes.
 
 | Result | What to do |
 | --- | --- |
@@ -174,19 +197,30 @@ the skill again in a fresh context instead: that's cheaper, and each run's summa
    or it's much bigger), stop:
    1. Label the issue `needs human review`.
    2. Comment with what you found.
-   3. Don't push the branch.
+   3. Remove `in progress`.
+   4. Don't push the branch.
 
    Then try the next ready issue from this batch, if there is one. If there isn't, go to step 4.
 5. If you notice a separate problem that doesn't belong in this PR, check that it isn't already filed, then file
    an issue for it with the `autonomous` label. Later runs triage it like any other issue. If it touches
    security, don't file it. Describe it in the summary instead.
 6. Commit, push with `git push -u origin HEAD`, and open the PR. Put `Closes #<N>` in the description and add the
-   `autonomous` label. Don't add `needs human review`: the next run reviews the PR and adds that label.
+   `autonomous` label. Don't add `needs human review`: the next run reviews the PR and adds that label. Then
+   remove `in progress` from the issue. The PR's `Closes #<N>` links it, so the query of step 2 leaves it out from
+   now on.
 
 ## Step 4: Summarize
 
+First remove `in progress` from everything this run labeled `in progress` that still has it, such as the ready
+issues that step 3 didn't get to. Then list what other runs have labeled `in progress`:
+
+```bash
+gh api 'repos/{owner}/{repo}/issues?labels=in%20progress&state=open' --jq '.[] | "In progress: \(if .pull_request then "PR" else "issue" end) #\(.number), updated \(.updated_at): \(.title)"'
+```
+
 End the run with a summary in the session. The user reads it to decide what to look at, so make it easy to skim
-and link everything.
+and link everything. Every summary gives that list, so that the user notices a label that an interrupted run left
+behind.
 
 - **After a PR review**, give:
   - the PR,
