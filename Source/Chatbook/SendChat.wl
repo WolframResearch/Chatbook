@@ -1408,6 +1408,9 @@ chatHandlers[ container_, cellObject_, settings_, messages_ ] :=
             autoOpen      = TrueQ @ $autoOpen,
             alwaysOpen    = TrueQ @ $alwaysOpen,
             autoAssist    = $AutomaticAssistance,
+            (* An auto-assist chat's handlers write its final output cell, and they run outside its chat state, where
+               $headlessChat would otherwise be True: *)
+            headless      = TrueQ @ $headlessChat,
             dynamicSplit  = dynamicSplitQ @ settings,
             handlers      = getHandlerFunctions @ settings,
             useTasks      = feTaskQ @ settings,
@@ -1443,6 +1446,7 @@ chatHandlers[ container_, cellObject_, settings_, messages_ ] :=
                         $chatStartTime       = startTime,
                         $customToolFormatter = toolFormatter,
                         $dynamicSplit        = dynamicSplit,
+                        $headlessChat        = headless,
                         $settings            = settings,
                         $usageData           = usageData
                     },
@@ -1488,6 +1492,7 @@ chatHandlers[ container_, cellObject_, settings_, messages_ ] :=
                         $chatStartTime       = startTime,
                         $customToolFormatter = toolFormatter,
                         $dynamicSplit        = dynamicSplit,
+                        $headlessChat        = headless,
                         $settings            = settings,
                         $usageData           = usageData
                     },
