@@ -218,11 +218,12 @@ VerificationTest[
     ],
     {
         Dynamic[
-            StringForm[
-                FrontEndResource[ "ChatbookStrings", "FormattingInsertContentAndEvaluateWorkspaceChatTooltip" ],
-                Row[ { ___, Style[ "My Notebook", FontWeight -> Bold ], ___ } ]
+            _Function[
+                "FormattingInsertContentAndEvaluateWorkspaceChatTooltip",
+                { "1" -> Row[ { ___, Style[ "My Notebook", FontWeight -> Bold ], ___ } ] },
+                HoldPattern @ FrontEndResource[ __ ]
             ],
-            TrackedSymbols :> { }
+            ___
         ],
         1
     },

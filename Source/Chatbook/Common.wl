@@ -1378,23 +1378,53 @@ pacletDataRebuild // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*trTemplate*)
-(* Fills in the slots of a templated text resource. Like `tr`, the result is a `Dynamic` that looks up the resource when
-   it's displayed, so it's in the front end's current language. The front end can't fill in slots by itself, so this
-   `Dynamic` is evaluated in the kernel, but it only uses System functions.
-   Positional slots (`1`, `2`, ...) can be filled with any expressions. Named slots (`name`) are filled from a single
-   association, whose values should be strings. *)
+(* Fills in the slots of a templated text resource, such as "Page `1` of `2`" or "Thought for `time` seconds". Like `tr`,
+   the result is a `Dynamic` that looks up the resource when it's displayed, so it's in the front end's current language.
+   The front end can't fill in slots by itself, so this `Dynamic` is evaluated by the front end's "System" kernel, which
+   is always running, so it needs neither the main kernel nor Chatbook (e.g. when a saved chat is opened). It only uses
+   System functions and has no tracked symbols, so it's evaluated once when displayed.
+   Slots are filled with positional arguments (`1`, `2`, ...) or with the values of an association (`name`). Values can
+   be any expressions, including Dynamic expressions with DynamicModule variables. They're given to the front end as a
+   list of rules, since DynamicModule doesn't localize variables inside an association. *)
 trTemplate // beginDefinition;
 
-trTemplate[ name_? StringQ, as_Association ] /; $CloudEvaluation := TemplateApply[ cloudTextResource @ name, as ];
-trTemplate[ name_? StringQ, args___ ] /; $CloudEvaluation := StringForm[ cloudTextResource @ name, args ];
-
 trTemplate[ name_? StringQ, as_Association ] :=
-    Dynamic[ TemplateApply[ FrontEndResource[ "ChatbookStrings", name ], as ], TrackedSymbols :> { } ];
+    trTemplate0[ name, KeyValueMap[ ToString @ #1 -> #2 &, as ] ];
 
 trTemplate[ name_? StringQ, args___ ] :=
-    Dynamic[ StringForm[ FrontEndResource[ "ChatbookStrings", name ], args ], TrackedSymbols :> { } ];
+    trTemplate0[ name, MapIndexed[ ToString @ First @ #2 -> #1 &, { args } ] ];
 
 trTemplate // endDefinition;
+
+
+trTemplate0 // beginDefinition;
+
+(* The template is split at backticks, so the slot names are at the even positions. The label is saved in notebooks, so
+   it only uses System symbols (the variables are in the Typeset context). Its arguments are the resource name,
+   the slot rules and the template, so it can be matched by these (see Serialization.wl). If the front end doesn't have
+   the resource (e.g. an older Chatbook opening a newer notebook), only the slot values are shown: *)
+$trTemplateFunction = Function[
+    { Typeset`name, Typeset`rules, Typeset`template },
+    Style[
+        If[ StringQ @ Typeset`template,
+            Row @ MapIndexed[
+                If[ EvenQ @ First @ #2, Replace[ #1, Append[ Typeset`rules, _ -> "" ] ], #1 ] &,
+                StringSplit[ Typeset`template, "`", All ]
+            ],
+            Row[ Last /@ Typeset`rules, " " ]
+        ],
+        ShowStringCharacters -> False
+    ]
+];
+
+trTemplate0[ name_String, rules_List ] /; $CloudEvaluation :=
+    $trTemplateFunction[ name, rules, cloudTextResource @ name ];
+
+trTemplate0[ name_String, rules_List ] := With[ { f = $trTemplateFunction },
+    Dynamic[ f[ name, rules, FrontEndResource[ "ChatbookStrings", name ] ], Evaluator -> "System", TrackedSymbols :> { } ]
+];
+
+trTemplate0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

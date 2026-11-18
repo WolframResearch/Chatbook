@@ -97,7 +97,7 @@ thinkingEmptyCell[ label_, meta_ ] :=
 thinkingText[ s_String ] := _? (MatchQ[ NormalizeTextData @ #, TextData @ { s } | s ] &);
 
 (* Labels. Fixed labels are front end resources, so they are localized by the front end; labels with a number of
-   seconds are created in the kernel from the "FormattingThinkingComplete" template: *)
+   seconds fill in the "FormattingThinkingComplete" template in the front end's "System" kernel: *)
 thinkingResourceLabel[ name_String ] :=
     DynamicBox[ ToBoxes[ FEPrivate`FrontEndResource[ "ChatbookStrings", name ], ___ ], ___ ];
 
@@ -105,8 +105,14 @@ $thinkingActiveLabel    = thinkingResourceLabel[ "FormattingThinkingActive"     
 $thinkingFallbackLabel  = thinkingResourceLabel[ "FormattingThinkingCompleteFallback" ]; (* "Thought"              *)
 $thinkingOneSecondLabel = thinkingResourceLabel[ "FormattingThinkingCompleteSingular" ]; (* "Thought for a second" *)
 
-thinkingSecondsLabel[ n_Integer ] :=
-    With[ { s = "Thought for " <> ToString @ n <> " seconds" }, ToBoxes @ s | s ];
+thinkingSecondsLabel[ n_Integer ] := With[ { time = ToString @ n },
+    DynamicBox[
+        ToBoxes[ _Function[ "FormattingThinkingComplete", { "time" -> time }, HoldPattern @ FrontEndResource[ __ ] ], ___ ],
+        ___,
+        Evaluator -> "System",
+        ___
+    ]
+];
 
 $thinkingLiteralMeta = <| "Type" -> "Literal" |>;
 

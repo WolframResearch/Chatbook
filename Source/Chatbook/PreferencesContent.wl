@@ -1626,8 +1626,8 @@ Module[ { retryButton, subscribeButton, username, signInButton, manageButton, up
                     trTemplate[
                         "PreferencesContentLLMKitUpgradePro",
                         <|
-                            "SubscriptionLevelPro"      -> ToString[ Style[ "Pro",      FontWeight -> "Bold" ], StandardForm ],
-                            "SubscriptionLevelResearch" -> ToString[ Style[ "Research", FontWeight -> "Bold" ], StandardForm ]
+                            "SubscriptionLevelPro"      -> Style[ "Pro",      FontWeight -> "Bold" ],
+                            "SubscriptionLevelResearch" -> Style[ "Research", FontWeight -> "Bold" ]
                         |>
                     ],
                     FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
@@ -1645,7 +1645,7 @@ Module[ { retryButton, subscribeButton, username, signInButton, manageButton, up
                 Style[
                     trTemplate[
                         "PreferencesContentLLMKitUpgradeResearch",
-                        <| "SubscriptionLevelResearch" -> ToString[ Style[ "Research", FontWeight -> "Bold" ], StandardForm ] |>
+                        <| "SubscriptionLevelResearch" -> Style[ "Research", FontWeight -> "Bold" ] |>
                     ],
                     FontColor -> (Dynamic[ If[ CurrentValue[ "MouseOver" ], #1, #2 ] ]&[
                         color @ "Gray20_94",
