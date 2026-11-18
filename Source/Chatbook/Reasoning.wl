@@ -262,13 +262,14 @@ resetReasoningStream // endDefinition;
 
 (* Returns the number of seconds spent on the current summary and restarts the timer for the next one. The timer starts
    when the first chunk of a response is received, and restarts after any other output, since reasoning that follows
-   other output can't have started before it: *)
+   other output can't have started before it. AbsoluteTime gives arbitrary-precision numbers, so the duration is a
+   machine number (otherwise two equal times give 0``7.45, whose sign can't be determined): *)
 reasoningDuration // beginDefinition;
 
 reasoningDuration[ ] :=
     Module[ { now, duration },
         now = AbsoluteTime[ ];
-        duration = If[ NumberQ @ $reasoningStart, now - $reasoningStart, Missing[ "NotAvailable" ] ];
+        duration = If[ NumberQ @ $reasoningStart, N[ now - $reasoningStart ], Missing[ "NotAvailable" ] ];
         $reasoningStart = now;
         duration
     ];
