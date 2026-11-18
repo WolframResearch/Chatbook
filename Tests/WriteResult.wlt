@@ -498,6 +498,7 @@ VerificationTest[
             {
                 Wolfram`Chatbook`Common`$lastTask,
                 Wolfram`Chatbook`Common`$lastCellObject,
+                Wolfram`Chatbook`Common`appendCitations              = Null &,
                 Wolfram`Chatbook`SendChat`Private`$debugLog          = Internal`Bag[ ],
                 Wolfram`Chatbook`Common`getHandlerFunctions          = <| |> &,
                 Wolfram`Chatbook`Common`dynamicSplitQ                = False &,
@@ -509,7 +510,6 @@ VerificationTest[
                 Wolfram`Chatbook`SendChat`Private`checkFinishReason  = Null &,
                 Wolfram`Chatbook`SendChat`Private`trimStopTokens     = Null &,
                 Wolfram`Chatbook`SendChat`Private`refusalDetails     = None &,
-                Wolfram`Chatbook`SendChat`Private`appendCitations    = Null &,
                 Wolfram`Chatbook`Common`writeReformattedCell         = (result = "Written"; Null) &,
                 NotebookDelete                                       = Function[ Null, Null, HoldAll ]
             },
