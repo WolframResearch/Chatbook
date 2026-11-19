@@ -69,4 +69,31 @@ VerificationTest[
     TestID   -> "ChatbarStateSetterBar-NoWriteOnDisplay"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*chatbarMenuMagnification*)
+
+(* The menu is attached to the notebook's right edge, so at high magnifications it must not get wider than the window,
+   and otherwise it scales with the notebook as before: *)
+VerificationTest[
+    UsingFrontEnd @ Module[ { key, chatbarMag, menuMag, nbo, results },
+        key = { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" };
+        chatbarMag = CurrentValue[ $FrontEndSession, key ];
+        menuMag = Setting @ Wolfram`Chatbook`ChatModes`UI`Private`chatbarMenuMagnification[ #1 ] &;
+        WithCleanup[
+            CurrentValue[ $FrontEndSession, key ] = 0.75;
+            nbo = CreateDocument[ { }, Visible -> False, WindowSize -> { 606, 600 }, Magnification -> 2 ];
+            results = { menuMag @ nbo * Wolfram`Chatbook`ChatModes`UI`Private`$coWidth };
+            SetOptions[ nbo, WindowSize -> { 1200, 600 }, Magnification -> 1.5 ];
+            AppendTo[ results, menuMag @ nbo ],
+            NotebookClose @ nbo;
+            CurrentValue[ $FrontEndSession, key ] = chatbarMag
+        ];
+        results
+    ],
+    { _? (# <= 606 - 13 &), _? (# == 1.5 * 0.75 &) },
+    SameTest -> MatchQ,
+    TestID   -> "ChatbarMenuMagnification-FitsWindow-GH#1795"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)
