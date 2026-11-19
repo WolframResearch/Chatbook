@@ -217,7 +217,14 @@ VerificationTest[
         ]
     ],
     {
-        Row[ { ___, Style[ "My Notebook", FontWeight -> Bold ], ___ } ],
+        Dynamic[
+            _Function[
+                "FormattingInsertContentAndEvaluateWorkspaceChatTooltip",
+                { "1" -> Row[ { ___, Style[ "My Notebook", FontWeight -> Bold ], ___ } ] },
+                HoldPattern @ FrontEndResource[ __ ]
+            ],
+            ___
+        ],
         1
     },
     SameTest -> MatchQ,

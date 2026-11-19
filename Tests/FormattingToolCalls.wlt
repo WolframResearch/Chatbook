@@ -75,7 +75,7 @@ VerificationTest[
        - "State": the initial open state (True/False) of a real opener (finished output), "Static" for the placeholder
          that only looks like a closed opener (streaming output), or "Loading" for the plain "Using tool..." label
          that's shown when the tool call can't be parsed
-       - "Label": the "Used"/"Using" string resource
+       - "Label": the "Used"/"Using"/"Cancelled" template resource, without its "Template" suffix
        - "Name": the displayed tool name
        - "Icon": the tool icon resource
        - "Progress": whether the active tool progress indicator is shown *)
@@ -84,8 +84,8 @@ VerificationTest[
         row = FirstCase[ boxes, GridBox[ { { _GraphicsBox, rest___ } }, ___ ] :> { rest }, { }, Infinity ];
         <|
             "State"    -> tcOpenerState @ boxes,
-            "Label"    -> FirstCase[ row, FEPrivate`FrontEndResource[ "ChatbookStrings", s_String ] :> s, None, Infinity ],
-            "Name"     -> FirstCase[ row, StyleBox[ s_String, ___, FontWeight -> "Plain", ___ ] :> ToExpression @ s, None, Infinity ],
+            "Label"    -> FirstCase[ row, HoldPattern @ FrontEndResource[ "ChatbookStrings", s_String ] :> StringDelete[ s, "Template" ~~ EndOfString ], None, Infinity ],
+            "Name"     -> FirstCase[ row, Style[ s_String, FontWeight -> "Plain" ] :> s, None, Infinity ],
             "Icon"     -> FirstCase[ row, FEPrivate`FrontEndResource[ "ChatbookExpressions", s_String ][ _ ] :> s, None, Infinity ],
             "Progress" -> ! FreeQ[ row, TagBox[ _, "ChatbookActiveToolProgress" ] ]
         |>
@@ -544,18 +544,21 @@ VerificationTest[
     TestID   -> "ToolCalls-Empty-Result-Not-Cancelled-GH#575"
 ]
 
-(* The labels are defined for every language: *)
+(* The labels are defined for every language, and each template has the tool name slot: *)
 VerificationTest[
     Select[
         FileNames[ "ChatbookStrings.tr", FileNameJoin @ { ParentDirectory @ DirectoryName @ $TestFileName, "FrontEnd", "TextResources" }, 2 ],
         ! And[
-            StringContainsQ[ ReadString @ #, "\"FormattingToolCancelled\" ->" ],
-            StringContainsQ[ ReadString @ #, "\"FormattingToolCancelledUnnamed\" ->" ]
+            StringContainsQ[ ReadString @ #, "\"FormattingToolCancelledUnnamed\" ->" ],
+            AllTrue[
+                { "FormattingToolUsingTemplate", "FormattingToolUsedTemplate", "FormattingToolCancelledTemplate" },
+                Function[ name, StringContainsQ[ ReadString @ #, "\"" <> name <> "\" -> \"" ~~ Except[ "\"" ]... ~~ "`1`" ] ]
+            ]
         ] &
     ],
     { },
     SameTest -> MatchQ,
-    TestID   -> "ToolCalls-Cancelled-TextResources-GH#575"
+    TestID   -> "ToolCalls-Label-TextResources-GH#575"
 ]
 
 (* Before there's a "{" the tool call can't be parsed, so it only shows a "Using tool..." label without an opener (or

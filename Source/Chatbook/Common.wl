@@ -58,8 +58,7 @@ System`HoldCompleteForm;
 
 `tr;
 `trRaw;
-`trStringTemplate;
-`trExprTemplate;
+`trTemplate;
 `trPaclet;
 
 `$catching;
@@ -92,6 +91,10 @@ System`HoldCompleteForm;
 `inlineTemplateBoxes;
 `sufficientVersionQ;
 `insufficientVersionQ;
+`allowExternalLLMConnectivityQ;
+`allowInternetQ;
+`llmRequestsAllowedQ;
+`llmRequestsBlockedFailure;
 `addToMXInitialization;
 `mxInitialize;
 
@@ -229,9 +232,11 @@ KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
     "ConnectionFailure"               -> "Server connection failure: `1`. Please try again later.",
     "ConnectionFailure2"              -> "Could not get a valid response from the server: `1`. Please try again later.",
     "ExpectedInstallableResourceType" -> "Expected a resource of type `1` instead of `2`.",
+    "ExternalLLMConnectivityDisabled" -> "AI features have been disabled. \[RightGuillemet]",
     "IntegratedServiceError"          -> "The `1` service returned an error: `2`",
     "IntegratedServiceUnavailable"    -> "The `1` service is currently not available. Please try again in a few minutes.",
     "Internal"                        -> "An unexpected error occurred. `1`",
+    "InternetDisabled"                -> "Internet access is not allowed. To allow it, set $AllowInternet = True.",
     "InvalidAPIKey"                   -> "Invalid value for API key: `1`",
     "InvalidArguments"                -> "Invalid arguments given for `1` in `2`.",
     "InvalidConversionRules"          -> "`1` is neither a list of replacement rules nor a valid dispatch table, and so cannot be used for replacing.",
@@ -1378,24 +1383,54 @@ pacletDataRebuild // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*trStringTemplate*)
-(* Templated strings require the kernel *)
-trStringTemplate // beginDefinition;
-trStringTemplate[ name_? StringQ ] := StringTemplate @ trRaw @ name;
-trStringTemplate // endDefinition;
+(*trTemplate*)
+(* Fills in the slots of a templated text resource, such as "Page `1` of `2`" or "Thought for `time` seconds". Like `tr`,
+   the result is a `Dynamic` that looks up the resource when it's displayed, so it's in the front end's current language.
+   The front end can't fill in slots by itself, so this `Dynamic` is evaluated by the front end's "System" kernel, which
+   is always running, so it needs neither the main kernel nor Chatbook (e.g. when a saved chat is opened). It only uses
+   System functions and has no tracked symbols, so it's evaluated once when displayed.
+   Slots are filled with positional arguments (`1`, `2`, ...) or with the values of an association (`name`). Values can
+   be any expressions, including Dynamic expressions with DynamicModule variables. They're given to the front end as a
+   list of rules, since DynamicModule doesn't localize variables inside an association. *)
+trTemplate // beginDefinition;
 
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*trExprTemplate*)
-(* There might be a better way to implement this, but the rationale is we should avoid placing huge
-    expressions or linear syntax within text resource files.
-    The following is compatible with injection into Row or TextData expressions using numbered sequential slots. *)
-trExprTemplate // beginDefinition;
+trTemplate[ name_? StringQ, as_Association ] :=
+    trTemplate0[ name, KeyValueMap[ ToString @ #1 -> #2 &, as ] ];
 
-trExprTemplate[ name_? StringQ ] :=
-    TemplateObject @ Splice @ StringSplit[ trRaw @ name, "`" ~~ d: DigitCharacter.. ~~ "`" :> TemplateSlot @ d ];
+trTemplate[ name_? StringQ, args___ ] :=
+    trTemplate0[ name, MapIndexed[ ToString @ First @ #2 -> #1 &, { args } ] ];
 
-trExprTemplate // endDefinition;
+trTemplate // endDefinition;
+
+
+trTemplate0 // beginDefinition;
+
+(* The template is split at backticks, so the slot names are at the even positions. The label is saved in notebooks, so
+   it only uses System symbols (the variables are in the Typeset context). Its arguments are the resource name,
+   the slot rules and the template, so it can be matched by these (see Serialization.wl). If the front end doesn't have
+   the resource (e.g. an older Chatbook opening a newer notebook), only the slot values are shown: *)
+$trTemplateFunction = Function[
+    { Typeset`name, Typeset`rules, Typeset`template },
+    Style[
+        If[ StringQ @ Typeset`template,
+            Row @ MapIndexed[
+                If[ EvenQ @ First @ #2, Replace[ #1, Append[ Typeset`rules, _ -> "" ] ], #1 ] &,
+                StringSplit[ Typeset`template, "`", All ]
+            ],
+            Row[ Last /@ Typeset`rules, " " ]
+        ],
+        ShowStringCharacters -> False
+    ]
+];
+
+trTemplate0[ name_String, rules_List ] /; $CloudEvaluation :=
+    $trTemplateFunction[ name, rules, cloudTextResource @ name ];
+
+trTemplate0[ name_String, rules_List ] := With[ { f = $trTemplateFunction },
+    Dynamic[ f[ name, rules, FrontEndResource[ "ChatbookStrings", name ] ], Evaluator -> "System", TrackedSymbols :> { } ]
+];
+
+trTemplate0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1567,6 +1602,62 @@ sufficientVersionQ // endDefinition;
 insufficientVersionQ // beginDefinition;
 insufficientVersionQ[ version_? NumberQ ] := TrueQ[ $VersionNumber < version ];
 insufficientVersionQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*allowExternalLLMConnectivityQ*)
+(* False if LLM requests made through ServiceExecute/LLMServices are blocked by System`$AllowExternalLLMConnectivity
+   (available in 16.0+). This reads only the kernel symbol, so it can be used while building dynamic content without
+   making it depend on front end options: *)
+allowExternalLLMConnectivityQ // beginDefinition;
+allowExternalLLMConnectivityQ[ ] := ! (sufficientVersionQ[ 16.0 ] && System`$AllowExternalLLMConnectivity === False);
+allowExternalLLMConnectivityQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*allowInternetQ*)
+(* False if $AllowInternet is False, which blocks every request that the service framework sends (giving messages such
+   as ServiceSubmit::isrv), including requests to a local server such as Ollama. Only the kernel symbol is read, since
+   it's what blocks the requests, and reading the front end's "AllowDownloads" option would be a front end call: *)
+allowInternetQ // beginDefinition;
+allowInternetQ[ ] := $AllowInternet =!= False;
+allowInternetQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*llmRequestsAllowedQ*)
+(* True unless LLM requests through the service framework would be blocked by either setting: *)
+llmRequestsAllowedQ // beginDefinition;
+llmRequestsAllowedQ[ ] := allowExternalLLMConnectivityQ[ ] && allowInternetQ[ ];
+llmRequestsAllowedQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*llmRequestsBlockedFailure*)
+(* The failure for a chat that is not sent because llmRequestsAllowedQ[ ] is False. It's written to the chat output (in
+   the front end's language) without also issuing a message, since the output already shows it. Its "Action" is the
+   preferences page that has the setting, which clicking the message in the chat output opens (see errorCell): *)
+llmRequestsBlockedFailure // beginDefinition;
+
+llmRequestsBlockedFailure[ ] :=
+    If[ allowExternalLLMConnectivityQ[ ],
+        llmRequestsBlockedFailure[ "InternetDisabled", "ChatbarWolframDisabledInternet" ],
+        llmRequestsBlockedFailure[ "ExternalLLMConnectivityDisabled", "PreferencesContentAIDisabled" ]
+    ];
+
+(* If the front end doesn't have the text resource (e.g. it's using the resources of an older Chatbook), the English
+   text from this paclet is used instead of failing: *)
+llmRequestsBlockedFailure[ tag_String, name_String ] :=
+    Failure[
+        tag,
+        <|
+            "MessageTemplate"   -> Replace[ Quiet @ catchAlways @ trRaw @ name, Except[ _String ] :> trPaclet @ name ],
+            "MessageParameters" -> { },
+            "Action"            -> tag
+        |>
+    ];
+
+llmRequestsBlockedFailure // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

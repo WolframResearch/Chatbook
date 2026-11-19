@@ -175,6 +175,146 @@ VerificationTest[
     TestID   -> "SendChat-ChatOutputData-Cloud"
 ]
 
+(* When external LLM connectivity is disabled, the chat fails before building messages or sending a request: *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Common`allowExternalLLMConnectivityQ = False & },
+        sendChatEvents @ $baseSettings
+    ],
+    <|
+        "Result" -> Failure[ "ExternalLLMConnectivityDisabled", KeyValuePattern[ "MessageTemplate" -> _String ] ],
+        "Events" -> { }
+    |>,
+    SameTest -> MatchQ,
+    TestID   -> "SendChat-ExternalLLMConnectivityDisabled"
+]
+
+(* The same goes for a chat when internet access is not allowed, which would only give messages like ServiceSubmit::isrv: *)
+(* The failure's text comes from the front end in its language, so it's only checked to be a string: *)
+VerificationTest[
+    Block[ { $AllowInternet = False },
+        sendChatEvents @ $baseSettings
+    ],
+    <|
+        "Result" -> Failure[ "InternetDisabled", KeyValuePattern[ "MessageTemplate" -> _String ] ],
+        "Events" -> { }
+    |>,
+    SameTest -> MatchQ,
+    TestID   -> "SendChat-InternetDisabled"
+]
+
+(* The connectivity setting is reported if both settings block the request: *)
+VerificationTest[
+    Block[ { $AllowInternet = False, Wolfram`Chatbook`Common`allowExternalLLMConnectivityQ = False & },
+        sendChatEvents @ $baseSettings
+    ],
+    <| "Result" -> Failure[ "ExternalLLMConnectivityDisabled", _ ], "Events" -> { } |>,
+    SameTest -> MatchQ,
+    TestID   -> "SendChat-ExternalLLMConnectivityAndInternetDisabled"
+]
+
+(* The message is defined for every language: *)
+VerificationTest[
+    Select[
+        FileNames[ "ChatbookStrings.tr", FileNameJoin @ { ParentDirectory @ DirectoryName @ $TestFileName, "FrontEnd", "TextResources" }, 2 ],
+        StringFreeQ[ ReadString @ #, "\"PreferencesContentAIDisabled\" ->" ] &
+    ],
+    { },
+    SameTest -> MatchQ,
+    TestID   -> "ExternalLLMConnectivityDisabled-TextResources"
+]
+
+(* If the front end doesn't have the text resource (e.g. it uses an older Chatbook's resources), the English text is used: *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Common`trRaw = $Failed & },
+        Wolfram`Chatbook`Common`llmRequestsBlockedFailure[ "ExternalLLMConnectivityDisabled", "PreferencesContentAIDisabled" ]
+    ],
+    Failure[
+        "ExternalLLMConnectivityDisabled",
+        KeyValuePattern[ "MessageTemplate" -> "AI features have been disabled. \[RightGuillemet]" ]
+    ],
+    SameTest -> MatchQ,
+    TestID   -> "LLMRequestsBlockedFailure-FallbackText"
+]
+
+(* Clicking the message in the error cell opens the preferences page with the setting that blocked the request. The cell
+   can be opened in a later session, so the button loads Chatbook if it's needed: *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Common`trRaw = "Message" & },
+        Cases[
+            Wolfram`Chatbook`SendChat`Private`errorCell @ Wolfram`Chatbook`Common`llmRequestsBlockedFailure[ #, "Message" ],
+            ButtonBox[ _, ___, ButtonFunction :> f_, ___ ] :> HoldForm @ f,
+            Infinity
+        ] & /@ { "ExternalLLMConnectivityDisabled", "InternetDisabled" }
+    ],
+    {
+        {
+            ___,
+            HoldForm @ CompoundExpression[
+                Needs[ "Wolfram`Chatbook`" -> None ],
+                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "OpenPreferences", "Services", "AllowAI" ]
+            ],
+            ___
+        },
+        { ___, HoldForm @ NotebookTools`OpenPreferencesDialog[ "InternetConnectivity", "AllowDownloads" ], ___ }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ErrorCell-LLMRequestsBlocked-PreferencesButtons"
+]
+
+(* Other errors don't open the preferences: *)
+VerificationTest[
+    {
+        FreeQ[ #, NotebookTools`OpenPreferencesDialog ],
+        FreeQ[ #, "OpenPreferences" ]
+    } & @ Wolfram`Chatbook`SendChat`Private`errorCell @ Failure[ "Other", <| "MessageTemplate" -> "Message", "MessageParameters" -> { } |> ],
+    { True, True },
+    SameTest -> MatchQ,
+    TestID   -> "ErrorCell-OtherFailures-NoPreferencesButton"
+]
+
+(* The action that the button calls opens the Services page at the setting: *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Common`openPreferencesPage = HoldForm @ openPreferencesPage[ ## ] & },
+        Wolfram`Chatbook`ChatbookAction[ "OpenPreferences", "Services", "AllowAI" ]
+    ],
+    HoldForm @ openPreferencesPage[ "Services", "AllowAI" ],
+    SameTest -> MatchQ,
+    TestID   -> "ChatbookAction-OpenPreferences"
+]
+
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Common`allowExternalLLMConnectivityQ = False &, Wolfram`Chatbook`Common`resolveAutoSettings },
+        Wolfram`Chatbook`Common`resolveAutoSettings[ ___ ] := Throw[ "UnexpectedSettingsResolution" ];
+        Wolfram`Chatbook`AgentEvaluate[ "Hello" ]
+    ],
+    Failure[ "Chatbook`AgentEvaluate::ExternalLLMConnectivityDisabled" | "AgentEvaluate::ExternalLLMConnectivityDisabled", _ ],
+    { AgentEvaluate::ExternalLLMConnectivityDisabled },
+    SameTest -> MatchQ,
+    TestID   -> "AgentEvaluate-ExternalLLMConnectivityDisabled"
+]
+
+VerificationTest[
+    Block[ { $AllowInternet = False, Wolfram`Chatbook`Common`resolveAutoSettings },
+        Wolfram`Chatbook`Common`resolveAutoSettings[ ___ ] := Throw[ "UnexpectedSettingsResolution" ];
+        Wolfram`Chatbook`AgentEvaluate[ "Hello" ]
+    ],
+    Failure[ "Chatbook`AgentEvaluate::InternetDisabled" | "AgentEvaluate::InternetDisabled", _ ],
+    { AgentEvaluate::InternetDisabled },
+    SameTest -> MatchQ,
+    TestID   -> "AgentEvaluate-InternetDisabled"
+]
+
+(* LLM requests made outside of a chat (e.g. content suggestions or chat titles) also check before sending anything: *)
+VerificationTest[
+    Block[ { $AllowInternet = False, Wolfram`LLMFunctions`Common`LLMKitCheck },
+        Wolfram`LLMFunctions`Common`LLMKitCheck[ ] := Throw[ "UnexpectedLLMKitCheck" ];
+        Wolfram`Chatbook`Common`catchAlways @ Wolfram`Chatbook`Common`llmKitCheck[ ]
+    ],
+    Failure[ "InternetDisabled", _ ],
+    SameTest -> MatchQ,
+    TestID   -> "LLMKitCheck-InternetDisabled"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Multimodal Messages*)
@@ -337,8 +477,8 @@ VerificationTest[
         },
         stopChatTaggingRules @ Wolfram`Chatbook`Common`$defaultChatSettings;
         {
-            FreeQ[ $stopChatWrittenCells, FEPrivate`FrontEndResource[ "ChatbookStrings", "FormattingToolCancelled" ] ],
-            FreeQ[ $stopChatWrittenCells, FEPrivate`FrontEndResource[ "ChatbookStrings", "FormattingToolUsing" ] ],
+            FreeQ[ $stopChatWrittenCells, HoldPattern @ FrontEndResource[ "ChatbookStrings", "FormattingToolCancelledTemplate" ] ],
+            FreeQ[ $stopChatWrittenCells, HoldPattern @ FrontEndResource[ "ChatbookStrings", "FormattingToolUsingTemplate" ] ],
             FreeQ[ $stopChatWrittenCells, "ChatbookActiveToolProgress" ]
         }
     ],

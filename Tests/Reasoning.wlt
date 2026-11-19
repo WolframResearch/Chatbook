@@ -178,7 +178,7 @@ VerificationTest[
     {
         "EmptyThoughts",
         "",
-        s_String /; StringContainsQ[ s, " 3 " ],
+        DynamicBox[ ToBoxes[ _Function[ "FormattingThinkingComplete", { "time" -> "3" }, _ ], ___ ], ___, Evaluator -> "System", ___ ],
         KeyValuePattern @ { "Type" -> "Summary", "ID" -> "abc123", "Signature" -> $signature }
     },
     SameTest -> MatchQ,
@@ -297,7 +297,7 @@ VerificationTest[
         <| "abc" -> <| "Duration" -> 7.4 |>, "def" -> <| "Duration" -> 0.3 |> |>
     ],
     {
-        s1_String /; StringContainsQ[ s1, " 7 " ],
+        DynamicBox[ ToBoxes[ _Function[ "FormattingThinkingComplete", { "time" -> "7" }, _ ], ___ ], ___, Evaluator -> "System", ___ ],
         DynamicBox[ ToBoxes[ FEPrivate`FrontEndResource[ "ChatbookStrings", "FormattingThinkingCompleteSingular" ], ___ ], ___ ],
         (* No duration is available: *)
         DynamicBox[ ToBoxes[ FEPrivate`FrontEndResource[ "ChatbookStrings", "FormattingThinkingCompleteFallback" ], ___ ], ___ ]
@@ -560,6 +560,17 @@ VerificationTest[
     { True, { KeyValuePattern[ "Duration" -> _Real? NonNegative ]? (FreeQ[ #, "Signature" ] &) }, None },
     SameTest -> MatchQ,
     TestID   -> "Stream-Interrupted-Summary"
+]
+
+(* Durations are machine numbers. AbsoluteTime gives arbitrary-precision numbers, and the difference of two equal times
+   (a reasoning item that ends right after it starts) is 0``7.45, whose sign can't be determined: *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Reasoning`Private`$reasoningStart = AbsoluteTime[ ] },
+        With[ { d = Wolfram`Chatbook`Reasoning`Private`reasoningDuration[ ] }, { MachineNumberQ @ d, NonNegative @ d } ]
+    ],
+    { True, True },
+    SameTest -> MatchQ,
+    TestID   -> "Reasoning-Duration-Machine-Number"
 ]
 
 VerificationTest[
