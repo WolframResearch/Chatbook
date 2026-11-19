@@ -117,6 +117,7 @@
 "PreferencesContentEnableAssistanceTooltip" -> "Si han sido habilitadas, las sugerencias autom\[AAcute]ticas proporcionadas por IA ser\[AAcute]n agregadas luego de los resultados de la evaluaci\[OAcute]n.",
 "PreferencesContentAIDisabledByAdmin" -> "Las caracter\[IAcute]sticas de IA han sido deshabilitadas por un administrador",
 "PreferencesContentAIDisabledByUser" -> "AI features have been disabled.",
+"PreferencesContentAIDisabled" -> "AI features have been disabled. \[RightGuillemet]",
 "PreferencesContentAIDisabledLearnMore" -> "M\[AAcute]s informaci\[OAcute]n \[RightGuillemet]",
 "PreferencesContentPersonaLabel" -> "Persona:",
 "PreferencesContentLLMServiceLabel" -> "Servicio LLM:",

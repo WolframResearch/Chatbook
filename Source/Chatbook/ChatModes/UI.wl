@@ -973,7 +973,11 @@ chatbarUserData[ ] := chatbarUserData @ cloudCredentialsQ[ ]
 
 chatbarUserData[ False ] := <| "credentialsQ" -> False |>;
 
-chatbarUserData[ True ] := chatbarUserData @ ServiceExecute[ "LLMKit", "RawAccess", ProgressReporting -> False ]
+(* The request would only issue a message if LLM requests are blocked (e.g. ServiceExecute::isrv): *)
+chatbarUserData[ True ] := chatbarUserData @ If[ llmRequestsAllowedQ[ ],
+    ServiceExecute[ "LLMKit", "RawAccess", ProgressReporting -> False ],
+    $Failed
+]
 
 chatbarUserData[ rawAccessData_ ] := $chatbarAccessFailedData /; Or[
     FailureQ[ rawAccessData ],

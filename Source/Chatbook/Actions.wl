@@ -99,6 +99,7 @@ chatbookAction[ "MakeWorkspaceChatDockedCell"     , args___ ] := makeWorkspaceCh
 chatbookAction[ "MoveToChatInputField"            , args___ ] := moveToChatInputField @ args;
 chatbookAction[ "OpenChatBlockSettings"           , args___ ] := OpenChatBlockSettings @ args;
 chatbookAction[ "OpenChatMenu"                    , args___ ] := OpenChatMenu @ args;
+chatbookAction[ "OpenPreferences"                 , args___ ] := openPreferencesPage @ args;
 chatbookAction[ "PersonaManage"                   , args___ ] := PersonaManage @ args;
 chatbookAction[ "RegenerateAssistantMessage"      , args___ ] := regenerateAssistantMessage @ args;
 chatbookAction[ "RemoveCellAccents"               , args___ ] := removeCellAccents @ args;

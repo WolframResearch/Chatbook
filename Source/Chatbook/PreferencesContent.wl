@@ -153,7 +153,7 @@ allowAISettings[ ] :=
             tr[ "PreferencesContentAllowAILabel" ],
             Hold @ allowExternalLLMConnectivityQ[ ]
         ],
-        None,
+        "Services",
         "AllowAI"
     ];
 
@@ -162,15 +162,6 @@ allowAISettings // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*AllowExternalLLMConnectivity*)
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*allowExternalLLMConnectivityQ*)
-(* Reads only the kernel symbol, so it can be used while building dynamic content without making it depend on front
-   end options: *)
-allowExternalLLMConnectivityQ // beginDefinition;
-allowExternalLLMConnectivityQ[ ] := System`$AllowExternalLLMConnectivity =!= False;
-allowExternalLLMConnectivityQ // endDefinition;
-
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*setAllowExternalLLMConnectivity*)
@@ -349,7 +340,7 @@ localAIOnly[ ] := Which[
     (* if disabled via Preferences checkbox. Don't read CurrentValue[ $FrontEnd, "AllowExternalLLMConnectivity" ] here:
        this runs while building the preferences content, and that read makes the content rebuild whenever any
        $FrontEnd option changes. *)
-    sufficientVersionQ[ 16.0 ] && ! allowExternalLLMConnectivityQ[ ],
+    ! allowExternalLLMConnectivityQ[ ],
         { True, "User" },
 
     True,
@@ -1520,9 +1511,15 @@ servicesSettingsPanel0 // endDefinition;
 (*getServiceData*)
 getServiceData // beginDefinition;
 
-getServiceData[ ] /; sufficientVersionQ[ 16.0 ] && ! allowExternalLLMConnectivityQ[ ] := $Failed;
+(* This check can't be a condition on its own definition, since a definition without arguments always comes first: *)
+getServiceData[ ] := If[ llmRequestsAllowedQ[ ], getServiceData0[ ], $Failed ];
 
-getServiceData[ ] := With[
+getServiceData // endDefinition;
+
+
+getServiceData0 // beginDefinition;
+
+getServiceData0[ ] := With[
     { rawData = Quiet[ ServiceExecute[ "LLMKit", "RawAccess", ProgressReporting -> False ], ServiceExecute::extllm ] },
     If[ AssociationQ @ rawData && Lookup[ rawData, "data", False, AssociationQ ],
         rawData[ "data" ]
@@ -1531,7 +1528,7 @@ getServiceData[ ] := With[
     ]
 ]
 
-getServiceData // endDefinition;
+getServiceData0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

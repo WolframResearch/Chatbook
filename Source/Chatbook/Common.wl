@@ -91,6 +91,10 @@ System`HoldCompleteForm;
 `inlineTemplateBoxes;
 `sufficientVersionQ;
 `insufficientVersionQ;
+`allowExternalLLMConnectivityQ;
+`allowInternetQ;
+`llmRequestsAllowedQ;
+`llmRequestsBlockedFailure;
 `addToMXInitialization;
 `mxInitialize;
 
@@ -228,9 +232,11 @@ KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
     "ConnectionFailure"               -> "Server connection failure: `1`. Please try again later.",
     "ConnectionFailure2"              -> "Could not get a valid response from the server: `1`. Please try again later.",
     "ExpectedInstallableResourceType" -> "Expected a resource of type `1` instead of `2`.",
+    "ExternalLLMConnectivityDisabled" -> "AI features have been disabled. \[RightGuillemet]",
     "IntegratedServiceError"          -> "The `1` service returned an error: `2`",
     "IntegratedServiceUnavailable"    -> "The `1` service is currently not available. Please try again in a few minutes.",
     "Internal"                        -> "An unexpected error occurred. `1`",
+    "InternetDisabled"                -> "Internet access is not allowed. To allow it, set $AllowInternet = True.",
     "InvalidAPIKey"                   -> "Invalid value for API key: `1`",
     "InvalidArguments"                -> "Invalid arguments given for `1` in `2`.",
     "InvalidConversionRules"          -> "`1` is neither a list of replacement rules nor a valid dispatch table, and so cannot be used for replacing.",
@@ -1596,6 +1602,62 @@ sufficientVersionQ // endDefinition;
 insufficientVersionQ // beginDefinition;
 insufficientVersionQ[ version_? NumberQ ] := TrueQ[ $VersionNumber < version ];
 insufficientVersionQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*allowExternalLLMConnectivityQ*)
+(* False if LLM requests made through ServiceExecute/LLMServices are blocked by System`$AllowExternalLLMConnectivity
+   (available in 16.0+). This reads only the kernel symbol, so it can be used while building dynamic content without
+   making it depend on front end options: *)
+allowExternalLLMConnectivityQ // beginDefinition;
+allowExternalLLMConnectivityQ[ ] := ! (sufficientVersionQ[ 16.0 ] && System`$AllowExternalLLMConnectivity === False);
+allowExternalLLMConnectivityQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*allowInternetQ*)
+(* False if $AllowInternet is False, which blocks every request that the service framework sends (giving messages such
+   as ServiceSubmit::isrv), including requests to a local server such as Ollama. Only the kernel symbol is read, since
+   it's what blocks the requests, and reading the front end's "AllowDownloads" option would be a front end call: *)
+allowInternetQ // beginDefinition;
+allowInternetQ[ ] := $AllowInternet =!= False;
+allowInternetQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*llmRequestsAllowedQ*)
+(* True unless LLM requests through the service framework would be blocked by either setting: *)
+llmRequestsAllowedQ // beginDefinition;
+llmRequestsAllowedQ[ ] := allowExternalLLMConnectivityQ[ ] && allowInternetQ[ ];
+llmRequestsAllowedQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*llmRequestsBlockedFailure*)
+(* The failure for a chat that is not sent because llmRequestsAllowedQ[ ] is False. It's written to the chat output (in
+   the front end's language) without also issuing a message, since the output already shows it. Its "Action" is the
+   preferences page that has the setting, which clicking the message in the chat output opens (see errorCell): *)
+llmRequestsBlockedFailure // beginDefinition;
+
+llmRequestsBlockedFailure[ ] :=
+    If[ allowExternalLLMConnectivityQ[ ],
+        llmRequestsBlockedFailure[ "InternetDisabled", "ChatbarWolframDisabledInternet" ],
+        llmRequestsBlockedFailure[ "ExternalLLMConnectivityDisabled", "PreferencesContentAIDisabled" ]
+    ];
+
+(* If the front end doesn't have the text resource (e.g. it's using the resources of an older Chatbook), the English
+   text from this paclet is used instead of failing: *)
+llmRequestsBlockedFailure[ tag_String, name_String ] :=
+    Failure[
+        tag,
+        <|
+            "MessageTemplate"   -> Replace[ Quiet @ catchAlways @ trRaw @ name, Except[ _String ] :> trPaclet @ name ],
+            "MessageParameters" -> { },
+            "Action"            -> tag
+        |>
+    ];
+
+llmRequestsBlockedFailure // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

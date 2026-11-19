@@ -418,15 +418,58 @@ VerificationTest[
     TestID   -> "SetAllowExternalLLMConnectivity-UpdatesFrontEndAndKernel"
 ]
 
+(* The setting only applies in 16.0+, and only an explicit False disables connectivity: *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Common`sufficientVersionQ, System`$AllowExternalLLMConnectivity },
+        Table[
+            Wolfram`Chatbook`Common`sufficientVersionQ[ 16.0 ] = v;
+            System`$AllowExternalLLMConnectivity = a;
+            Wolfram`Chatbook`Common`allowExternalLLMConnectivityQ[ ],
+            { v, { True, False } },
+            { a, { True, False, Automatic } }
+        ]
+    ],
+    { { True, False, True }, { True, True, True } },
+    SameTest -> MatchQ,
+    TestID   -> "AllowExternalLLMConnectivityQ"
+]
+
+(* Only an explicit False blocks requests, and either setting blocks them: *)
+VerificationTest[
+    Block[ { $AllowInternet, Wolfram`Chatbook`Common`allowExternalLLMConnectivityQ },
+        Table[
+            $AllowInternet = i;
+            Wolfram`Chatbook`Common`allowExternalLLMConnectivityQ[ ] = c;
+            { Wolfram`Chatbook`Common`allowInternetQ[ ], Wolfram`Chatbook`Common`llmRequestsAllowedQ[ ] },
+            { c, { True, False } },
+            { i, { True, False, Automatic } }
+        ]
+    ],
+    { { { True, True }, { False, False }, { True, True } }, { { True, False }, { False, False }, { True, False } } },
+    SameTest -> MatchQ,
+    TestID   -> "LLMRequestsAllowedQ"
+]
+
+(* The preferences don't request the LLM Kit info when internet access is not allowed: *)
+VerificationTest[
+    Block[ { $AllowInternet = False, ServiceExecute },
+        ServiceExecute[ ___ ] := (Message[ ServiceExecute::isrv, "LLMKit" ]; "UnexpectedRequest");
+        Wolfram`Chatbook`Common`getServiceData[ ]
+    ],
+    $Failed,
+    SameTest -> MatchQ,
+    TestID   -> "GetServiceData-InternetDisabledDoesNotRequestOrWarn"
+]
+
 VerificationTest[
     Block[
         {
             Wolfram`Chatbook`Common`sufficientVersionQ,
-            Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ,
+            System`$AllowExternalLLMConnectivity,
             ServiceExecute
         },
         Wolfram`Chatbook`Common`sufficientVersionQ[ 16.0 ] = True;
-        Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ[ ] = False;
+        System`$AllowExternalLLMConnectivity = False;
         ServiceExecute[ ___ ] := (Message[ ServiceExecute::extllm ]; "UnexpectedRequest");
         Wolfram`Chatbook`Common`getServiceData[ ]
     ],
@@ -439,11 +482,11 @@ VerificationTest[
     Block[
         {
             Wolfram`Chatbook`Common`sufficientVersionQ,
-            Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ,
+            System`$AllowExternalLLMConnectivity,
             ServiceExecute
         },
         Wolfram`Chatbook`Common`sufficientVersionQ[ 16.0 ] = False;
-        Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ[ ] = False;
+        System`$AllowExternalLLMConnectivity = False;
         ServiceExecute[ ___ ] := <| "data" -> <| "userHasSubscription" -> True |> |>;
         Wolfram`Chatbook`Common`getServiceData[ ]
     ],
@@ -456,11 +499,11 @@ VerificationTest[
     Block[
         {
             Wolfram`Chatbook`Common`sufficientVersionQ,
-            Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ,
+            System`$AllowExternalLLMConnectivity,
             ServiceExecute
         },
         Wolfram`Chatbook`Common`sufficientVersionQ[ 16.0 ] = True;
-        Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ[ ] = True;
+        System`$AllowExternalLLMConnectivity = True;
         ServiceExecute[ ___ ] := (Message[ ServiceExecute::extllm ]; <| "data" -> <| "userHasSubscription" -> True |> |>);
         Wolfram`Chatbook`Common`getServiceData[ ]
     ],
@@ -473,11 +516,11 @@ VerificationTest[
     Block[
         {
             Wolfram`Chatbook`Common`sufficientVersionQ,
-            Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ,
+            System`$AllowExternalLLMConnectivity,
             ServiceExecute
         },
         Wolfram`Chatbook`Common`sufficientVersionQ[ 16.0 ] = True;
-        Wolfram`Chatbook`PreferencesContent`Private`allowExternalLLMConnectivityQ[ ] = True;
+        System`$AllowExternalLLMConnectivity = True;
         ServiceExecute[ ___ ] := (Message[ ServiceExecute::other ]; $Failed);
         Wolfram`Chatbook`Common`getServiceData[ ]
     ],
