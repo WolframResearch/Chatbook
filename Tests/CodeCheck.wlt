@@ -493,11 +493,14 @@ VerificationTest[
     TestID -> "10_03_brackets"
 ]
 
+(* This input takes about 0.5-1 s to fix, close to the default 1 s limit, so give it more time (GH#1742): *)
 VerificationTest[
-    CodeCheckFix[
-        "\nmaxC = 20;\n\tprimTriples = Select[\n\t  With[{m = #1, n = #2}, \n\t    {m ^ 2 - n ^ 2, 2 m n, m ^ 2 + n ^ 2}\n\t  ] & @@@ \n\t  Select[\n\t    Flatten[Table[{m, n}, {n, Floor[Sqrt[maxC / 2]}], {m, n + 1, Floor[Sqrt[maxC]], 2}], 1], \n\t    #[[1]] ^ 2 + #[[2]] ^ 2 <= maxC &\n\t  ], \n\t  Apply[CoprimeQ, #] &\n\t];\n\t\n\tprimTriples\n"
-    ][
-        "FixedCode"
+    Block[ { $MaxIterateTimeBracketsFix = 10. },
+        CodeCheckFix[
+            "\nmaxC = 20;\n\tprimTriples = Select[\n\t  With[{m = #1, n = #2}, \n\t    {m ^ 2 - n ^ 2, 2 m n, m ^ 2 + n ^ 2}\n\t  ] & @@@ \n\t  Select[\n\t    Flatten[Table[{m, n}, {n, Floor[Sqrt[maxC / 2]}], {m, n + 1, Floor[Sqrt[maxC]], 2}], 1], \n\t    #[[1]] ^ 2 + #[[2]] ^ 2 <= maxC &\n\t  ], \n\t  Apply[CoprimeQ, #] &\n\t];\n\t\n\tprimTriples\n"
+        ][
+            "FixedCode"
+        ]
     ],
     "\nmaxC = 20;\n\tprimTriples = Select[\n\t  With[{m = #1, n = #2}, \n\t    {m ^ 2 - n ^ 2, 2 m n, m ^ 2 + n ^ 2}\n\t  ] & @@@ \n\t  Select[\n\t    Flatten[Table[{m, n}, {n, Floor[Sqrt[maxC / 2]]}, {m, n + 1, Floor[Sqrt[maxC]], 2}], 1], \n\t    #[[1]] ^ 2 + #[[2]] ^ 2 <= maxC &\n\t  ], \n\t  Apply[CoprimeQ, #] &\n\t];\n\t\n\tprimTriples\n",
     TestID -> "11_03_brackets"
@@ -574,6 +577,41 @@ VerificationTest[
     "graphics3D[{a,b,{c,Red},viewPoint -> {1, -2, 1}}]",
     TestID -> "21_03_brackets"
 ]
+
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::PrivateContextSymbol:: *)
+
+(* CodeParser catches the time limit abort and calls Abort[] again; that must not escape CodeCheckFix (GH#1742): *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`CodeCheck`Private`fixPatternBrackets, $MaxIterateTimeBracketsFix = 0.1 },
+        Wolfram`Chatbook`CodeCheck`Private`fixPatternBrackets[ _ ][ ___ ] := CheckAbort[ Pause[ 10 ], Abort[ ] ];
+        CodeCheckFix[ "f[{{3}}}" ][ "FixedCode" ]
+    ],
+    Missing[ "Time limit exceeded" ],
+    TestID -> "BracketFixTimeLimitAbort-GH#1742"
+]
+
+(* An abort before the time limit (e.g. from the user) is passed on: *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`CodeCheck`Private`fixPatternBrackets },
+        Wolfram`Chatbook`CodeCheck`Private`fixPatternBrackets[ _ ][ ___ ] := Abort[ ];
+        CheckAbort[ CodeCheckFix[ "f[{{3}}}" ], "Aborted" ]
+    ],
+    "Aborted",
+    TestID -> "BracketFixUserAbort-GH#1742"
+]
+
+(* An outer TimeConstrained that runs out during the bracket fix still gets its own abort: *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`CodeCheck`Private`fixPatternBrackets },
+        Wolfram`Chatbook`CodeCheck`Private`fixPatternBrackets[ _ ][ ___ ] := Pause[ 10 ];
+        TimeConstrained[ CodeCheckFix[ "f[{{3}}}" ], 0.1, "Outer time limit" ]
+    ],
+    "Outer time limit",
+    TestID -> "BracketFixOuterTimeLimit-GH#1742"
+]
+
+(* :!CodeAnalysis::EndBlock:: *)
 
 VerificationTest[
     (CodeCheckFix[ (#1) ][ "FixedCode" ] &)[

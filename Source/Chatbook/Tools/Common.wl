@@ -363,6 +363,11 @@ formatToolCallExample[ name_String, params_Association, "Simple" ] := Enclose[
     throwInternalFailure
 ];
 
+(* Custom tools take plain text instead of JSON: *)
+formatToolCallExample[ name_String, params_Association, "Service" ] /;
+    customToolsQ @ $ChatHandlerData[ "ChatNotebookSettings" ] && StringQ @ params @ customToolParameter @ name :=
+        TemplateApply[ "TOOLCALL: `1`\n`2`", { toMachineToolName @ name, params @ customToolParameter @ name } ];
+
 formatToolCallExample[ name_String, params_Association, "Service" ] :=
     TemplateApply[
         "TOOLCALL: `1`\n`2`",
@@ -1389,6 +1394,195 @@ getToolFormattingFunction[ HoldPattern @ LLMTool[ as_, ___ ] ] := getToolFormatt
 getToolFormattingFunction[ as_Association ] := Lookup[ as, "FormattingFunction", Automatic ];
 getToolFormattingFunction[ _ ] := Automatic;
 getToolFormattingFunction // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Custom Tools*)
+
+(* The responses endpoint has "custom" tools, which take plain text as their input instead of JSON arguments. That
+   suits code and long text better, so for models with "EnableCustomTools" in $modelAutoSettings, these tools are
+   given to the service as custom tools, where the text is the value of the listed parameter.
+
+   The rest of Chatbook only sees tool calls with named parameters: calls of custom tools are converted as soon as they
+   are received (`fromCustomToolRequest`), and converted back when they are sent as chat history (`toCustomToolCalls`,
+   and `toCustomToolCallData` for the calls that are read from the text of earlier messages), so the text that
+   represents a tool call is the same as for any other tool. *)
+$customToolParameters = <|
+    "CreateNotebook"           -> "content",
+    "WolframLanguageEvaluator" -> "code"
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*customToolsQ*)
+customToolsQ // beginDefinition;
+
+(* Custom tools came with the same paclet versions as the responses endpoint ($responsesAPIAvailable). Development
+   builds of those versions from before October 2026 don't have them, which is not checked for here. *)
+customToolsQ[ settings_Association ] := TrueQ @ And[
+    responsesRequestQ @ settings,
+    autoModelSetting[ settings, "EnableCustomTools" ]
+];
+
+customToolsQ[ _ ] := False;
+
+customToolsQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*customToolParameter*)
+customToolParameter // beginDefinition;
+customToolParameter[ name_String ] := Lookup[ $customToolParameters, toolName[ name, "Canonical" ], None ];
+customToolParameter // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*toCustomTools*)
+toCustomTools // beginDefinition;
+toCustomTools[ settings_, tools_List ] := If[ customToolsQ @ settings, toCustomTool /@ tools, tools ];
+toCustomTools // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toCustomTool*)
+toCustomTool // beginDefinition;
+
+(* Creating an LLMTool takes a few milliseconds and this runs for every request, so the last result for each tool name
+   is kept (one entry for each name in $customToolParameters): *)
+toCustomTool[ tool: $$llmToolH[ KeyValuePattern[ "Name" -> name_String ], ___ ] ] /;
+    StringQ @ customToolParameter @ name :=
+        With[ { cached = Lookup[ $customToolCache, name ] },
+            If[ MatchQ[ cached, { _, _ } ] && First @ cached === tool,
+                Last @ cached,
+                Last[ $customToolCache[ name ] = { tool, makeCustomTool @ tool } ]
+            ]
+        ];
+
+toCustomTool[ tool_ ] := tool;
+
+toCustomTool // endDefinition;
+
+$customToolCache = <| |>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeCustomTool*)
+makeCustomTool // beginDefinition;
+
+(* A custom tool has no parameter schema, so the description of its parameter is added to the tool's description: *)
+makeCustomTool[ $$llmToolH[
+    as: KeyValuePattern @ { "Name" -> name_String, "Parameters" -> { param_String -> info_ } },
+    opts___
+] ] /; customToolParameter @ name === param :=
+    LLMTool[
+        <| as, "Description" -> customToolDescription[ as[ "Description" ], info ], "Parameters" -> None |>,
+        opts
+    ];
+
+makeCustomTool[ tool_ ] := tool;
+
+makeCustomTool // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*customToolDescription*)
+customToolDescription // beginDefinition;
+
+customToolDescription[ description_String, KeyValuePattern[ "Help" -> help_String ] ] :=
+    StringTrim @ description <> "\n\nThe input of this tool is plain text (not JSON): " <> help;
+
+customToolDescription[ description_, _ ] := description;
+
+customToolDescription // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*fromCustomToolRequest*)
+fromCustomToolRequest // beginDefinition;
+
+fromCustomToolRequest[ HoldPattern @ LLMToolRequest[
+    as: KeyValuePattern @ { "Name" -> name_String, "ParameterValues" -> input_String },
+    opts___
+] ] :=
+    With[ { param = customToolParameter @ name },
+        (* The input usually ends with a newline, which would show up as an empty line in the formatted tool call: *)
+        LLMToolRequest[
+            <| as, "ParameterValues" -> { param -> StringDelete[ input, WhitespaceCharacter.. ~~ EndOfString ] } |>,
+            opts
+        ] /; StringQ @ param
+    ];
+
+fromCustomToolRequest[ request_ ] := request;
+
+fromCustomToolRequest // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*toCustomToolCalls*)
+toCustomToolCalls // beginDefinition;
+
+toCustomToolCalls[ settings_, messages_List ] :=
+    If[ customToolsQ @ settings,
+        ReplaceAll[
+            messages,
+            {
+                request_LLMToolRequest   :> RuleCondition @ toCustomToolCall @ request,
+                response_LLMToolResponse :> RuleCondition @ toCustomToolCall @ response
+            }
+        ],
+        messages
+    ];
+
+toCustomToolCalls // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toCustomToolCall*)
+toCustomToolCall // beginDefinition;
+
+(* Creating these objects takes a few milliseconds each, so the ones that don't change are returned as they are: *)
+toCustomToolCall[ request: HoldPattern @ LLMToolRequest[ as_Association, opts___ ] ] :=
+    With[ { new = toCustomToolCallData @ as },
+        If[ new === as, request, LLMToolRequest[ new, opts ] ]
+    ];
+
+(* The service matches a tool's output to its call by the type of the request's parameter values: *)
+toCustomToolCall[ response: HoldPattern @ LLMToolResponse[ as: KeyValuePattern[ "Request" -> request_ ], opts___ ] ] :=
+    With[ { new = toCustomToolCall @ request },
+        If[ new === request, response, LLMToolResponse[ <| as, "Request" -> new |>, opts ] ]
+    ];
+
+toCustomToolCall[ other_ ] := other;
+
+toCustomToolCall // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*toCustomToolCallData*)
+toCustomToolCallData // beginDefinition;
+
+(* Converts the data of an LLMToolRequest, so that a caller that is creating the request anyway only does it once.
+
+   Calls are converted by the tool's name, not by the tools that the request declares. So when the tool isn't declared
+   (e.g. after switching to a persona without the evaluator, or turning it off), its earlier calls are sent as custom
+   tool calls of a tool the request doesn't have. Before custom tools, they were function calls of a tool the request
+   didn't have. Whether the endpoint accepts that hasn't been tested. *)
+toCustomToolCallData[ settings_, as_Association ] :=
+    If[ customToolsQ @ settings, toCustomToolCallData @ as, as ];
+
+toCustomToolCallData[ as: KeyValuePattern[ "Name" -> name_String ] ] :=
+    Replace[
+        Normal @ as[ "ParameterValues" ],
+        {
+            { param_String -> input_String } /; customToolParameter @ name === param :>
+                <| as, "ParameterValues" -> input |>,
+            _ :> as
+        }
+    ];
+
+toCustomToolCallData[ as_Association ] := as;
+
+toCustomToolCallData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

@@ -4,7 +4,7 @@ Adding model support to Chatbook ranges from minimal (2 files, ~20 lines) to sub
 
 The core idea: Chatbook classifies models into **families** and resolves their capabilities through a **hierarchical settings table**. Adding support means (a) teaching Chatbook to recognize the model and (b) telling it how the model behaves.
 
-For a real-world example of a simple addition, see [PR #1355](https://github.com/WolframResearch/Chatbook/pull/1355) (Gemini 2/3 support, 2 files, 21 lines). For a complex addition requiring structural changes, see [PR #1120](https://github.com/WolframResearch/Chatbook/pull/1120) (Claude 3.7 Sonnet improvements, 7 files, 151 lines). For a detailed walkthrough covering new settings, on-demand prompts, formatting fixes, and pipeline reordering, see [Case Study: Adding GPT 5.4 Support](model-support-examples/gpt-5-4.md).
+For a real-world example of a simple addition, see [PR #1355](https://github.com/WolframResearch/Chatbook/pull/1355) (Gemini 2/3 support, 2 files, 21 lines). For a complex addition requiring structural changes, see [PR #1120](https://github.com/WolframResearch/Chatbook/pull/1120) (Claude 3.7 Sonnet improvements, 7 files, 151 lines). For a detailed walkthrough covering new settings, on-demand prompts, formatting fixes, and pipeline reordering, see [Case Study: Adding GPT 5.4 Support](model-support-examples/gpt-5-4.md). For a model that needed a different endpoint and native tool calls, see [Case Study: Making gpt-6.1-sol the Default Model](model-support-examples/gpt-6-1-sol.md).
 
 ---
 
@@ -72,8 +72,10 @@ Settings that model configurations commonly override, organized by category. See
 | `"Multimodal"` | Boolean | Whether the model accepts image inputs |
 | `"ToolsEnabled"` | Boolean | Whether the model supports tool/function calling |
 | `"ForceSynchronous"` | Boolean | Force non-streaming (synchronous) API calls |
-| `"Reasoning"` | `"Minimal"` / `"None"` / `Missing["NotSupported"]` | Extended thinking/reasoning mode |
-| `"EnableResponses"` | Boolean | Whether the model can use the responses endpoint (`"RequestMethod"`); currently only honored for the `"OpenAI"` service |
+| `"Reasoning"` | `"None"` / `"Minimal"` / `"Low"` / `"Medium"` / ... / `Missing["NotSupported"]` | Extended thinking/reasoning mode |
+| `"EnableResponses"` | Boolean | Whether the model can use the responses endpoint (`"RequestMethod"`); only honored for the `"OpenAI"` service |
+| `"ResponsesRequired"` | Boolean | The model's tools only work with the responses endpoint, so it's also used with LLMKit, and the model is not chosen as the LLMKit default when the installed paclets don't support the endpoint |
+| `"EnableCustomTools"` | Boolean | With the responses endpoint, give the tools that take code or long text to the service as custom tools (plain text input instead of JSON; see [Custom Tools](settings/setting-groups/tools.md#custom-tools)) |
 
 **Tool configuration:**
 
@@ -600,7 +602,8 @@ All model families currently defined in `chooseModelFamily0` (`Models.wl`):
 | `"GPT52"` | `{ "GPT", "5.2", ___ }` | `Automatic` (inherits from GPT51) |
 | `"GPT53"` | `{ "GPT", "5.3", ___ }` | `Automatic` (inherits from GPT52) |
 | `"GPT53Chat"` | `{ "GPT", "5.3", "Chat", ___ }` | `Automatic` (inherits from GPT53) |
-| `"GPT54"` | `{ "GPT", "5.4", ___ }` | `Automatic` (inherits from GPT53) |
+| `"GPT54Plus"` | `{ "GPT", version, ___ }` with version 5.4 or later (below 6), and `gpt-6-sol`, `gpt-6-luna`, `gpt-6.1-terra` | `Automatic` (inherits from GPT53) |
+| `"GPT6Plus"` | `{ "GPT", version, ___ }` with version 6 or later | `Automatic` (inherits from GPT54Plus) |
 | `"Claude2"` | `{ "Claude", "2.0"\|"2.1" }` | `Anthropic` |
 | `"Claude3"` | `{ "Claude", "3", ___ }` | `Anthropic` |
 | `"Claude4"` | `{ "Claude", "Haiku"\|"Sonnet"\|"Opus", "4", ___ }` | `Anthropic` |

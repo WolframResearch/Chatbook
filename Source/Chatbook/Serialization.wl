@@ -634,6 +634,14 @@ cellToString[ Cell[ a__, $$docSearchStyle, b___ ] ] :=
 cellToString[ Cell[ BoxData[ TemplateBox[ { name_String, content_ }, "FileListing", ___ ], ___ ], ___ ] ] :=
     name <> "\n```\n" <> fasterCellToString @ content <> "\n```";
 
+(* Code blocks that show the shebang line of a script as a header put it back in front of the code: *)
+cellToString[ Cell[
+    BoxData[ GridBox[ { _, { Cell[ BoxData[ boxes_, ___ ], a___ ] } }, ___ ], ___ ],
+    ___,
+    TaggingRules -> KeyValuePattern[ "ShebangLine" -> line_String ],
+    ___
+] ] := cellToString @ Cell[ BoxData @ RowBox @ { line, "\n", boxes }, a ];
+
 (* Delimit code blocks with triple backticks *)
 cellToString[ cell_Cell? codeBlockQ ] /; ! TrueQ @ $delimitedCodeBlock := Enclose[
     Block[ { $delimitedCodeBlock = True },
@@ -2292,6 +2300,28 @@ outputSizeLimitString // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Iconized Expressions*)
+
+(* Code that the AI folded (see formatIconizedObjectBoxes) is given in full, unlike other iconized expressions: *)
+boxToString[ InterpretationBox[
+    DynamicModuleBox[ _, TemplateBox[ { _, label_, ___ }, "IconizedObject", ___ ], ___ ],
+    code_,
+    ___,
+    BaseStyle -> "FoldedCode",
+    ___
+] ] := StringJoin[
+    "IconizedObject[",
+    inputFormString @ Unevaluated @ code,
+    Replace[
+        label,
+        {
+            StyleBox[ name_, "IconizedCustomName", ___ ] :>
+                ", " <> Block[ { $showStringCharacters = True }, boxToString @ name ],
+            _ :> ""
+        }
+    ],
+    "]"
+];
+
 boxToString[
     InterpretationBox[ DynamicModuleBox[ { ___ }, iconized: TemplateBox[ _, "IconizedObject", ___ ] ], expr_, ___ ]
 ] := serializeIconizedObject[ iconized, HoldComplete @ expr ];
@@ -2423,7 +2453,8 @@ riffleTableString[ rows: { ___String } ] := Enclose[
 
         If[ Total @ lengths <= max, Throw @ StringRiffle[ rows, "\n" ] ];
         a = Max[ LengthWhile[ Accumulate @ lengths, # <= Floor[ 2 * (max / 3) ] & ], 3 ];
-        remaining = ConfirmMatch[ max - Total @ lengths[[ 1;;a ]], $$size, "Remaining" ];
+        (* The first three rows are always kept, so they can use up the whole budget on their own: *)
+        remaining = ConfirmMatch[ Max[ 0, max - Total @ lengths[[ 1;;a ]] ], $$size, "Remaining" ];
         b = LengthWhile[ Accumulate @ Reverse @ lengths, # <= remaining & ];
         removed = ConfirmMatch[ count - (a + b), $$size, "Removed" ];
         If[ removed === 0, Throw @ StringRiffle[ rows, "\n" ] ];

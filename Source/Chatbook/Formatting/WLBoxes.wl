@@ -13,7 +13,13 @@ Needs[ "Wolfram`Chatbook`CodeCheck`" ];
 (*wlStringToBoxes*)
 wlStringToBoxes // beginDefinition;
 
-wlStringToBoxes[ string_String ] /; $dynamicText := formatSpecialBoxes @ string;
+(* While streaming, the code from the start of a fold is hidden behind an icon until the code block is complete, since
+   finding where the fold ends would need bracket matching: *)
+wlStringToBoxes[ string_String ] /; $dynamicText :=
+    formatSpecialBoxes @ StringReplace[
+        string,
+        "IconizedObject" ~~ (("[" ~~ ___) | EndOfString) :> $foldedCodePlaceholder
+    ];
 
 wlStringToBoxes[ string_String ] :=
     string // RightComposition[
@@ -112,6 +118,12 @@ formatSpecialBoxes[ boxes_ ] :=
         ,
         RowBox @ { "Placeholder", "[", label: Except[ RowBox @ { ___, ",", ___ } ], "]" } :>
             RuleCondition @ formatPlaceholderBoxes @ label
+        ,
+        (* The arguments are formatted first, so that the folded code is what a notebook would evaluate: *)
+        RowBox @ { "IconizedObject", "[", args__, "]" } :>
+            RuleCondition @ formatIconizedObjectBoxes @ RowBox @ {
+                "IconizedObject", "[", Sequence @@ formatSpecialBoxes @ { args }, "]"
+            }
         ,
         box: RowBox @ { h: "Entity"|"EntityClass"|"EntityProperty", "[", a_, "]" } :>
             With[ { b = formatEntityBoxes @ RowBox @ { h, "[", formatSpecialBoxes @ a, "]" } },
@@ -261,6 +273,43 @@ formatPlaceholderBoxes // endDefinition;
 formatPlaceholderFast // beginDefinition;
 formatPlaceholderFast[ p_String ] := formatPlaceholderBoxes[ "\"" <> p <> "\"" ];
 formatPlaceholderFast // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatIconizedObjectBoxes*)
+
+(* Displays code that the AI folded with IconizedObject (see "CodeFolding" in Prompting.wl) the way notebooks display
+   iconized selections. A string as the last argument is the label, and everything else is the folded code: *)
+formatIconizedObjectBoxes // beginDefinition;
+
+formatIconizedObjectBoxes[ box_RowBox ] := Replace[
+    (* Code with embedded boxes (linear syntax) is left as it is: *)
+    If[ FreeQ[ box, _String? (StringContainsQ[ "\\!" ]) ], Quiet @ ToExpression[ box, StandardForm, HoldComplete ] ],
+    {
+        HoldComplete @ IconizedObject[ code_, label_String: Automatic ] :> foldedCodeBoxes[ code, label ],
+        (* Several arguments are folded together, in case they weren't wrapped in Sequence: *)
+        HoldComplete @ IconizedObject[ code__, label_String: Automatic ] :> foldedCodeBoxes[ Sequence @ code, label ],
+        _ :> box
+    }
+];
+
+formatIconizedObjectBoxes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*foldedCodeBoxes*)
+foldedCodeBoxes // beginDefinition;
+foldedCodeBoxes // Attributes = { HoldAllComplete };
+
+(* The style is what tells folded code apart from other iconized expressions when it's serialized (see boxToString).
+   It's an option instead of a wrapper like TagBox, since that would be evaluated as a wrapper around the code: *)
+foldedCodeBoxes[ code_, label_ ] := Append[ MakeBoxes @ IconizedObject[ code, label ], BaseStyle -> "FoldedCode" ];
+
+foldedCodeBoxes // endDefinition;
+
+(* An iconized object with nothing in it, as a string of boxes that can be used in code that's still streaming: *)
+$foldedCodePlaceholder := $foldedCodePlaceholder =
+    ToString[ RawBoxes @ MakeBoxes @ IconizedObject[ Sequence[ ], Automatic ], StandardForm ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

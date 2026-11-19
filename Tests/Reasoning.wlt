@@ -1087,11 +1087,130 @@ VerificationTest[
     TestID   -> "ResolveAutoSetting-RequestMethod-Unavailable"
 ]
 
+(* The models of the "GPT6Plus" family can't use their tools without the responses endpoint, so they also use it with
+   LLMKit: *)
+VerificationTest[
+    With[
+        {
+            settings = {
+                <| "Model" -> <| "Service" -> "LLMKit", "Name" -> "gpt-6.1-sol" |> |>,
+                <| "Model" -> <| "Service" -> "LLMKit", "Name" -> "gpt-6.1-sol-2026-11-01" |> |>,
+                <| "Model" -> <| "Service" -> "LLMKit", "Name" -> "gpt-6.2-sol" |> |>,
+                (* Other models of the same generation can turn reasoning off: *)
+                <| "Model" -> <| "Service" -> "LLMKit", "Name" -> "gpt-6.1-terra" |> |>
+            }
+        },
+        {
+            Block[ { Wolfram`Chatbook`Common`$responsesAPIAvailable = True },
+                Wolfram`Chatbook`Settings`Private`resolveAutoSetting0[ #1, "RequestMethod" ] & /@ settings
+            ],
+            Block[ { Wolfram`Chatbook`Common`$responsesAPIAvailable = False },
+                Wolfram`Chatbook`Settings`Private`resolveAutoSetting0[ #1, "RequestMethod" ] & /@ settings
+            ]
+        }
+    ],
+    {
+        { "Responses", "Responses", "Responses", "ChatCompletions" },
+        { "ChatCompletions", "ChatCompletions", "ChatCompletions", "ChatCompletions" }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ResolveAutoSetting-RequestMethod-LLMKit-ResponsesRequired"
+]
+
+(* gpt-6.1-sol rejects the "None" effort that other GPT models default to, and calls its tools natively: *)
+VerificationTest[
+    Function[ name,
+        Wolfram`Chatbook`Settings`Private`resolveAutoSetting0[
+            <| "Model" -> <| "Service" -> "OpenAI", "Name" -> name |> |>,
+            #1
+        ] & /@ { "Reasoning", "ToolMethod", "HybridToolMethod" }
+    ] /@ { "gpt-6.1-sol", "gpt-6.1-sol-2026-11-01", "gpt-6.1-terra", "gpt-5.4" },
+    {
+        { "Medium", "Service", False },
+        { "Medium", "Service", False },
+        { "None", Automatic, True },
+        { "None", Automatic, True }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ResolveAutoSetting-GPT61Sol"
+]
+
+(* Every gpt-6 model accepts the settings of gpt-6.1-sol, so they are the settings of the "GPT6Plus" family, which also
+   covers models that are released later (gpt-6.2-sol failed with the settings of gpt-5.4 when it was released). The
+   three that can turn reasoning off keep the settings of gpt-5.4, which work without the responses endpoint: *)
+VerificationTest[
+    Function[ name,
+        Join[
+            Wolfram`Chatbook`Settings`Private`resolveAutoSetting0[
+                <| "Model" -> <| "Service" -> "OpenAI", "Name" -> name |> |>,
+                #1
+            ] & /@ { "Reasoning", "ToolMethod", "HybridToolMethod" },
+            Wolfram`Chatbook`Common`autoModelSetting[
+                <| "Service" -> "OpenAI", "Name" -> name |>,
+                #1
+            ] & /@ { "EnableCustomTools", "ResponsesRequired", "EnabledBasePrompts", "MaxContextTokens" }
+        ]
+    ] /@ {
+        "gpt-6.1-sol", "gpt-6.2-sol", "gpt-6.2-sol-2026-11-17", "gpt-6-astra", "gpt-6.2-astra", "gpt-6.3-sol",
+        "gpt-6-sol", "gpt-6-luna", "gpt-6.1-terra"
+    },
+    {
+        family: {
+            "Medium",
+            "Service",
+            False,
+            True,
+            True,
+            {
+                "FunctionRepositoryIntegration",
+                "WolframLanguageEvaluatorToolInteractive",
+                "FunctionRepositoryPreference",
+                "ReasonableAssumptions",
+                "WolframLanguageEvaluatorToolCode"
+            },
+            1050000
+        },
+        family_,
+        family_,
+        family_,
+        family_,
+        family_,
+        gpt54: {
+            "None",
+            Automatic,
+            True,
+            _Missing,
+            _Missing,
+            { "FunctionRepositoryIntegration", "WolframLanguageEvaluatorToolInteractive" },
+            1050000
+        },
+        gpt54_,
+        gpt54_
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ResolveAutoSetting-GPT6Plus"
+]
+
 VerificationTest[
     Wolfram`Chatbook`Settings`Private`autoStopTokens @ <| "RequestMethod" -> "Responses", "ToolMethod" -> "Simple" |>,
     Missing[ "NotSupported" ],
     SameTest -> MatchQ,
     TestID   -> "AutoStopTokens-Responses"
+]
+
+(* The responses endpoint only accepts images in user messages, so the image links in assistant messages (e.g. the plot
+   of an earlier response) and system messages are not replaced by images: *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Common`$responsesAPIAvailable = True },
+        Wolfram`Chatbook`Common`allowedMultimodalRoles /@ {
+            <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-5.4" |>, "RequestMethod" -> "Responses" |>,
+            <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-5.4" |>, "RequestMethod" -> "ChatCompletions" |>,
+            <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-4o" |>, "RequestMethod" -> "ChatCompletions" |>
+        }
+    ],
+    { { "User" }, All, { "User" } },
+    SameTest -> MatchQ,
+    TestID   -> "AllowedMultimodalRoles-Responses"
 ]
 
 (* ::**************************************************************************************************************:: *)

@@ -46,17 +46,21 @@ $basePromptOrder = {
     "SpecialURIDynamic",
     "ExpressionURIResults",
     "VisibleUserInput",
+    "ReasonableAssumptions",
     "TrivialCode",
     "Packages",
     "FunctionRepositoryIntegration",
     "FunctionRepositoryFunctionSyntax",
+    "FunctionRepositoryPreference",
     "WolframSymbolCapitalization",
     "ModernMethods",
     "FunctionalStyle",
     "WolframLanguageStyle",
     "Placeholders",
+    "CodeFolding",
     "WolframLanguageEvaluatorTool",
     "WolframLanguageEvaluatorToolInteractive",
+    "WolframLanguageEvaluatorToolCode",
     "ExampleDataFiles",
     "EndTurnToken",
     "ToolCallPreamble",
@@ -82,7 +86,7 @@ $basePromptClasses = <|
 |>;
 
 $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
-    "GeneralInstructionsHeader"            -> { },
+    "GeneralInstructionsHeader"            -> { "ReasonableAssumptions" },
     "NotebooksPreamble"                    -> { },
     "AutoAssistant"                        -> { "CodeBlocks", "DoubleBackticks" },
     "CodeBlocks"                           -> { },
@@ -115,11 +119,21 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "VisibleUserInput"                     -> { },
     "TrivialCode"                          -> { },
     "Placeholders"                         -> { },
+    "CodeFolding"                          -> { },
     "WolframSymbolCapitalization"          -> { },
     "ModernMethods"                        -> { },
     "FunctionalStyle"                      -> { },
-    "WolframLanguageStyle"                 -> { "DocumentationLinkSyntax", "InlineSymbolLinks", "Placeholders" },
-    "WolframLanguageEvaluatorTool"         -> { "WolframLanguageStyle", "WolframLanguageEvaluatorToolInteractive" },
+    "WolframLanguageStyle"                 -> {
+        "DocumentationLinkSyntax",
+        "InlineSymbolLinks",
+        "Placeholders",
+        "CodeFolding"
+    },
+    "WolframLanguageEvaluatorTool"         -> {
+        "WolframLanguageStyle",
+        "WolframLanguageEvaluatorToolInteractive",
+        "WolframLanguageEvaluatorToolCode"
+    },
     "EndTurnToken"                         -> { },
     "ToolCallPreamble"                     -> { },
     "ServiceToolCallRetry"                 -> { },
@@ -131,7 +145,7 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "NotebookAssistanceGettingStarted"     -> { "NotebookAssistanceInstructionsHeader" },
     "NotebookAssistanceErrorMessage"       -> { "NotebookAssistanceInstructionsHeader" },
     "NotebookAssistanceExtraInstructions"  -> { "NotebookAssistanceInstructionsHeader" },
-    "FunctionRepositoryIntegration"        -> { "FunctionRepositoryFunctionSyntax" }
+    "FunctionRepositoryIntegration"        -> { "FunctionRepositoryFunctionSyntax", "FunctionRepositoryPreference" }
 |>;
 
 $$possibleName = $$string | Automatic | ParentList | Inherited | None;
@@ -141,9 +155,12 @@ $excludedBasePrompts = { };
 (* These base prompts are disabled by default, so that `needsBasePrompt["promptName"]` is a no-op, unless explicitly
    enabled via the "EnabledBasePrompts" setting. *)
 $disabledBasePrompts = {
+    "ReasonableAssumptions",
     "FunctionRepositoryIntegration",
     "FunctionRepositoryFunctionSyntax",
+    "FunctionRepositoryPreference",
     "WolframLanguageEvaluatorToolInteractive",
+    "WolframLanguageEvaluatorToolCode",
     "ExpressionURIResults"
 };
 
@@ -222,7 +239,8 @@ $basePromptComponents[ "DoubleBackticks" ] = "\
 * ALWAYS surround inline code with double backticks to avoid ambiguity with context names: ``MyContext`MyFunction[x]``";
 
 $basePromptComponents[ "MathExpressions" ] = "\
-* Write math expressions using LaTeX and surround them with dollar signs: $$x^2 + y^2$$";
+* Write math expressions using LaTeX and surround them with double dollar signs, \
+including math that is inline with text: $$x^2 + y^2$$";
 
 $basePromptComponents[ "EscapedCharacters" ] = "\
 * If your response contains currency in dollars, write with an escaped dollar sign: \\$99.95.
@@ -328,6 +346,11 @@ the formatted result as markdown text.";
 $basePromptComponents[ "VisibleUserInput" ] = "\
 * The user can still see their input, so there's no need to repeat it in your response";
 
+(* For models that otherwise answer a request that leaves something open with only a question: *)
+$basePromptComponents[ "ReasonableAssumptions" ] = "\
+* If a request leaves out a detail, but a reasonable choice makes it answerable, make that choice, \
+say what you chose, and answer. Only ask first when there is nothing reasonable to assume.";
+
 $basePromptComponents[ "TrivialCode" ] = "\
 * Avoid suggesting trivial code that does not evaluate to anything";
 
@@ -342,6 +365,12 @@ $basePromptComponents[ "FunctionRepositoryFunctionSyntax" ] = "\
 * ALWAYS call repository functions via the wrapped head, with the name as a string: \
 `ResourceFunction[\"SomeFunctionName\"][args]`. A bare `SomeFunctionName` is just an unbound symbol and will not \
 resolve.";
+
+(* For models that otherwise work out an answer themselves when the documentation has a function for it: *)
+$basePromptComponents[ "FunctionRepositoryPreference" ] = "\
+* When a documentation snippet is for a ResourceFunction that directly does what the user is asking for, \
+use that function (look up its documentation first) instead of working out the answer another way. \
+If a built-in function does it just as simply, use the built-in function instead.";
 
 $basePromptComponents[ "WolframSymbolCapitalization" ] = "\
 * ALWAYS capitalize Wolfram Language symbols correctly, ESPECIALLY in code";
@@ -369,11 +398,28 @@ This will render as an inline input field that replaces itself with the user's i
 NEVER use a comment as a stand-in for an expression (e.g. ``data = (* your data *)``), \
 since this is invalid syntax and will not display correctly to the user.";
 
+(* Excluded when the response is not formatted in a notebook (see resolveAutoSettings): *)
+$basePromptComponents[ "CodeFolding" ] = "\
+* Fold code that isn't important to what you're showing the user (e.g. styling options, example data setup) \
+with ``IconizedObject[code, \"label\"]``. \
+It displays as an icon that the user can expand and evaluates the same as the code inside. \
+Use ``Sequence`` to fold multiple arguments: \
+``Plot[Sin[x], {x, 0, 10}, IconizedObject[Sequence[PlotStyle -> Red, Filling -> Axis], \"options\"]]``. \
+Don't fold code that the user asked about.";
+
 $basePromptComponents[ "WolframLanguageEvaluatorTool" ] = "\
 * If the user is asking for a result instead of code to produce that result, use the wolfram_language_evaluator tool";
 
 $basePromptComponents[ "WolframLanguageEvaluatorToolInteractive" ] = "\
 * You can generate interactive content (e.g. Manipulate) using the wolfram_language_evaluator tool.";
+
+(* For models that otherwise only show the result of the code they evaluated: *)
+$basePromptComponents[ "WolframLanguageEvaluatorToolCode" ] = "\
+* Tool calls are collapsed in the chat, so the user doesn't see their code. \
+When you use the wolfram_language_evaluator tool to make something for the user \
+(e.g. a plot, graphic, table or function), show the result and also give the code that produced it in a code block, \
+so they can use it in their notebook. \
+Give the code as you evaluated it, apart from replacing things that only work in the tool (e.g. expression URIs).";
 
 $basePromptComponents[ "ExampleDataFiles" ] = "\
 * When writing example code that imports files and the user has not specified a particular file, \

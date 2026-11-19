@@ -179,6 +179,21 @@ VerificationTest[
     TestID   -> "RelatedDocumentation-Regression-UserPrefix"
 ]
 
+(* A turn whose user message has no content has nothing to search: *)
+VerificationTest[
+    RelatedDocumentation[
+        {
+            <| "Role" -> "System", "Content" -> "You are a helpful assistant." |>,
+            <| "Role" -> "User"  , "Content" -> ""                             |>
+        },
+        "Prompt",
+        20
+    ],
+    "",
+    SameTest -> MatchQ,
+    TestID   -> "RelatedDocumentation-Regression-EmptyUserMessage-GH#1582"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Vector Database Tests*)

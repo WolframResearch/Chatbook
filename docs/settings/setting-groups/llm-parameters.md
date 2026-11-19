@@ -197,8 +197,11 @@ When `Automatic`, resolved via `$modelAutoSettings` lookup. With `"RequestMethod
 ### Model-Specific Overrides
 
 - **GPT-5**: Resolves to `"Minimal"`.
-- **GPT-5.1**: Resolves to `"None"`.
-- **GPT-5.4+** (inherited by GPT-5.6+): Resolves to `"None"` on chat completions, and to `"Medium"` on the Responses endpoint through `"ResponsesReasoning"`.
+- **GPT-5.1 through GPT-5.6** (including the `"GPT54Plus"` family and the `"GPT56Plus"` family that inherits it): Resolves to `"None"`. From GPT-5.4 on, it resolves to `"Medium"` on the Responses endpoint instead, through `"ResponsesReasoning"`.
+- **GPT-5.3 Chat**: Resolves to `"Medium"` (it doesn't accept `"None"`).
+- **GPT-6 and later** (the `"GPT6Plus"` family): Resolves to `"Medium"`. Several of these models don't accept `"None"` (gpt-6.1-sol, gpt-6.2-sol and the "astra" models; their lowest effort is `"Low"`), and none accepts `"Minimal"`. The three that can turn reasoning off (gpt-6-sol, gpt-6-luna, gpt-6.1-terra) are in the `"GPT54Plus"` family and resolve as it does.
+- **xAI Grok 3**: `False`; **Grok 4**: `Missing["NotSupported"]`.
+- **OpenRouter DeepSeek Flash and Kimi K2.5**: `<| "effort" -> "none" |>`.
 
 When the `"Responses"` request method is used, plain effort levels are expanded to request reasoning summaries. See [`"RequestMethod"`](model-and-service.md#requestmethod).
 

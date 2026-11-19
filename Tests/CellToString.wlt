@@ -330,3 +330,22 @@ VerificationTest[
     SameTest -> MatchQ,
     TestID   -> "ScriptBoxes-PreserveValue-GH#1807"
 ]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Tables*)
+
+(* Long tables keep their first rows and drop the rest when the first rows alone use up the length limit: *)
+VerificationTest[
+    CellToString[ GridBox @ Table[ StringRepeat[ "x", 60 ], 10, 3 ], "MaxCellStringLength" -> 500 ],
+    _String? (StringEndsQ[ "\[LeftGuillemet]9 rows removed\[RightGuillemet]" ]),
+    SameTest -> MatchQ,
+    TestID   -> "GridBox-FirstRowsExceedLimit-GH#1236"
+]
+
+VerificationTest[
+    CellToString @ GridBox @ Table[ StringRepeat[ "x", 50 ], 10, 100 ],
+    _String? (StringEndsQ[ "\[LeftGuillemet]9 rows removed\[RightGuillemet]" ]),
+    SameTest -> MatchQ,
+    TestID   -> "GridBox-WideTableDefaultLimit-GH#1236"
+]

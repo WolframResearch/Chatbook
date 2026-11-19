@@ -42,12 +42,14 @@ VerificationTest[
     |>;
 
     (* Evaluates `eval` without a front end. Notebook writes are collected in $staticWrites, and the front end parses
-       of Wolfram Language code (one per code block, plus any inline code) are counted in $reparseCount: *)
+       of Wolfram Language code (one per code block, plus any inline code) are counted in $reparseCount. The chat's
+       settings are given to the static writes the same way its handlers give them: *)
     withoutFrontEnd // Attributes = { HoldFirst };
     withoutFrontEnd[ eval_ ] := Block[
         {
             Wolfram`Chatbook`Formatting`Private`reparseBoxStructurePacket = ($reparseCount++; #1) &,
             Wolfram`Chatbook`Common`usingFrontEnd = Identity,
+            Wolfram`Chatbook`SendChat`Private`$settings = $formatSettings,
             Wolfram`Chatbook`$ChatHandlerData = <| "ChatNotebookSettings" -> $formatSettings |>,
             NotebookRead  = Null &,
             NotebookWrite = (Internal`StuffBag[ $staticWrites, #2 ]; Null) &,
@@ -257,6 +259,35 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Static Writes*)
+
+(* An auto-assist chat's handlers run after its own evaluation has ended, possibly after another chat action has reset
+   $ChatHandlerData. The static writes made while streaming use the chat's own settings: *)
+VerificationTest[
+    withoutFrontEnd @ Block[ { Wolfram`Chatbook`Common`$staticCodeBlockCache = <| |> },
+        Module[ { expected, reset, plain },
+            expected = First @ streamResponse @ $codeBlockResponse;
+            $staticWrites = Internal`Bag[ ];
+            reset = Block[ { $ChatHandlerData = <| |> }, First @ streamResponse @ $codeBlockResponse ];
+            $staticWrites = Internal`Bag[ ];
+            plain = Block[ { Wolfram`Chatbook`SendChat`Private`$settings = <| "AutoFormat" -> False |> },
+                First @ streamResponse @ $codeBlockResponse
+            ];
+            {
+                Length @ expected,
+                reset === expected,
+                Count[ expected, Cell[ _, "ChatCodeBlock", ___ ], Infinity ],
+                Count[ plain, Cell[ _, "ChatCodeBlock", ___ ], Infinity ]
+            }
+        ]
+    ],
+    { 5, True, 5, 0 },
+    SameTest -> MatchQ,
+    TestID   -> "StaticWrites-Reset-Handler-Data-GH#1034"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Response Checking*)
 VerificationTest[
     responseResult[ { contentChunk[ "Hello" ], contentChunk[ " world" ], $taskFinished }, 200 ],
@@ -451,6 +482,67 @@ VerificationTest[
     ],
     SameTest -> MatchQ,
     TestID   -> "WriteResult-Error-Status-Code"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Automatic Assistance*)
+
+(* An auto-assist chat (AIAutoAssist or WidgetSend) writes its final output cell from its "TaskFinished" handler, which
+   runs after the chat state of its own evaluation has ended. Creates the handlers of an auto-assist chat in `create`,
+   runs the "TaskFinished" handler outside of it, and gives whether the final output cell was written: *)
+VerificationTest[
+    autoAssistResult[ create_ ] := Module[ { container, handlers, result = "NotWritten" },
+        container = <| "FullContent" -> "Hello", "DynamicContent" -> "" |>;
+        Block[
+            {
+                Wolfram`Chatbook`Common`$lastTask,
+                Wolfram`Chatbook`Common`$lastCellObject,
+                Wolfram`Chatbook`Common`appendCitations              = Null &,
+                Wolfram`Chatbook`SendChat`Private`$debugLog          = Internal`Bag[ ],
+                Wolfram`Chatbook`Common`getHandlerFunctions          = <| |> &,
+                Wolfram`Chatbook`Common`dynamicSplitQ                = False &,
+                Wolfram`Chatbook`Common`logUsage                     = Null &,
+                Wolfram`Chatbook`SendChat`Private`feTaskQ            = False &,
+                Wolfram`Chatbook`SendChat`Private`getToolFormatter   = None &,
+                Wolfram`Chatbook`SendChat`Private`makeStopTokens     = None &,
+                Wolfram`Chatbook`SendChat`Private`emulatedStopTokens = None &,
+                Wolfram`Chatbook`SendChat`Private`checkFinishReason  = Null &,
+                Wolfram`Chatbook`SendChat`Private`trimStopTokens     = Null &,
+                Wolfram`Chatbook`SendChat`Private`refusalDetails     = None &,
+                Wolfram`Chatbook`Common`writeReformattedCell         = (result = "Written"; Null) &,
+                NotebookDelete                                       = Function[ Null, Null, HoldAll ]
+            },
+            handlers = create @ Block[ { Wolfram`Chatbook`$AutomaticAssistance = True },
+                Wolfram`Chatbook`SendChat`Private`chatHandlers[
+                    container,
+                    CellObject[ "TestOutputCell" ],
+                    <| "ToolsEnabled" -> False, "BypassResponseChecking" -> True |>
+                ]
+            ];
+            handlers[ "TaskFinished" ][ $taskFinished ];
+            result
+        ]
+    ];
+
+    (* Like chatEvaluateHeadless (AgentEvaluate): *)
+    headlessChatState = Function[
+        eval,
+        Block[ { Wolfram`Chatbook`Common`$headlessChat = True }, Wolfram`Chatbook`Common`withChatState @ eval ],
+        HoldFirst
+    ];
+    ,
+    Null,
+    SameTest -> MatchQ,
+    TestID   -> "AutoAssist-Handler-Definitions"
+]
+
+(* A headless chat only gives the response string, so it doesn't write the output cell: *)
+VerificationTest[
+    autoAssistResult /@ { Wolfram`Chatbook`Common`withChatState, headlessChatState },
+    { "Written", "NotWritten" },
+    SameTest -> SameQ,
+    TestID   -> "AutoAssist-Handler-Final-Cell-GH#1717"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

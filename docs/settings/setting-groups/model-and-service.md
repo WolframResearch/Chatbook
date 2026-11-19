@@ -19,8 +19,8 @@ The value can be specified in three ways:
 Model is resolved **first** in the topological sort order (`$autoSettingKeyPriority` explicitly prepends `"Model"`). During `resolveAutoSettings` (`Settings.wl`), the model is resolved via `resolveFullModelSpec` (`Models.wl`):
 
 1. Already-resolved models (with `"ResolvedModel" -> True`) are returned unchanged.
-2. `{service, name}` lists and plain strings are converted to Associations.
-3. **LLMKit service** with unspecified name: substitutes the actual backing service and model from `$defaultLLMKitService`/`$defaultLLMKitModelName` and sets `"Authentication" -> "LLMKit"`.
+2. `{service, name}` lists and plain strings (as OpenAI models) are converted to Associations.
+3. **LLMKit service** with unspecified name: substitutes the actual backing service and model from `$defaultLLMKitService`/`$defaultLLMKitModelName` and sets `"Authentication" -> "LLMKit"`. The model name is the first entry of `$llmKitPreferredModels` (`Models.wl`, currently only `gpt-5.4`) that LLMKit lists as available for the user's subscription. Models that need the responses endpoint (`"ResponsesRequired"` in `$modelAutoSettings`: the `"GPT6Plus"` family, e.g. `gpt-6.2-sol`) are skipped when the installed paclets don't support it (`$responsesAPIAvailable`), and the last entry is used when none of them is listed and usable. None of them is in the list yet: one will be added before `gpt-5.4` once it has been tested end to end with LLMKit, since the default would switch as soon as the server lists it.
 4. **Other services** with `"Name" -> Automatic`: calls `chooseDefaultModelName` (`Models.wl`), which tries in order:
    - The `$DefaultModel` name if the service matches
    - The service's registered `"DefaultModel"` property
@@ -71,7 +71,7 @@ Selects the API endpoint used for chat requests.
 
 - **`"ChatCompletions"`**: Requests use `LLMServices`ChatSubmit` (or `LLMServices`Chat` when `"ForceSynchronous"` is `True`).
 - **`"Responses"`**: Requests use `LLMServices`ResponseSubmit` (or `LLMServices`Response`). This endpoint returns reasoning summaries along with an encrypted copy of the model's reasoning (a signature), which is sent back to the model in later requests. Requires `Wolfram/LLMFunctions` 2.4.0+ and `LLMConnections` 1.1.0+; if they are not installed, an explicit `"Responses"` setting fails with a `Chatbook::ResponsesAPIUnavailable` message.
-- **`Automatic`**: Resolved by `chooseRequestMethod` (`Settings.wl`). Models with `"EnableResponses" -> True` in `$modelAutoSettings` (set for the `"GPT5"` family and inherited by later GPT models) resolve to `"Responses"` for the `"OpenAI"` service when the required paclets are available (`$responsesAPIAvailable`). Everything else resolves to `"ChatCompletions"`, including LLMKit (either as the model's service or through `"Authentication" -> "LLMKit"`), since its server does not support the responses endpoint yet.
+- **`Automatic`**: Resolved by `chooseRequestMethod` (`Settings.wl`). Models with `"EnableResponses" -> True` in `$modelAutoSettings` (set for the `"GPT5"` family and inherited by later GPT models) resolve to `"Responses"` for the `"OpenAI"` service when the required paclets are available (`$responsesAPIAvailable`). With LLMKit (either as the model's service or through `"Authentication" -> "LLMKit"`), only models with `"ResponsesRequired" -> True` resolve to `"Responses"` (the `"GPT6Plus"` family, whose tools don't work with the chat completions endpoint), since the LLMKit server does not support the responses endpoint for the other models yet. `Wolfram/LLMFunctions` registers the endpoint for the `"LLMKit"` service only, so a model of another service with `"Authentication" -> "LLMKit"` can't be used this way. Everything else resolves to `"ChatCompletions"`.
 
 Invalid values produce a `Chatbook::InvalidRequestMethod` message and fall back to `"ChatCompletions"`.
 
@@ -159,7 +159,7 @@ When `True`, `makeMessageContent` (`ChatMessages.wl`) processes cell content thr
 
 **Image constraints:**
 
-- `allowedMultimodalRoles` (`ChatMessages.wl`) restricts multimodal content to `"User"` role messages for every model on the Responses endpoint and for GPT-4o models on chat completions, and allows `All` roles otherwise.
+- `allowedMultimodalRoles` (`ChatMessages.wl`) restricts multimodal content to `"User"` role messages for the responses endpoint with any model (it rejects images in assistant and system messages) and for GPT-4o models, and allows `All` roles otherwise. With the responses endpoint, images in a tool's output are sent in a user message: for `"ToolMethod" -> "Service"`, one that follows the tool's output (`toolResponseImagesMessage` in `SendChat.wl`), since the endpoint only gets that output as text.
 - Images are resized via `resizeMultimodalImage` (`ChatMessages.wl`) to fit within `$maxMMImageSize` dimensions before encoding.
 
 **Serialization:** In `Serialization.wl`, the related `$multimodalImages` variable (derived from `$contentTypes`) controls whether graphics boxes are encoded as image URIs (`toMarkdownImageBox`) or replaced with `"[GRAPHIC]"` placeholders, and whether `"Picture"` style cells are serialized as image URIs. Graphics exceeding `$maxBoxSizeForImages` bytes fall back to non-multimodal serialization.

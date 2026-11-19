@@ -1161,15 +1161,20 @@ cacheTokenCount // endDefinition;
 (*logUsage*)
 logUsage // beginDefinition;
 
-logUsage[ KeyValuePattern[ "FullContent" -> response_ ] ] :=
-    logUsage @ response;
+logUsage[ container_ ] :=
+    logUsage[ container, $ChatHandlerData ];
 
-logUsage[ $$progressIndicator ] :=
+(* The chat's handler data can be given explicitly, since $ChatHandlerData might belong to another chat by the time a
+   handler runs: *)
+logUsage[ KeyValuePattern[ "FullContent" -> response_ ], data_ ] :=
+    logUsage[ response, data ];
+
+logUsage[ $$progressIndicator, _ ] :=
     Null;
 
-logUsage[ response_String ] := logUsage[
-    $ChatHandlerData[ "ChatNotebookSettings" ],
-    $ChatHandlerData[ "Messages" ],
+logUsage[ response_String, data_ ] := logUsage[
+    data[ "ChatNotebookSettings" ],
+    data[ "Messages" ],
     response
 ];
 
@@ -1525,8 +1530,9 @@ makeMessageContent // endDefinition;
 (*allowedMultimodalRoles*)
 allowedMultimodalRoles // beginDefinition;
 
-(* The Responses endpoint accepts an image part only inside a user item, whatever the model: *)
-allowedMultimodalRoles[ KeyValuePattern[ "RequestMethod" -> "Responses" ] ] := { "User" };
+(* The responses endpoint only accepts images in user messages. It rejects them in assistant messages (e.g. a plot in an
+   earlier response) and in system messages: *)
+allowedMultimodalRoles[ settings_Association? responsesRequestQ ] := { "User" };
 
 allowedMultimodalRoles[ settings_ ] := allowedMultimodalRoles0 @ toModelName @ settings[ "Model" ];
 

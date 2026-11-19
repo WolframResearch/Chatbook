@@ -13,7 +13,10 @@ Needs[ "Wolfram`Chatbook`UI`"      ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-(* Add additional supported models here as needed: *)
+(* Add additional supported models here as needed. The first one that LLMKit lists as available is used.
+   TODO: Add "gpt-6.2-sol" (or "gpt-6.1-sol") before "gpt-5.4" once it has been tested end to end with LLMKit. These
+         need the responses endpoint ("ResponsesRequired" in $modelAutoSettings), and nothing tells Chatbook whether
+         the server supports that endpoint, so the default would switch as soon as the server lists the model. *)
 $llmKitPreferredModels = <|
     "Pro"      -> { "gpt-5.4" },
     "Research" -> { "gpt-5.4" },
@@ -67,12 +70,26 @@ chooseFirstAvailableModel[ level_String, models_ ] := Enclose[
     Module[ { preferred, available },
         preferred = ConfirmMatch[ Lookup[ $llmKitPreferredModels, level ], { __String }, "PreferredModels" ];
         available = ConfirmMatch[ extractModelNames @ models, { ___String }, "AvailableModels" ];
-        FirstCase[ preferred, Alternatives @@ available, First @ preferred ]
+        (* If none of them can be used, choose the last one, which has been supported the longest: *)
+        SelectFirst[ preferred, MemberQ[ available, #1 ] && usableLLMKitModelQ @ #1 &, Last @ preferred ]
     ],
     throwInternalFailure
 ];
 
 chooseFirstAvailableModel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*usableLLMKitModelQ*)
+(* Models that need the responses endpoint can't be the default if the installed paclets don't support it: *)
+usableLLMKitModelQ // beginDefinition;
+
+usableLLMKitModelQ[ name_String ] := Or[
+    ! TrueQ @ autoModelSetting[ <| "Service" -> "OpenAI", "Name" -> name |>, "ResponsesRequired" ],
+    TrueQ @ $responsesAPIAvailable
+];
+
+usableLLMKitModelQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -514,6 +531,12 @@ chooseModelFamily0[ wordsPattern[ { "GPT", "5.2", ___ } ] ] := "GPT52";
 chooseModelFamily0[ wordsPattern[ { "GPT", "5.3", "Chat", ___ } ] ] := "GPT53Chat";
 chooseModelFamily0[ wordsPattern[ { "GPT", "5.3", ___ } ] ] := "GPT53";
 chooseModelFamily0[ wordsPattern[ { "GPT", "5.4", ___ } ] ] := "GPT54Plus";
+(* These gpt-6 models can turn reasoning off, so they also work without the responses endpoint, as gpt-5.4 does.
+   TODO: Move them to "GPT6Plus" when they no longer need to work without that endpoint (the released paclets don't
+         support it). With it, they repeat tool calls with the hybrid method and do better with native tool calls. *)
+chooseModelFamily0[ wordsPattern[ { "GPT", "6", "Sol"|"Luna", ___ } ] ] := "GPT54Plus";
+chooseModelFamily0[ wordsPattern[ { "GPT", "6.1", "Terra", ___ } ] ] := "GPT54Plus";
+chooseModelFamily0[ wordsPattern[ { "GPT", v: NumberString /; ToExpression[ v ] >= 6, ___ } ] ] := "GPT6Plus";
 chooseModelFamily0[ wordsPattern[ { "GPT", v: NumberString /; ToExpression[ v ] >= 5.6, ___ } ] ] := "GPT56Plus";
 chooseModelFamily0[ wordsPattern[ { "GPT", v: NumberString /; ToExpression[ v ] >= 5.4, ___ } ] ] := "GPT54Plus";
 chooseModelFamily0[ wordsPattern[ { "GPT", "5", ___ } ] ] := "GPT5";
@@ -807,6 +830,11 @@ resolveFullModelSpec[ settings: KeyValuePattern[ "Model" -> model_ ] ] :=
 
 resolveFullModelSpec[ { service_String, name_ } ] :=
     resolveFullModelSpec @ <| "Service" -> service, "Name" -> name |>;
+
+(* A model name without a service (e.g. "Model" -> "gpt-4" from SetModel or older chat notebooks) is an OpenAI model,
+   the same as in serviceName and the model menu: *)
+resolveFullModelSpec[ name_String ] :=
+    resolveFullModelSpec @ { "OpenAI", name };
 
 resolveFullModelSpec[ model: KeyValuePattern @ { "Service" -> "LLMKit", "Name" -> $$unspecified } ] :=
     standardizeModelData @ <|

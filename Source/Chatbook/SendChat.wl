@@ -588,7 +588,7 @@ prepareMessagesForLLM // endDefinition;
 prepareMessagesForLLM0 // beginDefinition;
 
 prepareMessagesForLLM0[ settings: KeyValuePattern[ "ToolMethod" -> "Service" ], messages: { ___Association } ] :=
-    contentFlatten @ rewriteServiceToolCalls[ settings, messages ];
+    contentFlatten @ toCustomToolCalls[ settings, rewriteServiceToolCalls[ settings, messages ] ];
 
 prepareMessagesForLLM0[ settings_, messages: { ___Association } ] :=
     contentFlatten[
@@ -695,8 +695,12 @@ replaceUnicodeCharacters[ data: _List|_Association ] :=
 replaceUnicodeCharacters[ content_String ] :=
     StringReplace[ content, "\[FreeformPrompt]" -> "\\"<>"[FreeformPrompt]" ];
 
-replaceUnicodeCharacters[ HoldPattern[ h: LLMTool|LLMToolRequest|LLMToolResponse ][ as0_Association, opts___ ] ] :=
-    With[ { as = replaceUnicodeCharacters @ as0 }, h[ as, opts ] ];
+(* Creating these objects takes a few milliseconds each, and this runs for every tool and every tool call of the chat
+   before each request, so the ones that don't change are returned as they are: *)
+replaceUnicodeCharacters[
+    object: HoldPattern[ h: LLMTool|LLMToolRequest|LLMToolResponse ][ as0_Association, opts___ ]
+] :=
+    With[ { as = replaceUnicodeCharacters @ as0 }, If[ as === as0, object, h[ as, opts ] ] ];
 
 replaceUnicodeCharacters // endDefinition;
 
@@ -714,13 +718,18 @@ contentFlatten // endDefinition;
 (*rewriteServiceToolCalls*)
 rewriteServiceToolCalls // beginDefinition;
 
+(* customToolsQ is part of the cache key of every earlier tool call (toolStringSplit), so it's checked once here
+   instead of for each call: *)
 rewriteServiceToolCalls[ settings_, messages_List ] :=
-    Flatten[ rewriteServiceToolCalls[ settings, # ] & /@ messages ];
+    With[ { custom = customToolsQ @ settings },
+        Flatten[ rewriteServiceToolCalls[ settings, custom, # ] & /@ messages ]
+    ];
 
 (* The message for a tool call that is being evaluated ends with that call, which is given in "ToolRequests".
    Earlier calls in the same response already have results, so they are split like any other assistant message: *)
 rewriteServiceToolCalls[
     settings_,
+    custom_,
     message: HoldPattern @ KeyValuePattern @ {
         "Content"      -> content_String,
         "ToolRequest"  -> True,
@@ -729,6 +738,7 @@ rewriteServiceToolCalls[
 ] := serviceToolMessageMerge @ Flatten @ {
     rewriteServiceToolCalls[
         settings,
+        custom,
         <| KeyDrop[ message, { "ToolRequest", "ToolRequests" } ], "Content" -> removeLastToolCall @ content |>
     ],
     <| message, "Content" -> { } |>
@@ -737,6 +747,7 @@ rewriteServiceToolCalls[
 (* Tool results end with "ENDRESULT(id)", where id is the request ID the tool call was sent with: *)
 rewriteServiceToolCalls[
     settings_,
+    custom_,
     message: KeyValuePattern @ { "Role" -> "Assistant", "Content" -> content_String }
 ] := serviceToolMessageThread[
     message,
@@ -747,11 +758,11 @@ rewriteServiceToolCalls[
                 req: ("TOOLCALL: " ~~ __ ~~ "\nENDARGUMENTS") ~~ "\nENDTOOLCALL\nRESULT\n" ~~ result__ ~~ "\nENDRESULT"
             ],
             ("(" ~~ id: (LetterCharacter|DigitCharacter).. ~~ ")") | ""
-        ] :> toolStringSplit[ req, result, id ]
+        ] :> toolStringSplit[ settings, custom, req, result, id ]
     ]
 ];
 
-rewriteServiceToolCalls[ settings_, message_Association ] :=
+rewriteServiceToolCalls[ settings_, custom_, message_Association ] :=
     message;
 
 rewriteServiceToolCalls // endDefinition;
@@ -814,27 +825,55 @@ serviceToolMessageMerge // endDefinition;
 (*toolStringSplit*)
 toolStringSplit // beginDefinition;
 
-toolStringSplit[ req_String, result_String, id_String ] :=
-    toolStringSplit[ toolRequestParser @ req, result, id ];
-
-(* Results written without an ID, or with a 5 character ID from before 3eee65a8 (MistralAI only accepts 9 characters),
-   get one from the request: *)
-toolStringSplit[ { _, req: HoldPattern @ LLMToolRequest[ as_Association, opts___ ] }, result_String, id_String ] :=
-    toolStringSplit[
-        LLMToolRequest @ <| as, "RequestID" -> If[ StringLength @ id === 9, id, tinyHash[ req, 9 ] ] |>,
-        result
+(* Creating the request and the response of a tool call takes several milliseconds, and every request needs the ones of
+   all earlier tool calls in the chat again, so they are kept. Their text doesn't change, and the settings only matter
+   for the conversions below. The response's tool is the one that was available when it was created; services only get
+   its request and output. *)
+toolStringSplit[ settings_, custom_, req_String, result_String, id_String ] :=
+    With[ { key = { custom, TrueQ @ settings[ "ReplaceUnicodeCharacters" ], req, result, id } },
+        Lookup[
+            $toolStringSplitCache,
+            Key @ key,
+            cacheToolStringSplit[ key, toolStringSplit[ settings, toolRequestParser @ req, result, id ] ]
+        ]
     ];
 
-toolStringSplit[ req: HoldPattern[ _LLMToolRequest ], result_String ] :=
-    toolStringSplit[ req, getToolByName @ req[ "Name" ], result ];
+(* Results written without an ID, or with a 5 character ID from before 3eee65a8 (MistralAI only accepts 9 characters),
+   get one from the request.
 
-toolStringSplit[ req: HoldPattern[ _LLMToolRequest ], tool: HoldPattern[ _LLMTool ], result_String ] :=
+   Calls of custom tools and special characters are converted here instead of afterwards (toCustomToolCalls and
+   replaceUnicodeCharacters in prepareMessagesForLLM), where the objects would have to be created again for every
+   request. That includes the response's tool, since the descriptions of some tools have special characters. *)
+toolStringSplit[
+    settings_,
+    { _, req: HoldPattern @ LLMToolRequest[ as_Association, opts___ ] },
+    result_String,
+    id_String
+] :=
+    toolStringSplit[
+        settings,
+        LLMToolRequest @ replaceUnicodeCharacters[
+            settings,
+            toCustomToolCallData[
+                settings,
+                <| as, "RequestID" -> If[ StringLength @ id === 9, id, tinyHash[ req, 9 ] ] |>
+            ]
+        ],
+        replaceUnicodeCharacters[ settings, result ]
+    ];
+
+toolStringSplit[ settings_, req: HoldPattern[ _LLMToolRequest ], result_String ] :=
+    toolStringSplit[ settings, req, getToolByName @ req[ "Name" ], result ];
+
+toolStringSplit[ settings_, req: HoldPattern[ _LLMToolRequest ], tool: HoldPattern[ _LLMTool ], result_String ] :=
     {
         req,
         LLMToolResponse @ <|
             "Request"                    -> req,
-            "Tool"                       -> tool,
-            "InterpretedParameterValues" -> Association @ req[ "ParameterValues" ],
+            "Tool"                       -> replaceUnicodeCharacters[ settings, tool ],
+            (* The input of a custom tool is a string instead of parameter values: *)
+            "InterpretedParameterValues" ->
+                Replace[ req[ "ParameterValues" ], p: Except[ _String ] :> Association @ p ],
             "Output"                     -> result,
             "ResponseString"             -> result,
             (* Without a version, LLMToolResponse runs its legacy updater, which takes about 50 ms: *)
@@ -843,6 +882,23 @@ toolStringSplit[ req: HoldPattern[ _LLMToolRequest ], tool: HoldPattern[ _LLMToo
     };
 
 toolStringSplit // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*cacheToolStringSplit*)
+cacheToolStringSplit // beginDefinition;
+
+(* The cache is emptied when it's full. The next request of a chat then adds its tool calls again, so a single chat
+   with more tool calls than this would get nothing from the cache: *)
+cacheToolStringSplit[ key_List, value_List ] := (
+    If[ Length @ $toolStringSplitCache >= $toolStringSplitCacheSize, $toolStringSplitCache = <| |> ];
+    $toolStringSplitCache[ key ] = value
+);
+
+cacheToolStringSplit // endDefinition;
+
+$toolStringSplitCache     = <| |>;
+$toolStringSplitCacheSize = 200;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1227,7 +1283,7 @@ makeLLMConfiguration0[ as_Association ] /; as[ "ToolMethod" ] === "Service" || a
         DeleteMissing @ Association[
             KeyTake[ as, $llmConfigPassedKeys ],
             "Reasoning"  -> resolveReasoningEffort @ requestReasoningSummaries @ as,
-            "Tools"      -> Cases[ Flatten @ { as[ "Tools" ] }, _LLMTool ],
+            "Tools"      -> toCustomTools[ as, Cases[ Flatten @ { as[ "Tools" ] }, _LLMTool ] ],
             "StopTokens" -> makeStopTokens @ as,
             "ToolMethod" -> "Service"
         ] // dropModelUnsupportedParameters[ as ]
@@ -1358,6 +1414,9 @@ chatHandlers[ container_, cellObject_, settings_, messages_ ] :=
             autoOpen      = TrueQ @ $autoOpen,
             alwaysOpen    = TrueQ @ $alwaysOpen,
             autoAssist    = $AutomaticAssistance,
+            (* An auto-assist chat's handlers write its final output cell, and they run outside its chat state, where
+               $headlessChat would otherwise be True: *)
+            headless      = TrueQ @ $headlessChat,
             dynamicSplit  = dynamicSplitQ @ settings,
             handlers      = getHandlerFunctions @ settings,
             useTasks      = feTaskQ @ settings,
@@ -1366,7 +1425,14 @@ chatHandlers[ container_, cellObject_, settings_, messages_ ] :=
             emulatedStop  = emulatedStopTokens @ settings,
             responses     = settings[ "RequestMethod" ] === "Responses",
             (* The start of the chat action, since catchTop resets $chatStartTime for handler calls made after it: *)
-            startTime     = Replace[ $chatStartTime, Except[ _Real ] :> AbsoluteTime[ ] ]
+            startTime     = Replace[ $chatStartTime, Except[ _Real ] :> AbsoluteTime[ ] ],
+            (* This chat's settings and messages for logging usage, since an auto-assist chat's handlers can run after
+               another chat action has replaced $ChatHandlerData. An auto-assist chat submits the request for a tool
+               response from inside its handlers, so those handlers pass theirs on: *)
+            usageData     = Replace[
+                $usageData,
+                Except[ _Association ] :> KeyTake[ $ChatHandlerData, { "ChatNotebookSettings", "Messages" } ]
+            ]
         },
         {
             bodyChunkHandler    = Lookup[ handlers, "BodyChunkReceived", None ],
@@ -1386,7 +1452,9 @@ chatHandlers[ container_, cellObject_, settings_, messages_ ] :=
                         $chatStartTime       = startTime,
                         $customToolFormatter = toolFormatter,
                         $dynamicSplit        = dynamicSplit,
-                        $settings            = settings
+                        $headlessChat        = headless,
+                        $settings            = settings,
+                        $usageData           = usageData
                     },
                     (* If an emulated stop token was previously detected, discard any remaining buffered text: *)
                     If[ ! (stopEmulation && $emulatedStopTriggered),
@@ -1413,7 +1481,7 @@ chatHandlers[ container_, cellObject_, settings_, messages_ ] :=
                                     "EventName"             -> "TaskFinished",
                                     "EmulatedStopTriggered" -> True
                                 |>;
-                                logUsage @ container;
+                                logUsage[ container, usageData ];
                                 checkResponse[ $settings, Unevaluated @ container, cellObject, as ]
                             ]
                         ]
@@ -1430,7 +1498,9 @@ chatHandlers[ container_, cellObject_, settings_, messages_ ] :=
                         $chatStartTime       = startTime,
                         $customToolFormatter = toolFormatter,
                         $dynamicSplit        = dynamicSplit,
-                        $settings            = settings
+                        $headlessChat        = headless,
+                        $settings            = settings,
+                        $usageData           = usageData
                     },
                     If[ stopEmulation && $emulatedStopTriggered,
                         (* The response was already processed when the emulated stop token was detected: *)
@@ -1439,7 +1509,7 @@ chatHandlers[ container_, cellObject_, settings_, messages_ ] :=
                         taskFinishedHandler[ #1 ];
                         Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
                         checkFinishReason[ #1 ];
-                        logUsage @ container;
+                        logUsage[ container, usageData ];
                         trimStopTokens[ container, stop ];
                         With[ { refusal = refusalDetails @ logStart },
                             If[ AssociationQ @ refusal,
@@ -2165,7 +2235,9 @@ $llmAutoCorrectRulesNoMoonshot := $llmAutoCorrectRulesNoMoonshot = Flatten @ {
     $$spaces ~~ "/" ~~ name: Repeated[ Except[ WhitespaceCharacter ], { 1, 80 } ] ~~ " "... ~~ "\n" /;
         toolShortNameQ @ name :>
             "\n/"<>name<>"\n",
-    "```" ~~ code: Except[ "\n" ].. ~~ "```" :> "``"<>code<>"``",
+    (* Triple backticks used for inline code. The JSON arguments of a service tool call have code blocks on a single
+       line too (e.g. markdown for the notebook creation tool), but those have escaped newlines: *)
+    "```" ~~ code: (Except[ "\n" | "\\" ] | ("\\" ~~ Except[ "n" | "\n" ])).. ~~ "```" :> "``"<>code<>"``",
     "wolfram_language_evaliator" -> "wolfram_language_evaluator",
     "\\!\\(\\*"~~$$specialBoxName~~"[\"" ~~ Shortest[ uri__ ] ~~ "\"]\\)" :> uri,
     "\\!\\("~~$$specialBoxName~~"[\"" ~~ Shortest[ uri__ ] ~~ "\"]\\)" :> uri,
@@ -2288,7 +2360,9 @@ writeDynamicChunkAsStatic[ static_String, dynamicBox_BoxObject ] := Enclose[
             throwTop[ removeTask @ $lastTask; Null ]
         ];
 
-        settings = ConfirmBy[ $ChatHandlerData[ "ChatNotebookSettings" ], AssociationQ, "Settings" ];
+        (* The chat's own settings, which its handlers give in $settings, since an auto-assist chat's handlers can run
+           after another chat action has replaced $ChatHandlerData: *)
+        settings = ConfirmBy[ $settings, AssociationQ, "Settings" ];
 
         reformatted = ConfirmMatch[
             If[ TrueQ @ settings[ "AutoFormat" ],
@@ -2620,9 +2694,11 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
         roles = ConfirmMatch[ allowedMultimodalRoles @ settings, All | { __String }, "Roles" ];
         role  = ConfirmBy[ toolResponseRole @ settings, StringQ, "Role" ];
 
-        (* Images are kept only if the role the tool response is actually sent with may carry them: *)
+        (* Images are kept only if the role the tool response is actually sent with may carry them. With the responses
+           endpoint, the images in a tool's output are sent in a user message: the one from toolResponseImagesMessage,
+           or the tool response itself, which is a user message there (chooseToolResponseRole): *)
         response =
-            If[ roles === All || MemberQ[ roles, role ],
+            If[ roles === All || MemberQ[ roles, If[ responsesRequestQ @ settings, "User", role ] ],
                 expandMultimodalString @ ToString @ output,
                 ToString @ output
             ];
@@ -2818,19 +2894,26 @@ makeToolResponseMessage // beginDefinition;
 makeToolResponseMessage[ settings_, response_, toolResponse_ ] :=
     makeToolResponseMessage[ settings, settings[ "Model" ], response, toolResponse ];
 
-makeToolResponseMessage[ settings_, model_Association, response_, toolResponse_ ] := {
-    makeToolResponseMessage0[
-        toolResponseRole @ settings,
-        settings[ "ToolResponseStyle" ],
-        response,
-        toolResponse
-    ],
-    (* With prompt cache optimization, this is a base prompt component instead (see needsSettingsBasePrompts): *)
-    If[ TrueQ @ settings[ "ToolCallRetryMessage" ] && ! promptCacheOptimizationQ @ settings,
-        $toolCallRetryMessage,
-        Nothing
-    ]
-};
+makeToolResponseMessage[ settings_, model_Association, response_, toolResponse_ ] :=
+    With[ { images = toolResponseImagesMessage[ settings, response ] },
+        {
+            makeToolResponseMessage0[
+                toolResponseRole @ settings,
+                settings[ "ToolResponseStyle" ],
+                (* Images that go into their own message are left out here. The content of this message would not be
+                   sent, but the service connection would still encode its images (about 25 ms each): *)
+                If[ AssociationQ @ images, DeleteCases[ response, KeyValuePattern[ "Type" -> "Image" ] ], response ],
+                toolResponse
+            ],
+            images,
+            lastToolResponseMessage @ settings,
+            (* With prompt cache optimization, this is a base prompt component instead (needsSettingsBasePrompts): *)
+            If[ TrueQ @ settings[ "ToolCallRetryMessage" ] && ! promptCacheOptimizationQ @ settings,
+                $toolCallRetryMessage,
+                Nothing
+            ]
+        }
+    ];
 
 makeToolResponseMessage // endDefinition;
 
@@ -2873,6 +2956,58 @@ makeToolResponseMessage0[ role_, style_, response_, toolResponse_ ] := <|
 |>;
 
 makeToolResponseMessage0 // endDefinition;
+
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*toolResponseImagesMessage*)
+
+(* The responses endpoint gets the output of a service tool call as text only (the content of the tool message is not
+   sent), so a multimodal model would not see the images in it. They are given in a message that follows it instead.
+   Like the tool response's own images, they are only sent in the request that follows the tool call: *)
+toolResponseImagesMessage // beginDefinition;
+
+toolResponseImagesMessage[ settings: KeyValuePattern[ "ToolMethod" -> "Service" ], response_List ] /;
+    responsesRequestQ @ settings :=
+        With[ { images = Cases[ response, KeyValuePattern[ "Type" -> "Image" ] ] },
+            If[ images === { },
+                Nothing,
+                <|
+                    "Role"          -> "User",
+                    "Content"       -> wrapResponse[ "<tool_response_images>", images, "</tool_response_images>" ],
+                    "ToolResponse"  -> True,
+                    "HoldTemporary" -> True
+                |>
+            ]
+        ];
+
+toolResponseImagesMessage[ settings_, response_ ] := Nothing;
+
+toolResponseImagesMessage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*lastToolResponseMessage*)
+
+(* The response to the last tool call that "MaxToolResponses" allows is sent, but the chat ends at the next tool call
+   without sending its response (see sendToolResponseQ), which would leave the user without an answer. So the model is
+   told to respond instead of calling another tool. Services differ in which messages they accept after a tool's
+   output, so this is only done for the responses endpoint: *)
+lastToolResponseMessage // beginDefinition;
+
+lastToolResponseMessage[ settings: KeyValuePattern[ "MaxToolResponses" -> n_Integer ] ] /;
+    $toolCallCount >= n && responsesRequestQ @ settings :=
+        <| "Role" -> "User", "Content" -> $lastToolResponsePrompt, "ToolResponse" -> True, "HoldTemporary" -> True |>;
+
+lastToolResponseMessage[ _ ] := Nothing;
+
+lastToolResponseMessage // endDefinition;
+
+$lastToolResponsePrompt = "\
+<system-hint>
+This was the last tool call available for this response, so do not make any more tool calls. \
+Respond to the user now with the results you have. If the task is not finished, say what is left to do.
+</system-hint>";
 
 
 $toolCallRetryPrompt = "\

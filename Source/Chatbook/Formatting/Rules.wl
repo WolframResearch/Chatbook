@@ -107,7 +107,9 @@ $$tripleBacktickCode = "```" ~~ code: Except[ "\n" ].. ~~ "```";
 $$doubleBacktickCode = "``" ~~ code__ ~~ "``";
 $$backtickName       = "`" ~~ code: Except[ WhitespaceCharacter ].. ~~ "`";
 $$backtickCode       = "`" ~~ code: Except[ "`"|"\n" ].. ~~ "`";
-$$dollarDisplayMath  = "$$" ~~ math__ ~~ "$$";
+(* Shortest, so the match ends at the next "$$". With a greedy math__, it ran to the end of the text and the rules'
+   condition was tested at every "$$" back from there, so text with many inline $$...$$ spans was slow to format: *)
+$$dollarDisplayMath  = "$$" ~~ Shortest[ math__ ] ~~ "$$";
 $$parenMath          = "\\(" ~~ math__ ~~ "\\)";
 $$bracketMath        = "\\[" ~~ math__ ~~ "\\]";
 $$dollarMath         = "$" ~~ math: Except[ "$" ].. ~~ "$";

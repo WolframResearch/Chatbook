@@ -81,7 +81,7 @@ explodeCell[ textData_List ] := Enclose[
     Module[ { processed, grouped, post },
         processed = ConfirmMatch[ preprocessExplodedCells @ textData, $$textDataList, "Preprocessing" ];
         grouped = ConfirmMatch[ regroupCells @ processed, $$textDataList, "RegroupCells" ];
-        post = ConfirmMatch[ Flatten[ postProcessExplodedCells /@ grouped ], { __Cell }, "PostProcessing" ];
+        post = ConfirmMatch[ Flatten[ postProcessExplodedCells /@ grouped ], { ___Cell }, "PostProcessing" ];
         SequenceReplace[
             post,
             { Cell[ caption_? captionQ, "Text", a___ ], input: Cell[ __, "Input"|"Code", ___ ] } :>
@@ -216,6 +216,10 @@ $preprocessingRules := $preprocessingRules = Dispatch @ {
 
     (* Remove "ChatCodeBlockTemplate" template boxes: *)
     TemplateBox[ { cell_Cell, ___ }, "ChatCodeBlockTemplate" | "NotebookAssistant`Sidebar`ChatCodeBlockTemplate", ___ ] :> cell,
+
+    (* Remove the shebang line header of scripts: *)
+    Cell[ BoxData[ GridBox[ { _, { cell_Cell } }, ___ ], ___ ], ___, TaggingRules -> KeyValuePattern[ "ShebangLine" -> _ ], ___ ] :>
+        cell,
 
     (* Remove nested cells: *)
     Cell @ BoxData[ cell_Cell, ___ ] :> cell,

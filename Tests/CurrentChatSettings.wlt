@@ -112,18 +112,12 @@ VerificationTest[
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*#426*)
+(* Without a cell argument, the scope is the front end and not the evaluation cell, so that it also works where there is
+   no evaluation cell (e.g. in a docked cell). There's none either when a kernel started from a script uses a front end
+   (as in CI): *)
 VerificationTest[
-    Module[ { model = None, nbo },
-        WithCleanup[
-            nbo = CreateNotebook[
-                DockedCells -> { Cell @ BoxData @ ToBoxes @ Dynamic[ model = CurrentChatSettings[ "Model" ] ] }
-            ],
-            TimeConstrained[ While[ model === None, Pause[ 0.1 ] ], 5 ];
-            model,
-            NotebookClose @ nbo
-        ]
-    ],
-    Except[ _? FailureQ ],
+    UsingFrontEnd @ CurrentChatSettings[ "Model" ],
+    KeyValuePattern @ { "Service" -> _String, "Name" -> _String | Automatic } | _String | Automatic,
     SameTest -> MatchQ,
     TestID   -> "CurrentChatSettings-Regression#426"
 ]
@@ -139,6 +133,19 @@ VerificationTest[
     Except[ _? FailureQ ],
     SameTest -> MatchQ,
     TestID   -> "CurrentChatSettings-Regression#592"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*#1173*)
+(* A model name without a service is an OpenAI model: *)
+VerificationTest[
+    Wolfram`Chatbook`Common`resolveAutoSettings[
+        <| Wolfram`Chatbook`Common`$defaultChatSettings, "Model" -> "gpt-4" |>
+    ][ "Model" ],
+    KeyValuePattern @ { "Service" -> "OpenAI", "Name" -> "gpt-4", "ResolvedModel" -> True },
+    SameTest -> MatchQ,
+    TestID   -> "ResolveAutoSettings-StringModel-GH#1173"
 ]
 
 (* ::**************************************************************************************************************:: *)

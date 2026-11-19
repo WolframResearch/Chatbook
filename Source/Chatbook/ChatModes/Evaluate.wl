@@ -113,8 +113,11 @@ appendCellToSidebarChat // endDefinition;
 evaluateSidebarChat // beginDefinition;
 
 (* The input field is optional, since the sidebar input cell of a front end session that started with an older version
-   of Chatbook doesn't give it: *)
-evaluateSidebarChat[ nbo_NotebookObject, sidebarCell_CellObject, input_, Dynamic[ cellObject_ ], field_: None ] := Enclose[
+   of Chatbook doesn't give it.
+   The sidebar input cell calls this directly, not through ChatbookAction like the workspace chat, so failures in the
+   chat are caught here. Otherwise ChatCellEvaluate catches them and gives them as its result, and the ConfirmMatch
+   below reports a second (internal) failure that hides where the first one happened (#1639): *)
+evaluateSidebarChat[ nbo_NotebookObject, sidebarCell_CellObject, input_, Dynamic[ cellObject_ ], field_: None ] := catchTopAs[ ChatbookAction ] @ Enclose[
     WithCleanup[
         Module[ { text, uuid, cell, result },
 

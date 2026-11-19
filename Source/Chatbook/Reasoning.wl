@@ -72,6 +72,20 @@ requestMethod // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*responsesRequestQ*)
+
+(* Whether requests with these settings go to the responses endpoint. Unlike requestMethod, this doesn't fail for
+   settings that ask for the endpoint when the installed paclets don't support it, so it can be used by code that also
+   runs when no request is sent (that failure is left to the request itself): *)
+responsesRequestQ // beginDefinition;
+responsesRequestQ[ settings_Association ] :=
+    settings[ "RequestMethod" ] === "Responses" && TrueQ @ $responsesAPIAvailable;
+
+responsesRequestQ[ _ ] := False;
+responsesRequestQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*reasoningServiceName*)
 
 (* Signatures can only be decrypted by the service that created them (e.g. a signature from an OpenAI account can't be

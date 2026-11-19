@@ -83,6 +83,20 @@ VerificationTest[
             { Wolfram`Chatbook`Common`evaluateSidebarChat[ $userNotebook, $sidebarCell, "Hello", args ], log }
         ]
     ];
+
+    (* Sends "Hello" from the sidebar with a stubbed front end, where the chat (in ChatCellEvaluate) evaluates eval: *)
+    sendSidebarChatEvaluating // Attributes = { HoldFirst };
+    sendSidebarChatEvaluating[ eval_ ] := Module[ { cell = None },
+        Block[
+            {
+                CurrentValue,
+                Wolfram`Chatbook`Actions`EvaluateChatInput      = eval &,
+                Wolfram`Chatbook`Common`appendCellToSidebarChat = $sidebarChatInput &,
+                Wolfram`Chatbook`Common`setCurrentValue         = Null &
+            },
+            Wolfram`Chatbook`Common`evaluateSidebarChat[ $userNotebook, $sidebarCell, "Hello", Dynamic @ cell ]
+        ]
+    ];
     ,
     Null,
     SameTest -> MatchQ,
@@ -193,6 +207,29 @@ VerificationTest[
     { { Null, { { "NextCell", $sidebarChatInput } } }, "" },
     SameTest -> MatchQ,
     TestID   -> "EvaluateSidebarChat-Answered-GH#1710"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Failures*)
+
+(* A failure in the chat is reported once, with the data of where it happened. It used to be caught by
+   ChatCellEvaluate, so evaluateSidebarChat reported a second failure, which hid the first one: *)
+VerificationTest[
+    sendSidebarChatEvaluating @ Wolfram`Chatbook`Common`throwInternalFailure @ sidebarChatFailureTest[ ],
+    Failure[ _, KeyValuePattern[ "MessageParameters" :> { _, KeyValuePattern[ "Evaluation" :> sidebarChatFailureTest[ ] ] } ] ],
+    { General::ChatbookInternal },
+    SameTest -> MatchQ,
+    TestID   -> "EvaluateSidebarChat-InternalFailure-GH#1639"
+]
+
+(* A failure that the chat throws without a message (e.g. an API error when there's no output cell to write it to) is
+   not reported as an internal failure: *)
+VerificationTest[
+    sendSidebarChatEvaluating @ Wolfram`Chatbook`Common`throwTop @ Failure[ "APIError", <| "StatusCode" -> 500 |> ],
+    Failure[ "APIError", <| "StatusCode" -> 500 |> ],
+    SameTest -> MatchQ,
+    TestID   -> "EvaluateSidebarChat-ThrownFailure-GH#1639"
 ]
 
 (* ::**************************************************************************************************************:: *)

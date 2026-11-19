@@ -55,6 +55,11 @@ $propagateMessages         = False;
 $segmentLine               = Missing[ "NotAvailable" ];
 $requestedLine             = Automatic;
 
+(* Code that the AI folded with IconizedObject (see "CodeFolding" in Prompting.wl) is unwrapped before it's evaluated.
+   This applies to the evaluator tool, but not to `WolframLanguageToolEvaluate`: its callers (e.g. the MCP server)
+   haven't been told to fold code, so their code is evaluated as it was written. *)
+$unwrapFoldedCode = True;
+
 (* Tests for expressions that lose their initialized status when sending over a link: *)
 $initializationTests = Join[
 
@@ -230,6 +235,7 @@ wolframLanguageToolEvaluate[ code_, property_, opts_Association ] := Enclose[
     Block[
         {
             $returnFullResult         = True,
+            $unwrapFoldedCode         = False,
             $appendRetryNotice        = getOption[ "AppendRetryNotice"    , opts ],
             $appendURIInstructions    = getOption[ "AppendURIInstructions", opts ],
             $evaluatorMethod          = getOption[ "Method"               , opts ],
@@ -443,7 +449,9 @@ sandboxKernelQ[ ___ ] := False;
 (* ::Subsubsection::Closed:: *)
 (*checkSandboxKernel*)
 checkSandboxKernel // beginDefinition;
-checkSandboxKernel[ kernel_LinkObject ] /; IntegerQ @ pingSandboxKernel @ kernel := kernel;
+(* Only reuse the kernel that startSandboxKernel finished setting up. A link to a kernel that was never set up can be
+   left open if startup was interrupted, e.g. by an abort: *)
+checkSandboxKernel[ kernel_LinkObject ] /; kernel === $SandboxKernel && IntegerQ @ pingSandboxKernel @ kernel := kernel;
 checkSandboxKernel[ kernel_LinkObject ] := startSandboxKernel[ ];
 checkSandboxKernel // endDefinition;
 
@@ -1375,7 +1383,7 @@ cloudSandboxEvaluate[ input: $$sandboxInput ] := Enclose[
         $lastSandboxEvaluation = input;
 
         api = ConfirmMatch[ getCloudEvaluatorAPI[ ], _CloudObject|_Failure, "CloudEvaluator" ];
-        If[ FailureQ @ api, Throw @ api ];
+        If[ FailureQ @ api, Throw @ cloudFailureResult @ api ];
 
         (* The cloud evaluator runs all segments in a single request, since the kernel state does not persist between
            requests. The cloud API applies the overall time constraint. *)
@@ -1420,7 +1428,8 @@ cloudSandboxEvaluate[ input: $$sandboxInput ] := Enclose[
             "Response"
         ];
 
-        If[ FailureQ @ response, Throw @ response ];
+        (* The raw failure includes the request, so it's replaced with a failure that only describes the problem: *)
+        If[ FailureQ @ response, Throw @ cloudFailureResult @ cloudEvaluatorRequestFailure[ ] ];
 
         records = ConfirmMatch[ cloudSegmentRecords @ response, { __Association }, "Records" ];
         If[ $requestedLine =!= None, $cloudLineNumber = line + Length @ records ];
@@ -1437,6 +1446,34 @@ cloudSandboxEvaluate[ input: $$sandboxInput ] := Enclose[
 ];
 
 cloudSandboxEvaluate // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cloudFailureResult*)
+cloudFailureResult // beginDefinition;
+
+(* The cloud evaluator could not be reached. As with a local kernel that could not be started, the failure is reported
+   to the model as the result, instead of ending the chat with an internal failure. As with a kernel quit, there's no
+   output, only the failure message: *)
+cloudFailureResult[ failure_Failure ] := Enclose[
+    $lastSandboxResult = ConfirmBy[
+        <|
+            sandboxResultData @ {
+                <|
+                    "Result"    -> stoppedSegmentResult[ failure, "KernelQuit" ],
+                    "OutputLog" -> { failure[ "Message" ] },
+                    "Packets"   -> { }
+                |>
+            },
+            "Line" -> $cloudLineNumber
+        |>,
+        AssociationQ,
+        "Result"
+    ],
+    throwInternalFailure
+];
+
+cloudFailureResult // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -3181,6 +3218,21 @@ This may mean that the number of currently running kernels exceeds the limit def
 noSandboxKernelFailure // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*cloudEvaluatorRequestFailure*)
+cloudEvaluatorRequestFailure // beginDefinition;
+
+cloudEvaluatorRequestFailure[ ] := Failure[
+    "CloudEvaluatorRequestFailed",
+    <|
+        "MessageTemplate"   -> "Unable to get a result from the cloud evaluator: the request failed or did not finish in time.",
+        "MessageParameters" -> { }
+    |>
+];
+
+cloudEvaluatorRequestFailure // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Segment Programs*)
 
@@ -3189,6 +3241,7 @@ noSandboxKernelFailure // endDefinition;
 
    Each program:
     - parses its input string using the evaluator's current $Context, $ContextPath, etc.
+    - unwraps code that was folded with IconizedObject (for the evaluator tool)
     - replaces macro placeholders with their expanded expressions
     - warns about undefined symbols
     - evaluates the input with time and memory constraints
@@ -3218,7 +3271,8 @@ makeSegmentProgram[ segment_Association, opts_Association ] := Enclose[
                 memFail   = ConfirmMatch[ memoryConstraintFailure[ ], _Function, "MemoryFailure" ],
                 evaluate  = ConfirmMatch[ segmentEvaluation[ ], _Function, "Evaluation" ],
                 undefined = $undefinedSymbolWarnings,
-                initQ     = $initializationTest
+                initQ     = $initializationTest,
+                unwrap    = TrueQ @ $unwrapFoldedCode
             },
             HoldComplete @ Module[
                 { segmentLine, segmentHeld, segmentSuppressed, segmentStop, segmentMemory, segmentResult },
@@ -3240,6 +3294,18 @@ makeSegmentProgram[ segment_Association, opts_Association ] := Enclose[
                     segmentHeld = If[ StringQ @ input, ToExpression[ input, InputForm, HoldComplete ], input ];
 
                     If[ MatchQ[ segmentHeld, _HoldComplete ],
+
+                        (* Folded code (see $unwrapFoldedCode) is evaluated as if it were written normally. A string
+                           as the last argument is its label. This applies to every IconizedObject in the input, so
+                           code that's about IconizedObject itself (e.g. a pattern) is changed too. Macros are still
+                           placeholder strings here, so one that's the last of several arguments is taken for the
+                           label: *)
+                        If[ unwrap,
+                            segmentHeld = segmentHeld //. {
+                                HoldPattern @ IconizedObject[ folded__, _String ] :> folded,
+                                HoldPattern @ IconizedObject[ folded__ ] :> folded
+                            }
+                        ];
 
                         (* Replace macro placeholders with their expanded expressions without evaluating them: *)
                         If[ keys =!= { },

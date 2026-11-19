@@ -1354,7 +1354,9 @@ Cell[
                     Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
                     Catch[ Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "WidgetSend", $CellContext`cell ], _ ]
                 ],
-                Appearance -> $suppressButtonAppearance
+                Appearance -> $suppressButtonAppearance,
+                (* The first chat in a kernel can take longer than the preemptive evaluation timeout: *)
+                Method     -> "Queued"
             ]
         ]
     }

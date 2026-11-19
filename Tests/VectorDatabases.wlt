@@ -963,4 +963,35 @@ VerificationTest[
     TestID   -> "SentenceBERTTokenizerCached"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Non-ASCII Directory*)
+(* On Windows, SemanticSearch can't open index files whose paths have non-ASCII characters (e.g. in the user name), so
+   searches use the short form of the directory (see toWindowsShortPath). On other systems, these paths just work: *)
+VerificationTest[
+    Module[ { name, dir },
+        name = "NeuralNetRepositoryURIs";
+        dir  = CreateDirectory @ FileNameJoin @ { $TemporaryDirectory, "Caf\[EAcute]-" <> CreateUUID[ ] };
+        WithCleanup[
+            CopyDirectory[
+                FileNameJoin @ { Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDBDirectory, name },
+                FileNameJoin @ { dir, name }
+            ];
+            Block[ { Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`$vectorDBDirectory = dir },
+                Wolfram`Chatbook`PromptGenerators`VectorDatabases`Private`inVectorDBDirectory @ VectorDatabaseSearch[
+                    VectorDatabaseObject @ File @ FileNameJoin @ { name, name <> ".wxf" },
+                    Wolfram`Chatbook`Common`getEmbedding[ "Is there a neural net that can classify images?" ],
+                    { "Index", "Distance" },
+                    MaxItems -> 3
+                ]
+            ],
+            (* On Windows, this can fail while the index file is still memory-mapped: *)
+            Quiet @ DeleteDirectory[ dir, DeleteContents -> True ]
+        ]
+    ],
+    { KeyValuePattern @ { "Index" -> _Integer, "Distance" -> _Real }.. },
+    SameTest -> MatchQ,
+    TestID   -> "VectorDatabaseSearch-NonASCIIDirectory"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)

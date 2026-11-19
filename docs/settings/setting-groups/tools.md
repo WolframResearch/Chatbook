@@ -49,7 +49,7 @@ The `getToolNames` function (`Tools/Common.wl`) determines the initial tool name
 
 Consumed in two places:
 
-1. **`makeLLMConfiguration`** (`SendChat.wl`) — when `ToolMethod` is `"Service"` or `HybridToolMethod` is `True`, tools are passed to `LLMConfiguration` as `"Tools" -> Cases[Flatten @ {as["Tools"]}, _LLMTool]`, enabling the LLM service's native tool calling API. When neither condition holds, tools are omitted from `LLMConfiguration` and tool calling is handled entirely through prompt-based instructions.
+1. **`makeLLMConfiguration`** (`SendChat.wl`) — when `ToolMethod` is `"Service"` or `HybridToolMethod` is `True`, tools are passed to `LLMConfiguration` as `"Tools" -> toCustomTools[as, Cases[Flatten @ {as["Tools"]}, _LLMTool]]` (see [Custom Tools](#custom-tools)), enabling the LLM service's native tool calling API. When neither condition holds, tools are omitted from `LLMConfiguration` and tool calling is handled entirely through prompt-based instructions.
 2. **`constructLLMConfiguration`** (`LLMUtilities.wl`) — tools are read from `settings["Tools"]`, each processed by `addToolPostProcessing`, validated with `ConfirmMatch[..., { ___LLMTool }]`, and passed to the `LLMConfiguration`.
 
 If `WolframLanguageEvaluator` is among the selected tools, `resolveTools` triggers the `"WolframLanguageEvaluatorTool"` base prompt component via `needsBasePrompt`.
@@ -219,7 +219,7 @@ When `Automatic`, resolved by `chooseToolMethod` (`Settings.wl`): if all resolve
 - Non-`"Service"`: Tool definitions are omitted from `LLMConfiguration`; tool calling is handled through prompt-based instructions.
 
 **Tool Prompts** (`makeToolPrompt` in `Tools/Common.wl`):
-- `"Service"`: Returns `Nothing` (no prompt injection).
+- `"Service"`: The pre, listing and post prompts are `Nothing` (the service gets the tool definitions). The example conversations (`"ToolExamplePrompt"`) are still included.
 - `"Simple"`: Uses `$simpleToolPre`/`$simpleToolListing`/`$simpleToolPost`.
 - Other methods: Uses `$toolPre`/`$toolListing`/`$toolPost`.
 
@@ -248,8 +248,21 @@ When `"Service"`, also triggers the `"ServiceToolCallRetry"` base prompt compone
 
 ### Model-Specific Overrides
 
-- **`"Service"`**: Anthropic (general), AzureOpenAI, DeepSeek Chat, OpenAI (general), GPT-3.5, GPT-5, O1, O3, O4-Mini
-- **`Verbatim @ Automatic`** (keeps prompt-based tools, often paired with `HybridToolMethod -> True`): Claude 2, GPT-4o, GPT-4.1, O3-Mini
+- **`"Service"`**: Anthropic (general), AzureOpenAI, DeepSeek Chat, OpenAI (general), GPT-3.5, GPT-5 through GPT-5.3, GPT-6 and later (the `"GPT6Plus"` family), O1, O3, O4-Mini
+- **`Verbatim @ Automatic`** (keeps prompt-based tools, often paired with `HybridToolMethod -> True`): Claude 2, GPT-4o, GPT-4.1, GPT-5.4 through GPT-5.6 (the `"GPT54Plus"` family, which also has gpt-6-sol, gpt-6-luna and gpt-6.1-terra), O3-Mini
+
+### Custom Tools
+
+With the `"Service"` method, a tool's arguments are normally written by the model as JSON, which works poorly for code and long text (escaping mistakes, see the [GPT 5.4 case study](../../model-support-examples/gpt-5-4.md)). The responses endpoint (`"RequestMethod" -> "Responses"`) also has "custom" tools, which take plain text as their input instead. For models with `"EnableCustomTools" -> True` in `$modelAutoSettings` (the `"GPT6Plus"` family, e.g. `gpt-6.2-sol`), the tools listed in `$customToolParameters` (`Tools/Common.wl`: the Wolfram Language evaluator and the notebook creation tool) are given to the service as custom tools, and the text the model writes becomes the value of the tool's single parameter (`"code"` or `"content"`).
+
+This only changes what is exchanged with the service:
+
+- `toCustomTools` replaces the parameter schema of these tools in the `LLMConfiguration` that is sent (`makeLLMConfiguration`), and adds the description of the parameter to the tool's description.
+- `fromCustomToolRequest` converts a custom tool call to a tool call with named parameters as soon as it is received, so the response text, tool evaluation, formatting and saved chats are the same as for any other service tool call.
+- These calls (and the requests of their responses) are converted back when they are sent as chat history (`prepareMessagesForLLM`): `toolStringSplit` creates the calls of earlier messages in that form (`toCustomToolCallData`) and keeps the objects for the following requests, and `toCustomToolCalls` converts the call that was just evaluated.
+- Tool call examples in the system prompt show plain text input for these tools (`formatToolCallExample`).
+
+The original JSON parameter schema is used whenever the request doesn't go to the responses endpoint (e.g. `"RequestMethod" -> "ChatCompletions"`, or when the installed `Wolfram/LLMFunctions` and `LLMConnections` paclets don't support it), and for all other models and services. For the models of the `"GPT6Plus"` family themselves that is not a working fallback: the chat completions endpoint rejects their function tools (see the [case study](../../model-support-examples/gpt-6-1-sol.md#finding-out-what-the-model-accepts)), so without the responses endpoint their tools need `"ToolMethod" -> "Simple"`.
 
 ### Integration Points
 
@@ -283,8 +296,8 @@ When `False`, the `LLMConfiguration` omits tool definitions and relies solely on
 
 ### Model-Specific Overrides
 
-- **`True`**: GPT-4o, GPT-4.1, O3-Mini (which use `ToolMethod -> Verbatim @ Automatic` to keep prompt-based tools alongside service tools)
-- **`False`**: DeepSeek Reasoner, GPT-5, O1, O3, O4-Mini (which use pure `"Service"` tool method or have limited tool support)
+- **`True`**: GPT-4o, GPT-4.1, GPT-5.4 through GPT-5.6 (the `"GPT54Plus"` family, which also has gpt-6-sol, gpt-6-luna and gpt-6.1-terra), O3-Mini (which use `ToolMethod -> Verbatim @ Automatic` to keep prompt-based tools alongside service tools)
+- **`False`**: DeepSeek Reasoner, GPT-5 through GPT-5.3, GPT-6 and later (the `"GPT6Plus"` family), O1, O3, O4-Mini (which use pure `"Service"` tool method or have limited tool support)
 
 ### Integration Points
 
@@ -320,7 +333,7 @@ During chat processing, `resolveTools` (`Tools/Common.wl`) assigns the resolved 
 
 Tool implementations use this to read their configuration: e.g., `Sandbox.wl` reads `"EvaluationTimeConstraint"`, `"Method"`, `"AllowedReadPaths"`, `"AllowedWritePaths"`, `"AllowedExecutePaths"`, `"AppendURIPrompt"`, and `"PingTimeConstraint"` for `"WolframLanguageEvaluator"`; `WolframAlpha.wl` reads `"DefaultPods"`, `"FoldPods"`, and `"MaxPodByteCount"`; `WebFetcher.wl` reads `"MaxContentLength"`.
 
-The `"WolframLanguageEvaluator"` tool evaluates each top-level expression in its code as a separate input, like an interactive kernel session: CodeParser splits the code without creating symbols, and each input is parsed in the evaluator kernel right before it's evaluated, with its own `In`/`Out` line. `"EvaluationTimeConstraint"` applies to the whole tool call, and evaluation stops at the first input that exceeds the remaining time.
+The `"WolframLanguageEvaluator"` tool evaluates each top-level expression in its code as a separate input, like an interactive kernel session: CodeParser splits the code without creating symbols, and each input is parsed in the evaluator kernel right before it's evaluated, with its own `In`/`Out` line. `"EvaluationTimeConstraint"` applies to the whole tool call, and evaluation stops at the first input that exceeds the remaining time. Code that was folded with `IconizedObject[code, "label"]` (see the `"CodeFolding"` base prompt component) is evaluated as the code inside; this applies to every `IconizedObject` in the tool's input. `WolframLanguageToolEvaluate` evaluates its code as written.
 
 ### Programmatic Access
 
@@ -608,7 +621,9 @@ Maximum number of tool responses allowed per chat turn before the tool-calling l
 
 During each chat turn, the `$toolCallCount` global variable (`CommonSymbols.wl`) is incremented each time the LLM makes a tool call (`SendChat.wl`), initialized to `0` via `ChatState.wl`. The `sendToolResponseQ` function (`SendChat.wl`) checks whether to continue the tool-calling loop: if `$toolCallCount > n` (where `n` is the `MaxToolResponses` value), it returns `False`, stopping the chat via `throwTop @ StopChat @ cell`.
 
-Note: the comparison uses `>` (not `>=`), so the LLM can make up to `n + 1` tool calls before being stopped.
+Note: the comparison uses `>` (not `>=`), so the LLM can make up to `n + 1` tool calls before being stopped, and the result of the last one is not sent back, which leaves the response without an answer.
+
+With the responses endpoint (`"RequestMethod" -> "Responses"`), the response to the `n`-th tool call is therefore followed by a hint that tells the model to answer with the results it has instead of calling another tool (`lastToolResponseMessage` in `SendChat.wl`, a user role message that is only part of that request). Other endpoints don't get the hint, since services differ in which messages they accept after a tool's output.
 
 ### Model-Specific Overrides
 

@@ -26,7 +26,7 @@ $backgroundHandlers = False;
 
 $defaultConfigSettings = <|
     "LLMEvaluator"        -> $defaultConfigPersona,
-    "ExcludedBasePrompts" -> { "Notebooks", "NotebooksPreamble" },
+    "ExcludedBasePrompts" -> { "Notebooks", "NotebooksPreamble", "CodeFolding", "WolframLanguageEvaluatorToolCode" },
     (* LLMFunctions sends generated configurations to chat completions, unless told otherwise, so their settings are
        resolved for that endpoint (e.g. reasoning without a summary request) unless the caller gives a method: *)
     "RequestMethod"       -> "ChatCompletions",
@@ -511,7 +511,7 @@ extractBodyChunksInBackground // endDefinition;
 (*toolRequestsToStrings*)
 toolRequestsToStrings // beginDefinition;
 toolRequestsToStrings[ requests_List ] := toolRequestsToStrings /@ requests;
-toolRequestsToStrings[ req: HoldPattern[ _LLMToolRequest ] ] := toolRequestToString @ req;
+toolRequestsToStrings[ req: HoldPattern[ _LLMToolRequest ] ] := toolRequestToString @ fromCustomToolRequest @ req;
 toolRequestsToStrings // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -616,7 +616,11 @@ generateLLMConfiguration[ name_String, as_Association? AssociationQ ] := Enclose
         evaluator = ConfirmBy[ mergeChatSettings @ { persona, as }, AssociationQ, "Evaluator" ];
         settings = ConfirmBy[ <| $defaultConfigSettings, "LLMEvaluator" -> evaluator |>, AssociationQ, "Settings" ];
         ConfirmMatch[
-            ChatEvaluationBlock[ constructLLMConfiguration[ ], settings ],
+            (* The configuration is used for chat completions requests (e.g. by LLMSynthesize), so the default model
+               can't be one that needs the responses endpoint for its tools, and tools keep their parameter schema: *)
+            Block[ { $responsesAPIAvailable = False },
+                ChatEvaluationBlock[ constructLLMConfiguration[ ], settings ]
+            ],
             HoldPattern @ LLMConfiguration[ _Association? AssociationQ, ___ ],
             "Result"
         ]
