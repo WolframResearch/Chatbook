@@ -857,7 +857,7 @@ Button[
     ],
     accessLevel = None; (* force chatbar to replace the tier indicator the next time the chatbar is maximized *)
     CurrentValue[ chatbarCell, { TaggingRules, "MinimizedQ" } ] = True;
-    If[ sufficientVersionQ[ 15.1 ], FE`Evaluate @ FEPrivate`SetAttachedCellPosition[ chatbarCell, { Right, Bottom }, 0, { Right, Bottom } ] ];
+    If[ sufficientVersionQ[ 16.0 ], FE`Evaluate @ FEPrivate`SetAttachedCellPosition[ chatbarCell, { Right, Bottom }, 0, { Right, Bottom } ] ];
     CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ] = True;
     With[
         { sel = FE`Evaluate @ FEPrivate`GetCurrentSelections @ EvaluationNotebook[ ] },
@@ -1745,13 +1745,13 @@ setChatbarState[ nbo_NotebookObject, newValue_ ] := With[ { chatbarCell = First[
             CurrentValue[ nbo, "ShowChatbar" ] = Inherited;
             CurrentValue[ $FrontEnd, "ShowChatbar" ] = True;
             CurrentValue[ chatbarCell, { TaggingRules, "MinimizedQ" } ] = False;
-            If[ sufficientVersionQ[ 15.1 ], FE`Evaluate @ FEPrivate`SetAttachedCellPosition[ chatbarCell, { Center, Bottom }, 0, { Center, Bottom } ] ];
+            If[ sufficientVersionQ[ 16.0 ], FE`Evaluate @ FEPrivate`SetAttachedCellPosition[ chatbarCell, { Center, Bottom }, 0, { Center, Bottom } ] ];
             CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ] = False,
         "Minimized",
             CurrentValue[ nbo, "ShowChatbar" ] = Inherited;
             CurrentValue[ $FrontEnd, "ShowChatbar" ] = True;
             CurrentValue[ chatbarCell, { TaggingRules, "MinimizedQ" } ] = True;
-            If[ sufficientVersionQ[ 15.1 ], FE`Evaluate @ FEPrivate`SetAttachedCellPosition[ chatbarCell, { Right, Bottom }, 0, { Right, Bottom } ] ];
+            If[ sufficientVersionQ[ 16.0 ], FE`Evaluate @ FEPrivate`SetAttachedCellPosition[ chatbarCell, { Right, Bottom }, 0, { Right, Bottom } ] ];
             CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ] = True,
         "Off",
             CurrentValue[ nbo, "ShowChatbar" ] = Inherited;
@@ -1773,7 +1773,7 @@ Button[
     blueHueButtonAppearance @ "ChatbarMinimized"
     ,
     CurrentValue[ chatbarCell, { TaggingRules, "MinimizedQ" } ] = False;
-    If[ sufficientVersionQ[ 15.1 ], FE`Evaluate @ FEPrivate`SetAttachedCellPosition[ chatbarCell, { Center, Bottom }, 0, { Center, Bottom } ] ];
+    If[ sufficientVersionQ[ 16.0 ], FE`Evaluate @ FEPrivate`SetAttachedCellPosition[ chatbarCell, { Center, Bottom }, 0, { Center, Bottom } ] ];
     CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ] = False;
     With[ { n = nbo, c = chatbarCell },
         FE`Evaluate @ FEPrivate`ExpressionEvaluateQueued @ FrontEnd`MoveCursorToInputField[ n, "AttachedChatInputField", c, c ]
@@ -1810,7 +1810,11 @@ makeChatbarChatInputCellContent // beginDefinition;
 
 makeChatbarChatInputCellContent[ ] := makeChatbarChatInputCellContent[ EvaluationNotebook[ ], "" ]
 
-makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
+(* The Style's Magnification multiplies by the chatbar magnification, so that value must exist before the content is
+   first formatted; the DynamicModule's Initialization runs after that. Without it (a front end's first chatbar, e.g.
+   with new preferences) the factor is Inherited, an invalid Magnification. *)
+makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] := (
+    initializeChatbarSettings[ ];
     Style[
         Pane[ #, FrameMargins -> { { 13, 13 }, { 13, 0 } } ],
         Magnification -> Dynamic[
@@ -1919,7 +1923,7 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
                             FrameMargins   -> { { 2, 3 }, { 2, 2 } },
                             FrameStyle     -> None,
                             ImageMargins   -> 0,
-                            ImageSize      -> If[ insufficientVersionQ[ 15.1 ],
+                            ImageSize      -> If[ insufficientVersionQ[ 16.0 ],
                                 Automatic
                                 ,
                                 Dynamic @ {
@@ -1945,31 +1949,44 @@ makeChatbarChatInputCellContent[ nbo_NotebookObject, initialText_:"" ] :=
         Initialization :> If[ !Typeset`initializedQ,
             Typeset`initializedQ = True;
             Typeset`thisCell = EvaluationCell[ ];
-            FE`Evaluate @ {
-                (* auto-instantiate the magnification and minimized state if they don't yet have $FrontEnd values *)
-                FrontEnd`CurrentValue[
-                    FrontEnd`$FrontEnd,
-                    { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" },
-                    FEPrivate`Switch[ FEPrivate`$SystemID, "MacOSX-ARM64", 1., "MacOSX-x86-64", 1., _, .75 ]
-                ],
-                FrontEnd`CurrentValue[
-                    FrontEnd`$FrontEnd,
-                    { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" },
-                    False
-                ]
-            };
+            initializeChatbarSettings[ ];
             With[{ minQ = TrueQ @ AbsoluteCurrentValue[ $FrontEndSession, { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" } ] },
                 setCurrentValue[ Typeset`thisCell, { TaggingRules, "MinimizedQ" }, minQ ];
-                If[ sufficientVersionQ[ 15.1 ],
-                    With[ { pos = If[ minQ, { Right, Bottom }, { Center, Bottom } ] },
-                        FE`Evaluate @ FEPrivate`SetAttachedCellPosition[ Typeset`thisCell, pos, 0, pos ]
+                If[ sufficientVersionQ[ 16.0 ],
+                    (* FE`Evaluate holds its argument, so the cell object must be inserted: the 16.0 front end fails
+                       with the unevaluated DynamicModule variable and leaves the minimized chatbar centered *)
+                    With[ { cell = Typeset`thisCell, pos = If[ minQ, { Right, Bottom }, { Center, Bottom } ] },
+                        FE`Evaluate @ FEPrivate`SetAttachedCellPosition[ cell, pos, 0, pos ]
                     ]
                 ]
             ]
         ]
-    ];
+    ]
+);
 
 makeChatbarChatInputCellContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*initializeChatbarSettings*)
+initializeChatbarSettings // beginDefinition;
+
+(* auto-instantiate the magnification and minimized state if they don't yet have $FrontEnd values *)
+initializeChatbarSettings[ ] := FE`Evaluate @ {
+    FrontEnd`CurrentValue[
+        FrontEnd`$FrontEnd,
+        { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "Magnification" },
+        FEPrivate`Switch[ FEPrivate`$SystemID, "MacOSX-ARM64", 1., "MacOSX-x86-64", 1., _, .75 ]
+    ],
+    FrontEnd`CurrentValue[
+        FrontEnd`$FrontEnd,
+        { PrivateFrontEndOptions, "InterfaceSettings", "NotebookAssistant", "Chatbar", "OpenMinimized" },
+        False
+    ]
+};
+
+initializeChatbarSettings // endDefinition;
+
 (* :!CodeAnalysis::EndBlock:: *)
 
 (* ::**************************************************************************************************************:: *)
