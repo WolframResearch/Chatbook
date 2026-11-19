@@ -4535,7 +4535,7 @@ errorCell[ as_ ] := Enclose[
     Module[ { text },
         text = ConfirmMatch[ errorText @ as, _String|$$textDataList, "ErrorText" ];
         Cell[
-            BoxData @ toErrorBoxes @ text,
+            BoxData @ toErrorBoxes[ text, errorAction @ as ],
             "Text",
             CellAutoOverwrite -> True,
             CellTrayWidgets   -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
@@ -4563,6 +4563,22 @@ $$usageLimitCode = Alternatives[
 (* ::Subsubsection::Closed:: *)
 (*toErrorBoxes*)
 toErrorBoxes // beginDefinition;
+
+toErrorBoxes[ text_, None ] := toErrorBoxes @ text;
+
+(* The message text is a button that opens the preferences page with the setting that caused the error: *)
+toErrorBoxes[ text_String, action_String ] := Enclose[
+    Module[ { label, box },
+        label = Row @ { RawBoxes @ $errorIconBox, errorActionButton[ text, action ] };
+        box = ConfirmMatch[
+            errorMessageBox[ label, Appearance -> "Fatal", ImageSize -> { Scaled[ 1 ], Automatic } ],
+            _Framed,
+            "Box"
+        ];
+        ToBoxes @ box
+    ],
+    throwInternalFailure
+];
 
 toErrorBoxes[ text_String ] := Enclose[
     Module[ { label, box },
@@ -4598,6 +4614,50 @@ toErrorBoxes // endDefinition;
 
 
 $errorIconBox = StyleBox[ "\[WarningSign] ", FontColor -> Darker @ Red, FontSize -> 1.5 * Inherited ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*errorAction*)
+(* The action of an error cell, if the failure has one (see llmRequestsBlockedFailure): *)
+errorAction // beginDefinition;
+errorAction[ Failure[ _, KeyValuePattern[ "Action" -> action_String ] ] ] := action;
+errorAction[ _ ] := None;
+errorAction // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*errorActionButton*)
+(* The error cell can be saved and opened in a later session, so the button function loads Chatbook if it needs it: *)
+errorActionButton // beginDefinition;
+
+errorActionButton[ text_String, "ExternalLLMConnectivityDisabled" ] := errorActionButton0[
+    text,
+    Needs[ "Wolfram`Chatbook`" -> None ];
+    Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "OpenPreferences", "Services", "AllowAI" ]
+];
+
+errorActionButton[ text_String, "InternetDisabled" ] := errorActionButton0[
+    text,
+    NotebookTools`OpenPreferencesDialog[ "InternetConnectivity", "AllowDownloads" ]
+];
+
+errorActionButton[ text_String, _String ] := text;
+
+errorActionButton // endDefinition;
+
+
+errorActionButton0 // beginDefinition;
+errorActionButton0 // Attributes = { HoldRest };
+
+errorActionButton0[ text_String, action_ ] := Button[
+    Mouseover[ text, Style[ text, Underlined ] ],
+    action,
+    Appearance -> "Suppressed",
+    ImageSize  -> Automatic,
+    Method     -> "Queued"
+];
+
+errorActionButton0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

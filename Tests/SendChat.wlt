@@ -216,7 +216,7 @@ VerificationTest[
 VerificationTest[
     Select[
         FileNames[ "ChatbookStrings.tr", FileNameJoin @ { ParentDirectory @ DirectoryName @ $TestFileName, "FrontEnd", "TextResources" }, 2 ],
-        StringFreeQ[ ReadString @ #, "\"ExternalLLMConnectivityDisabled\" ->" ] &
+        StringFreeQ[ ReadString @ #, "\"PreferencesContentAIDisabled\" ->" ] &
     ],
     { },
     SameTest -> MatchQ,
@@ -226,7 +226,7 @@ VerificationTest[
 (* If the front end doesn't have the text resource (e.g. it uses an older Chatbook's resources), the English text is used: *)
 VerificationTest[
     Block[ { Wolfram`Chatbook`Common`trRaw = $Failed & },
-        Wolfram`Chatbook`Common`llmRequestsBlockedFailure[ "ExternalLLMConnectivityDisabled", "ExternalLLMConnectivityDisabled" ]
+        Wolfram`Chatbook`Common`llmRequestsBlockedFailure[ "ExternalLLMConnectivityDisabled", "PreferencesContentAIDisabled" ]
     ],
     Failure[
         "ExternalLLMConnectivityDisabled",
@@ -234,6 +234,52 @@ VerificationTest[
     ],
     SameTest -> MatchQ,
     TestID   -> "LLMRequestsBlockedFailure-FallbackText"
+]
+
+(* Clicking the message in the error cell opens the preferences page with the setting that blocked the request. The cell
+   can be opened in a later session, so the button loads Chatbook if it's needed: *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Common`trRaw = "Message" & },
+        Cases[
+            Wolfram`Chatbook`SendChat`Private`errorCell @ Wolfram`Chatbook`Common`llmRequestsBlockedFailure[ #, "Message" ],
+            ButtonBox[ _, ___, ButtonFunction :> f_, ___ ] :> HoldForm @ f,
+            Infinity
+        ] & /@ { "ExternalLLMConnectivityDisabled", "InternetDisabled" }
+    ],
+    {
+        {
+            ___,
+            HoldForm @ CompoundExpression[
+                Needs[ "Wolfram`Chatbook`" -> None ],
+                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "OpenPreferences", "Services", "AllowAI" ]
+            ],
+            ___
+        },
+        { ___, HoldForm @ NotebookTools`OpenPreferencesDialog[ "InternetConnectivity", "AllowDownloads" ], ___ }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ErrorCell-LLMRequestsBlocked-PreferencesButtons"
+]
+
+(* Other errors don't open the preferences: *)
+VerificationTest[
+    {
+        FreeQ[ #, NotebookTools`OpenPreferencesDialog ],
+        FreeQ[ #, "OpenPreferences" ]
+    } & @ Wolfram`Chatbook`SendChat`Private`errorCell @ Failure[ "Other", <| "MessageTemplate" -> "Message", "MessageParameters" -> { } |> ],
+    { True, True },
+    SameTest -> MatchQ,
+    TestID   -> "ErrorCell-OtherFailures-NoPreferencesButton"
+]
+
+(* The action that the button calls opens the Services page at the setting: *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Common`openPreferencesPage = HoldForm @ openPreferencesPage[ ## ] & },
+        Wolfram`Chatbook`ChatbookAction[ "OpenPreferences", "Services", "AllowAI" ]
+    ],
+    HoldForm @ openPreferencesPage[ "Services", "AllowAI" ],
+    SameTest -> MatchQ,
+    TestID   -> "ChatbookAction-OpenPreferences"
 ]
 
 VerificationTest[

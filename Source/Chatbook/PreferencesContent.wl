@@ -153,7 +153,7 @@ allowAISettings[ ] :=
             tr[ "PreferencesContentAllowAILabel" ],
             Hold @ allowExternalLLMConnectivityQ[ ]
         ],
-        None,
+        "Services",
         "AllowAI"
     ];
 

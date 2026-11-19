@@ -1635,7 +1635,8 @@ llmRequestsAllowedQ // endDefinition;
 (* ::Subsection::Closed:: *)
 (*llmRequestsBlockedFailure*)
 (* The failure for a chat that is not sent because llmRequestsAllowedQ[ ] is False. It's written to the chat output (in
-   the front end's language) without also issuing a message, since the output already shows it: *)
+   the front end's language) without also issuing a message, since the output already shows it. Its "Action" is the
+   preferences page that has the setting, which clicking the message in the chat output opens (see errorCell): *)
 llmRequestsBlockedFailure // beginDefinition;
 
 llmRequestsBlockedFailure[ ] :=
@@ -1651,7 +1652,8 @@ llmRequestsBlockedFailure[ tag_String, name_String ] :=
         tag,
         <|
             "MessageTemplate"   -> Replace[ Quiet @ catchAlways @ trRaw @ name, Except[ _String ] :> trPaclet @ name ],
-            "MessageParameters" -> { }
+            "MessageParameters" -> { },
+            "Action"            -> tag
         |>
     ];
 
