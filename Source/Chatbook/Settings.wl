@@ -511,6 +511,8 @@ $modelAutoSettings[ Automatic, "GPT6Plus" ] = <|
     },
     "HybridToolMethod"   -> False,
     "Reasoning"          -> "Medium",
+    (* Every gpt-6 model accepts "Max" with the responses endpoint, which these models need for their tools: *)
+    "ReasoningEfforts"   -> { "None", "Low", "Medium", "High", "XHigh", "Max" },
     "ResponsesRequired"  -> True,
     "ToolMethod"         -> "Service"
 |>;
