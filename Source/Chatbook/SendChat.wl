@@ -62,7 +62,10 @@ AgentEvaluate // endExportedDefinition;
 chatEvaluateHeadless // beginDefinition;
 
 chatEvaluateHeadless[ messages0_, settings_? AssociationQ ] := Enclose[
-    If[ ! allowExternalLLMConnectivityQ[ ], throwFailure[ "ExternalLLMConnectivityDisabled" ] ];
+    Which[
+        ! allowExternalLLMConnectivityQ[ ], throwFailure[ "ExternalLLMConnectivityDisabled" ],
+        ! allowInternetQ[ ], throwFailure[ "InternetDisabled" ]
+    ];
     Block[ { $headlessChat = True },
         ChatEvaluationBlock[
             Module[ { messages, as, container },
@@ -226,7 +229,7 @@ sendChat[ evalCell_CellObject, nbo_NotebookObject, appContainer_, settings0_ ] /
         ];
 
         (* Fail before building the messages, since the request would be blocked anyway: *)
-        If[ ! allowExternalLLMConnectivityQ[ ], throwFailureToChatOutput @ $externalLLMConnectivityFailure ];
+        If[ ! llmRequestsAllowedQ[ ], throwFailureToChatOutput @ llmRequestsBlockedFailure[ ] ];
 
         If[ ! settings[ "IncludeHistory" ], cells = { evalCell } ];
 
@@ -4500,13 +4503,6 @@ throwFailureToChatOutput[ task_, _, failure_Failure ] := (
 );
 
 throwFailureToChatOutput // endDefinition;
-
-(* Written to the chat output (in the front end's language) without also issuing a message, since the output already
-   shows it: *)
-$externalLLMConnectivityFailure := Failure[
-    "ExternalLLMConnectivityDisabled",
-    <| "MessageTemplate" -> MessageName[ Chatbook, "ExternalLLMConnectivityDisabled" ], "MessageParameters" -> { } |>
-];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

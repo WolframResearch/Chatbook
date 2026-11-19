@@ -181,14 +181,35 @@ VerificationTest[
         sendChatEvents @ $baseSettings
     ],
     <|
-        "Result" -> Failure[
-            "ExternalLLMConnectivityDisabled",
-            KeyValuePattern[ "MessageTemplate" -> Wolfram`Chatbook`Common`trPaclet[ "ExternalLLMConnectivityDisabled" ] ]
-        ],
+        "Result" -> Failure[ "ExternalLLMConnectivityDisabled", KeyValuePattern[ "MessageTemplate" -> _String ] ],
         "Events" -> { }
     |>,
     SameTest -> MatchQ,
     TestID   -> "SendChat-ExternalLLMConnectivityDisabled"
+]
+
+(* The same goes for a chat when internet access is not allowed, which would only give messages like ServiceSubmit::isrv: *)
+(* The failure's text comes from the front end in its language, so it's only checked to be a string: *)
+VerificationTest[
+    Block[ { $AllowInternet = False },
+        sendChatEvents @ $baseSettings
+    ],
+    <|
+        "Result" -> Failure[ "InternetDisabled", KeyValuePattern[ "MessageTemplate" -> _String ] ],
+        "Events" -> { }
+    |>,
+    SameTest -> MatchQ,
+    TestID   -> "SendChat-InternetDisabled"
+]
+
+(* The connectivity setting is reported if both settings block the request: *)
+VerificationTest[
+    Block[ { $AllowInternet = False, Wolfram`Chatbook`Common`allowExternalLLMConnectivityQ = False & },
+        sendChatEvents @ $baseSettings
+    ],
+    <| "Result" -> Failure[ "ExternalLLMConnectivityDisabled", _ ], "Events" -> { } |>,
+    SameTest -> MatchQ,
+    TestID   -> "SendChat-ExternalLLMConnectivityAndInternetDisabled"
 ]
 
 (* The message is defined for every language: *)
@@ -202,6 +223,19 @@ VerificationTest[
     TestID   -> "ExternalLLMConnectivityDisabled-TextResources"
 ]
 
+(* If the front end doesn't have the text resource (e.g. it uses an older Chatbook's resources), the English text is used: *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Common`trRaw = $Failed & },
+        Wolfram`Chatbook`Common`llmRequestsBlockedFailure[ "ExternalLLMConnectivityDisabled", "ExternalLLMConnectivityDisabled" ]
+    ],
+    Failure[
+        "ExternalLLMConnectivityDisabled",
+        KeyValuePattern[ "MessageTemplate" -> "AI features have been disabled. \[RightGuillemet]" ]
+    ],
+    SameTest -> MatchQ,
+    TestID   -> "LLMRequestsBlockedFailure-FallbackText"
+]
+
 VerificationTest[
     Block[ { Wolfram`Chatbook`Common`allowExternalLLMConnectivityQ = False &, Wolfram`Chatbook`Common`resolveAutoSettings },
         Wolfram`Chatbook`Common`resolveAutoSettings[ ___ ] := Throw[ "UnexpectedSettingsResolution" ];
@@ -211,6 +245,28 @@ VerificationTest[
     { AgentEvaluate::ExternalLLMConnectivityDisabled },
     SameTest -> MatchQ,
     TestID   -> "AgentEvaluate-ExternalLLMConnectivityDisabled"
+]
+
+VerificationTest[
+    Block[ { $AllowInternet = False, Wolfram`Chatbook`Common`resolveAutoSettings },
+        Wolfram`Chatbook`Common`resolveAutoSettings[ ___ ] := Throw[ "UnexpectedSettingsResolution" ];
+        Wolfram`Chatbook`AgentEvaluate[ "Hello" ]
+    ],
+    Failure[ "Chatbook`AgentEvaluate::InternetDisabled" | "AgentEvaluate::InternetDisabled", _ ],
+    { AgentEvaluate::InternetDisabled },
+    SameTest -> MatchQ,
+    TestID   -> "AgentEvaluate-InternetDisabled"
+]
+
+(* LLM requests made outside of a chat (e.g. content suggestions or chat titles) also check before sending anything: *)
+VerificationTest[
+    Block[ { $AllowInternet = False, Wolfram`LLMFunctions`Common`LLMKitCheck },
+        Wolfram`LLMFunctions`Common`LLMKitCheck[ ] := Throw[ "UnexpectedLLMKitCheck" ];
+        Wolfram`Chatbook`Common`catchAlways @ Wolfram`Chatbook`Common`llmKitCheck[ ]
+    ],
+    Failure[ "InternetDisabled", _ ],
+    SameTest -> MatchQ,
+    TestID   -> "LLMKitCheck-InternetDisabled"
 ]
 
 (* ::**************************************************************************************************************:: *)

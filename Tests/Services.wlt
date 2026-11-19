@@ -455,4 +455,19 @@ VerificationTest[
     TestID -> "LLMKitInfoRequest-ExternalLLMConnectivityDisabled"
 ]
 
+(* The same goes for when internet access is not allowed, where the request would only give ServiceSubmit::isrv: *)
+VerificationTest[
+    withLLMKitInfoTest @ Block[ { $AllowInternet = False },
+        {
+            Wolfram`Chatbook`Common`startLLMKitInfoRequest[ ],
+            Wolfram`Chatbook`Services`Private`getLLMKitInfo0[ ],
+            sent,
+            updates,
+            Wolfram`Chatbook`Services`Private`$llmKitInfoRequest
+        }
+    ],
+    { Null, None, 0, 0, None },
+    TestID -> "LLMKitInfoRequest-InternetDisabled"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)

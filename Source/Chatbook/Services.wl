@@ -82,9 +82,9 @@ getLLMKitInfo // endDefinition;
 
 getLLMKitInfo0 // beginDefinition;
 
-(* If external LLM connectivity is disabled, the request would be blocked (with a ServiceExecute::extllm message), so
-   there's no info: *)
-getLLMKitInfo0[ ] := If[ ! allowExternalLLMConnectivityQ[ ],
+(* If LLM requests are blocked (by $AllowExternalLLMConnectivity or $AllowInternet), the request would only issue a
+   message (e.g. ServiceExecute::extllm or ServiceExecute::isrv), so there's no info: *)
+getLLMKitInfo0[ ] := If[ ! llmRequestsAllowedQ[ ],
     None,
     LLMSynthesize;
     (* The response of a request that was sent ahead of time is used instead of sending another one: *)
@@ -102,10 +102,10 @@ getLLMKitInfo0 // endDefinition;
    unless the user is signed in, so this never opens a sign-in dialog. *)
 startLLMKitInfoRequest // beginDefinition;
 
-(* $CloudUserID is None until the cloud connection has been checked, which $CloudConnected does. Nothing is sent if
-   external LLM connectivity is disabled, since the request would be blocked: *)
+(* $CloudUserID is None until the cloud connection has been checked, which $CloudConnected does. Nothing is sent if LLM
+   requests are blocked, since the request would only issue a message: *)
 startLLMKitInfoRequest[ ] :=
-    If[ allowExternalLLMConnectivityQ[ ] && TrueQ @ $CloudConnected, startLLMKitInfoRequest[ $CloudUserID, $CloudBase ] ];
+    If[ llmRequestsAllowedQ[ ] && TrueQ @ $CloudConnected, startLLMKitInfoRequest[ $CloudUserID, $CloudBase ] ];
 
 startLLMKitInfoRequest[ user_String, cloud_String ] /; ! AssociationQ @ $llmKitInfoRequest := (
     LLMSynthesize;
@@ -175,7 +175,10 @@ $llmKitInfoRequestTimeout = 10;
 (*llmKitCheck*)
 llmKitCheck // beginDefinition;
 
+(* If LLM requests are blocked, checking would only issue messages (and might open the LLM Kit dialog), and the request
+   that follows would fail anyway: *)
 llmKitCheck[ ] := LogChatTiming[
+    If[ ! llmRequestsAllowedQ[ ], throwFailureToChatOutput @ llmRequestsBlockedFailure[ ] ];
     getLLMKitInfo[ ];
     Replace[
         Replace[

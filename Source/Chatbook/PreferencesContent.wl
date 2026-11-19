@@ -1511,9 +1511,15 @@ servicesSettingsPanel0 // endDefinition;
 (*getServiceData*)
 getServiceData // beginDefinition;
 
-getServiceData[ ] /; ! allowExternalLLMConnectivityQ[ ] := $Failed;
+(* This check can't be a condition on its own definition, since a definition without arguments always comes first: *)
+getServiceData[ ] := If[ llmRequestsAllowedQ[ ], getServiceData0[ ], $Failed ];
 
-getServiceData[ ] := With[
+getServiceData // endDefinition;
+
+
+getServiceData0 // beginDefinition;
+
+getServiceData0[ ] := With[
     { rawData = Quiet[ ServiceExecute[ "LLMKit", "RawAccess", ProgressReporting -> False ], ServiceExecute::extllm ] },
     If[ AssociationQ @ rawData && Lookup[ rawData, "data", False, AssociationQ ],
         rawData[ "data" ]
@@ -1522,7 +1528,7 @@ getServiceData[ ] := With[
     ]
 ]
 
-getServiceData // endDefinition;
+getServiceData0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

@@ -434,6 +434,33 @@ VerificationTest[
     TestID   -> "AllowExternalLLMConnectivityQ"
 ]
 
+(* Only an explicit False blocks requests, and either setting blocks them: *)
+VerificationTest[
+    Block[ { $AllowInternet, Wolfram`Chatbook`Common`allowExternalLLMConnectivityQ },
+        Table[
+            $AllowInternet = i;
+            Wolfram`Chatbook`Common`allowExternalLLMConnectivityQ[ ] = c;
+            { Wolfram`Chatbook`Common`allowInternetQ[ ], Wolfram`Chatbook`Common`llmRequestsAllowedQ[ ] },
+            { c, { True, False } },
+            { i, { True, False, Automatic } }
+        ]
+    ],
+    { { { True, True }, { False, False }, { True, True } }, { { True, False }, { False, False }, { True, False } } },
+    SameTest -> MatchQ,
+    TestID   -> "LLMRequestsAllowedQ"
+]
+
+(* The preferences don't request the LLM Kit info when internet access is not allowed: *)
+VerificationTest[
+    Block[ { $AllowInternet = False, ServiceExecute },
+        ServiceExecute[ ___ ] := (Message[ ServiceExecute::isrv, "LLMKit" ]; "UnexpectedRequest");
+        Wolfram`Chatbook`Common`getServiceData[ ]
+    ],
+    $Failed,
+    SameTest -> MatchQ,
+    TestID   -> "GetServiceData-InternetDisabledDoesNotRequestOrWarn"
+]
+
 VerificationTest[
     Block[
         {
