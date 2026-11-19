@@ -69,4 +69,22 @@ VerificationTest[
     TestID   -> "ChatbarStateSetterBar-NoWriteOnDisplay"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*makeChatbarChatInputCellContent*)
+
+(* The content's Magnification multiplies by the chatbar magnification, so making the content sets that value (if it
+   isn't set yet) before the content is returned and first formatted, not only in its DynamicModule's Initialization: *)
+VerificationTest[
+    Module[ { calls = { } },
+        Block[ { FE`Evaluate = (AppendTo[ calls, # ]; Null) & },
+            Wolfram`Chatbook`Common`makeChatbarChatInputCellContent[ NotebookObject[ "chatbar-test" ], "" ]
+        ];
+        Cases[ calls, FrontEnd`CurrentValue[ FrontEnd`$FrontEnd, { ___, "Chatbar", key_ }, _ ] :> key, Infinity ]
+    ],
+    { "Magnification", "OpenMinimized" },
+    SameTest -> MatchQ,
+    TestID   -> "ChatbarContent-SettingsBeforeFirstFormat"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)
