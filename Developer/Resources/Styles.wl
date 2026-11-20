@@ -192,7 +192,7 @@ Cell[
         ]
         ,
         (* the following three events swap the effects of Enter and Shift+Enter, PassEventsDown -> False is also needed *)
-        "ReturnKeyDown" :> MathLink`CallFrontEnd @ FrontEnd`CellEvaluate @ EvaluationCell[ ]
+        "ReturnKeyDown" :> If[ FE`Evaluate @ FEPrivate`Runtime`CurrentEnvironment[]["Name"] =!= "Player", MathLink`CallFrontEnd @ FrontEnd`CellEvaluate @ EvaluationCell[ ] ]
         ,
         { "MenuCommand", "HandleShiftReturn" } :> NotebookWrite[ InputNotebook[ ], "\n" ]
         ,

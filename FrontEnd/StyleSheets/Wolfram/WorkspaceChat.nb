@@ -11,7 +11,6 @@ Notebook[
   Cell[StyleData[StyleDefinitions -> "Chatbook.nb"]],
   Cell[
    StyleData["Notebook"],
-   ClosingSaveDialog -> False,
    Saveable -> False,
    WindowToolbars -> { },
    CellInsertionPointCell -> None,
@@ -163,13 +162,14 @@ Notebook[
    ShowChatbar -> False,
    Magnification -> 0.85,
    Background ->
-    LightDarkSwitched[GrayLevel[1], GrayLevel[0.098]]
+    LightDarkSwitched[GrayLevel[1], GrayLevel[0.098]],
+   ClosingSaveDialog -> False
   ],
   Cell[StyleData["CellExpression"], Selectable -> True],
   Cell[
    StyleData["WorkspaceChatStyleSheetInformation"],
    TaggingRules -> <|
-    "WorkspaceChatStyleSheetVersion" -> "2.7.147.4003933787"
+    "WorkspaceChatStyleSheetVersion" -> "2.7.154.4004158355"
    |>
   ],
   Cell[

@@ -81,9 +81,11 @@ Function[ Evaluate @ ToBoxes @ With[ { hoverFrame = color @ "Blue_B1D5E8_607D8F"
 							False ->
 								Button[
 									Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatButtonLabel" ][ #1, #2, #3 ] ],
-									Wolfram`Chatbook`$ChatEvaluationCell = Typeset`cell;
-									SelectionMove[ Typeset`cell, All, Cell ];
-									FrontEndTokenExecute[ Notebooks @ Typeset`cell, "EvaluateCells" ],
+									If[ FE`Evaluate[ FEPrivate`Runtime`CurrentEnvironment[]["Name"] ] =!= "Player",
+										Wolfram`Chatbook`$ChatEvaluationCell = Typeset`cell;
+										SelectionMove[ Typeset`cell, All, Cell ];
+										FrontEndTokenExecute[ Notebooks @ Typeset`cell, "EvaluateCells" ]
+									],
 									Appearance   -> "Suppressed",
 									FrameMargins -> 0,
 									Method       -> "Queued"

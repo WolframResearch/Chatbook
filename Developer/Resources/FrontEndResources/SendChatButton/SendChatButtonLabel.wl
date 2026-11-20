@@ -12,18 +12,36 @@ Function[ Evaluate @ ToBoxes @
 			bgHover        = color @ "Gray100_10",
 			frameHover     = color @ "Blue_B1D5E8_607D8F"
 		},
-		MouseAppearance[
-			Framed[
-				Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatArrow" ][ #1, #3 ] ],
-				Alignment        -> { Center, Center },
-				Background       -> ThemeColor[ "Background" ],
-				BaselinePosition -> Baseline,
-				FrameMargins     -> 0,
-				FrameStyle       -> Dynamic @ If[ CurrentValue[ "MouseOver" ], frameHover, ThemeColor[ "Background" ] ],
-				ImageSize        -> #2,
-				RoundingRadius   -> 4
-			],
-			"LinkHand"
+		PaneSelector[
+			{
+				True ->
+					Framed[
+						Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatArrow" ][ #1, #3 ] ],
+						Alignment        -> { Center, Center },
+						Background       -> ThemeColor[ "Background" ],
+						BaselinePosition -> Baseline,
+						FrameMargins     -> 0,
+						FrameStyle       -> ThemeColor[ "Background" ],
+						ImageSize        -> #2,
+						RoundingRadius   -> 4
+					],
+				False ->
+					MouseAppearance[
+						Framed[
+							Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatArrow" ][ #1, #3 ] ],
+							Alignment        -> { Center, Center },
+							Background       -> ThemeColor[ "Background" ],
+							BaselinePosition -> Baseline,
+							FrameMargins     -> 0,
+							FrameStyle       -> Dynamic @ If[ CurrentValue[ "MouseOver" ], frameHover, ThemeColor[ "Background" ] ],
+							ImageSize        -> #2,
+							RoundingRadius   -> 4
+						],
+						"LinkHand"
+					]
+			},
+			Dynamic @ FEPrivate`SameQ[ FEPrivate`Runtime`CurrentEnvironment[ ][ "Name" ], "Player" ],
+			ImageSize -> Automatic
 		]
 	]
 ]
