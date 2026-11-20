@@ -1349,7 +1349,7 @@ MakeChatInputCellDingbat[ ] :=
 	PaneSelector[
 		{
 			True  -> chatbookIcon[ "ChatIconUser", False ],
-			False -> makeChatInputActiveCellDingbat[ { Left, Center }, 0, { Right, Center } ]
+			False -> playerSelector[ chatbookIcon[ "ChatIconUser", False ], makeChatInputActiveCellDingbat[ { Left, Center }, 0, { Right, Center } ] ]
 		},
 		Dynamic @ TrueQ @ CloudSystem`$CloudNotebooks,
 		ImageSize -> Automatic
@@ -1362,11 +1362,22 @@ MakeChatDelimiterCellDingbat[ ] :=
 	PaneSelector[
 		{
 			True  -> "",
-			False -> makeChatInputActiveCellDingbat[ { Center, Bottom }, 0, { Center, Top } ]
+			False -> playerSelector[ "", makeChatInputActiveCellDingbat[ { Center, Bottom }, 0, { Center, Top } ] ]
 		},
 		Dynamic @ TrueQ @ CloudSystem`$CloudNotebooks,
 		ImageSize -> Automatic
 	];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*playerSelector*)
+(* Shows `player` in Wolfram Player (but not Player Pro), which does not allow chat. The check is evaluated by the front
+   end alone, so it costs no kernel round trip. It is not used in the cloud, which has no FEPrivate`Runtime. *)
+playerSelector[ player_, other_ ] := PaneSelector[
+	{ True -> player, False -> other },
+	Dynamic @ FEPrivate`SameQ[ FEPrivate`Runtime`CurrentEnvironment[ ][ "Name" ], "Player" ],
+	ImageSize -> Automatic
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

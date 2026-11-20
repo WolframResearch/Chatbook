@@ -475,6 +475,8 @@ writePageContent // endDefinition;
 (*EvaluateChatInput*)
 EvaluateChatInput // beginDefinition;
 
+EvaluateChatInput[ ___ ] /; $playerFrontEnd := Null;
+
 EvaluateChatInput[ ] := EvaluateChatInput @ rootEvaluationCell[ ];
 
 EvaluateChatInput[ evalCell_CellObject? chatInputCellQ ] :=

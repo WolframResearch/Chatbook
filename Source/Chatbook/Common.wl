@@ -13,6 +13,7 @@ System`HoldCompleteForm;
 `$mxFlag;
 `$closedChatCellOptions;
 `$cloudNotebooks;
+`$playerFrontEnd;
 `$debug;
 `$maxChatCells;
 `$thisPaclet;
@@ -114,6 +115,13 @@ Needs[ "Wolfram`Chatbook`" ];
 (* ::Section::Closed:: *)
 (*Config*)
 $cloudNotebooks := TrueQ @ CloudSystem`$CloudNotebooks;
+
+(* Wolfram Player (but not Player Pro) does not allow chat. The front end does not change, so the answer is cached once
+   there is one (delayed, so building the MX file does not save it). *)
+$playerFrontEnd := If[ TrueQ @ $Notebooks && ! $cloudNotebooks,
+    $playerFrontEnd = MathLink`CallFrontEnd @ FrontEnd`Value @ FEPrivate`Runtime`CurrentEnvironment[ ][ "Name" ] === "Player",
+    False
+];
 
 $chatIndicatorSymbol  = "\|01f4ac";
 $defaultAppName       = "Default";
