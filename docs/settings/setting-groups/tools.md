@@ -26,6 +26,7 @@ Resolution only occurs when `ToolsEnabled` is `True`; otherwise the setting rema
    - Per-persona tool selections from `getToolSelections` (stored in `"ToolSelections"`)
    - Per-tool selection types from `getToolSelectionTypes` (stored in `"ToolSelectionType"`)
 3. The resolved `$selectedTools` association (filtered by `toolEnabledQ`, which checks each tool's `"Enabled"` key) is stored as `Values @ $selectedTools` (a list of `LLMTool` objects) back into the `"Tools"` key of the settings.
+4. If any of the [notebook tools](#notebook-tools) is selected, `"MaxToolResponses"` is raised to at least 20 (`notebookToolResponses`).
 
 A built-in tool can be version-gated through its `"Enabled"` and `"Hidden"` keys: `FileReader` wraps `FormatUtilities`LLM`ReadFile` and requires Wolfram 15.1, so on earlier versions it stays in `$DefaultTools` (persona tool lists that name it remain valid) but is filtered out by `toolEnabledQ` and hidden from the tool manager UI.
 
@@ -37,6 +38,15 @@ A built-in tool can be version-gated through its `"Enabled"` and `"Hidden"` keys
 - Is not selected when `"AllowSelectionContext"` is not `True` (the user turned notebook content off, e.g. with the sidebar's "Ignore notebook content", which is checked by default). `selectTools` in `Tools/Common.wl` drops it in that case. If it is called anyway, it gives an explanation instead of notebook content, as it does when there is no notebook.
 - Leaves out the "user does not see the output of this tool call" notice that other tool results with images get (`checkMarkdownOutput` in `SendChat.wl`), since the content comes from the user's own notebook.
 - Does not change the chat's own notebook context state (`$contextPrompt`, `$selectionPrompt`, `$contextImages`, and so on).
+
+#### Notebook Tools
+
+The notebook tools (ListNotebooks, OpenNotebook, GetOutline, ReadCells, SearchNotebook, GetSelection, EditInCell, SetCells, InsertCells, DeleteCells, ShowChanges, CloseNotebook; `Tools/NotebookTools.wl`, registered in `Tools/DefaultToolDefinitions/NotebookTools.wl`) let the model edit the user's notebooks through hidden snapshots, which ShowChanges shows to the user as a comparison. See [Notebook Tools](../../notebook-tools.md). Like NotebookReader, they are listed in `$notebookAssistanceBaseSettings["Tools"]` and in no persona's tool list, and:
+
+- Are enabled only in sidebar and Notebook Assistant window chats, and only where `notebookToolsSupportedQ[]` is `True`: Wolfram 16.0 or later, not in the cloud, with a front end that has the agent notebook packets (probed once per session).
+- Are hidden from the tool manager UI, since they are enabled only in those chats.
+- Are dropped with NotebookReader when `"AllowSelectionContext"` is not `True`, since they read the user's notebooks. So the sidebar only offers them when "Ignore notebook content" is unchecked.
+- Raise `"MaxToolResponses"` to at least 20 when any of them is selected, since one edit takes several calls (open, read, edit, fix, show). A larger value is kept.
 
 The `getToolNames` function (`Tools/Common.wl`) determines the initial tool name list through a two-level dispatch:
 
@@ -230,6 +240,10 @@ When `Automatic`, resolved by `chooseToolMethod` (`Settings.wl`): if all resolve
 **Tool Call Parsing:**
 - `"Simple"`: Uses `simpleToolRequestParser`.
 - Other methods: Uses `toolRequestParser`.
+
+**Structured parameters with `"Simple"`:** Simple tool calls give every parameter as text. A parameter whose interpreter takes a list or an object (`RepeatingElement`, `CompoundElement` or `AnySubset`, such as EditInCell's `edits` among the [notebook tools](#notebook-tools)) is listed with the type `JSON`, and `simpleToolRequestParser` reads its value as JSON (`readJSONParameters` in `Tools/Common.wl`) before the tool's interpreter gets it. A value that isn't a JSON array or object stays a string, so the interpreter reports it.
+
+**Native calls with the hybrid tool method:** `toolRequestToString` (`LLMUtilities.wl`) writes a native tool call into the response text as a Simple tool call: lists and associations as compact JSON, and, for a tool with more than one parameter, each value as a `name: value` line, since a native call can leave out optional parameters or give them in any order, and values without names would be assigned in the tool's parameter order. Only the value of a tool's only parameter is written without its name.
 
 **Tool Response Formatting:**
 - `"Service"`: Tool response role is forced to `"Tool"` regardless of `ToolResponseRole`.
@@ -631,7 +645,7 @@ With the responses endpoint (`"RequestMethod" -> "Responses"`), the response to 
 
 ### Chat Mode Overrides
 
-NotebookAssistance mode explicitly sets this to `5` in `$notebookAssistanceBaseSettings`.
+NotebookAssistance mode explicitly sets this to `5` in `$notebookAssistanceBaseSettings`. When any of the [notebook tools](#notebook-tools) is selected, `resolveTools` raises it to at least `20` (`$notebookToolResponses` in `Tools/Common.wl`), since one notebook edit takes several tool calls; a larger value is kept.
 
 ### Integration Points
 

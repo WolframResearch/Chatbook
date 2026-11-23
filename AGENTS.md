@@ -116,7 +116,7 @@ PacletInfo.wl defines three kernel extensions loaded in order:
 - **ChatModes/** — Chat mode extensions (Evaluate, UI, Context, NotebookAssistance, ContentSuggestions)
 - **Formatting/** — LLM response formatting for notebook display (`Formatting.wl` loads the other files, which share its ``Wolfram`Chatbook`Formatting`Private` `` context)
 - **PromptGenerators/** — Prompt augmentation (RelatedDocumentation, WolframAlpha queries, VectorDatabases, NotebookChunking)
-- **Tools/** — LLM tool definitions (WolframLanguageEvaluator, WebSearcher, WebFetcher, DocumentationSearcher, WolframAlpha, NotebookEditor, etc.)
+- **Tools/** — LLM tool definitions (WolframLanguageEvaluator, WebSearcher, WebFetcher, DocumentationSearcher, WolframAlpha, NotebookReader, etc.); the AI Assistant's notebook editing tools are implemented in `Tools/NotebookTools.wl` and registered in `Tools/DefaultToolDefinitions/NotebookTools.wl` (see [notebook-tools.md](docs/notebook-tools.md))
 
 ### Error Handling Pattern
 
@@ -147,6 +147,7 @@ UI colors are `LightDarkSwitched` pairs looked up by name with `color["Name"]` (
 - `Assets/Tokenizers/` — Token counting resources
 - `Assets/AIAssistant/` — AI assistant configurations
 - `Assets/Skills/` — Built-in agent skills (`<name>/SKILL.md` plus supporting files), declared as the `"Skills"` asset in PacletInfo.wl
+- `Assets/CellDiff/` — CellDiff's notebook comparison (a copy of the FE repository's `docs/CellDiff`; keep it in sync), used by the ShowChanges notebook tool, declared as the `"CellDiff"` asset in PacletInfo.wl
 
 ## Code Conventions
 
@@ -184,6 +185,7 @@ Developer documentation lives in the `docs/` directory:
 - **[adding-model-support.md](docs/adding-model-support.md)** — Guide for adding support for new LLM models
 - **[model-support-examples/](docs/model-support-examples/)** — Real-world case studies (e.g., GPT 5.4)
 - **[settings/](docs/settings/)** — Complete settings reference with per-group documentation
+- **[notebook-tools.md](docs/notebook-tools.md)** — The AI Assistant's notebook editing tools: snapshots, the front end packets and the gate, CellDiff, the code check, limits, tests
 - **[docs-todo.md](docs/docs-todo.md)** — Backlog of documentation still needed
 
 ## Special Considerations
