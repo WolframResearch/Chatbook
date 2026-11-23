@@ -1026,6 +1026,168 @@ $$sandboxInput = KeyValuePattern @ { "Segments" -> { __Association }, "Definitio
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*sandboxCheckCells*)
+
+(* The code check of the notebook editing tools: evaluates the boxes of a notebook's code cells in order in the sandbox
+   kernel, never in this kernel, in a context of their own with only System` on $ContextPath (removed afterwards), each
+   for at most cellSeconds, and stops starting cells after seconds. Gives for each cell that ran <| "Result" -> what it
+   gave as InputForm (at most 100 characters; "" for Null, graphics and the like), "Messages" -> their names,
+   "Aborted" |>, or a Failure ("NoSandboxKernel", "TimedOut": the kernel is closed and the next use starts another one,
+   "KernelQuit"). With the positions of cells to evaluate for their outputs (evaluated), each of those also gets
+   "Boxes" -> for each of the cell's statements with a result other than Null (the front end's outputs: one each), its
+   StandardForm boxes as FullForm text (graphics made static: their DynamicBoxes, such as a plot's highlighting, are
+   left out), "" for boxes over $sandboxOutputLength characters; None for no such result or $Aborted. FullForm, since
+   the front end reads a box wrapper with its notebook file parser, which has no /@, /. or @@: InputForm would write
+   a StreamPlot's (f &) /@ m that way. Nothing that the kernel gives back is evaluated here but those strings.
+   Known gap: changes that the checked code makes to System` symbols stay in the sandbox kernel, so they also affect
+   later WolframLanguageEvaluator calls in it. *)
+sandboxCheckCells // beginDefinition;
+
+sandboxCheckCells[ boxes_List, cellSeconds_? Positive, seconds_? Positive ] :=
+    sandboxCheckCells[ boxes, cellSeconds, seconds, { } ];
+
+sandboxCheckCells[ boxes_List, cellSeconds_? Positive, seconds_? Positive, evaluated: { ___Integer } ] := Catch @ Module[
+    { kernel, context, packet },
+    kernel = Quiet @ getSandboxKernel[ ];
+    If[ ! MatchQ[ kernel, _LinkObject ], Throw @ Failure[ "NoSandboxKernel", <| |> ] ];
+    context = "CodeCheck" <> StringDelete[ createUUID[ ], "-" ] <> "`";
+    With[ { cells = boxes, ctx = context, cs = cellSeconds, s = seconds, out = evaluated, max = $sandboxOutputLength },
+        LinkWrite[ kernel, Unevaluated @ EvaluatePacket @ Module[ { end, results, result, values, shown, outBoxes },
+            end = AbsoluteTime[ ] + s;
+            results = Block[ { $Context = ctx, $ContextPath = { "System`" }, $Messages = { } },
+                Table[
+                    If[ AbsoluteTime[ ] > end,
+                        Nothing,
+                        Block[ { $MessageList = { } },
+                            (* the cell's statements in order, each one's value: the boxes give HoldComplete[ s1, s2, ... ], or a
+                               list of those for a list of boxes (lines), and List evaluates the held statements *)
+                            result = CheckAbort[
+                                Catch @ TimeConstrained[
+                                    Catenate[
+                                        Replace[ #, { HoldComplete[ e___ ] :> { e }, other_ :> { other } } ] & /@
+                                            Flatten @ { ToExpression[ cells[[ i ]], StandardForm, HoldComplete ] }
+                                    ],
+                                    cs,
+                                    $Aborted
+                                ],
+                                $Aborted
+                            ];
+                            values = Replace[ result, { list_List :> DeleteCases[ list, Null ], $Aborted -> { }, other_ :> { other } } ];
+                            shown  = Replace[
+                                values /. g: (_Graphics | _Graphics3D | _Image | _Legended | _DynamicModule | _Manipulate) :> Skeleton @ Head @ g,
+                                { one_ } :> one
+                            ];
+                            <|
+                                "Result"   -> If[ MatchQ[ shown, { } | Skeleton[ _ ] | { Skeleton[ _ ].. } ],
+                                    "",
+                                    StringReplace[ StringTake[ ToString[ shown, InputForm ], UpTo[ 100 ] ], "\n" -> " " ]
+                                ],
+                                "Messages" -> DeleteDuplicates[ ToString /@ $MessageList ],
+                                "Aborted"  -> result === $Aborted,
+                                If[ MemberQ[ out, i ],
+                                    "Boxes" -> If[ values === { },
+                                        None,
+                                        Function[ value,
+                                            outBoxes = Quiet @ ToString[
+                                                FullForm[ ToBoxes[ value, StandardForm ] /. g: (_GraphicsBox | _Graphics3DBox) :> RuleCondition[ g /. _DynamicBox -> { } ] ],
+                                                CharacterEncoding -> "PrintableASCII"
+                                            ];
+                                            If[ StringQ @ outBoxes && StringLength @ outBoxes <= max, outBoxes, "" ]
+                                        ] /@ values
+                                    ],
+                                    Nothing
+                                ]
+                            |>
+                        ]
+                    ],
+                    { i, Length @ cells }
+                ]
+            ];
+            Quiet @ Remove[ ctx <> "*" ];
+            results
+        ] ]
+    ];
+    packet = TimeConstrained[ readReturnPacket @ kernel, seconds + cellSeconds + 5, $TimedOut ];
+    Replace[ packet, {
+        $TimedOut :> (Quiet @ LinkClose @ kernel; Failure[ "TimedOut", <| |> ]),
+        (* held, the associations are Association[...] expressions: only this form is evaluated *)
+        HoldComplete[ ReturnPacket[ list: { Association[
+            "Result" -> _String, "Messages" -> { ___String }, "Aborted" -> True | False, Repeated[ "Boxes" -> { __String } | None, { 0, 1 } ]
+        ] ... } ] ] :> list,
+        HoldComplete[ _ReturnPacket ] :> Failure[ "KernelQuit", <| |> ],
+        _ :> (Quiet @ LinkClose @ kernel; Failure[ "KernelQuit", <| |> ])
+    } ]
+];
+
+sandboxCheckCells // endDefinition;
+
+$sandboxOutputLength = 2000000;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*readReturnPacket*)
+
+(* The next ReturnPacket of the kernel, held, or $Failed once the link is gone (the code quit the kernel) *)
+readReturnPacket // beginDefinition;
+
+readReturnPacket[ kernel_LinkObject ] := Module[ { packet },
+    While[ MatchQ[ packet = Quiet @ LinkRead[ kernel, HoldComplete ], HoldComplete[ Except[ _ReturnPacket ] ] ] ];
+    packet
+];
+
+readReturnPacket // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*sandboxTeXBoxes*)
+
+(* The LaTeX formulas of the notebook editing tools: reads each string as LaTeX math with the kernel's TeX import in the
+   sandbox kernel, never in this kernel, since the import evaluates parts of what it reads (\mathrm{...} content as a
+   string literal). Gives for each its boxes in TraditionalForm as InputForm text (letters without their italic style,
+   the import's combining diaeresis of \ddot as the front end's "..", and a space after a function name such as cos,
+   which the import runs into its argument; = stays the import's \[LongEqual], an equation in TraditionalForm, where a
+   plain = would be an assignment), or None for a string that is not math it can read; or a Failure ("NoSandboxKernel",
+   "TimedOut", "KernelQuit"). Nothing that the kernel gives back is evaluated here but that list of strings. *)
+sandboxTeXBoxes // beginDefinition;
+
+sandboxTeXBoxes[ texs: { __String }, seconds_? Positive ] := Catch @ Module[ { kernel, packet },
+    kernel = Quiet @ getSandboxKernel[ ];
+    If[ ! MatchQ[ kernel, _LinkObject ], Throw @ Failure[ "NoSandboxKernel", <| |> ] ];
+    With[ { formulas = texs, names = $texFunctionNames },
+        LinkWrite[ kernel, Unevaluated @ EvaluatePacket @ Block[ { $Messages = { } },
+            Replace[
+                Cases[ Quiet @ ImportString[ "$" <> StringTrim @ # <> "$", "TeX" ], _FormBox, Infinity, 1 ],
+                {
+                    { FormBox[ box_, TraditionalForm ] } :> ToString[
+                        box //. {
+                            StyleBox[ s_String, "TI" ] :> s,
+                            "\:0308" -> "..",
+                            RowBox[ { a___, f: names, b: Except[ " " | "(" ], c___ } ] :> RowBox @ { a, f, " ", b, c }
+                        },
+                        InputForm,
+                        CharacterEncoding -> "PrintableASCII"
+                    ],
+                    _ -> None
+                }
+            ] & /@ formulas
+        ] ]
+    ];
+    packet = TimeConstrained[ readReturnPacket @ kernel, seconds, $TimedOut ];
+    Replace[ packet, {
+        $TimedOut :> (Quiet @ LinkClose @ kernel; Failure[ "TimedOut", <| |> ]),
+        HoldComplete[ ReturnPacket[ list: { (_String | None) .. } ] ] /; Length @ list === Length @ texs :> list,
+        HoldComplete[ _ReturnPacket ] :> Failure[ "KernelQuit", <| |> ],
+        _ :> (Quiet @ LinkClose @ kernel; Failure[ "KernelQuit", <| |> ])
+    } ]
+];
+
+sandboxTeXBoxes // endDefinition;
+
+$texFunctionNames = Alternatives[ "sin", "cos", "tan", "cot", "sec", "csc", "sinh", "cosh", "tanh", "arcsin", "arccos",
+    "arctan", "exp", "log", "ln", "det" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*sandboxEvaluate*)
 sandboxEvaluate // beginDefinition;
 

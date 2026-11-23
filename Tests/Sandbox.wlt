@@ -361,4 +361,125 @@ If[ $localEvaluatorAvailable,
     ]
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*TeX Boxes*)
+
+(* The notebook tools' LaTeX formulas are read in the sandbox kernel: the TeX import evaluates \mathrm{...} content
+   as a string literal, so code smuggled into one runs there, never in this kernel *)
+If[ $localEvaluatorAvailable,
+    VerificationTest[
+        Block[ { Wolfram`ChatbookTests`$texInjected = False },
+            {
+                Wolfram`Chatbook`Common`sandboxTeXBoxes[
+                    { "\\omega=\\sqrt{k/m}", "\\frac{1}{2", "\\mathrm{a\"<>ToString[Wolfram`ChatbookTests`$texInjected = True]<>\"b}", "\\ddot r=-g\\cos\\theta" },
+                    60
+                ],
+                Wolfram`ChatbookTests`$texInjected
+            }
+        ],
+        {
+            {
+                "RowBox[{\"\\[Omega]\", \"\\[LongEqual]\", SqrtBox[RowBox[{\"k\", \"/\", \"m\"}]]}]",
+                None,
+                _String,
+                "RowBox[{OverscriptBox[\"r\", \"..\"], \"\\[LongEqual]\", \"-\", \"g\", \"cos\", \" \", \"\\[Theta]\"}]"
+            },
+            False
+        },
+        SameTest -> MatchQ,
+        TestID   -> "TeXBoxes"
+    ]
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Check Cells*)
+
+(* A cell evaluated for its outputs gives the boxes of each of its statements with a result other than Null, as the
+   front end makes an Output cell for each, whether its boxes are one RowBox or a list of lines; a plot's boxes come
+   without their DynamicBoxes, a legend's included *)
+If[ $localEvaluatorAvailable,
+    VerificationTest[
+        Lookup[
+            Wolfram`Chatbook`Common`sandboxCheckCells[
+                {
+                    RowBox[ { RowBox[ { RowBox[ { "f", "[", "x_", "]" } ], ":=", RowBox[ { "x", "^", "2" } ] } ], "\n", RowBox[ { "f", "[", "3", "]" } ], "\n", RowBox[ { "f", "[", "4", "]" } ] } ],
+                    RowBox[ { RowBox[ { "y", "=", "1" } ], ";" } ],
+                    { RowBox[ { "y", "=", "2" } ], "\n", RowBox[ { "y", "+", "1" } ] },
+                    RowBox[ { "Plot", "[", RowBox[ { RowBox[ { "{", RowBox[ { "x", ",", RowBox[ { "x", "^", "2" } ] } ], "}" } ], ",", RowBox[ { "{", RowBox[ { "x", ",", "0", ",", "1" } ], "}" } ], ",", RowBox[ { "PlotLegends", "->", "Automatic" } ] } ], "]" } ]
+                },
+                20,
+                60,
+                { 1, 2, 3, 4 }
+            ],
+            { "Result", "Boxes" }
+        ],
+        {
+            { "{9, 16}", { "\"9\"", "\"16\"" } },
+            { "", None },
+            { "{2, 3}", { "\"2\"", "\"3\"" } },
+            { "", { s_String /; StringContainsQ[ s, "GraphicsBox" ] && ! StringContainsQ[ s, "DynamicBox" ] } }
+        },
+        SameTest -> MatchQ,
+        TestID   -> "CheckCells-Outputs"
+    ]
+]
+
+(* The boxes are FullForm text: the front end reads them with its notebook file parser, which has no /@ (a StreamPlot's
+   boxes hold (f &) /@ m) *)
+If[ $localEvaluatorAvailable,
+    VerificationTest[
+        Lookup[
+            Wolfram`Chatbook`Common`sandboxCheckCells[
+                { RowBox[ { "Interpretation", "[", RowBox[ { "1", ",", RowBox[ { "Hold", "[", RowBox[ { "Sin", "/@", "x" } ], "]" } ] } ], "]" } ] },
+                20,
+                60,
+                { 1 }
+            ],
+            "Boxes"
+        ],
+        { { s_String /; StringContainsQ[ s, "Hold[Map[Sin, x]]" ] && ! StringContainsQ[ s, "/@" ] } },
+        SameTest -> MatchQ,
+        TestID   -> "CheckCells-OutputsFullForm"
+    ]
+]
+
+(* A cell that runs longer than cellSeconds is aborted, its messages and result left out, and the cells after it
+   still run; cells without outputs to evaluate get no "Boxes" *)
+If[ $localEvaluatorAvailable,
+    VerificationTest[
+        Wolfram`Chatbook`Common`sandboxCheckCells[
+            { RowBox[ { "While", "[", "True", "]" } ], RowBox[ { "1", "+", "1" } ] },
+            1,
+            60
+        ],
+        {
+            <| "Result" -> "", "Messages" -> { }, "Aborted" -> True |>,
+            <| "Result" -> "2", "Messages" -> { }, "Aborted" -> False |>
+        },
+        SameTest       -> MatchQ,
+        TimeConstraint -> 60,
+        TestID         -> "CheckCells-CellAborted"
+    ]
+]
+
+(* No cell starts once the check has taken seconds: the result is cut short where it stopped *)
+If[ $localEvaluatorAvailable,
+    VerificationTest[
+        Lookup[
+            Wolfram`Chatbook`Common`sandboxCheckCells[
+                { RowBox[ { "While", "[", "True", "]" } ], RowBox[ { "1", "+", "1" } ] },
+                2,
+                1
+            ],
+            "Aborted"
+        ],
+        { True },
+        SameTest       -> MatchQ,
+        TimeConstraint -> 60,
+        TestID         -> "CheckCells-TimeBudget"
+    ]
+]
+
 (* :!CodeAnalysis::EndBlock:: *)
