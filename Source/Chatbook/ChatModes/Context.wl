@@ -208,7 +208,7 @@ getSidebarPrompt // beginDefinition;
 
 getSidebarPrompt[ settings_Association ] :=
     If[ TrueQ @ $SidebarChat && TrueQ @ settings[ "AllowSelectionContext" ],
-        Block[ { $includeCellXML = TrueQ @ $notebookEditorEnabled },
+        Block[ { $includeCellXML = False },
             getContextFromSelection[ $evaluationNotebook, settings ]
         ] // LogChatTiming[ "GetWorkspacePrompt" ],
         None
@@ -223,7 +223,7 @@ getWorkspacePrompt // beginDefinition;
 
 getWorkspacePrompt[ settings_Association ] :=
     If[ TrueQ @ $WorkspaceChat && TrueQ @ settings[ "AllowSelectionContext" ],
-        Block[ { $includeCellXML = TrueQ @ $notebookEditorEnabled },
+        Block[ { $includeCellXML = False },
             getContextFromSelection[ $evaluationNotebook, settings ]
         ] // LogChatTiming[ "GetWorkspacePrompt" ],
         None
@@ -1168,7 +1168,7 @@ contextFromSelectionData // beginDefinition;
 contextFromSelectionData[ nbo_NotebookObject, info_, selectionData_Association, settings0_Association ] := Enclose[
     Block[
         {
-            $includeCellXML         = TrueQ @ $notebookEditorEnabled,
+            $includeCellXML         = False,
             (* The context is sent again unchanged in later requests, where relative times would be out of date: *)
             $includeRelativeTimes   = False,
             $notebookMetadataString
@@ -1408,7 +1408,7 @@ readUserNotebook[ settings_, scope_, offset_, { nbo_NotebookObject, info_ } ] :=
             (* Leave the chat's own notebook context state as it is: *)
             $contextImages, $contextPrompt, $selectionPrompt, $lastContextPrompt, $lastSelectionPrompt,
             (* Use the same format as getSidebarPrompt and getWorkspacePrompt: *)
-            $includeCellXML = TrueQ @ $notebookEditorEnabled,
+            $includeCellXML = False,
             $includeRelativeTimes = False
         },
         (* During a chat, serializing cells would otherwise use (and use up) what's left of the chat's token budget, so
