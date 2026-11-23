@@ -28,6 +28,10 @@ HoldComplete[
 $$llmTool  = HoldPattern[ _LLMTool ];
 $$llmToolH = HoldPattern[ LLMTool ];
 
+(* Parameter interpreters whose JSON schema (as LLMFunctions declares it to the service) is an array or an object.
+   The Simple tool method passes their values as JSON text: *)
+$$jsonInterpreter = _RepeatingElement | _CompoundElement | _AnySubset;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Tool Lists*)
@@ -840,6 +844,7 @@ simpleToolRequestParser[ string_String ] := Enclose[
 
         paramNames = Keys @ ConfirmMatch[ tool[ "Parameters" ], KeyValuePattern @ { }, "ParameterNames" ];
         params = ConfirmBy[ parseSimpleToolCallParameterStrings[ paramNames, argString ], AssociationQ, "Parameters" ];
+        params = ConfirmBy[ readJSONParameters[ tool[ "Parameters" ], params ], AssociationQ, "JSONParameters" ];
 
         { callPos, LLMToolRequest[ name, params, callString ] }
     ],
@@ -850,10 +855,35 @@ simpleToolRequestParser // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*readJSONParameters*)
+(* The values of parameters that take structured data (e.g. a list of objects) are written as JSON, which is read
+   here. Values that aren't JSON arrays or objects stay strings, so the interpreter reports them as before: *)
+readJSONParameters // beginDefinition;
+
+readJSONParameters[ parameters_, params_Association ] :=
+    Association @ KeyValueMap[ #1 -> readJSONParameter[ Lookup[ parameters, #1 ], #2 ] &, params ];
+
+readJSONParameters // endDefinition;
+
+
+readJSONParameter // beginDefinition;
+
+readJSONParameter[ KeyValuePattern[ "Interpreter" -> $$jsonInterpreter ], value_String ] :=
+    Replace[ Quiet @ Developer`ReadRawJSONString @ value, Except[ _List | _Association ] :> value ];
+
+readJSONParameter[ _, value_ ] := value;
+
+readJSONParameter // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*parseSimpleToolCallParameterStrings*)
 $$argNameDelimiter = (":"|"="|"-") ~~ " "...;
 
 parseSimpleToolCallParameterStrings // beginDefinition;
+
+(* A tool without parameters, e.g. "/nb_list": *)
+parseSimpleToolCallParameterStrings[ { }, _String ] := <| |>;
 
 parseSimpleToolCallParameterStrings[ { param_String }, argString_String ] :=
     <| param -> StringDelete[ argString, StartOfString ~~ WhitespaceCharacter... ~~ param ~~ $$argNameDelimiter ] |>;
@@ -1153,7 +1183,7 @@ simpleToolSchema[ as_Association ] := Enclose[
         command     = ConfirmBy[ toolShortName @ data, StringQ, "ShortName" ];
         description = ConfirmBy[ data[ "Description" ], StringQ, "Description" ];
         args        = ConfirmMatch[ as[ "Parameters" ], KeyValuePattern @ { }, "Arguments" ];
-        argStrings  = ConfirmMatch[ simpleArgStrings @ args, { __String }, "ArgStrings" ];
+        argStrings  = ConfirmMatch[ simpleArgStrings @ args, { ___String }, "ArgStrings" ];
 
         StringReplace[
             TemplateApply[
@@ -1162,7 +1192,8 @@ simpleToolSchema[ as_Association ] := Enclose[
                     "DisplayName" -> name,
                     "ShortName"   -> command,
                     "Description" -> description,
-                    "Arguments"   -> StringRiffle[ argStrings, "\n" ]
+                    (* a tool without parameters, e.g. ListNotebooks: *)
+                    "Arguments"   -> If[ argStrings === { }, "\tnone", StringRiffle[ argStrings, "\n" ] ]
                 |>
             ],
         "\n\n" -> "\n"
@@ -1212,6 +1243,9 @@ simpleArgString[ name_String, type_String, _Missing, required_ ] :=
 
 simpleArgString[ name_String, type_String, help_String, required_ ] :=
     StringRiffle @ { name, "-", help, If[ required === False, "(" <> type <> ", optional)", "("<>type<>")" ] };
+
+simpleArgString[ name_String, $$jsonInterpreter, help_, required_ ] :=
+    simpleArgString[ name, "JSON", help, required ];
 
 simpleArgString[ name_String, type: Except[ _String ], help_, required_ ] :=
     simpleArgString[ name, "String", help, required ];
