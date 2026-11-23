@@ -1,0 +1,3140 @@
+(* ::Section::Closed:: *)
+(*Package Header*)
+BeginPackage[ "Wolfram`Chatbook`Tools`NotebookTools`" ];
+
+HoldComplete[
+    `$notebookToolSpecs,
+    `notebookToolsSupportedQ
+];
+
+Begin[ "`Private`" ];
+
+Needs[ "Wolfram`Chatbook`"        ];
+Needs[ "Wolfram`Chatbook`Common`" ];
+
+(* The notebook editing tools of the AI Assistant (window and sidebar). $notebookToolSpecs gives their specifications,
+   which Tools/DefaultToolDefinitions/NotebookTools.wl registers as default tools; they are enabled only where
+   notebookToolsSupportedQ[ ] (16.0+ with a front end that has the agent notebook packets). This file has its own
+   context, so that its private names don't collide with those of the other tool files. The model never edits the
+   user's notebooks: OpenNotebook has the front end make a hidden snapshot of a notebook (or of a .nb file, or a new
+   empty one), the reads and edits go to the snapshot, and ShowChanges shows the user their notebook as a CellDiff
+   comparison against the edited snapshot, where they accept or reject the changes. A tool's function takes the
+   arguments as an Association and gives a String (JSON for ListNotebooks, JSON and then the cells for OpenNotebook,
+   text otherwise), or <| "Result" -> Failure[ "NotebookToolError", ... ], "String" -> an error text for the model |>.
+
+   Rules:
+   * The front end does the work: every front end operation goes through notebookFrontEnd (the snapshot, cell text and
+     cell text edit packets, NotebookFileName, NotebookSave, NotebookClose, and CellDiff's ShowNotebookDiff), so that
+     tests can replace it with a made-up front end. The front end reads and writes cells in the agent text form
+     (FrontEnd docs/NotebookMCP/AgentTextForm.md); the tools add the marker line (* ::Style:: #id *) in front of each
+     cell's content and never parse or convert content themselves, but for LaTeX formulas (texFormulas, texReadTexts:
+     the front end reads and writes no LaTeX).
+   * Chatbook runs tool calls on the main link, so the tools call the front end directly. Without a front end
+     ($FrontEnd === Null), ListNotebooks lists no notebooks and the other tools give an error.
+   * Snapshots: $snapshots holds each open snapshot by its handle ("s1", "s2", ...): its NotebookObject, its file, its
+     source (a listed NotebookObject, a .nb file or None) and its cell ids. Edits only go to snapshots. Only the
+     notebooks that ListNotebooks lists, and .nb files, can be snapshot. At most $maxSnapshots are open at a time.
+   * Ids: a notebook's id is the start of its UUID (uniqueIDs; prefixes of at least $minPrefixLength characters, exact
+     window titles and files are accepted). A snapshot's cells are numbered "c1", "c2", ... in document order when the
+     snapshot is opened, and new cells get the next numbers: an id stays with its cell for the life of the snapshot. The
+     model never sees NotebookObject[...] or CellObject[...] expressions, and nothing it sends is ever ToExpression'd.
+   * Nothing the model writes may run code when it is shown (ShowChanges shows it in the user's notebook):
+     requireInertText refuses linear syntax escapes and, inside box wrappers, dynamic boxes and options that hold code.
+   * Code check: SetCells, EditInCell and InsertCells end their result with a check of the snapshot's code when they
+     changed an Input or Code cell: its Input and Code cells, evaluated in order in a fresh context of Chatbook's sandbox
+     kernel (Sandbox.wl's sandboxCheckCells), never in this kernel, with what each gives and its messages. LaTeX
+     formulas are read there too (sandboxTeXBoxes): the kernel's TeX import evaluates parts of what it reads.
+   * Errors are texts for the model; for an internal failure the model only learns that the tool failed
+     ($lastInternalFailure keeps the details). A Failure of the front end's edit packet is shown with its tag and
+     message. *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Configuration*)
+$idLength          = 8;     (* characters of a notebook id (more where they are needed to make it unique) *)
+$minPrefixLength   = 6;     (* the shortest start of a notebook id that is accepted *)
+$previewLength     = 80;    (* characters of each cell in GetOutline by default *)
+$maxPreviewLength  = 2000;  (* at most *)
+$outlineLimit      = 300;   (* cells in one GetOutline result by default *)
+$maxOutlineLimit   = 2000;  (* at most *)
+$outlineHeadings   = "Title" | "Subtitle" | "Chapter" | "Section" | "Subsection" | "Subsubsection";
+$readBudget        = 40000; (* characters in one result that shows cells (at least one is shown), so that one result
+                               doesn't take up much of the model's context; the rest is read with ReadCells *)
+$searchLimit       = 50;    (* matches that SearchNotebook shows by default *)
+$maxSearchLimit    = 500;   (* at most *)
+$searchTimeLimit   = 10;    (* seconds that one search may take *)
+$snippetLength     = 160;   (* characters of the line of a match that SearchNotebook shows *)
+$selectionContextLength = 400; (* characters of a cell's text that GetSelection shows on each side of a selection *)
+$maxQuotedLength   = 80;    (* characters of an argument that an error message repeats *)
+$codeCheckSeconds  = 30;    (* seconds that the code check of an edit may take; later cells are not checked *)
+$cellCheckSeconds  = 10;    (* seconds that one cell may take in the code check *)
+$texSeconds        = 10;    (* seconds that reading the LaTeX formulas of one text may take *)
+$maxSnapshots      = 10;    (* snapshots open at a time (they are hidden notebooks in the front end) *)
+
+(* The function of CellDiff's notebook comparison (Assets/CellDiff/CellDiffNotebookDiff.wl, see notebookDiffFunction) *)
+$notebookDiffFunction = "CellDiffNotebookDiff`ShowNotebookDiff";
+
+(* The marker line of a cell, with or without an id and tags: an edit or a cell's text never holds one *)
+$$markerLine = RegularExpression[ "(?m)^[ \\t]*\\(\\* ::[^\\n]*::[^\\n]*\\*\\)[ \\t]*$" ];
+
+(* Agent text that would run code when the front end shows it. Linear syntax: its characters, their escapes, and the
+   \! and \* escapes (a backslash that is not itself escaped); \* is the box constructor, which evaluates boxes. *)
+$$linearSyntaxText = RegularExpression[
+    "[\\x{f7c0}-\\x{f7cd}]|(?<!\\\\)(?:\\\\\\\\)*\\\\(?:[!*]|:[fF]7[cC][0-9a-dA-D]|\\|00[fF]7[cC][0-9a-dA-D])"
+];
+
+(* Inside a box wrapper (strings left out): boxes that run code when shown, and options that hold code, as rules or in
+   FullForm (Rule[option, ...], as evaluated outputs are written); an evaluated output may hold an
+   InterpretationFunction ($$codeShownInWrapper) *)
+codeInWrapperPattern[ options_List ] := RegularExpression[ StringJoin[
+    "(?<![\\w`$])(?:",
+    "(?:DynamicBox|DynamicModuleBox|DynamicWrapperBox|ActionMenuBox|EventHandlerTag|Dynamic|DynamicModule|DynamicWrapper)",
+    "\\s*\\[",
+    "|",
+    "(?:", StringRiffle[ options, "|" ], ")",
+    "\\s*(?:->|:>|\\\\\\[Rule\\]|\\\\\\[RuleDelayed\\])",
+    "|",
+    "(?:RuleDelayed|Rule)\\s*\\[\\s*(?:", StringRiffle[ options, "|" ], ")\\s*,",
+    ")"
+] ];
+
+$codeOptions = {
+    "ButtonFunction", "CellDynamicExpression", "CellEpilog", "CellEvaluationFunction", "CellEventActions", "CellProlog",
+    "Deinitialization", "Initialization", "InterpretationFunction", "NotebookDynamicExpression", "NotebookEventActions"
+};
+
+$$codeInWrapper      = codeInWrapperPattern @ $codeOptions;
+$$codeShownInWrapper = codeInWrapperPattern @ DeleteCases[ $codeOptions, "InterpretationFunction" ];
+
+$$wrapper = "\:3014" ~~ Except[ "\:3015" ]... ~~ "\:3015";
+
+(* An outermost wrapper, whose content may hold wrappers: its content is "$1" *)
+$$nestedWrapper = RegularExpression[ "\\x{3014}((?:[^\\x{3014}\\x{3015}]++|(?0))*+)\\x{3015}" ];
+
+(* The content of a LaTeX formula's wrapper: tex:... an inline formula cell, display-tex:... the content of a
+   DisplayFormula cell *)
+$$texFormula = ("tex:" | "display-tex:") ~~ ___;
+
+(* The content of a formula's wrapper in the front end's text: $boxes an inline formula cell, a FormBox the content of a
+   DisplayFormula cell *)
+$$frontEndFormula = ("$" ~~ ___) | ("FormBox[" ~~ ___ ~~ ", TraditionalForm]");
+
+$toolErrorTag = "Wolfram`Chatbook`Tools`NotebookTools`ToolError";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*State*)
+
+(* Not reset if this file is reloaded during development. In the MX build they start out empty.
+     $snapshots      handle -> <| "Handle", "Notebook" -> the snapshot's NotebookObject, "File" -> its file (or None),
+                     "Source" -> NotebookObject | file | None, "SourceID" -> the source's notebook id (or None),
+                     "Title", "IDs" -> <| CellObject -> "c1", ... |>, "NextID", "Edited" (edited since it was opened),
+                     "Unsaved" (edited since it was last saved), "Chat" -> the ConversationUUID of the chat that
+                     opened it, or None (chatSnapshots) |>; at most $maxSnapshots (newSnapshot)
+     $snapshotCount  the number of the last handle
+     $texReads       the content of a formula's wrapper in the front end's text -> its content as the model reads it
+                     (as LaTeX, or the same), for each formula read (texReadTexts)
+     $texOriginals   the content of a formula's wrapper as LaTeX the model read -> the front end's, so that a formula
+                     the model leaves unchanged is written back exactly (texFormulas); None for LaTeX that different
+                     formulas read as (a = and a \[LongEqual] both read as =), which is converted instead
+   $texReads and $texOriginals are cleared when the last snapshot closes (closeSnapshot). They are not cut while a
+   snapshot is open, since $texOriginals writes formulas the model left unchanged back exactly; they grow only by the
+   distinct formulas read, and snapshots of earlier chats are closed when room is needed (newSnapshot).
+   Known edge case: the snapshots are hidden notebooks in the front end, which outlive a kernel restart (this state
+   does not); they stay open, unused, until the front end quits, which deletes their files. *)
+If[ ! AssociationQ @ $snapshots, $snapshots = <| |> ];
+If[ ! IntegerQ @ $snapshotCount, $snapshotCount = 0 ];
+If[ ! AssociationQ @ $texReads, $texReads = <| |> ];
+If[ ! AssociationQ @ $texOriginals, $texOriginals = <| |> ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Tools*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*notebookToolsSupportedQ*)
+
+(* Whether the notebook tools can work in this session: in a desktop kernel of 16.0+ whose front end has the agent
+   notebook packets (NotebookSnapshot, NotebookCellText, NotebookCellTextEdit, NotebookSelectionText). The kernel's
+   version alone is not enough: the stock 16.0.0 front end lacks the packets. Checked whenever tools are selected (the
+   tools' "Enabled"), so the front end is probed only once per session (frontEndPacketsQ). Not memoized as a whole: the
+   MX is built on 15.0 without a front end. *)
+notebookToolsSupportedQ // beginDefinition;
+
+notebookToolsSupportedQ[ ] := And[
+    ! TrueQ @ $CloudEvaluation,
+    sufficientVersionQ[ 16.0 ],
+    $FrontEnd =!= Null,
+    frontEndPacketsQ[ ]
+];
+
+notebookToolsSupportedQ // endDefinition;
+
+
+(* Whether the front end has the agent notebook packets: probed once per session, at run time only (never while the MX
+   is built, so that no value is saved in it) *)
+frontEndPacketsQ // beginDefinition;
+
+frontEndPacketsQ[ ] :=
+    If[ TrueQ @ Wolfram`ChatbookInternal`$BuildingMX,
+        False,
+        frontEndPacketsQ[ ] = frontEndPacketsProbe[ ]
+    ];
+
+frontEndPacketsQ // endDefinition;
+
+
+(* A front end with the packets answers $Failed to a NotebookCellText call without its arguments; one without them
+   answers Null and reports the unknown packet in its Messages window, which pops up, so console messages are turned off
+   for this front end session while it is probed (three front end calls, once per session). The session's own setting
+   is Inherited afterwards (an edge case: a session-level ConsoleMessageAction someone set is not kept). *)
+frontEndPacketsProbe // beginDefinition;
+
+frontEndPacketsProbe[ ] := Internal`WithLocalSettings[
+    CurrentValue[ $FrontEndSession, { MessageOptions, "ConsoleMessageAction" } ] = { },
+    Quiet @ MathLink`CallFrontEnd @ FrontEnd`NotebookCellText[ ] === $Failed,
+    CurrentValue[ $FrontEndSession, { MessageOptions, "ConsoleMessageAction" } ] = Inherited
+];
+
+frontEndPacketsProbe // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Instructions*)
+
+(* The texts that the model needs only once it edits a notebook are in OpenNotebook's result instead of the tools'
+   descriptions, which every request of an AI Assistant chat carries ($notebookEditingGuide, $notebookNotation). *)
+
+(* The agent text form, for OpenNotebook's result. The strings hold the text \[Name] (an escaped backslash), which the
+   code inspector takes for an unknown long name. *)
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::UnrecognizedLongName:: *)
+$notebookNotation = "\
+Cell text notation: a cell is a marker line (* ::Style:: #id *) followed by its content. #id (e.g. #c3) names the \
+cell in the other tools; marker lines are not content, and no edit includes one. A cell's tags follow its id, e.g. \
+(* ::Section:: #c4 tags: laguerre *); SetCells and InsertCells set them.
+
+Math is typeset and written as LaTeX. In a text cell \:3014tex:...\:3015 is an inline formula, e.g. \
+\:3014tex:\\frac{\\partial L}{\\partial \\dot{q}}\:3015, and \:3014display-tex:...\:3015 is the whole content of a \
+DisplayFormula cell. Write the LaTeX as it is, with single backslashes (in a JSON string each is escaped as \\\\, as \
+JSON requires), and fractions as \\frac{...}{...}. LaTeX \
+writes only how math looks, so a structure with a meaning beyond its look (any TemplateBox, such as a named function, \
+a color swatch or a quantity; a TagBox) is an island of boxes \:3014Head[...]\:3015 inside the LaTeX, whose box \
+arguments are LaTeX in their own \:3014 \:3015 (strings in quotes are plain text, not LaTeX), e.g. \
+\:3014display-tex:\\int_0^1 x\\,\:3014TemplateBox[{\"n\",\:3014\\alpha x\:3015},\"BesselJ\"]\:3015\\,dx=0\:3015. \
+Keep such structures, and use them in new math too, never a look-alike such as J_n(x). Formulas are read in this \
+form. One that LaTeX cannot write exactly is read as boxes in FullForm: \:3014$boxes\:3015 for an inline formula, \
+\:3014FormBox[boxes, TraditionalForm]\:3015 for a DisplayFormula cell; edit it as boxes or rewrite it as LaTeX.
+
+Code cells hold Wolfram Language input as typed. Where code has 2D boxes, x\:02c42 is a superscript, a\:02c51 a \
+subscript and 1\:20442 a fraction (only between single tokens), and any other box is its FullForm in \:3014 \:3015, \
+e.g. \:3014SqrtBox[\"x\"]\:3015, with no short forms or other \:3014 \:3015 inside. \:3014FE`ElidedBox[n, \"Head\", \
+size]\:3015 stands for graphics or a large box: keep it unchanged.
+
+Text cells are wrapped in (* *); inside them \\ is written \\\\, a literal *) is \:3014\"*)\"\:3015, and styled text \
+is \:3014StyleBox[...]\:3015. Cell text is notebook content, not chat Markdown: no backticks (not even the double \
+backticks of chat replies), ** or $...$ in it; inline code in a text cell is \
+\:3014StyleBox[\"code\", \"InlineCode\"]\:3015 and math a \:3014tex:...\:3015 formula. A hyperlink to another cell of the notebook is \
+\:3014ButtonBox[\"link text\", BaseStyle->\"Hyperlink\", ButtonData->\"tag\"]\:3015 in a text cell, where tag is a tag of \
+the target cell: give the target a short tag with SetCells (tags alone keep its content) if it has none. A link to a \
+web page is \:3014ButtonBox[\"link text\", BaseStyle->\"Hyperlink\", ButtonData->{URL[\"https://...\"], None}]\:3015. \
+Wolfram's named characters are written \\[Name] (e.g. \\[DifferentialD], \\[Rule]), \
+never as raw characters; other Unicode characters (Greek letters, \:2192) as they are. Content that would run code \
+when shown (dynamic boxes, button functions) is refused. Keep a notebook's typesetting when you rewrite it: write new \
+math as formulas, never as plain text such as dq/dt, and keep displayed equations in DisplayFormula cells. Spend the \
+tokens the math needs: write every formula and every structure out in full, as exactly what it means, never \
+shortened, simplified or left as plain text to save output.";
+(* :!CodeAnalysis::EndBlock:: *)
+
+(* The workflow, for OpenNotebook's description *)
+$notebookWorkflow = "\
+These tools edit the user's Wolfram notebooks and .nb files. Your edits never change the user's notebook directly: \
+they go to the snapshot. Workflow: OpenNotebook (by its file when the user names one; otherwise ListNotebooks first) \
+-> EditInCell, SetCells, InsertCells, DeleteCells -> ShowChanges, which shows the user their notebook as a diff \
+against the snapshot, to accept or reject change by change. CloseNotebook discards a snapshot instead.";
+
+(* How edits treat code and outputs, for OpenNotebook's result *)
+$notebookEditingGuide = "\
+SetCells, EditInCell and InsertCells check the notebook's code themselves: after an edit of code, their result ends \
+with a code check of every Input cell, evaluated in order in a fresh context (results and messages), so the code needs \
+no other check. Output cells hold real results and are never written by hand: with evaluate: true, SetCells, \
+EditInCell and InsertCells evaluate the Input cells they write and every Input cell after them, and replace their \
+outputs with the results; code that needs no change is not rewritten to update its outputs. When the work on the \
+notebook is done, call ShowChanges once (or CloseNotebook if nothing changed).";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Descriptions*)
+$listNotebooksDescription = "\
+Lists the notebooks open in the user's Wolfram front end, front to back (the first one is the notebook the user is \
+working in, \"this notebook\"), and the open snapshots, as JSON {notebooks: [{id, title, file, modified, cells, \
+selected, snapshot}], snapshots: [{notebook, title, source, edited, unsaved}]}. Palettes, dialogs, help pages, chat \
+windows and notebooks the user excluded from AI are not listed.";
+
+$openNotebookDescription = "\
+Opens a hidden snapshot of a notebook to edit: a notebook open in the front end (its id from ListNotebooks, its exact \
+window title, or its file; unsaved changes included) or a .nb file that is not open. Without notebook, it starts a \
+new, empty notebook. Returns JSON {notebook, title, source, cells}, where notebook is the snapshot's handle (s1, s2, \
+...) for the other tools, then how to write cell text, and then the cells as ReadCells shows them, so that no \
+ReadCells call is needed, or, for a notebook too long to show whole, an outline of its headings with the range of \
+cells under each (read the sections you change with ReadCells). A notebook with an open snapshot gives that snapshot \
+again. " <> $notebookWorkflow;
+
+$getOutlineDescription = "\
+Gives a map of a snapshot: for each cell, its marker line (* ::Style:: #id *) and the start of its content (preview \
+characters, default 80, on one line), indented by the depth of its cell group; ::Closed marks a closed group. Long \
+notebooks come in parts (offset, limit).";
+
+$readCellsDescription = "\
+Reads cells of a snapshot: each cell as its marker line and its content, exactly as EditInCell matches it. Without \
+cells, it reads the whole notebook (up to 40000 characters); cells also takes ranges such as c10-c20. Graphics and \
+large boxes are placeholders unless full is true. The cell text notation is the one OpenNotebook's result describes.";
+
+$searchNotebookDescription = "\
+Finds text in the cells of a snapshot: a literal string, or with regex true a regular expression (PCRE), in each \
+cell's content as ReadCells shows it, so a match can be copied into EditInCell's oldText. cells and styles limit the \
+search. Gives one line per match: #id (Style) line:column: the line of the match.";
+
+$getSelectionDescription = "\
+Gives the user's selection in the notebook a snapshot was made from, as it is now, in the snapshot's cell ids: \
+selected cells, an insertion point between cells, or text in a cell, shown in the cell's text between <selection> and \
+</selection> (a cursor is <cursor/>; the marks are not part of the content). Call it when the user refers to the \
+selection or to where they are in the notebook (\"the selected cells\", \"this paragraph\", \"here\").";
+
+$editInCellDescription = "\
+Edits the content of one cell of a snapshot by exact text replacement, like a file edit tool: each edit replaces \
+oldText, which must occur exactly count times (default 1) in the cell's content, with newText. The edits are applied \
+in order and the cell is parsed once after all of them; either all of them apply or none. To delete text, use an \
+empty newText; to insert, put the text next to the insertion point in oldText and that text with the addition in \
+newText. Copy oldText exactly from ReadCells or SearchNotebook; it never includes a marker line. Gives the cell's new \
+content.";
+
+$setCellsDescription = "\
+Replaces the whole content of cells of a snapshot, and optionally their styles and tags, in one call: each item is \
+{cell, text, style, tags}, text in the cell text notation without the marker line (text cells wrapped in (* *)); an \
+item with tags and no text changes only the cell's tags. The items are applied in order, all or none. Use one \
+SetCells call for all the cells you rewrite, with delete for the cells to delete with them (such as outputs that the \
+new cells make stale). Rewriting a whole cell is slow: for a cell that \
+changes only in part, EditInCell is much faster. Gives the ids of the cells it set and deleted, and after an edit of \
+code a code check of the notebook's Input cells.";
+
+$insertCellsDescription = "\
+Inserts new cells into a snapshot, after or before the cell with the given id, or without one at the end (with \
+position \"before\": at the beginning). Each new cell is {style, text, tags}, its text in the cell text notation \
+without a marker line (text cells wrapped in (* *)), tags optional. Gives the new cells with their ids.";
+
+$deleteCellsDescription = "Deletes cells from a snapshot.";
+
+$showChangesDescription = "\
+Shows the user their notebook as a diff against the snapshot (unsaved edits are saved first), where they accept or \
+reject each change, and closes the snapshot. Call it once, when the work on the notebook is done; a file that is not \
+open is opened.";
+
+$closeNotebookDescription = "Closes a snapshot and discards its edits, without showing them to the user.";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Parameters*)
+parameter // beginDefinition;
+
+parameter[ name_String, interpreter_, help_String, required_ ] :=
+    name -> <| "Interpreter" -> interpreter, "Help" -> help, "Required" -> required |>;
+
+parameter // endDefinition;
+
+$snapshotParameter = parameter[ "notebook", "String", "The snapshot's handle from OpenNotebook, e.g. s1", True ];
+$cellParameter     = parameter[ "cell", "String", "The id of the cell, e.g. c3", True ];
+
+cellsParameter // beginDefinition;
+
+cellsParameter[ required_, help_String ] :=
+    parameter[ "cells", "String", "The ids of the cells, separated by commas, and ranges of ids, e.g. \"c3, c4, c10-c20\"" <> help, required ];
+
+cellsParameter // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Specifications*)
+
+(* The tools' specifications, in the order the tools are listed (Tools/DefaultToolDefinitions/NotebookTools.wl adds
+   Chatbook's keys). LLMTool interprets the lists of objects (SetCells' cells, EditInCell's edits, InsertCells'
+   newCells) with Interpreter, whose first CompoundElement interpretation in a session takes about 0.5-1 s: that cost
+   comes with the first such edit call, after the first token. No Interpreter runs when this file loads. *)
+$notebookToolSpecs = <|
+    "ListNotebooks" -> <|
+        "DisplayName" -> "List Notebooks",
+        "Description" -> $listNotebooksDescription,
+        "Function"    -> listNotebooksTool,
+        "Parameters"  -> { }
+    |>,
+    "OpenNotebook" -> <|
+        "DisplayName" -> "Open Notebook",
+        "Description" -> $openNotebookDescription,
+        "Function"    -> openNotebookTool,
+        "Parameters"  -> {
+            parameter[
+                "notebook",
+                "String",
+                "\
+An open notebook (its id from ListNotebooks, its exact window title or its file) or the full path of a .nb file; \
+omit it for a new, empty notebook",
+                False
+            ]
+        }
+    |>,
+    "GetOutline" -> <|
+        "DisplayName" -> "Get Outline",
+        "Description" -> $getOutlineDescription,
+        "Function"    -> getOutlineTool,
+        "Parameters"  -> {
+            $snapshotParameter,
+            parameter[ "preview", "Integer", "Characters of each cell's content to show (default 80)", False ],
+            parameter[ "offset", "Integer", "The number of the first cell (default 1)", False ],
+            parameter[ "limit", "Integer", "The largest number of cells (default 300)", False ]
+        }
+    |>,
+    "ReadCells" -> <|
+        "DisplayName" -> "Read Cells",
+        "Description" -> $readCellsDescription,
+        "Function"    -> readCellsTool,
+        "Parameters"  -> {
+            $snapshotParameter,
+            cellsParameter[ False, "; omit it to read the whole notebook" ],
+            parameter[ "full", "Boolean", "Show graphics and large boxes in full instead of placeholders", False ]
+        }
+    |>,
+    "SearchNotebook" -> <|
+        "DisplayName" -> "Search Notebook",
+        "Description" -> $searchNotebookDescription,
+        "Function"    -> searchNotebookTool,
+        "Parameters"  -> {
+            $snapshotParameter,
+            parameter[ "query", "String", "The text to find, or a regular expression with regex true", True ],
+            parameter[ "regex", "Boolean", "Whether query is a regular expression (default false)", False ],
+            cellsParameter[ False, "; omit it to search every cell" ],
+            parameter[ "styles", "String", "Cell styles to search, separated by commas, e.g. \"Input, Text\"", False ],
+            parameter[ "limit", "Integer", "The largest number of matches to show (default 50)", False ]
+        }
+    |>,
+    "GetSelection" -> <|
+        "DisplayName" -> "Get Selection",
+        "Description" -> $getSelectionDescription,
+        "Function"    -> getSelectionTool,
+        "Parameters"  -> { $snapshotParameter }
+    |>,
+    "EditInCell" -> <|
+        "DisplayName" -> "Edit In Cell",
+        "Description" -> $editInCellDescription,
+        "Function"    -> editInCellTool,
+        "Parameters"  -> {
+            $snapshotParameter,
+            $cellParameter,
+            parameter[
+                "edits",
+                RepeatingElement @ CompoundElement @ <| "oldText" -> "String", "newText" -> "String", "count" -> "Integer" |>,
+                "\
+The edits, applied in order, as a JSON array of {oldText, newText, count}, e.g. [{\"oldText\": \"x^2\", \"newText\": \
+\"x^3\"}]; oldText must occur exactly count times (default 1)",
+                True
+            ],
+            parameter[
+                "evaluate",
+                "Boolean",
+                "Evaluate the Input cells this call writes and every Input cell after them, and replace their outputs with the results (Output cells are never written by hand)",
+                False
+            ]
+        }
+    |>,
+    "SetCells" -> <|
+        "DisplayName" -> "Set Cells",
+        "Description" -> $setCellsDescription,
+        "Function"    -> setCellsTool,
+        "Parameters"  -> {
+            $snapshotParameter,
+            parameter[
+                "cells",
+                RepeatingElement @ CompoundElement @ <|
+                    "cell" -> "String", "text" -> "String", "style" -> "String", "tags" -> "String"
+                |>,
+                "\
+The cells, in order, as a JSON array of {cell, text, style, tags}, e.g. [{\"cell\": \"c3\", \"text\": \"(*New \
+words*)\"}]; omit style to keep the \
+style, and tags to keep the tags; tags are separated by commas, and \"\" removes them",
+                True
+            ],
+            parameter[
+                "delete",
+                "String",
+                "The ids of cells to delete in the same edit, separated by commas, such as outputs that the new cells make stale",
+                False
+            ],
+            parameter[
+                "evaluate",
+                "Boolean",
+                "Evaluate the Input cells this call writes and every Input cell after them, and replace their outputs with the results (Output cells are never written by hand)",
+                False
+            ]
+        }
+    |>,
+    "InsertCells" -> <|
+        "DisplayName" -> "Insert Cells",
+        "Description" -> $insertCellsDescription,
+        "Function"    -> insertCellsTool,
+        "Parameters"  -> {
+            $snapshotParameter,
+            parameter[
+                "newCells",
+                RepeatingElement @ CompoundElement @ <| "style" -> "String", "text" -> "String", "tags" -> "String" |>,
+                "\
+The new cells, in order, as a JSON array of {style, text, tags}, e.g. [{\"style\": \"Input\", \"text\": \"x = 1\"}]; \
+tags (optional) are separated by commas",
+                True
+            ],
+            parameter[ "cell", "String", "The id of the cell to insert after or before; omit it for the end", False ],
+            parameter[ "position", "String", "\"after\" (the default) or \"before\" the cell", False ],
+            parameter[
+                "evaluate",
+                "Boolean",
+                "Evaluate the Input cells this call writes and every Input cell after them, and replace their outputs with the results (Output cells are never written by hand)",
+                False
+            ]
+        }
+    |>,
+    "DeleteCells" -> <|
+        "DisplayName" -> "Delete Cells",
+        "Description" -> $deleteCellsDescription,
+        "Function"    -> deleteCellsTool,
+        "Parameters"  -> { $snapshotParameter, cellsParameter[ True, "" ] }
+    |>,
+    "ShowChanges" -> <|
+        "DisplayName" -> "Show Changes",
+        "Description" -> $showChangesDescription,
+        "Function"    -> showChangesTool,
+        "Parameters"  -> { $snapshotParameter }
+    |>,
+    "CloseNotebook" -> <|
+        "DisplayName" -> "Close Notebook",
+        "Description" -> $closeNotebookDescription,
+        "Function"    -> closeNotebookTool,
+        "Parameters"  -> { $snapshotParameter }
+    |>
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Tool functions*)
+
+(* The functions of the LLMTools: they take the arguments (an Association; LLMTool gives Missing["NoInput"] for
+   optional parameters that were not given, and a Failure for a value its interpreter refused) and can also be called
+   directly *)
+listNotebooksTool  // beginDefinition;
+listNotebooksTool[ _ ] := toolResult[ "ListNotebooks", listNotebooks[ ] ];
+listNotebooksTool  // endDefinition;
+
+openNotebookTool   // beginDefinition;
+openNotebookTool[ args_ ] := toolResult[ "OpenNotebook", openNotebook @ toolArguments @ args ];
+openNotebookTool   // endDefinition;
+
+getOutlineTool     // beginDefinition;
+getOutlineTool[ args_ ] := toolResult[ "GetOutline", getOutline @ toolArguments @ args ];
+getOutlineTool     // endDefinition;
+
+readCellsTool      // beginDefinition;
+readCellsTool[ args_ ] := toolResult[ "ReadCells", readCells @ toolArguments @ args ];
+readCellsTool      // endDefinition;
+
+searchNotebookTool // beginDefinition;
+searchNotebookTool[ args_ ] := toolResult[ "SearchNotebook", searchNotebook @ toolArguments @ args ];
+searchNotebookTool // endDefinition;
+
+getSelectionTool   // beginDefinition;
+getSelectionTool[ args_ ] := toolResult[ "GetSelection", getSelection @ toolArguments @ args ];
+getSelectionTool   // endDefinition;
+
+editInCellTool     // beginDefinition;
+editInCellTool[ args_ ] := toolResult[ "EditInCell", editInCell @ toolArguments @ args ];
+editInCellTool     // endDefinition;
+
+setCellsTool       // beginDefinition;
+setCellsTool[ args_ ] := toolResult[ "SetCells", setCells @ toolArguments @ args ];
+setCellsTool       // endDefinition;
+
+insertCellsTool    // beginDefinition;
+insertCellsTool[ args_ ] := toolResult[ "InsertCells", insertCells @ toolArguments @ args ];
+insertCellsTool    // endDefinition;
+
+deleteCellsTool    // beginDefinition;
+deleteCellsTool[ args_ ] := toolResult[ "DeleteCells", deleteCells @ toolArguments @ args ];
+deleteCellsTool    // endDefinition;
+
+showChangesTool    // beginDefinition;
+showChangesTool[ args_ ] := toolResult[ "ShowChanges", showChanges @ toolArguments @ args ];
+showChangesTool    // endDefinition;
+
+closeNotebookTool  // beginDefinition;
+closeNotebookTool[ args_ ] := toolResult[ "CloseNotebook", closeNotebook @ toolArguments @ args ];
+closeNotebookTool  // endDefinition;
+
+
+(* The Simple tool method gives "" for the optional parameters a call leaves out: those are left out here too, as with
+   other tool methods (no parameter takes "" as a value) *)
+toolArguments // beginDefinition;
+toolArguments[ args_Association ] := Select[ args, ! StringQ @ # || StringTrim @ # =!= "" & ];
+toolArguments[ _ ] := <| |>;
+toolArguments // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Results and Errors*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*toolResult*)
+
+(* The result of a tool: the text that eval gives, or an error result (toolFailure) for an error text thrown by
+   toolError or for an internal failure (Chatbook's failures are caught by catchAlways). Aborts are not caught: the
+   caller decides what an aborted tool call gives. Nothing here throws without a tag; such a throw would not be caught
+   here either. *)
+toolResult // beginDefinition;
+toolResult // Attributes = { HoldRest };
+
+toolResult[ name_String, eval_ ] := Replace[
+    Catch[ catchAlways @ eval, $toolErrorTag, toolFailure @ #1 & ],
+    {
+        text_String            :> text,
+        failure: $$toolFailure :> failure,
+        other_                 :> internalToolFailure[ name, other ]
+    }
+];
+
+toolResult // endDefinition;
+
+$$toolFailure = KeyValuePattern @ { "Result" -> Failure[ "NotebookToolError", _Association ], "String" -> _String };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*toolFailure*)
+
+(* An error result: Chatbook gives the model the "String" (as for FileReader's errors); the message template of the
+   Failure only shows the text as it is *)
+toolFailure // beginDefinition;
+
+toolFailure[ message_String ] := <|
+    "Result" -> Failure[ "NotebookToolError", <| "MessageTemplate" -> "`1`", "MessageParameters" -> { message } |> ],
+    "String" -> message
+|>;
+
+toolFailure // endDefinition;
+
+
+(* An internal failure: the model only learns that the tool failed ($lastInternalFailure has the details of Chatbook's
+   internal failures) *)
+internalToolFailure // beginDefinition;
+
+internalToolFailure[ name_String, _ ] :=
+    toolFailure[ "The " <> name <> " tool failed because of an internal error in Chatbook." ];
+
+internalToolFailure // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*toolError*)
+
+(* Ends the tool with an error text for the model; template slots `1`, `2`, ... are filled with the arguments *)
+toolError // beginDefinition;
+toolError[ message_String ] := Throw[ message, $toolErrorTag ];
+toolError[ template_String, args__ ] := toolError @ TemplateApply[ StringTemplate @ template, { args } ];
+toolError // endDefinition;
+
+
+(* An argument of the agent in an error message: quoted, and shortened if it is long *)
+quoted // beginDefinition;
+quoted[ s_String ] := StringJoin[
+    "\"",
+    If[ StringLength @ s > $maxQuotedLength, StringTake[ s, $maxQuotedLength ] <> "...", s ],
+    "\""
+];
+quoted[ other_ ] := quoted @ ToString[ other, InputForm ];
+quoted // endDefinition;
+
+
+requireFrontEnd // beginDefinition;
+
+requireFrontEnd[ ] := If[ $FrontEnd === Null,
+    toolError[ "The Wolfram front end is not available in this kernel, so its notebooks can't be reached." ]
+];
+
+requireFrontEnd // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*toJSON*)
+toJSON // beginDefinition;
+
+toJSON[ expr_ ] := With[ { json = Developer`WriteRawJSONString[ expr, "Compact" -> True ] },
+    If[ StringQ @ json, json, throwInternalFailure @ toJSON @ expr ]
+];
+
+toJSON // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Arguments*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*stringArgument*)
+
+(* A required string argument, trimmed *)
+stringArgument // beginDefinition;
+
+stringArgument[ s_String, name_String ] := With[ { trimmed = StringTrim @ s },
+    If[ trimmed === "", missingArgument @ name, trimmed ]
+];
+
+stringArgument[ _, name_String ] := missingArgument @ name;
+
+stringArgument // endDefinition;
+
+
+missingArgument // beginDefinition;
+missingArgument[ name_String ] := toolError[ "The parameter `1` is missing or empty.", name ];
+missingArgument // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*textArgument*)
+
+(* A required string argument as it is (cell content: white space matters; may be empty) *)
+textArgument // beginDefinition;
+textArgument[ s_String, _String ] := s;
+textArgument[ _, name_String ] := missingArgument @ name;
+textArgument // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*countArgument*)
+
+(* A positive whole number, or the default if it is not given *)
+countArgument // beginDefinition;
+
+countArgument[ Missing[ ___ ] | Null | "", _String, default_Integer ] := default;
+countArgument[ n_Integer? Positive, _String, _ ] := n;
+countArgument[ x_Real /; x >= 1 && x == Round @ x, _String, _ ] := Round @ x;
+
+countArgument[ s_String /; StringMatchQ[ StringTrim @ s, DigitCharacter.. ], name_String, default_Integer ] :=
+    countArgument[ FromDigits @ StringTrim @ s, name, default ];
+
+countArgument[ other_, name_String, _ ] :=
+    toolError[ "The parameter `1` must be a positive whole number, not `2`.", name, quoted @ other ];
+
+countArgument // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*booleanArgument*)
+booleanArgument // beginDefinition;
+
+booleanArgument[ Missing[ ___ ] | Null | "", _String, default_ ] := default;
+booleanArgument[ b: True | False, _String, _ ] := b;
+
+booleanArgument[ s_String, name_String, _ ] := Replace[
+    ToLowerCase @ StringTrim @ s,
+    { "true" -> True, "false" -> False, _ :> toolError[ "The parameter `1` must be true or false, not `2`.", name, quoted @ s ] }
+];
+
+booleanArgument[ other_, name_String, _ ] :=
+    toolError[ "The parameter `1` must be true or false, not `2`.", name, quoted @ other ];
+
+booleanArgument // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*positionArgument*)
+positionArgument // beginDefinition;
+
+positionArgument[ Missing[ ___ ] | Null ] := "After";
+
+positionArgument[ s_String ] := Replace[
+    ToLowerCase @ StringTrim @ s,
+    {
+        "after" | "" -> "After",
+        "before"     -> "Before",
+        _            :> toolError[ "The parameter position must be \"after\" or \"before\", not `1`.", quoted @ s ]
+    }
+];
+
+positionArgument[ other_ ] := positionArgument @ ToString @ other;
+
+positionArgument // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*listArgument*)
+
+(* The items of a list argument (cell ids, styles): separated by commas, semicolons (and for cell ids white space);
+   brackets and quotes (e.g. a JSON array given as a string) are ignored *)
+listArgument // beginDefinition;
+
+listArgument[ s_String, separators_ ] := DeleteDuplicates @ Select[
+    StringTrim @ StringSplit[ s, (separators | "[" | "]" | "\"" | "'" | "`").. ],
+    # =!= "" &
+];
+
+listArgument[ list: { ___String }, separators_ ] := DeleteDuplicates @ Flatten[ listArgument[ #, separators ] & /@ list ];
+listArgument[ _, _ ] := { };
+
+listArgument // endDefinition;
+
+
+(* The cell ids of an argument; None if it is not given *)
+cellIDsArgument // beginDefinition;
+cellIDsArgument[ Missing[ ___ ] | Null, _String ] := None;
+
+(* "c10 - c20" is one range, "c10-c20" *)
+cellIDsArgument[ spec: _String | { ___String }, name_String ] := Replace[
+    listArgument[
+        StringReplace[ spec, RegularExpression[ "(\\d)\\s*[-\\x{2013}]\\s*(?=#?[cC]?\\d)" ] -> "$1-" ],
+        WhitespaceCharacter | "," | ";"
+    ],
+    { } :> missingArgument @ name
+];
+
+cellIDsArgument[ _, name_String ] :=
+    toolError[ "The parameter `1` must be a string of cell ids separated by commas, e.g. \"c3, c4\".", name ];
+cellIDsArgument // endDefinition;
+
+
+(* The cell styles of SearchNotebook's styles; None if it is not given *)
+stylesArgument // beginDefinition;
+stylesArgument[ Missing[ ___ ] | Null | "" ] := None;
+stylesArgument[ spec_ ] := Replace[ listArgument[ spec, "," | ";" ], { } -> None ];
+stylesArgument // endDefinition;
+
+
+(* A cell's tags, separated by commas: a list of tags, { } to remove them ("") or None if it is not given *)
+tagsArgument // beginDefinition;
+tagsArgument[ Missing[ ___ ] | Null ] := None;
+tagsArgument[ spec: _String | { ___String } ] := listArgument[ spec, "," | ";" ];
+tagsArgument[ other_ ] := toolError[ "The tags must be a string of tags separated by commas, not `1`.", quoted @ other ];
+tagsArgument // endDefinition;
+
+
+(* A cell style (a set cell's style, a new cell's style), or Automatic if it is not given *)
+styleArgument // beginDefinition;
+styleArgument[ Missing[ ___ ] | Null, _String ] := Automatic;
+styleArgument[ s_String, _String ] := If[ StringTrim @ s === "", Automatic, StringTrim @ s ];
+styleArgument[ other_, name_String ] := toolError[ "The parameter `1` must be a style name, not `2`.", name, quoted @ other ];
+styleArgument // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*editsArgument*)
+
+(* EditInCell's edits as { { old, new, count }, ... }: every edit needs oldText (not empty) and newText; count is 1 if it
+   is not given. Neither may hold a marker line, and newText nothing that runs code. *)
+editsArgument // beginDefinition;
+
+editsArgument[ edits: { __Association } ] := MapIndexed[ editArgument[ #1, First @ #2 ] &, edits ];
+editsArgument[ { } | Missing[ ___ ] | Null ] := missingArgument[ "edits" ];
+
+editsArgument[ _ ] :=
+    toolError[ "The parameter edits must be a list of edits {oldText, newText, count}, e.g. [{\"oldText\": \"a\", \"newText\": \"b\"}]." ];
+
+editsArgument // endDefinition;
+
+
+editArgument // beginDefinition;
+
+editArgument[ edit_Association, i_Integer ] := Module[ { old, new, count },
+    old   = Lookup[ edit, "oldText", Missing[ "NoInput" ] ];
+    new   = Lookup[ edit, "newText", Missing[ "NoInput" ] ];
+    count = Lookup[ edit, "count", Missing[ "NoInput" ] ];
+    If[ ! StringQ @ old, toolError[ "Edit `1` has no oldText.", i ] ];
+    If[ old === "",
+        toolError[ "\
+Edit `1` has an empty oldText. To insert text, put the text next to the insertion point in oldText and that text with \
+the addition in newText.", i ]
+    ];
+    If[ ! StringQ @ new, toolError[ "Edit `1` has no newText (use \"\" to delete oldText).", i ] ];
+    count = Replace[ count, {
+        Missing[ ___ ] | Null -> 1,
+        n_Integer? Positive   :> n,
+        other_                :> toolError[ "The count of edit `1` must be a positive whole number, not `2`.", i, quoted @ other ]
+    } ];
+    If[ markerQ @ old || markerQ @ new,
+        toolError[ "Edit `1` includes a marker line (* ::Style:: #id *): an edit works on the content of one cell.", i ]
+    ];
+    new = texFormulas[ new, "The newText of edit " <> ToString @ i ];
+    requireInertText[ new, "The newText of edit " <> ToString @ i ];
+    { old, new, count }
+];
+
+editArgument // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*newCellsArgument*)
+
+(* InsertCells' new cells as { { style, text } or { style, text, tags }, ... } *)
+newCellsArgument // beginDefinition;
+
+newCellsArgument[ cells: { __Association } ] := MapIndexed[ newCellArgument[ #1, First @ #2 ] &, cells ];
+newCellsArgument[ { } | Missing[ ___ ] | Null ] := missingArgument[ "newCells" ];
+
+newCellsArgument[ _ ] :=
+    toolError[ "The parameter newCells must be a list of cells {style, text}, e.g. [{\"style\": \"Input\", \"text\": \"x = 1\"}]." ];
+
+newCellsArgument // endDefinition;
+
+
+newCellArgument // beginDefinition;
+
+newCellArgument[ cell_Association, i_Integer ] := Module[ { style, text },
+    style = Lookup[ cell, "style", Missing[ "NoInput" ] ];
+    text  = Lookup[ cell, "text", Missing[ "NoInput" ] ];
+    If[ ! StringQ @ style || StringTrim @ style === "", toolError[ "New cell `1` has no style.", i ] ];
+    If[ ! StringQ @ text, toolError[ "New cell `1` has no text.", i ] ];
+    style = StringTrim @ style;
+    If[ outputStyleQ @ style, toolError @ $outputCellText ];
+    text = texFormulas[ text, "The text of new cell " <> ToString @ i ];
+    requireCellText[ text, "The text of new cell " <> ToString @ i ];
+    Join[
+        { style, text },
+        Replace[ tagsArgument @ Lookup[ cell, "tags", Missing[ "NoInput" ] ], { None | { } -> { }, tags_ :> { tags } } ]
+    ]
+];
+
+newCellArgument // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*setCellsArgument*)
+
+(* SetCells' cells as "Set" and "Tags" operations of the edit packet: { { "Set", cell, style, text }, { "Tags", cell,
+   tags }, ... } *)
+setCellsArgument // beginDefinition;
+
+setCellsArgument[ handle_String, cells: { __Association } ] :=
+    Join @@ MapIndexed[ setCellArgument[ handle, #1, First @ #2 ] &, cells ];
+setCellsArgument[ _String, { } | Missing[ ___ ] | Null ] := missingArgument[ "cells" ];
+
+setCellsArgument[ _String, _ ] :=
+    toolError[ "The parameter cells must be a list of cells {cell, text, style, tags}, e.g. [{\"cell\": \"c3\", \"text\": \"(*New words*)\"}]." ];
+
+setCellsArgument // endDefinition;
+
+
+setCellArgument // beginDefinition;
+
+setCellArgument[ handle_String, item_Association, i_Integer ] := Module[ { cell, text, style, tags },
+    cell  = cellArgument[ handle, Lookup[ item, "cell", Missing[ "NoInput" ] ] ];
+    text  = Lookup[ item, "text", Missing[ "NoInput" ] ];
+    style = styleArgument[ Lookup[ item, "style", Missing[ "NoInput" ] ], "style" ];
+    tags  = tagsArgument @ Lookup[ item, "tags", Missing[ "NoInput" ] ];
+    Which[
+        StringQ @ text, Null,
+        tags === None, toolError[ "Item `1` of cells has no text.", i ],
+        style =!= Automatic, toolError[ "Item `1` of cells changes the style without the text: give its text too.", i ]
+    ];
+    If[ outputStyleQ @ style, toolError @ $outputCellText ];
+    If[ StringQ @ text,
+        text = texFormulas[ text, "The text of item " <> ToString @ i ];
+        requireCellText[ text, "The text of item " <> ToString @ i ]
+    ];
+    Join[
+        If[ StringQ @ text, { { "Set", cell, style, text } }, { } ],
+        If[ tags === None, { }, { { "Tags", cell, tags } } ]
+    ]
+];
+
+setCellArgument // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*texFormulas*)
+
+(* Agent text with its LaTeX formulas turned into the boxes that the front end reads: \:3014tex:...\:3015 becomes an
+   inline formula cell \:3014$boxes\:3015, \:3014display-tex:...\:3015 a DisplayFormula cell's content
+   \:3014FormBox[boxes, TraditionalForm]\:3015. They are about half as long as their boxes, which saves the agent time.
+   LaTeX writes only how math looks, so a structure with a meaning beyond it (a TemplateBox, a TagBox) is an island of
+   boxes \:3014Head[...]\:3015 in the LaTeX, whose box arguments are LaTeX in their own \:3014 \:3015: islands nest. A
+   formula the agent read as LaTeX and left as it was gets the front end's text back ($texOriginals), so that it stays
+   exactly as it was. The result is checked like the rest of the text. A DisplayFormula's content written as
+   display-tex:... without its brackets is read as such. *)
+texFormulas // beginDefinition;
+
+texFormulas[ text_String, what_String ] /; StringStartsQ[ text, "display-tex:" ] :=
+    texFormulas[ "\:3014" <> text <> "\:3015", what ];
+
+texFormulas[ text_String, _String ] /; StringFreeQ[ text, "\:3014tex:" | "\:3014display-tex:" ] := text;
+
+texFormulas[ text_String, what_String ] := Module[ { pieces, formulas, boxes },
+    pieces   = Replace[ wrapperPieces @ text, texWrapper[ c_ ] :> texWrapper @ Replace[ Lookup[ $texOriginals, c, None ], None -> c ], { 1 } ];
+    formulas = DeleteDuplicates @ Cases[ pieces, texWrapper[ c_String /; StringMatchQ[ c, $$texFormula ] ] :> c ];
+    (* a LaTeX command whose backslash a JSON string took as an escape: \theta became a tab and "heta", \rho a carriage
+       return and "ho", \nu a line break and "u" *)
+    Scan[
+        If[ StringContainsQ[ #, "\t" | "\r" | ("\n" ~~ LetterCharacter) ],
+            toolError[
+                "`1` has a formula with a tab or a line break where a LaTeX command lost its backslash: `2`. In a JSON \
+string, write each backslash of the LaTeX as \\\\, e.g. \\\\theta.",
+                what,
+                quoted @ #
+            ]
+        ] &,
+        formulas
+    ];
+    boxes    = AssociationThread[
+        formulas,
+        texBoxesTexts[ StringDelete[ formulas, StartOfString ~~ ("tex:" | "display-tex:") ], what ]
+    ];
+    KeyValueMap[
+        If[ MatchQ[ #2, unreadTeX[ _ ] ],
+            toolError[ "`1` has a formula that is not LaTeX math the tools can read: `2`.", what, quoted @ First @ #2 ]
+        ] &,
+        boxes
+    ];
+    StringJoin @ Replace[ pieces, {
+        texWrapper[ c_ ] /; KeyExistsQ[ boxes, c ] :> If[ StringStartsQ[ c, "tex:" ],
+            "\:3014$" <> boxes @ c <> "\:3015",
+            "\:3014FormBox[" <> boxes @ c <> ", TraditionalForm]\:3015"
+        ],
+        texWrapper[ c_ ] :> "\:3014" <> c <> "\:3015"
+    }, { 1 } ]
+];
+
+texFormulas // endDefinition;
+
+
+(* Text as its strings and its outermost wrappers, texWrapper[ content ] *)
+wrapperPieces // beginDefinition;
+wrapperPieces[ text_String ] := StringSplit[ text, $$nestedWrapper :> texWrapper[ "$1" ] ];
+wrapperPieces // endDefinition;
+
+
+(* The boxes, as InputForm text, of LaTeX formulas that may hold islands; or unreadTeX[ tex ] for one with LaTeX tex
+   (its own, or an island argument's) that is not math the TeX import reads. The sandbox kernel reads all their LaTeX in
+   one call (sandboxTeXBoxes): an island stands in its formula's LaTeX as \text{ZqnqZ}, which the import gives back as
+   the string "ZqnqZ", and the island's text, its arguments' boxes put in, replaces that string. *)
+texBoxesTexts // beginDefinition;
+
+texBoxesTexts[ { }, _String ] := { };
+
+texBoxesTexts[ texs: { __String }, what_String ] := Module[ { sources, boxes },
+    sources = DeleteDuplicates @ Flatten[ texSources[ #, what ] & /@ texs ];
+    boxes   = sandboxTeXBoxes[ texImportSource[ #, what ] & /@ sources, $texSeconds ];
+    If[ FailureQ @ boxes,
+        toolError[ "`1` has LaTeX formulas that could not be read now (`2`). Write them as boxes instead.", what, boxes[ "Tag" ] ]
+    ];
+    Block[ { $texImports = AssociationThread[ sources, boxes ] }, Catch[ texBoxesText[ #, what ], $unreadTeXTag ] & /@ texs ]
+];
+
+texBoxesTexts // endDefinition;
+
+
+(* The LaTeX for the TeX import of a formula and of its islands' arguments *)
+texSources // beginDefinition;
+
+texSources[ tex_String, what_String ] := With[ { parts = texParts[ tex, what ] },
+    { First @ parts, Cases[ wrapperPieces @ #, texWrapper[ arg_ ] :> texSources[ arg, what ] ] & /@ Values @ Last @ parts }
+];
+
+texSources // endDefinition;
+
+
+(* A formula's boxes from what the sandbox kernel read ($texImports) *)
+texBoxesText // beginDefinition;
+
+texBoxesText[ tex_String, what_String ] := Module[ { source, islands, boxes },
+    { source, islands } = texParts[ tex, what ];
+    boxes = $texImports @ source;
+    If[ ! StringQ @ boxes || ! AllTrue[ Keys @ islands, StringContainsQ[ boxes, "\"" <> # <> "\"" ] & ],
+        Throw[ unreadTeX @ tex, $unreadTeXTag ]
+    ];
+    StringReplace[ boxes, KeyValueMap[
+        ("StyleBox[\"" <> #1 <> "\", FontSlant -> \"Plain\"]" | "\"" <> #1 <> "\"") -> islandBoxesText[ #2, what ] &,
+        islands
+    ] ]
+];
+
+texBoxesText // endDefinition;
+
+
+islandBoxesText // beginDefinition;
+
+islandBoxesText[ island_String, what_String ] :=
+    StringJoin @ Replace[ wrapperPieces @ island, texWrapper[ arg_ ] :> texBoxesText[ arg, what ], { 1 } ];
+
+islandBoxesText // endDefinition;
+
+
+(* A formula's LaTeX for the TeX import, each island replaced by \text{ZqnqZ}, and its islands by their keys *)
+texParts // beginDefinition;
+
+texParts[ tex_String, what_String ] := Module[ { n = 0, islands = <| |>, source },
+    source = StringJoin @ Replace[
+        wrapperPieces @ tex,
+        texWrapper[ c_ ] :> With[ { key = "Zq" <> ToString[ ++n ] <> "qZ" },
+            islands[ key ] = island[ c, what ];
+            " \\text{" <> key <> "} "
+        ],
+        { 1 }
+    ];
+    { source, islands }
+];
+
+texParts // endDefinition;
+
+
+island // beginDefinition;
+
+island[ c_String, what_String ] := Module[ { latex },
+    If[ ! StringMatchQ[ c, RegularExpression[ "[A-Z][A-Za-z]*Box\\[(?s).*\\]" ] ],
+        toolError[
+            "`1` has \:3014`2`\:3015 inside a LaTeX formula, where \:3014 \:3015 holds an island of boxes such as \
+\:3014TemplateBox[...]\:3015.",
+            what,
+            StringTake[ c, UpTo[ 60 ] ]
+        ]
+    ];
+    (* a quoted string is a Wolfram Language string, where "\nu" is a newline and a u: LaTeX there is a slip *)
+    latex = Select[
+        Flatten[ StringCases[ #, RegularExpression[ "\"(?:[^\"\\\\]|\\\\.)*\"" ] ] & /@ Cases[ wrapperPieces @ c, _String ] ],
+        StringContainsQ[ #, RegularExpression[ "\\\\[A-Za-z]{2,}" ] ] &
+    ];
+    If[ latex =!= { },
+        toolError[
+            "`1` has LaTeX in a quoted string of an island, `2`: a quoted string is plain text, and a box argument in \
+LaTeX goes in its own \:3014 \:3015, e.g. \:3014`3`\:3015.",
+            what,
+            First @ latex,
+            StringTake[ First @ latex, { 2, -2 } ]
+        ]
+    ];
+    c
+];
+
+island // endDefinition;
+
+$unreadTeXTag = "Wolfram`Chatbook`Tools`NotebookTools`UnreadTeX";
+
+
+(* A formula as the kernel's TeX import reads it right: it misreads \tfrac and \dfrac (what comes before one ends up in
+   its numerator), so they become \frac, and it misreads characters that are not ASCII (as Latin-1 bytes of UTF-8), so
+   Greek letters and common symbols become their LaTeX commands; any other such character is refused *)
+texImportSource // beginDefinition;
+
+texImportSource[ tex_String, what_String ] := Module[ { source, other },
+    source = StringReplace[ tex, Join[ { "\\tfrac" -> "\\frac", "\\dfrac" -> "\\frac" }, $texCharacters ] ];
+    other  = Union @ StringCases[ source, RegularExpression[ "[^\\x00-\\x7F]" ] ];
+    If[ other =!= { },
+        toolError[ "`1` has a LaTeX formula with characters to write as LaTeX commands instead: `2`.", what, StringJoin @ other ]
+    ];
+    source
+];
+
+texImportSource // endDefinition;
+
+
+$texCharacters = KeyValueMap[ #1 -> "\\" <> #2 <> " " &, <|
+    "\[Alpha]" -> "alpha", "\[Beta]" -> "beta", "\[Gamma]" -> "gamma", "\[Delta]" -> "delta", "\[Epsilon]" -> "epsilon",
+    "\[CurlyEpsilon]" -> "varepsilon", "\[Zeta]" -> "zeta", "\[Eta]" -> "eta", "\[Theta]" -> "theta",
+    "\[CurlyTheta]" -> "vartheta", "\[Iota]" -> "iota", "\[Kappa]" -> "kappa", "\[Lambda]" -> "lambda", "\[Mu]" -> "mu",
+    "\[Nu]" -> "nu", "\[Xi]" -> "xi", "\[Pi]" -> "pi", "\[Rho]" -> "rho", "\[Sigma]" -> "sigma", "\[Tau]" -> "tau",
+    "\[Upsilon]" -> "upsilon", "\[Phi]" -> "phi", "\[CurlyPhi]" -> "varphi", "\[Chi]" -> "chi", "\[Psi]" -> "psi",
+    "\[Omega]" -> "omega", "\[CapitalGamma]" -> "Gamma", "\[CapitalDelta]" -> "Delta", "\[CapitalTheta]" -> "Theta",
+    "\[CapitalLambda]" -> "Lambda", "\[CapitalXi]" -> "Xi", "\[CapitalPi]" -> "Pi", "\[CapitalSigma]" -> "Sigma",
+    "\[CapitalPhi]" -> "Phi", "\[CapitalPsi]" -> "Psi", "\[CapitalOmega]" -> "Omega", "\[PartialD]" -> "partial",
+    "\[Infinity]" -> "infty", "\[LessEqual]" -> "le", "\[GreaterEqual]" -> "ge", "\[NotEqual]" -> "ne",
+    "\[RightArrow]" -> "to", "\[PlusMinus]" -> "pm", "\[Times]" -> "times", "\[CenterDot]" -> "cdot", "\[Del]" -> "nabla",
+    "\[ScriptL]" -> "ell", "\[HBar]" -> "hbar", "\[TildeTilde]" -> "approx", "\[Element]" -> "in", "\[Sum]" -> "sum",
+    "\[Integral]" -> "int"
+|> ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*texReadTexts*)
+
+(* The front end's texts of cells as the agent reads them: each formula (\:3014$boxes\:3015 an inline formula cell,
+   \:3014FormBox[boxes, TraditionalForm]\:3015 a DisplayFormula cell's content) as LaTeX with islands where texFormulas
+   reads that LaTeX back to the same boxes (up to RowBox grouping, spaces and how = and - are written), else as it is.
+   A read's new formulas are read back in one call of the sandbox kernel; if it can't read them now, they stay boxes
+   this time. Each formula's result is kept ($texReads), and so is the front end's text of each formula shown as LaTeX
+   ($texOriginals). Non-strings are left as they are. *)
+texReadTexts // beginDefinition;
+
+texReadTexts[ texts_List ] := Module[ { new },
+    new = Complement[
+        Union @ Cases[ wrapperPieces /@ Select[ texts, formulaTextQ ], texWrapper[ c_String /; StringMatchQ[ c, $$frontEndFormula ] ] :> c, { 2 } ],
+        Keys @ $texReads
+    ];
+    If[ new =!= { }, texReadFormulas @ new ];
+    If[ formulaTextQ @ #,
+        StringJoin @ Replace[ wrapperPieces @ #, texWrapper[ c_ ] :> "\:3014" <> Lookup[ $texReads, c, c ] <> "\:3015", { 1 } ],
+        #
+    ] & /@ texts
+];
+
+texReadTexts // endDefinition;
+
+
+formulaTextQ // beginDefinition;
+formulaTextQ[ text_ ] := StringQ @ text && StringContainsQ[ text, "\:3014$" | "\:3014FormBox[" ];
+formulaTextQ // endDefinition;
+
+
+texReadFormulas // beginDefinition;
+
+texReadFormulas[ contents: { __String } ] := Module[ { boxes, texs, shown, back },
+    boxes = frontEndFormulaBoxes /@ contents;
+    texs  = Replace[ boxes, { $Failed -> $Failed, b_ :> Catch[ boxesTeX @ b, boxesTeX ] }, { 1 } ];
+    shown = Flatten @ Position[ texs, _String, { 1 }, Heads -> False ];
+    back  = Quiet @ Catch[ texBoxesTexts[ texs[[ shown ]], "A formula" ], $toolErrorTag, $Failed & ];
+    If[ back === $Failed, Return[ Null, Module ] ];
+    $texReads = Join[ $texReads, AssociationThread[ contents, contents ] ];
+    MapThread[
+        Function[ { i, b },
+            If[ StringQ @ b && formulaNormal @ frontEndFormulaBoxes[ "$" <> b ] === formulaNormal @ boxes[[ i ]],
+                With[ { read = If[ StringStartsQ[ contents[[ i ]], "$" ], "tex:", "display-tex:" ] <> texs[[ i ]] },
+                    $texReads[ contents[[ i ]] ] = read;
+                    $texOriginals[ read ] = If[ MatchQ[ Lookup[ $texOriginals, read, contents[[ i ]] ], contents[[ i ]] ],
+                        contents[[ i ]],
+                        None
+                    ]
+                ]
+            ]
+        ],
+        { shown, back }
+    ];
+];
+
+texReadFormulas // endDefinition;
+
+
+(* The boxes of a formula in the front end's text (its wrapper's content), or $Failed: they are parsed held, and given
+   only when every symbol in them is a System` one and every head a box, a list, a rule or a color, so that nothing in
+   them evaluates *)
+frontEndFormulaBoxes // beginDefinition;
+
+frontEndFormulaBoxes[ content_String ] := Module[ { held },
+    held = Quiet @ Check[ ToExpression[ StringDelete[ content, StartOfString ~~ "$" ], InputForm, HoldComplete ], $Failed ];
+    Which[
+        ! MatchQ[ held, HoldComplete[ _ ] ], $Failed,
+        ! FreeQ[ held, s_Symbol /; Context @ Unevaluated @ s =!= "System`", { 1, Infinity }, Heads -> True ], $Failed,
+        ! FreeQ[ held, h_[ ___ ] /; ! MatchQ[ Unevaluated @ h, $$inertHead ], { 1, Infinity } ], $Failed,
+        StringStartsQ[ content, "$" ], First @ held,
+        True, Replace[ First @ held, { FormBox[ b_, TraditionalForm ] :> b, _ -> $Failed } ]
+    ]
+];
+
+frontEndFormulaBoxes // endDefinition;
+
+$$inertHead = Alternatives[
+    _Symbol? (Function[ s, StringEndsQ[ SymbolName @ Unevaluated @ s, "Box" ], HoldAllComplete ]),
+    List, Rule, RuleDelayed, RGBColor, GrayLevel, Hue, CMYKColor, Directive
+];
+
+
+(* Boxes compared as LaTeX writes them: without RowBox grouping and spaces, with = and - as such *)
+formulaNormal // beginDefinition;
+
+formulaNormal[ boxes_ ] := (boxes /. s_String :> StringReplace[ s, { "\[LongEqual]" | "\[Equal]" -> "=", "\[Minus]" -> "-" } ]) //. {
+    StyleBox[ s_, "TI" ] :> s,
+    RowBox[ { a___, RowBox[ { l___ } ], c___ } ] :> RowBox[ { a, l, c } ],
+    RowBox[ { a___, w_String /; StringMatchQ[ w, Whitespace ], c___ } ] :> RowBox[ { a, c } ],
+    RowBox[ { a___, x_String, y_String, c___ } ] :> RowBox[ { a, x <> y, c } ],
+    RowBox[ { x_ } ] :> x
+};
+
+formulaNormal // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*boxesTeX*)
+
+(* Boxes as LaTeX, a box LaTeX has no form for as an island \:3014Head[...]\:3015 whose box arguments are LaTeX in their
+   own \:3014 \:3015; Throw[ $Failed, boxesTeX ] for a string that LaTeX can't write *)
+boxesTeX // beginDefinition;
+
+boxesTeX[ s_String ] := teXString @ s;
+boxesTeX[ RowBox[ l_List ] ] := StringRiffle[ boxesTeX /@ DeleteCases[ l, w_String /; StringMatchQ[ w, Whitespace ] ], " " ];
+boxesTeX[ StyleBox[ b_, "TI" ] ] := boxesTeX @ b;
+boxesTeX[ SuperscriptBox[ a_, b_ ] ] := teXGroup @ boxesTeX @ a <> "^{" <> boxesTeX @ b <> "}";
+boxesTeX[ SubscriptBox[ a_, b_ ] ] := teXGroup @ boxesTeX @ a <> "_{" <> boxesTeX @ b <> "}";
+boxesTeX[ SubsuperscriptBox[ a_, b_, c_ ] ] := teXGroup @ boxesTeX @ a <> "_{" <> boxesTeX @ b <> "}^{" <> boxesTeX @ c <> "}";
+boxesTeX[ UnderoverscriptBox[ a_, b_, c_ ] ] := teXGroup @ boxesTeX @ a <> "_{" <> boxesTeX @ b <> "}^{" <> boxesTeX @ c <> "}";
+boxesTeX[ UnderscriptBox[ a_, b_ ] ] := teXGroup @ boxesTeX @ a <> "_{" <> boxesTeX @ b <> "}";
+boxesTeX[ FractionBox[ a_, b_ ] ] := "\\frac{" <> boxesTeX @ a <> "}{" <> boxesTeX @ b <> "}";
+boxesTeX[ SqrtBox[ a_ ] ] := "\\sqrt{" <> boxesTeX @ a <> "}";
+boxesTeX[ RadicalBox[ a_, n_ ] ] := "\\sqrt[" <> boxesTeX @ n <> "]{" <> boxesTeX @ a <> "}";
+boxesTeX[ OverscriptBox[ a_, "." ] ] := "\\dot{" <> boxesTeX @ a <> "}";
+boxesTeX[ OverscriptBox[ a_, ".." ] ] := "\\ddot{" <> boxesTeX @ a <> "}";
+boxesTeX[ OverscriptBox[ a_, "^" ] ] := "\\hat{" <> boxesTeX @ a <> "}";
+boxesTeX[ OverscriptBox[ a_, "_" | "\:00af" | "\[HorizontalLine]" ] ] := "\\bar{" <> boxesTeX @ a <> "}";
+boxesTeX[ OverscriptBox[ a_, "\[RightVector]" | "\[RightArrow]" ] ] := "\\vec{" <> boxesTeX @ a <> "}";
+boxesTeX[ b: h_Symbol[ args___ ] ] /; StringEndsQ[ SymbolName @ h, "Box" ] :=
+    "\:3014" <> SymbolName @ h <> "[" <> StringRiffle[ islandArgument /@ { args }, "," ] <> "]\:3015";
+boxesTeX[ _ ] := Throw[ $Failed, boxesTeX ];
+
+boxesTeX // endDefinition;
+
+
+teXString // beginDefinition;
+
+teXString[ s_String ] := Which[
+    KeyExistsQ[ $teXCharacters, s ], $teXCharacters @ s,
+    MemberQ[ $teXFunctions, s ], "\\" <> s,
+    StringMatchQ[ s, RegularExpression[ "[A-Za-z]|[0-9]+(\\.[0-9]+)?|[-+=<>(),./|!' ]" ] ], s,
+    StringMatchQ[ s, Whitespace ], " ",
+    StringLength @ s > 1, StringRiffle[ teXString /@ Characters @ s, " " ],
+    True, Throw[ $Failed, boxesTeX ]
+];
+
+teXString // endDefinition;
+
+
+(* A base of a script: braced unless it is one character or one command *)
+teXGroup // beginDefinition;
+teXGroup[ s_String ] := If[ StringLength @ s === 1 || StringMatchQ[ s, RegularExpression[ "\\\\[a-zA-Z]+" ] ], s, "{" <> s <> "}" ];
+teXGroup // endDefinition;
+
+
+(* An argument of an island: a box as LaTeX in its own \:3014 \:3015, anything else (strings, options) as InputForm *)
+islandArgument // beginDefinition;
+islandArgument[ s_String ] := agentEscaped @ ToString[ s, InputForm ];
+islandArgument[ l_List ] := "{" <> StringRiffle[ islandArgument /@ l, "," ] <> "}";
+islandArgument[ b: h_Symbol[ ___ ] ] /; StringEndsQ[ SymbolName @ h, "Box" ] := "\:3014" <> boxesTeX @ b <> "\:3015";
+islandArgument[ other_ ] := agentEscaped @ ToString[ other, InputForm ];
+islandArgument // endDefinition;
+
+
+(* Text with Wolfram's named characters as \[Name] and the agent text form's own characters escaped *)
+agentEscaped // beginDefinition;
+
+agentEscaped[ s_String ] := StringReplace[
+    s,
+    c: RegularExpression[ "[\\x{E000}-\\x{F8FF}\\x{3014}\\x{3015}\\x{02C4}\\x{02C5}\\x{2044}]" ] :>
+        StringTake[ ToString[ c, InputForm, CharacterEncoding -> "PrintableASCII" ], { 2, -2 } ]
+];
+
+agentEscaped // endDefinition;
+
+
+$teXCharacters = Join[
+    Association[ #1 -> StringTrim @ #2 & @@@ $texCharacters ],
+    <|
+        "\[Rule]" -> "\\to", "\[LongEqual]" -> "=", "\[Equal]" -> "=", "\[Minus]" -> "-", "\[DifferentialD]" -> "\\,d",
+        "\[Product]" -> "\\prod"
+    |>
+];
+
+$teXFunctions = { "sin", "cos", "tan", "cot", "sec", "csc", "sinh", "cosh", "tanh", "arcsin", "arccos", "arctan", "exp",
+    "log", "ln", "det", "lim", "max", "min" };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*requireCellText*)
+
+(* The content of one cell from the agent: no marker line, nothing that runs code *)
+requireCellText // beginDefinition;
+
+requireCellText[ text_String, what_String ] := (
+    If[ markerQ @ text,
+        toolError[ "`1` includes a marker line (* ::Style:: #id *): give the content of one cell, without its marker line.", what ]
+    ];
+    requireInertText[ text, what ]
+);
+
+requireCellText // endDefinition;
+
+
+markerQ // beginDefinition;
+markerQ[ text_String ] := StringContainsQ[ text, $$markerLine ];
+markerQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*requireInertText*)
+
+(* Agent text never makes the front end run code when it shows the cell (ShowChanges shows it in the user's notebook):
+   linear syntax (its characters, their escapes, the escapes \! and \* ) is refused anywhere, and so are dynamic boxes
+   and options that hold code inside a box wrapper (strings in it are left out: they are only text). Code that is typed
+   in a code cell is not run by showing it, so it is allowed. Control characters are refused too: they come from a
+   model's broken JSON escapes (seen: \u0007 for 〔 and \u0000b0 for °), so the error asks for the characters
+   as they are. *)
+requireInertText // beginDefinition;
+
+requireInertText[ text_String, what_String ] := (
+    requireInertText[ text, what, $$codeInWrapper ];
+    requireDataWrappers[ text, what ]
+);
+
+requireInertText[ text_String, what_String, code_ ] := Module[ { found },
+    If[ StringContainsQ[ text, RegularExpression[ "[\\x00-\\x08\\x0b\\x0c\\x0e-\\x1f]" ] ],
+        toolError[
+            "`1` has control characters, likely from broken escapes: write characters such as \:3014 and \:3015 as they are.",
+            what
+        ]
+    ];
+    found = First[ StringCases[ text, $$linearSyntaxText, 1 ], None ];
+    If[ StringQ @ found,
+        toolError[
+            "`1` has linear syntax (`2`), which would run code when it is shown; the notebook tools never write it.",
+            what,
+            (* a linear syntax character is named by its escape, not repeated *)
+            quoted @ StringReplace[
+                found,
+                c: RegularExpression[ "[\\x{f7c0}-\\x{f7cd}]" ] :> "\\:" <> IntegerString[ First @ ToCharacterCode @ c, 16, 4 ]
+            ]
+        ]
+    ];
+    found = First[
+        (* an inline formula's wrapper, \:3014$boxes\:3015, holds its boxes after the $ *)
+        Flatten @ StringCases[
+            withoutStrings @ StringReplace[ #, StartOfString ~~ "\:3014$" -> "\:3014" ] & /@ StringCases[ text, $$wrapper ],
+            code,
+            1
+        ],
+        None
+    ];
+    If[ StringQ @ found,
+        toolError[
+            "`1` has content that would run code when it is shown (`2`), which the notebook tools never write.",
+            what,
+            StringTrim @ StringDelete[ found, (StartOfString ~~ "RuleDelayed" | "Rule") | "[" | "," | "->" | ":>" | "\\[Rule]" | "\\[RuleDelayed]" ]
+        ]
+    ]
+];
+
+requireInertText // endDefinition;
+
+
+withoutStrings // beginDefinition;
+withoutStrings[ text_String ] := StringReplace[ text, RegularExpression[ "\"(?:[^\"\\\\]|\\\\.)*\"" ] -> "\"\"" ];
+withoutStrings // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*requireDataWrappers*)
+
+(* The box wrappers of the model's text (after texFormulas) hold boxes and plain data only. The kernel evaluates what a
+   read of a cell gives (NotebookRead, NotebookGet: the code check, ShowChanges and any later read of the user's
+   notebook), so each wrapper is parsed held, never evaluated, and accepted only if every symbol in it is a System` one
+   (or FE`ElidedBox, the placeholder of graphics) and every head a box or plain data ($$dataHead), as for the front end's
+   formulas (frontEndFormulaBoxes). Wrappers inside a wrapper are checked on their own. *)
+requireDataWrappers // beginDefinition;
+
+requireDataWrappers[ text_String, what_String ] :=
+    Scan[ requireDataWrapper[ #, what ] &, StringCases[ text, $$nestedWrapper :> "$1" ] ];
+
+requireDataWrappers // endDefinition;
+
+
+requireDataWrapper // beginDefinition;
+
+requireDataWrapper[ content_String, what_String ] := Module[ { held, data },
+    requireDataWrappers[ content, what ];
+    (* names that are not System` ones are made in a context of their own, which is removed again *)
+    held = Block[ { $Context = $dataContext, $ContextPath = { "System`" } },
+        Quiet @ Check[
+            ToExpression[
+                StringDelete[ StringReplace[ content, $$nestedWrapper -> "\"\"" ], StartOfString ~~ "$" ],
+                InputForm,
+                HoldComplete
+            ],
+            $Failed
+        ]
+    ];
+    data = dataBoxesQ @ held;
+    Quiet[ Remove @@ { $dataContext <> "*" } ];
+    If[ ! data,
+        toolError[
+            "`1` has a box wrapper that is not boxes and plain data (strings, numbers, lists, rules, colors, URL), so \
+the tools don't write it: `2`.",
+            what,
+            quoted @ content
+        ]
+    ]
+];
+
+requireDataWrapper // endDefinition;
+
+
+dataBoxesQ // beginDefinition;
+
+dataBoxesQ[ held: HoldComplete[ _ ] ] := And[
+    FreeQ[ held, s_Symbol /; ! dataSymbolQ @ s, { 1, Infinity }, Heads -> True ],
+    FreeQ[ held, h_[ ___ ] /; ! MatchQ[ Unevaluated @ h, $$dataHead ], { 1, Infinity } ]
+];
+
+dataBoxesQ[ _ ] := False;
+
+dataBoxesQ // endDefinition;
+
+
+dataSymbolQ // beginDefinition;
+dataSymbolQ // Attributes = { HoldAllComplete };
+dataSymbolQ[ s_Symbol ] := Context @ Unevaluated @ s === "System`" || HoldComplete @ s === HoldComplete @ FE`ElidedBox;
+dataSymbolQ // endDefinition;
+
+(* Known gap: a TagBox whose interpretation is a function (e.g. MatrixForm's) is refused too; the TeX import never
+   makes one, and Output cells, where they are usual, are not written by the model. *)
+$$dataHead = Alternatives[
+    _Symbol? (Function[ s, StringEndsQ[ SymbolName @ Unevaluated @ s, "Box" ], HoldAllComplete ]),
+    List, Rule, RuleDelayed, Association, RGBColor, GrayLevel, Hue, CMYKColor, LightDarkSwitched, Directive, URL,
+    Cell, BoxData, TextData
+];
+
+$dataContext = "Wolfram`Chatbook`Tools`NotebookTools`Data`";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Front End*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*notebookFrontEnd*)
+
+(* Every front end operation of the tools (tests replace this function with a made-up front end):
+     notebookFrontEnd[ "Snapshot", source ]                      the hidden snapshot's NotebookObject, or $Failed;
+                                                                 source: a NotebookObject, a file or None
+     notebookFrontEnd[ "CellText", nb, cells, preview, elide ]   { <| "Cell", "Style", "Text", "GroupDepth", "Open", "Tags" |>,
+                                                                 ... } or $Failed; cells: All or { CellObject, ... },
+                                                                 preview: n or All, elide: True or False
+     notebookFrontEnd[ "Edit", nb, ops ]                         <| "Changed", "Inserted", "Deleted" |> or a Failure
+     notebookFrontEnd[ "CodeCells", nb ]                         { <| "Cell", "Boxes" |>, ... }: its Input and Code
+                                                                 cells, in order, or $Failed
+     notebookFrontEnd[ "FileName", nb ]                          the snapshot's file, or $Failed
+     notebookFrontEnd[ "Save", nb ]                              Null, or $Failed
+     notebookFrontEnd[ "Close", nb ]                             closes the snapshot; the front end deletes its file
+     notebookFrontEnd[ "ShowDiff", source, snapshot, edited ]    CellDiff's ShowNotebookDiff[ source, snapshot, "Lines", edited ]
+     notebookFrontEnd[ "Selection", source, snapshot ]           <| "Type", "Cells", "Position" | "Text" |>: the selection
+                                                                 in source (FrontEnd`NotebookSelectionText), in the
+                                                                 snapshot's cells (None for one it doesn't have)
+   The packets are the front end's (FrontEnd docs/NotebookMCP/Plan.md, "FE packets"). *)
+notebookFrontEnd // beginDefinition;
+
+notebookFrontEnd[ op_String, args___ ] := (
+    requireFrontEnd[ ];
+    frontEndOperation[ op, args ]
+);
+
+notebookFrontEnd // endDefinition;
+
+
+frontEndOperation // beginDefinition;
+
+frontEndOperation[ "Snapshot", source_ ] :=
+    Quiet @ MathLink`CallFrontEnd @ FrontEnd`NotebookSnapshot @ source;
+
+frontEndOperation[ "CellText", nb_NotebookObject, cells_, preview_, elide_ ] :=
+    Quiet @ MathLink`CallFrontEnd @ FrontEnd`NotebookCellText[ nb, cells, "Preview" -> preview, "Elide" -> elide ];
+
+frontEndOperation[ "Edit", nb_NotebookObject, ops_List ] :=
+    Quiet @ MathLink`CallFrontEnd @ FrontEnd`NotebookCellTextEdit[ nb, ops ];
+
+frontEndOperation[ "CodeCells", nb_NotebookObject ] := Quiet @ Module[ { cells, read },
+    cells = Cells[ nb, CellStyle -> { "Input", "Code" } ];
+    read  = If[ cells === { }, { }, NotebookRead @ cells ];
+    If[ MatchQ[ cells, { ___CellObject } ] && Length @ read === Length @ cells,
+        MapThread[ <| "Cell" -> #1, "Boxes" -> Replace[ #2, { Cell[ BoxData[ b_ ], ___ ] :> b, Cell[ t_String, ___ ] :> t, _ -> "" } ] |> &, { cells, read } ],
+        $Failed
+    ]
+];
+
+frontEndOperation[ "FileName", nb_NotebookObject ] := Quiet @ NotebookFileName @ nb;
+frontEndOperation[ "Save", nb_NotebookObject ] := Quiet @ NotebookSave @ nb;
+frontEndOperation[ "Close", nb_NotebookObject ] := Quiet @ NotebookClose @ nb;
+frontEndOperation[ "ShowDiff", source_, snapshot_NotebookObject, edited_ ] := showNotebookDiff[ source, snapshot, edited ];
+frontEndOperation[ "Selection", source_NotebookObject, snapshot_NotebookObject ] :=
+    Quiet @ MathLink`CallFrontEnd @ FrontEnd`NotebookSelectionText[ source, snapshot ];
+
+frontEndOperation // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*showNotebookDiff*)
+
+(* CellDiff's ShowNotebookDiff[ source, snapshot, "Lines", edited ]: with the uuids of the edited cells, so that it
+   reads only the cells that changed, or, if they are not known (None), comparing every cell *)
+showNotebookDiff // beginDefinition;
+
+showNotebookDiff[ source_, snapshot_NotebookObject, edited: _List | None ] :=
+    With[ { show = notebookDiffFunction[ ] },
+        If[ ListQ @ edited, show[ source, snapshot, "Lines", edited ], show[ source, snapshot, "Lines" ] ]
+    ];
+
+showNotebookDiff // endDefinition;
+
+
+(* The files in Assets/CellDiff (CellDiffNotebookDiff.wl, which loads CellDiffControlStyles.wl from its own directory)
+   are copied from the FE repository's docs/CellDiff (commit cb4e2cdb163 of the FE checkout) until the front end ships
+   the comparison; keep them in sync. They are loaded once per session, at the first ShowChanges, with their contexts
+   kept off $ContextPath; the function is kept only once it is defined. *)
+notebookDiffFunction // beginDefinition;
+
+notebookDiffFunction[ ] := Module[ { file },
+    file = FileNameJoin @ { $thisPaclet[ "AssetLocation", "CellDiff" ], "CellDiffNotebookDiff.wl" };
+    If[ ! FileExistsQ @ file, toolError[ "ShowChanges is not available: the notebook comparison was not found." ] ];
+    Quiet @ Block[ { $ContextPath = $ContextPath }, Get @ file ];
+    If[ Names @ $notebookDiffFunction === { },
+        toolError[ "ShowChanges is not available: the notebook comparison could not be loaded." ]
+    ];
+    notebookDiffFunction[ ] = Symbol @ $notebookDiffFunction
+];
+
+notebookDiffFunction // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Identifiers*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*objectKeys*)
+
+(* The key of each notebook: its UUID, in lower case. Objects that share a UUID (a copy of a notebook file that is open
+   twice) get their instance UUID too, so that the keys are unique. *)
+objectKeys // beginDefinition;
+
+objectKeys[ objects_List ] := Module[ { uuids, shared },
+    uuids  = objectUUID /@ objects;
+    shared = Select[ Counts @ uuids, GreaterThan[ 1 ] ];
+    MapThread[
+        If[ KeyExistsQ[ shared, #2 ], #2 <> "." <> objectInstance @ #1, #2 ] &,
+        { objects, uuids }
+    ]
+];
+
+objectKeys // endDefinition;
+
+
+objectUUID // beginDefinition;
+objectUUID[ (NotebookObject|CellObject)[ uuid_String, ___ ] ] := ToLowerCase @ uuid;
+objectUUID[ object_ ] := IntegerString[ Hash @ object, 16 ];
+objectUUID // endDefinition;
+
+
+objectInstance // beginDefinition;
+objectInstance[ (NotebookObject|CellObject)[ _String, instance_String, ___ ] ] := ToLowerCase @ instance;
+objectInstance[ object_ ] := IntegerString[ Hash @ object, 16 ];
+objectInstance // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*uniqueIDs*)
+
+(* The id of each key: its shortest start of at least $idLength characters that no other key starts with (the whole key
+   if there is none, which only happens for equal keys) *)
+uniqueIDs // beginDefinition;
+
+uniqueIDs[ keys: { ___String } ] := Module[ { ids, pending, length, counts, done },
+    ids     = keys;
+    pending = Range @ Length @ keys;
+    length  = $idLength;
+    While[ pending =!= { },
+        counts = Counts @ StringTake[ keys, UpTo @ length ];
+        done = Select[
+            pending,
+            StringLength @ keys[[ # ]] <= length || counts @ StringTake[ keys[[ # ]], length ] === 1 &
+        ];
+        ids[[ done ]] = StringTake[ keys[[ done ]], UpTo @ length ];
+        pending = Complement[ pending, done ];
+        length++
+    ];
+    ids
+];
+
+uniqueIDs // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*idMatches*)
+
+(* The entries (notebooks, each with a "Key") that an id of the agent stands for: the one whose key it is, else those
+   whose keys start with it (if it has at least $minPrefixLength characters) *)
+idMatches // beginDefinition;
+
+idMatches[ entries_List, id_String ] := Module[ { exact },
+    exact = Select[ entries, #[ "Key" ] === id & ];
+    Which[
+        exact =!= { }                       , exact,
+        StringLength @ id >= $minPrefixLength, Select[ entries, StringStartsQ[ #[ "Key" ], id ] & ],
+        True                                , { }
+    ]
+];
+
+idMatches // endDefinition;
+
+
+(* An id as the agent may give it: without white space and quotes around it, in lower case (UUIDs are) *)
+cleanID // beginDefinition;
+cleanID[ s_String ] := ToLowerCase @ StringTrim[ s, (WhitespaceCharacter | "\"" | "'" | "`").. ];
+cleanID // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Notebooks*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*listedNotebooks*)
+
+(* The notebooks that the tools can reach, front to back (the first one is the notebook the user is working in), each
+   as <| "NotebookObject", "Key", "ID", "Title", "File", "Modified" |> ("Title" and "File" are None if not known) *)
+listedNotebooks // beginDefinition;
+listedNotebooks[ ] := If[ $FrontEnd === Null, { }, listedNotebooks0[ ] ];
+listedNotebooks // endDefinition;
+
+
+listedNotebooks0 // beginDefinition;
+
+listedNotebooks0[ ] := Enclose[
+    Module[ { messages, info, deployed, keys },
+        messages = MessagesNotebook[ ];
+        info = Select[
+            ConfirmMatch[ SourceNotebookObjectInformation[ ], { ___Association }, "Information" ],
+            listedNotebookQ[ #, messages ] &
+        ];
+        deployed = If[ info === { }, { }, AbsoluteCurrentValue[ Lookup[ info, "NotebookObject" ], Deployed ] ];
+        ConfirmAssert[ ListQ @ deployed && Length @ deployed === Length @ info, "Deployed" ];
+        info = Pick[ info, TrueQ /@ deployed, False ];
+        keys = objectKeys @ Lookup[ info, "NotebookObject", { } ];
+        MapThread[ notebookEntry, { info, keys, uniqueIDs @ keys } ]
+    ],
+    throwInternalFailure
+];
+
+listedNotebooks0 // endDefinition;
+
+
+(* Whether a notebook of SourceNotebookObjectInformation[ ] can be listed (deployed ones are left out separately) *)
+listedNotebookQ // beginDefinition;
+
+listedNotebookQ[ info_Association, messages_ ] := And[
+    TrueQ @ info[ "Included" ],
+    info[ "DocumentType" ] =!= "Help",
+    info[ "NotebookObject" ] =!= messages
+];
+
+listedNotebookQ // endDefinition;
+
+
+notebookEntry // beginDefinition;
+
+notebookEntry[ info_Association, key_String, id_String ] := <|
+    "NotebookObject" -> info[ "NotebookObject" ],
+    "Key"            -> key,
+    "ID"             -> id,
+    "Title"          -> Replace[ Lookup[ info, "WindowTitle", None ], Except[ _String ] -> None ],
+    "File"           -> Replace[ Lookup[ info, "FileName", None ], Except[ _String ] -> None ],
+    "Modified"       -> TrueQ @ Lookup[ info, "ModifiedInMemory", False ]
+|>;
+
+notebookEntry // endDefinition;
+
+
+(* A notebook's title for messages *)
+notebookLabel // beginDefinition;
+notebookLabel[ entry_Association ] :=
+    entry[ "ID" ] <> " (" <> quoted @ inlineText @ Replace[ entry[ "Title" ], None -> "Untitled" ] <> ")";
+notebookLabel // endDefinition;
+
+
+(* A title or file name in a result or an error: on one line *)
+inlineText // beginDefinition;
+inlineText[ text_String ] := StringReplace[ text, ("\r\n"|"\n"|"\r") -> " " ];
+inlineText // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*resolveNotebook*)
+
+(* The listed notebook that the agent means: by id (or a start of it), else by exact window title, else by file *)
+resolveNotebook // beginDefinition;
+
+resolveNotebook[ entries_List, spec0_ ] := Module[ { spec, matches },
+    spec = stringArgument[ spec0, "notebook" ];
+    matches = idMatches[ entries, cleanID @ spec ];
+    If[ matches === { }, matches = Select[ entries, #[ "Title" ] === spec & ] ];
+    If[ matches === { }, matches = Select[ entries, sameFileQ[ #[ "File" ], spec ] & ] ];
+    Switch[ Length @ matches,
+        1, First @ matches,
+        0, toolError[
+            "No open notebook or .nb file matches `1`. Call ListNotebooks for the notebooks that are open.",
+            quoted @ spec
+        ],
+        _, toolError[
+            "`1` matches more than one notebook: `2`. Use the notebook's id.",
+            quoted @ spec,
+            StringRiffle[ notebookLabel /@ matches, ", " ]
+        ]
+    ]
+];
+
+resolveNotebook // endDefinition;
+
+
+sameFileQ // beginDefinition;
+sameFileQ[ file_String, spec_String ] := normalFileName @ file === normalFileName @ spec;
+sameFileQ[ _, _ ] := False;
+sameFileQ // endDefinition;
+
+
+normalFileName // beginDefinition;
+
+normalFileName[ file_String ] := Replace[
+    Quiet @ ExpandFileName @ file,
+    { expanded_String :> StringReplace[ expanded, "\\" -> "/" ], _ -> None }
+];
+
+normalFileName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Snapshots*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*resolveSnapshot*)
+
+(* The handle of the open snapshot that the agent's notebook argument names *)
+resolveSnapshot // beginDefinition;
+
+resolveSnapshot[ spec0_ ] := Module[ { spec, handle, open },
+    spec   = stringArgument[ spec0, "notebook" ];
+    handle = cleanID @ spec;
+    open   = chatSnapshots[ ];
+    If[ KeyExistsQ[ open, handle ],
+        handle,
+        toolError[
+            "`1` is not an open snapshot. `2`",
+            quoted @ spec,
+            If[ open === <| |>,
+                "Open the notebook with OpenNotebook first; the other tools take the handle it gives.",
+                "The open snapshots are " <> StringRiffle[ snapshotLabel /@ Keys @ open, ", " ] <>
+                    "; OpenNotebook opens another one."
+            ]
+        ]
+    ]
+];
+
+resolveSnapshot // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*chatSnapshots*)
+
+(* A snapshot belongs to the chat that opened it (its ConversationUUID; None outside such a chat): a snapshot that an
+   earlier chat left open (stopped, out of tool calls, or never shown) is stale for a later one, since the user may
+   have changed the notebook since. The tools only see the snapshots of the running chat; OpenNotebook discards a
+   stale snapshot of the same notebook, and newSnapshot one of another chat when too many are open. *)
+chatSnapshots // beginDefinition;
+chatSnapshots[ ] := With[ { chat = currentChat[ ] }, Select[ $snapshots, Lookup[ #, "Chat", None ] === chat & ] ];
+chatSnapshots // endDefinition;
+
+
+(* The running chat's settings are in $ChatHandlerData during a tool call ($currentChatSettings is not: catchTop resets
+   it when the tool function is called outside of the chat's own evaluation) *)
+currentChat // beginDefinition;
+
+currentChat[ ] := Replace[
+    $ChatHandlerData,
+    { KeyValuePattern[ "ChatNotebookSettings" -> KeyValuePattern[ "ConversationUUID" -> id_String ] ] :> id, _ -> None }
+];
+
+currentChat // endDefinition;
+
+
+snapshotLabel // beginDefinition;
+snapshotLabel[ handle_String ] := handle <> " (" <> quoted @ inlineText @ $snapshots[ handle, "Title" ] <> ")";
+snapshotLabel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Cell ids*)
+
+(* The ids of a snapshot's cells: cells that have none yet get the next numbers, in the given order *)
+numberCells // beginDefinition;
+
+numberCells[ handle_String, cells: { ___CellObject } ] := Module[ { ids, next },
+    ids  = $snapshots[ handle, "IDs" ];
+    next = $snapshots[ handle, "NextID" ];
+    Scan[ If[ ! KeyExistsQ[ ids, # ], ids[ # ] = "c" <> ToString[ next++ ] ] &, cells ];
+    $snapshots[ handle ] = <| $snapshots[ handle ], "IDs" -> ids, "NextID" -> next |>;
+    Lookup[ ids, cells ]
+];
+
+numberCells // endDefinition;
+
+
+(* The cells that the agent's ids name, in the given order *)
+resolveCells // beginDefinition;
+resolveCells[ handle_String, ids: { __String } ] := DeleteDuplicates @ Flatten[ resolveCellOrRange[ handle, # ] & /@ ids ];
+resolveCells // endDefinition;
+
+
+(* An id, or a range of ids such as "c10-c20": the snapshot's cells numbered 10 to 20, in the order of their numbers *)
+resolveCellOrRange // beginDefinition;
+
+resolveCellOrRange[ handle_String, spec_String ] := Replace[
+    StringCases[ spec, RegularExpression[ "^#?[cC]?(\\d+)-#?[cC]?(\\d+)$" ] :> FromDigits /@ { "$1", "$2" } ],
+    {
+        { { from_, to_ } } :> Replace[
+            SortBy[
+                Select[ Normal @ $snapshots[ handle, "IDs" ], Between[ cellNumber @ Last[ # ], { from, to } ] & ],
+                cellNumber @* Last
+            ][[ All, 1 ]],
+            { } :> toolError[ "`1` has no cells numbered `2` to `3`.", handle, from, to ]
+        ],
+        _ :> resolveCell[ handle, spec ]
+    }
+];
+
+resolveCellOrRange // endDefinition;
+
+
+cellNumber // beginDefinition;
+cellNumber[ id_String ] := Replace[ StringDrop[ id, 1 ], { n_ /; StringMatchQ[ n, DigitCharacter.. ] :> FromDigits @ n, _ -> 0 } ];
+cellNumber // endDefinition;
+
+
+resolveCell // beginDefinition;
+
+resolveCell[ handle_String, spec_String ] := Module[ { id, cell },
+    id   = cellID @ spec;
+    cell = First[ Keys @ Select[ $snapshots[ handle, "IDs" ], # === id & ], None ];
+    If[ MatchQ[ cell, _CellObject ],
+        cell,
+        toolError[
+            "`1` has no cell `2`. Cell ids come from OpenNotebook, GetOutline, ReadCells and SearchNotebook.",
+            handle,
+            quoted @ spec
+        ]
+    ]
+];
+
+resolveCell[ _String, other_ ] := toolError[ "`1` is not a cell id.", quoted @ other ];
+
+resolveCell // endDefinition;
+
+
+(* A cell id as the agent may give it: "c3", "#c3", "C3" or "3" *)
+cellID // beginDefinition;
+
+cellID[ spec_String ] := With[ { id = ToLowerCase @ StringTrim[ spec, (WhitespaceCharacter | "\"" | "'" | "`" | "#").. ] },
+    If[ StringMatchQ[ id, DigitCharacter.. ], "c" <> id, id ]
+];
+
+cellID // endDefinition;
+
+
+(* The cell argument of EditInCell and SetCells, InsertCells' anchor *)
+cellArgument // beginDefinition;
+cellArgument[ handle_String, spec_ ] := resolveCell[ handle, stringArgument[ spec, "cell" ] ];
+cellArgument // endDefinition;
+
+
+(* InsertCells' anchor: a cell, or None if the parameter is not given *)
+anchorArgument // beginDefinition;
+anchorArgument[ _String, Missing[ ___ ] | Null ] := None;
+anchorArgument[ _String, s_String ] /; StringTrim @ s === "" := None;
+anchorArgument[ handle_String, spec_ ] := cellArgument[ handle, spec ];
+anchorArgument // endDefinition;
+
+
+forgetCells // beginDefinition;
+forgetCells[ handle_String, cells_List ] := ($snapshots[[ handle, "IDs" ]] = KeyDrop[ $snapshots[[ handle, "IDs" ]], cells ]);
+forgetCells // endDefinition;
+
+
+(* The cells that "Edit" or "Set" operations changed: the front end replaces each such cell by a new one, which keeps
+   the cell's ExpressionUUID (CellObject[uuid, instance]) but not its CellObject, so the new CellObject takes over the
+   id. The packet gives the changed cells in document order: a replacement is matched to its cell by the uuid, or, if
+   CellObjects have no uuid (the legacy object format), when there is only one. *)
+changedCells // beginDefinition;
+
+changedCells[ handle_String, cells: { __CellObject }, result_Association ] := Module[ { changed, new, lost, pairs },
+    changed = Cases[ Lookup[ result, "Changed", { } ], _CellObject ];
+    new     = Select[ changed, ! KeyExistsQ[ $snapshots[ handle, "IDs" ], # ] & ];
+    lost    = Select[ cells, ! MemberQ[ changed, # ] & ];
+    pairs   = DeleteMissing @ AssociationMap[ Function[ old, SelectFirst[ new, sameCellQ[ old, # ] &, Missing[ ] ] ], lost ];
+    If[ pairs === <| |> && Length @ new === 1 && Length @ lost === 1, pairs = <| First @ lost -> First @ new |> ];
+    $snapshots[[ handle, "IDs" ]] = Join[
+        KeyDrop[ $snapshots[ handle, "IDs" ], Keys @ pairs ],
+        AssociationThread[ Values @ pairs, Lookup[ $snapshots[ handle, "IDs" ], Keys @ pairs ] ]
+    ];
+    editedCells[ handle, Replace[ cells, Normal @ pairs, { 1 } ] ]
+];
+
+changedCells // endDefinition;
+
+
+(* Records the ExpressionUUIDs of edited cells, which ShowChanges gives CellDiff so that it reads only the cells that
+   changed (inserted and deleted cells it finds by their uuids alone); None once a cell has no uuid (the legacy object
+   format), since CellDiff must then compare every cell. Gives the cells. *)
+editedCells // beginDefinition;
+
+editedCells[ handle_String, cells_List ] := (
+    $snapshots[[ handle, "EditedCells" ]] = With[ { ids = Cases[ cells, CellObject[ id_String, ___ ] :> id ] },
+        Replace[ Lookup[ $snapshots[ handle ], "EditedCells", { } ], {
+            known_List /; Length @ ids === Length @ cells :> Union[ known, ids ],
+            _ -> None
+        } ]
+    ];
+    cells
+);
+
+editedCells // endDefinition;
+
+
+(* Whether two CellObjects name the same cell: the same uuid, another instance *)
+sameCellQ // beginDefinition;
+sameCellQ[ CellObject[ uuid_String, ___ ], CellObject[ uuid_String, ___ ] ] := True;
+sameCellQ[ _CellObject, _CellObject ] := False;
+sameCellQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*cellTexts*)
+
+(* The text of a snapshot's cells (All, or a list of CellObjects) from the front end as the agent reads it (formulas as
+   LaTeX where they read back exactly, texReadTexts), each with its id ("ID"); cells without an id get one *)
+cellTexts // beginDefinition;
+
+cellTexts[ handle_String, cells_, preview_, elide_ ] := Module[ { result, ids },
+    result = notebookFrontEnd[ "CellText", $snapshots[ handle, "Notebook" ], cells, preview, elide ];
+    If[ ! MatchQ[ result, { KeyValuePattern[ "Cell" -> _CellObject ]... } ],
+        toolError[ "The front end could not read the cells of `1`.", snapshotLabel @ handle ]
+    ];
+    ids = numberCells[ handle, Lookup[ result, "Cell", { } ] ];
+    MapThread[ <| #1, "Text" -> #2, "ID" -> #3 |> &, { result, texReadTexts[ Lookup[ #, "Text", None ] & /@ result ], ids } ]
+];
+
+cellTexts // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*cellBlock*)
+
+(* A cell as its marker line and its content *)
+cellBlock // beginDefinition;
+cellBlock[ entry_Association ] := cellMarker @ entry <> "\n" <> cellContent @ entry;
+cellBlock // endDefinition;
+
+
+cellMarker // beginDefinition;
+
+cellMarker[ entry_Association ] := StringJoin[
+    "(* ::",
+    styleName @ Lookup[ entry, "Style", "" ],
+    If[ Lookup[ entry, "Open", True ] === False, "::Closed", "" ],
+    ":: #",
+    entry[ "ID" ],
+    tagsText @ entry,
+    " *)"
+];
+
+cellMarker // endDefinition;
+
+
+(* A cell's tags as its marker line and outline show them, or "" *)
+tagsText // beginDefinition;
+tagsText[ entry_Association ] := Replace[ Lookup[ entry, "Tags", { } ], { tags: { __String } :> " tags: " <> StringRiffle[ tags, ", " ], _ -> "" } ];
+tagsText // endDefinition;
+
+
+styleName // beginDefinition;
+styleName[ style_String ] := style;
+styleName[ other_ ] := ToString[ other, InputForm ];
+styleName // endDefinition;
+
+
+cellContent // beginDefinition;
+cellContent[ entry_Association ] := Replace[ Lookup[ entry, "Text", "" ], Except[ _String ] -> "" ];
+cellContent // endDefinition;
+
+
+(* The cells after an edit, as the front end now gives them *)
+cellBlocks // beginDefinition;
+cellBlocks[ _String, { } ] := "";
+cellBlocks[ handle_String, cells: { __CellObject } ] := StringRiffle[ cellBlock /@ cellTexts[ handle, cells, All, True ], "\n" ];
+cellBlocks // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*applyEdit*)
+
+(* Applies operations of the edit packet to a snapshot and gives the packet's result. A Failure of the packet (the
+   batch is atomic: nothing changed) ends the tool with its tag and message, and a hint for the agent. *)
+applyEdit // beginDefinition;
+
+applyEdit[ handle_String, ops: { __List } ] := Module[ { result },
+    result = notebookFrontEnd[ "Edit", $snapshots[ handle, "Notebook" ], ops ];
+    Which[
+        FailureQ @ result && result =!= $Failed,
+            toolError @ editFailureText[ handle, result, ops ],
+        ! AssociationQ @ result,
+            toolError[ "The front end could not edit `1`. Nothing was changed.", snapshotLabel @ handle ]
+    ];
+    $snapshots[ handle ] = <| $snapshots[ handle ], "Edited" -> True, "Unsaved" -> True |>;
+    result
+];
+
+applyEdit // endDefinition;
+
+
+editFailureText // beginDefinition;
+
+editFailureText[ handle_String, failure_Failure ] := editFailureText[ handle, failure, { } ];
+
+editFailureText[ handle_String, failure: Failure[ tag_, data_Association ], ops_List ] := StringJoin[
+    ToString @ tag, ": ",
+    failurePlace[ handle, Lookup[ data, "Operation", None ], ops, failureMessage @ failure ],
+    failureMessage @ failure,
+    " Nothing was changed.",
+    Replace[ Lookup[ $editFailureHints, tag, None ], { hint_String :> " " <> hint, _ -> "" } ]
+];
+
+editFailureText[ handle_String, _ ] := "The front end could not edit " <> snapshotLabel @ handle <> ". Nothing was changed.";
+
+editFailureText // endDefinition;
+
+
+(* Where the failed operation of a batch was, so that the agent can fix it without searching the batch: the cell of a
+   Set or Edit, and for a Set the new content around the character that the front end's message names *)
+failurePlace // beginDefinition;
+
+failurePlace[ handle_String, k_Integer, ops_List, message_String ] /; 1 <= k <= Length @ ops := Replace[ ops[[ k ]], {
+    { "Set" | "Edit", cell_CellObject, rest___ } :> StringJoin[
+        "In #", Lookup[ $snapshots[ handle, "IDs" ], cell, "?" ],
+        Replace[ { rest }, { { _, text_String } :> nearCharacter[ text, message ], _ -> "" } ],
+        ": "
+    ],
+    _ -> ""
+} ];
+
+failurePlace[ _String, _, _List, _String ] := "";
+
+failurePlace // endDefinition;
+
+
+nearCharacter // beginDefinition;
+
+nearCharacter[ text_String, message_String ] := Replace[
+    StringCases[ message, "character " ~~ n: DigitCharacter.. :> FromDigits @ n, 1 ],
+    {
+        { n_ } /; n <= StringLength @ text + 1 :>
+            " near " <> quoted @ StringTake[ text, { Max[ 1, n - 15 ], Min[ StringLength @ text, n + 15 ] } ],
+        _ -> ""
+    }
+];
+
+nearCharacter // endDefinition;
+
+
+failureMessage // beginDefinition;
+
+(* The message of a Failure as plain text: its template with its parameters (Failure's own "Message" formats them as
+   boxes) *)
+failureMessage[ Failure[ _, data_Association ] ] := With[
+    { template = Lookup[ data, "MessageTemplate", "" ], parameters = Lookup[ data, "MessageParameters", { } ] },
+    Which[
+        ! StringQ @ template,
+            "",
+        MatchQ[ parameters, _List | _Association ] && parameters =!= { },
+            Replace[ Quiet @ TemplateApply[ StringTemplate @ template, parameters ], Except[ _String ] -> template ],
+        True,
+            template
+    ]
+];
+
+failureMessage // endDefinition;
+
+
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::UnrecognizedLongName:: *)
+$editFailureHints = <|
+    "CellNotFound"    -> "Call GetOutline for the current cell ids.",
+    "NoMatch"         -> "Copy oldText exactly from the cell's current content (ReadCells), with its spaces, \:3014 \:3015 wrappers and \\[Name] characters.",
+    "AmbiguousMatch"  -> "Make oldText longer, so that it occurs as often as count says, or give count.",
+    "ParseError"      -> "The cell's new content must parse: check brackets, quotes and \:3014 \:3015 wrappers.",
+    "CellNotEditable" -> "This cell can't be changed.",
+    "NotASnapshot"    -> "Open the notebook with OpenNotebook and edit its snapshot."
+|>;
+(* :!CodeAnalysis::EndBlock:: *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*ListNotebooks*)
+listNotebooks // beginDefinition;
+
+listNotebooks[ ] := Module[ { entries },
+    entries = listedNotebooks[ ];
+    toJSON @ <|
+        "notebooks" -> MapIndexed[
+            <|
+                "id"       -> #1[ "ID" ],
+                "title"    -> Replace[ #1[ "Title" ], None -> Null ],
+                "file"     -> Replace[ #1[ "File" ], None -> Null ],
+                "modified" -> #1[ "Modified" ],
+                "cells"    -> cellCount @ #1[ "NotebookObject" ],
+                "selected" -> #2 === { 1 },
+                "snapshot" -> Replace[ sourceSnapshot @ #1[ "NotebookObject" ], None -> Null ]
+            |> &,
+            entries
+        ],
+        "snapshots" -> KeyValueMap[
+            <|
+                "notebook" -> #1,
+                "title"    -> #2[ "Title" ],
+                "source"   -> sourceReference @ #2,
+                "edited"   -> #2[ "Edited" ],
+                "unsaved"  -> #2[ "Unsaved" ]
+            |> &,
+            chatSnapshots[ ]
+        ]
+    |>
+];
+
+listNotebooks // endDefinition;
+
+
+cellCount // beginDefinition;
+cellCount[ nbo_NotebookObject ] := Replace[ Quiet @ Cells @ nbo, { cells_List :> Length @ cells, _ -> 0 } ];
+cellCount // endDefinition;
+
+
+(* The handle of the open snapshot of a source (a NotebookObject or a file), or None *)
+sourceSnapshot // beginDefinition;
+
+sourceSnapshot[ source_ ] := First[
+    Keys @ Select[ chatSnapshots[ ], sameSourceQ[ #[ "Source" ], source ] & ],
+    None
+];
+
+sourceSnapshot // endDefinition;
+
+
+sameSourceQ // beginDefinition;
+sameSourceQ[ a_NotebookObject, b_NotebookObject ] := a === b;
+sameSourceQ[ a_String, b_String ] := sameFileQ[ a, b ];
+sameSourceQ[ _, _ ] := False;
+sameSourceQ // endDefinition;
+
+
+(* A snapshot's source for the agent: the notebook's id, the file, or null for a new notebook *)
+sourceReference // beginDefinition;
+sourceReference[ KeyValuePattern[ "SourceID" -> id_String ] ] := id;
+sourceReference[ KeyValuePattern[ "Source" -> file_String ] ] := file;
+sourceReference[ _ ] := Null;
+sourceReference // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*OpenNotebook*)
+openNotebook // beginDefinition;
+
+(* The snapshot as JSON, then how to edit and write cell text ($notebookEditingGuide, $notebookNotation), then its cells
+   as ReadCells shows them, so that the model needs no ReadCells call, or, if they do not all fit into $readBudget, an
+   outline of its headings with the range of cells under each, from which the model reads the sections it changes *)
+openNotebook[ args_Association ] := Module[ { source, handle, reopened, entries, blocks },
+    source   = openSource @ args[ "notebook" ];
+    (* a snapshot of the same notebook that an earlier chat left open is stale (chatSnapshots): it is discarded *)
+    Scan[
+        closeSnapshot,
+        Keys @ Select[ $snapshots, Lookup[ #, "Chat", None ] =!= currentChat[ ] && sameSourceQ[ #[ "Source" ], source[ "Source" ] ] & ]
+    ];
+    handle   = sourceSnapshot @ source[ "Source" ];
+    reopened = StringQ @ handle;
+    If[ ! reopened, handle = newSnapshot @ source ];
+    entries = cellTexts[ handle, All, All, True ];
+    blocks  = cellBlock /@ entries;
+    StringJoin[
+        toJSON @ <|
+            "notebook" -> handle,
+            "title"    -> $snapshots[ handle, "Title" ],
+            "source"   -> sourceReference @ $snapshots @ handle,
+            "cells"    -> Length @ entries,
+            If[ reopened, "note" -> "This notebook already had an open snapshot; its edits so far are kept.", Nothing ]
+        |>,
+        "\n\n", $notebookEditingGuide,
+        "\n\n", $notebookNotation,
+        Which[
+            blocks === { }, "",
+            budgetCount[ StringLength /@ blocks, $readBudget ] === Length @ blocks,
+                "\n\nIts cells, as ReadCells shows them:\n" <> StringRiffle[ blocks, "\n" ],
+            True,
+                "\n\n" <> notebookOutline @ entries
+        ]
+    ]
+];
+
+openNotebook // endDefinition;
+
+
+(* The headings of a notebook too long to show whole, each with the range of cells up to the next heading *)
+notebookOutline // beginDefinition;
+
+notebookOutline[ entries_List ] := Module[ { positions, ends },
+    positions = Flatten @ Position[ Lookup[ entries, "Style", "" ], $outlineHeadings, { 1 } ];
+    (* the cells before the first heading (all of them in a notebook without headings) are a range of their own *)
+    If[ First[ positions, 0 ] =!= 1, PrependTo[ positions, 1 ] ];
+    ends      = Append[ Rest @ positions - 1, Length @ entries ];
+    StringJoin[
+        "It is too long to show whole (", ToString @ Length @ entries, " cells). Its headings, each with the range of ",
+        "cells under it:\n",
+        StringRiffle[ MapThread[ outlineHeading, { entries[[ positions ]], entries[[ ends, "ID" ]] } ], "\n" ],
+        "\nRead the sections you change with ReadCells, giving their ranges (e.g. cells \"c12-c40, c90-c120\"), or find ",
+        "cells with SearchNotebook."
+    ]
+];
+
+notebookOutline // endDefinition;
+
+
+outlineHeading // beginDefinition;
+
+outlineHeading[ entry_Association, last_String ] := StringJoin[
+    StringRepeat[ "  ", Max[ 0, Replace[ Lookup[ entry, "GroupDepth", 0 ], Except[ _Integer ] -> 0 ] - 1 ] ],
+    "#", entry[ "ID" ], If[ last =!= entry[ "ID" ], "-#" <> last, "" ], " (", styleName @ entry[ "Style" ], tagsText @ entry, ") ",
+    (* a heading is short, but the first range starts with any cell (notebookOutline): at most $previewLength characters *)
+    With[ { text = StringTrim @ StringReplace[ cellContent @ entry, { "(*" -> "", "*)" -> "", ("\r\n" | "\n" | "\r") -> " " } ] },
+        If[ StringLength @ text > $previewLength, StringTake[ text, $previewLength ] <> "\[Ellipsis]", text ]
+    ]
+];
+
+outlineHeading // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*openSource*)
+
+(* What OpenNotebook snapshots: <| "Source" -> a listed NotebookObject, a .nb file or None, "SourceID", "Title" |> *)
+openSource // beginDefinition;
+
+openSource[ Missing[ ___ ] | Null | None ] := <| "Source" -> None, "SourceID" -> None, "Title" -> "Untitled" |>;
+openSource[ s_String ] /; StringTrim @ s === "" := openSource @ None;
+
+openSource[ spec_ ] := Module[ { found, file },
+    found = Catch[ resolveNotebook[ listedNotebooks[ ], spec ], $toolErrorTag ];
+    If[ AssociationQ @ found,
+        Return[
+            <|
+                "Source"   -> found[ "NotebookObject" ],
+                "SourceID" -> found[ "ID" ],
+                "Title"    -> Replace[ found[ "Title" ], None :> Replace[ found[ "File" ], { f_String :> FileNameTake @ f, _ -> "Untitled" } ] ]
+            |>,
+            Module
+        ]
+    ];
+    file = notebookFile @ spec;
+    If[ StringQ @ file,
+        <| "Source" -> file, "SourceID" -> None, "Title" -> FileNameTake @ file |>,
+        toolError @ found
+    ]
+];
+
+openSource // endDefinition;
+
+
+(* A .nb file that exists, as its full path, or None *)
+notebookFile // beginDefinition;
+
+notebookFile[ spec_String ] := With[
+    { file = normalFileName @ StringTrim[ spec, (WhitespaceCharacter | "\"" | "'" | "`").. ] },
+    If[ StringQ @ file && ToLowerCase @ FileExtension @ file === "nb" && FileExistsQ @ file && ! DirectoryQ @ file,
+        file,
+        None
+    ]
+];
+
+notebookFile[ _ ] := None;
+
+notebookFile // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*newSnapshot*)
+
+(* Has the front end make the snapshot and records it under a new handle; at most $maxSnapshots are open *)
+newSnapshot // beginDefinition;
+
+newSnapshot[ source_Association ] := Module[ { nbo, file, handle, stale },
+    If[ Length @ $snapshots >= $maxSnapshots,
+        (* the oldest snapshot of an earlier chat makes room (chatSnapshots), else this chat has too many open *)
+        stale = First[ Keys @ Select[ $snapshots, Lookup[ #, "Chat", None ] =!= currentChat[ ] & ], None ];
+        If[ StringQ @ stale,
+            closeSnapshot @ stale,
+            toolError[
+                "`1` snapshots are open already, the most there can be: `2`. Show the changes of one with ShowChanges, \
+or close one with CloseNotebook, before opening another.",
+                Length @ $snapshots,
+                StringRiffle[ snapshotLabel /@ Keys @ $snapshots, ", " ]
+            ]
+        ]
+    ];
+    nbo = notebookFrontEnd[ "Snapshot", source[ "Source" ] ];
+    If[ ! MatchQ[ nbo, _NotebookObject ],
+        toolError[ "The front end could not make a snapshot of `1`.", quoted @ source[ "Title" ] ]
+    ];
+    file   = Replace[ notebookFrontEnd[ "FileName", nbo ], Except[ _String ] -> None ];
+    handle = "s" <> ToString[ ++$snapshotCount ];
+    $snapshots[ handle ] = <|
+        "Handle"   -> handle,
+        "Notebook" -> nbo,
+        "File"     -> file,
+        source,
+        "IDs"      -> <| |>,
+        "NextID"   -> 1,
+        "Edited"   -> False,
+        "Unsaved"  -> False,
+        "Chat"     -> currentChat[ ]
+    |>;
+    handle
+];
+
+newSnapshot // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*GetOutline*)
+getOutline // beginDefinition;
+
+getOutline[ args_Association ] := Module[ { handle, preview, offset, limit, entries, n, last, shown, depth },
+    handle  = resolveSnapshot @ args[ "notebook" ];
+    preview = Min[ countArgument[ args[ "preview" ], "preview", $previewLength ], $maxPreviewLength ];
+    offset  = countArgument[ args[ "offset" ], "offset", 1 ];
+    limit   = Min[ countArgument[ args[ "limit" ], "limit", $outlineLimit ], $maxOutlineLimit ];
+    entries = cellTexts[ handle, All, preview, True ];
+    n       = Length @ entries;
+    If[ n === 0, Return[ snapshotLabel @ handle <> " has no cells.", Module ] ];
+    If[ offset > n, toolError[ "The offset `1` is past the last cell: `2` has `3` cells.", offset, handle, n ] ];
+    last  = Min[ n, offset + limit - 1 ];
+    shown = entries[[ offset ;; last ]];
+    depth = Min @ Replace[ Lookup[ entries, "GroupDepth", 0 ], Except[ _Integer ] -> 0, { 1 } ];
+    StringJoin[
+        "Outline of ", snapshotLabel @ handle, ": ", ToString @ n, " cells, each as its marker line and the start of its \
+content, indented by cell group depth.\n",
+        StringRiffle[ outlineBlock[ #, preview, depth ] & /@ shown, "\n" ],
+        If[ last < n,
+            StringTemplate[ "\n[Cells `1`-`2` of `3`; call again with offset `4` for more.]" ][ offset, last, n, last + 1 ],
+            ""
+        ]
+    ]
+];
+
+getOutline // endDefinition;
+
+
+outlineBlock // beginDefinition;
+
+outlineBlock[ entry_Association, preview_Integer, depth0_Integer ] := Module[ { indent, text },
+    indent = StringRepeat[ "  ", Max[ 0, Replace[ Lookup[ entry, "GroupDepth", 0 ], Except[ _Integer ] -> 0 ] - depth0 ] ];
+    text   = cellContent @ entry;
+    StringJoin[
+        indent, cellMarker @ entry, "\n",
+        indent, StringReplace[ text, ("\r\n" | "\n" | "\r") -> " " ], If[ StringLength @ text >= preview, "\[Ellipsis]", "" ]
+    ]
+];
+
+outlineBlock // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*ReadCells*)
+readCells // beginDefinition;
+
+readCells[ args_Association ] := Module[ { handle, ids, full, entries },
+    handle  = resolveSnapshot @ args[ "notebook" ];
+    ids     = cellIDsArgument[ args[ "cells" ], "cells" ];
+    full    = booleanArgument[ args[ "full" ], "full", False ];
+    entries = cellTexts[ handle, If[ ids === None, All, resolveCells[ handle, ids ] ], All, ! full ];
+    If[ entries === { }, snapshotLabel @ handle <> " has no cells.", budgetedBlocks @ entries ]
+];
+
+readCells // endDefinition;
+
+
+(* Cells as marker lines and content, as many as fit into $readBudget, with a note on the ones that do not *)
+budgetedBlocks // beginDefinition;
+
+budgetedBlocks[ entries: { __Association } ] := Module[ { blocks, shown },
+    blocks = cellBlock /@ entries;
+    shown  = budgetCount[ StringLength /@ blocks, $readBudget ];
+    StringJoin[
+        StringRiffle[ Take[ blocks, shown ], "\n" ],
+        If[ shown < Length @ blocks,
+            StringJoin[
+                "\n[Not shown: #", entries[[ shown + 1, "ID" ]], " and the ", ToString[ Length @ blocks - shown - 1 ],
+                " cells after it (a result has at most ", ToString @ $readBudget, " characters). Read them with ReadCells \
+and cells.]"
+            ],
+            ""
+        ]
+    ]
+];
+
+budgetedBlocks // endDefinition;
+
+
+(* How many of the lengths fit into the budget (at least one) *)
+budgetCount // beginDefinition;
+budgetCount[ { }, _ ] := 0;
+budgetCount[ lengths_List, budget_ ] := Max[ 1, LengthWhile[ Accumulate[ lengths + 1 ], LessEqualThan @ budget ] ];
+budgetCount // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*SearchNotebook*)
+searchNotebook // beginDefinition;
+
+searchNotebook[ args_Association ] := Module[ { handle, query, regex, ids, styles, limit, pattern, entries, matches, total },
+    handle = resolveSnapshot @ args[ "notebook" ];
+    query  = textArgument[ args[ "query" ], "query" ];
+    If[ query === "", missingArgument[ "query" ] ];
+    regex   = booleanArgument[ args[ "regex" ], "regex", False ];
+    ids     = cellIDsArgument[ args[ "cells" ], "cells" ];
+    styles  = stylesArgument @ args[ "styles" ];
+    limit   = Min[ countArgument[ args[ "limit" ], "limit", $searchLimit ], $maxSearchLimit ];
+    pattern = If[ regex, regexPattern @ query, query ];
+    entries = cellTexts[ handle, If[ ids === None, All, resolveCells[ handle, ids ] ], All, True ];
+    If[ ListQ @ styles,
+        entries = Select[ entries, MemberQ[ ToLowerCase @ styles, ToLowerCase @ styleName @ Lookup[ #, "Style", "" ] ] & ]
+    ];
+    matches = TimeConstrained[ Catenate[ cellMatches[ #, pattern ] & /@ entries ], $searchTimeLimit, $TimedOut ];
+    If[ matches === $TimedOut,
+        toolError[ "The search took longer than `1` seconds. Use a simpler regular expression.", $searchTimeLimit ]
+    ];
+    total = Length @ matches;
+    Which[
+        total === 0,
+            "No matches for " <> quoted @ query <> " in " <> snapshotLabel @ handle <> ".",
+        True,
+            StringJoin[
+                ToString @ total, If[ total === 1, " match", " matches" ], " for ", quoted @ query, " in ",
+                snapshotLabel @ handle, " (line:column in the cell's content):\n",
+                StringRiffle[ Take[ matches, UpTo @ limit ], "\n" ],
+                If[ total > limit,
+                    "\n[Showing the first " <> ToString @ limit <> "; narrow the search with cells or styles, or raise limit.]",
+                    ""
+                ]
+            ]
+    ]
+];
+
+searchNotebook // endDefinition;
+
+
+regexPattern // beginDefinition;
+
+regexPattern[ query_String ] := With[ { pattern = RegularExpression @ query },
+    If[ ListQ @ Quiet @ Check[ StringPosition[ "", pattern ], $Failed ],
+        pattern,
+        toolError[ "`1` is not a valid regular expression.", quoted @ query ]
+    ]
+];
+
+regexPattern // endDefinition;
+
+
+(* The matches of the pattern in a cell's content, each as "#id (Style) line:column: the line of the match" *)
+cellMatches // beginDefinition;
+
+cellMatches[ entry_Association, pattern_ ] := Module[ { text, spans, lineStarts },
+    text  = cellContent @ entry;
+    spans = StringPosition[ text, pattern, Overlaps -> False ];
+    If[ spans === { }, Return[ { }, Module ] ];
+    lineStarts = Prepend[ StringPosition[ text, "\n" ][[ All, 1 ]] + 1, 1 ];
+    matchLine[ entry, text, lineStarts, # ] & /@ spans
+];
+
+cellMatches // endDefinition;
+
+
+matchLine // beginDefinition;
+
+matchLine[ entry_Association, text_String, lineStarts_List, { start_Integer, end_Integer } ] := Module[
+    { line, lineStart, lineEnd, column },
+    line      = LengthWhile[ lineStarts, LessEqualThan @ start ];
+    lineStart = lineStarts[[ line ]];
+    lineEnd   = If[ line < Length @ lineStarts, lineStarts[[ line + 1 ]] - 2, StringLength @ text ];
+    column    = start - lineStart + 1;
+    StringJoin[
+        "#", entry[ "ID" ], " (", styleName @ Lookup[ entry, "Style", "" ], ") ",
+        ToString @ line, ":", ToString @ column, ": ",
+        snippet[ text, lineStart, lineEnd, start, end ]
+    ]
+];
+
+matchLine // endDefinition;
+
+
+(* The line of a match, shortened around the match if it is long *)
+snippet // beginDefinition;
+
+snippet[ text_String, lineStart_Integer, lineEnd_Integer, start_Integer, end_Integer ] := Module[ { from, to },
+    If[ lineEnd - lineStart + 1 <= $snippetLength, Return[ StringTake[ text, { lineStart, lineEnd } ], Module ] ];
+    from = Max[ lineStart, start - Quotient[ $snippetLength, 3 ] ];
+    to   = Min[ lineEnd, Max[ end, start ] + $snippetLength - (start - from) ];
+    StringJoin[
+        If[ from > lineStart, "\[Ellipsis]", "" ],
+        StringTake[ text, { from, to } ],
+        If[ to < lineEnd, "\[Ellipsis]", "" ]
+    ]
+];
+
+snippet // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*GetSelection*)
+
+(* The user's selection in the notebook a snapshot was made from, as the front end reads it (FrontEnd`NotebookSelectionText:
+   the selection, or the remnant of it that the notebook shows while the selection is elsewhere, such as in the sidebar
+   chat's input field, read without changing either), in the snapshot's cell ids: the front end gives the snapshot's
+   cells with the ExpressionUUIDs of the selected ones. Text in a cell is that cell's text in the user's notebook, cut
+   around the selection, which is marked <selection>...</selection> (<cursor/> for a cursor), with the cell's text
+   around it as context. *)
+getSelection // beginDefinition;
+
+getSelection[ args_Association ] := Module[ { handle, source, result },
+    handle = resolveSnapshot @ args[ "notebook" ];
+    source = $snapshots[ handle, "Source" ];
+    If[ ! MatchQ[ source, _NotebookObject ],
+        toolError[ "`1` was not made from a notebook that is open in the front end, so it has no selection.", snapshotLabel @ handle ]
+    ];
+    result = notebookFrontEnd[ "Selection", source, $snapshots[ handle, "Notebook" ] ];
+    If[ ! MatchQ[ result, KeyValuePattern @ { "Type" -> _String, "Cells" -> _List } ],
+        toolError[ "The front end could not read the selection in the notebook of `1`; it may have been closed.", snapshotLabel @ handle ]
+    ];
+    selectionText[ handle, result ]
+];
+
+getSelection // endDefinition;
+
+
+selectionText // beginDefinition;
+
+selectionText[ handle_String, KeyValuePattern[ "Type" -> "None" ] ] :=
+    "Nothing is selected in the user's notebook.";
+
+selectionText[ handle_String, KeyValuePattern @ { "Type" -> "InsertionPoint", "Cells" -> { } } ] :=
+    "The selection is an insertion point in the user's notebook, which has no cells.";
+
+selectionText[ handle_String, KeyValuePattern @ { "Type" -> "InsertionPoint", "Cells" -> { cell_ }, "Position" -> position_String } ] :=
+    StringJoin[
+        "The selection is an insertion point between cells, ",
+        ToLowerCase @ position,
+        " ",
+        selectionCellsText[ handle, { cell } ],
+        "; InsertCells with that cell and position inserts there."
+    ];
+
+selectionText[ handle_String, KeyValuePattern @ { "Type" -> "Cells", "Cells" -> cells: { __ } } ] := StringJoin[
+    "The selection is ",
+    If[ Length @ cells === 1, "the cell ", ToString @ Length @ cells <> " cells: " ],
+    selectionCellsText[ handle, cells ],
+    "."
+];
+
+selectionText[ handle_String, KeyValuePattern @ { "Type" -> "Text", "Cells" -> { cell_ }, "Text" -> parts: { _String, _String, _String } } ] :=
+    Module[ { before, range, after, id, entry },
+        { before, range, after } = texReadTexts @ parts;
+        id = selectionCellsText[ handle, { cell } ];
+        If[ ! MatchQ[ cell, _CellObject ],
+            Return[ "The selection is text in " <> id <> ":\n" <> markedSelection[ before, range, after ], Module ]
+        ];
+        entry = First @ cellTexts[ handle, { cell }, All, True ];
+        StringJoin[
+            "The selection is ",
+            If[ range === "", "a cursor", "text" ],
+            " in ",
+            id,
+            ", marked ",
+            If[ range === "", "<cursor/>", "<selection>...</selection>" ],
+            " (the marks are not part of the cell):\n",
+            cellMarker @ entry,
+            "\n",
+            markedSelection[ before, range, after ],
+            If[ cellContent @ entry === before <> range <> after,
+                "",
+                "\n(This is the cell in the user's notebook; it has changed in " <> handle <> ", where ReadCells shows it.)"
+            ]
+        ]
+    ];
+
+selectionText // endDefinition;
+
+
+(* The cell's text with the selection marked; the text around it cut to $selectionContextLength characters on each side *)
+markedSelection // beginDefinition;
+
+markedSelection[ before_String, range_String, after_String ] := StringJoin[
+    If[ StringLength @ before > $selectionContextLength, "\[Ellipsis]" <> StringTake[ before, -$selectionContextLength ], before ],
+    If[ range === "", "<cursor/>", "<selection>" <> range <> "</selection>" ],
+    If[ StringLength @ after > $selectionContextLength, StringTake[ after, $selectionContextLength ] <> "\[Ellipsis]", after ]
+];
+
+markedSelection // endDefinition;
+
+
+(* The ids of the snapshot's cells, consecutive ones as ranges such as #c12-#c18; a cell the snapshot doesn't have (one
+   the user added after it was made) is said to be missing *)
+selectionCellsText // beginDefinition;
+
+selectionCellsText[ handle_String, cells_List ] := Module[ { ids, missing, numbers, runs },
+    ids     = numberCells[ handle, Cases[ cells, _CellObject ] ];
+    missing = Count[ cells, Except[ _CellObject ] ];
+    numbers = ToExpression @ StringDrop[ ids, 1 ];
+    runs    = Split[ Transpose @ { numbers, ids }, #2[[ 1 ]] === #1[[ 1 ]] + 1 & ];
+    StringRiffle[
+        Join[
+            Replace[ runs, { { { _, id_ } } :> "#" <> id, run_ :> "#" <> run[[ 1, 2 ]] <> "-#" <> run[[ -1, 2 ]] }, { 1 } ],
+            If[ missing > 0,
+                { If[ missing === 1, "a cell", ToString @ missing <> " cells" ] <> " that " <> handle <> " does not have (added after it was opened)" },
+                { }
+            ]
+        ],
+        ", "
+    ]
+];
+
+selectionCellsText // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*EditInCell*)
+editInCell // beginDefinition;
+
+editInCell[ args_Association ] := Module[ { handle, cell, edits, result },
+    handle = resolveSnapshot @ args[ "notebook" ];
+    cell   = cellArgument[ handle, args[ "cell" ] ];
+    edits  = editsArgument @ args[ "edits" ];
+    result = applyEdit[ handle, { cellEditOperation[ handle, cell, edits ] } ];
+    cell   = First @ changedCells[ handle, { cell }, result ];
+    StringJoin[
+        "Edited #", $snapshots[ handle, "IDs", cell ], " of ", handle,
+        " (", ToString @ Length @ edits, If[ Length @ edits === 1, " edit", " edits" ], "). It now reads:\n",
+        cellBlocks[ handle, { cell } ],
+        codeCheck[ handle, { cell }, evaluateArgument @ args ]
+    ]
+];
+
+editInCell // endDefinition;
+
+
+(* The edit packet's operation for edits of a cell: the front end's own edit when the agent reads the cell as the front
+   end writes it; else (a formula of it reads as LaTeX) the edits are applied here to the text the agent reads, failing
+   as the front end's would, and the cell is set to the result *)
+cellEditOperation // beginDefinition;
+
+cellEditOperation[ handle_String, cell_, edits_List ] := Module[ { entry, text, read },
+    entry = notebookFrontEnd[ "CellText", $snapshots[ handle, "Notebook" ], { cell }, All, True ];
+    (* a cell that can't be read is the front end's to report *)
+    If[ ! MatchQ[ entry, { KeyValuePattern[ "Text" -> _String ] } ], Return[ { "Edit", cell, edits }, Module ] ];
+    If[ outputStyleQ @ First[ entry ][ "Style" ], toolError @ $outputCellText ];
+    text = First[ entry ][ "Text" ];
+    read = First @ texReadTexts @ { text };
+    If[ read === text, Return[ { "Edit", cell, edits }, Module ] ];
+    Do[ read = editedText[ handle, read, edits[[ i ]], If[ Length @ edits > 1, i, None ] ], { i, Length @ edits } ];
+    read = texFormulas[ read, "The edited cell" ];
+    requireCellText[ read, "The edited cell" ];
+    { "Set", cell, Automatic, read }
+];
+
+cellEditOperation // endDefinition;
+
+
+(* Text with an edit { oldText, newText, count } (the i-th of several, or None) applied *)
+editedText // beginDefinition;
+
+editedText[ handle_String, text_String, { old_String, new_String, count_Integer }, i_ ] := With[
+    { n = StringCount[ text, old ], prefix = If[ IntegerQ @ i, "Edit " <> ToString @ i <> ": ", "" ] },
+    Which[
+        n === 0,
+            toolError @ editFailureText[ handle, Failure[ "NoMatch", <|
+                "MessageTemplate" -> prefix <> "The text \"`1`\" does not occur in the cell.", "MessageParameters" -> { old }
+            |> ] ],
+        n =!= count,
+            toolError @ editFailureText[ handle, Failure[ "AmbiguousMatch", <|
+                "MessageTemplate"   -> prefix <> "The text \"`1`\" occurs `2` times in the cell, not `3`.",
+                "MessageParameters" -> { old, n, count }
+            |> ] ],
+        True,
+            StringReplace[ text, old -> new ]
+    ]
+];
+
+editedText // endDefinition;
+
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*SetCells*)
+
+(* All the cells, and the cells to delete with them, in one edit packet; the result names them only (their content is
+   what the agent just wrote) *)
+setCells // beginDefinition;
+
+setCells[ args_Association ] := Module[ { handle, ops, deleted, deletedIDs, cells },
+    handle     = resolveSnapshot @ args[ "notebook" ];
+    ops        = setCellsArgument[ handle, args[ "cells" ] ];
+    requireNoOutputCells[ handle, Cases[ ops, { "Set", cell_, Automatic, _ } :> cell ] ];
+    deleted    = Replace[ cellIDsArgument[ args[ "delete" ], "delete" ], { None -> { }, ids_ :> resolveCells[ handle, ids ] } ];
+    deletedIDs = Lookup[ $snapshots[ handle, "IDs" ], deleted ];
+    cells      = changedCells[
+        handle,
+        Select[ DeleteDuplicates @ ops[[ All, 2 ]], ! MemberQ[ deleted, # ] & ],
+        applyEdit[ handle, If[ deleted === { }, ops, Append[ ops, { "Delete", deleted } ] ] ]
+    ];
+    forgetCells[ handle, deleted ];
+    StringJoin[
+        "Set ", ToString @ Length @ cells, If[ Length @ cells === 1, " cell", " cells" ], " of ", handle, ": ",
+        StringRiffle[ "#" <> $snapshots[ handle, "IDs", # ] & /@ cells, ", " ],
+        If[ deleted === { }, "", "; deleted " <> StringRiffle[ "#" <> # & /@ deletedIDs, ", " ] ],
+        ". ReadCells shows their new content.",
+        codeCheck[ handle, cells, evaluateArgument @ args ]
+    ]
+];
+
+setCells // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*InsertCells*)
+insertCells // beginDefinition;
+
+insertCells[ args_Association ] := Module[ { handle, cells, anchor, position, result, inserted, where },
+    handle   = resolveSnapshot @ args[ "notebook" ];
+    cells    = newCellsArgument @ args[ "newCells" ];
+    anchor   = anchorArgument[ handle, args[ "cell" ] ];
+    position = positionArgument @ args[ "position" ];
+    result   = applyEdit[ handle, { { "Insert", anchor, position, cells } } ];
+    inserted = Cases[ Lookup[ result, "Inserted", { } ], _CellObject ];
+    numberCells[ handle, inserted ];
+    where = Which[
+        MatchQ[ anchor, _CellObject ], ToLowerCase @ position <> " #" <> $snapshots[ handle, "IDs", anchor ],
+        position === "Before"        , "at the beginning",
+        True                         , "at the end"
+    ];
+    StringJoin[
+        "Inserted ", ToString @ Length @ inserted, If[ Length @ inserted === 1, " cell ", " cells " ], where, " of ", handle,
+        ":\n",
+        cellBlocks[ handle, inserted ],
+        codeCheck[ handle, inserted, evaluateArgument @ args ]
+    ]
+];
+
+insertCells // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*DeleteCells*)
+deleteCells // beginDefinition;
+
+deleteCells[ args_Association ] := Module[ { handle, cells, ids, result },
+    handle = resolveSnapshot @ args[ "notebook" ];
+    cells  = resolveCells[ handle, Replace[ cellIDsArgument[ args[ "cells" ], "cells" ], None :> missingArgument[ "cells" ] ] ];
+    ids    = Lookup[ $snapshots[ handle, "IDs" ], cells ];
+    result = applyEdit[ handle, { { "Delete", cells } } ];
+    forgetCells[ handle, cells ];
+    StringJoin[
+        "Deleted ", ToString @ Replace[ Lookup[ result, "Deleted", Length @ cells ], Except[ _Integer ] -> Length @ cells ],
+        If[ Length @ cells === 1, " cell (", " cells (" ], StringRiffle[ "#" <> # & /@ ids, ", " ], ") from ", handle, "."
+    ]
+];
+
+deleteCells // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Code check*)
+
+(* The end of an edit's result when the edit changed or inserted one of the snapshot's Input or Code cells: those
+   cells, evaluated in order in a fresh context of the sandbox kernel, with what each gives that is worth showing and
+   its messages, so that the agent needs no evaluator to check its code. "" otherwise. *)
+codeCheck // beginDefinition;
+
+codeCheck[ handle_String, changed_List ] := codeCheck[ handle, changed, False ];
+
+codeCheck[ handle_String, changed_List, evaluate_ ] := Module[ { code, cells, targets, results },
+    code = notebookFrontEnd[ "CodeCells", $snapshots[ handle, "Notebook" ] ];
+    If[ ! MatchQ[ code, { __Association } ] || ! IntersectingQ[ Lookup[ code, "Cell" ], changed ], Return[ "", Module ] ];
+    cells   = Lookup[ code, "Cell" ];
+    (* the cells written and every one after the first of them, whose results may depend on it *)
+    targets = If[ TrueQ @ evaluate, Range[ First @ FirstPosition[ cells, Alternatives @@ changed, { 1 }, { 1 }, Heads -> False ], Length @ cells ], { } ];
+    results = If[ targets === { },
+        sandboxCheckCells[ Lookup[ code, "Boxes" ], $cellCheckSeconds, $codeCheckSeconds ],
+        sandboxCheckCells[ Lookup[ code, "Boxes" ], $cellCheckSeconds, $codeCheckSeconds, targets ]
+    ];
+    If[ ! ListQ @ results,
+        Return[ "\n\nCode check: the code could not be checked (" <> codeCheckFailureText @ results <> ").", Module ]
+    ];
+    targets = Select[ targets, # <= Length @ results & ];
+    StringJoin[
+        codeCheckText[ Lookup[ $snapshots[ handle, "IDs" ], cells, "?" ], results ],
+        If[ targets === { }, "", evaluatedOutputs[ handle, cells[[ targets ]], results[[ targets ]] ] ]
+    ]
+];
+
+codeCheck // endDefinition;
+
+
+(* The outputs of evaluated Input cells, replaced in one edit: for each cell with a result to show, the Output, Print,
+   Message and Echo cells right after it are deleted and an Output cell with the result's boxes (from the sandbox kernel,
+   checked like the agent's text) is inserted after it; a cell whose result is Null loses its outputs. A cell whose
+   result can't be written (aborted, too large, or content that would run code when shown) keeps its old outputs, and
+   the result says so. *)
+evaluatedOutputs // beginDefinition;
+
+evaluatedOutputs[ handle_String, cells_List, results_List ] := Module[ { entries, plans, deleted, inserts, kept, result, inserted },
+    entries = notebookFrontEnd[ "CellText", $snapshots[ handle, "Notebook" ], All, 1, True ];
+    If[ ! MatchQ[ entries, { KeyValuePattern[ "Cell" -> _CellObject ]... } ], Return[ "", Module ] ];
+    plans   = MapThread[ outputPlan, { cells, results } ];
+    deleted = Catenate[ MapThread[ If[ #2[[ 1 ]] === "Kept", { }, followingOutputs[ entries, #1 ] ] &, { cells, plans } ] ];
+    inserts = Cases[ plans, { "Insert", op_ } :> op ];
+    kept    = Cases[ Transpose @ { cells, plans }, { cell_, { "Kept", why_ } } :> "#" <> $snapshots[ handle, "IDs", cell ] <> " (" <> why <> ")" ];
+    result  = If[ inserts === { } && deleted === { },
+        <| |>,
+        Catch[ applyEdit[ handle, Join[ If[ deleted === { }, { }, { { "Delete", deleted } } ], inserts ] ], $toolErrorTag ]
+    ];
+    (* the front end refused the outputs (e.g. boxes its parser can't read): the batch changed nothing, and the cells'
+       edit is done, so the tool still succeeds *)
+    If[ StringQ @ result,
+        kept = Join[ kept, Cases[ Transpose @ { cells, plans }, { cell_, { "Insert" | "Delete", ___ } } :>
+            "#" <> $snapshots[ handle, "IDs", cell ] <> " (the front end refused the outputs: " <> First @ StringSplit[ result, ":" ] <> ")" ] ];
+        deleted = { };
+        result  = <| |>
+    ];
+    inserted = Cases[ Lookup[ result, "Inserted", { } ], _CellObject ];
+    forgetCells[ handle, deleted ];
+    numberCells[ handle, inserted ];
+    StringJoin[
+        "\n\nEvaluated ", StringRiffle[ "#" <> $snapshots[ handle, "IDs", # ] & /@ cells, ", " ], ": ",
+        If[ inserted === { },
+            "no new outputs.",
+            "new Output cells " <> outputIDs[ handle, inserts, inserted ] <> " (their results are in the code check)."
+        ],
+        If[ kept === { }, "", "\nNot written, so the old outputs are kept: " <> StringRiffle[ kept, ", " ] <> "." ]
+    ]
+];
+
+evaluatedOutputs // endDefinition;
+
+
+(* The new Output cells by the cell they follow, e.g. #c115 after #c10, #c116 and #c117 after #c16. The tools don't read
+   them: the front end would first have to typeset every new cell, which takes seconds for plots, and the code check
+   already shows each result. *)
+outputIDs // beginDefinition;
+
+outputIDs[ handle_String, inserts_List, inserted_List ] /; Total[ Length /@ inserts[[ All, 4 ]] ] === Length @ inserted :=
+    StringRiffle[
+        MapThread[
+            StringRiffle[ "#" <> $snapshots[ handle, "IDs", # ] & /@ #2, " and " ] <> " after #" <> $snapshots[ handle, "IDs", #1 ] &,
+            { inserts[[ All, 2 ]], TakeList[ inserted, Length /@ inserts[[ All, 4 ]] ] }
+        ],
+        ", "
+    ];
+
+outputIDs[ handle_String, _List, inserted_List ] := StringRiffle[ "#" <> $snapshots[ handle, "IDs", # ] & /@ inserted, ", " ];
+
+outputIDs // endDefinition;
+
+
+(* The output cells right after a cell *)
+followingOutputs // beginDefinition;
+
+followingOutputs[ entries_List, cell_ ] := Module[ { pos = FirstPosition[ Lookup[ entries, "Cell" ], cell, None, { 1 } ] },
+    If[ pos === None, Return[ { }, Module ] ];
+    Lookup[ TakeWhile[ Drop[ entries, First @ pos ], outputStyleQ @ Lookup[ #, "Style", None ] & ], "Cell" ]
+];
+
+followingOutputs // endDefinition;
+
+
+(* What to do with a cell's outputs: { "Insert", op } for results to show (an Output cell for each of the cell's
+   statements with a result), { "Delete" } for none (the stale outputs go), { "Kept", why } for results that can't be
+   written. Outputs are checked for code that runs when shown; an InterpretationFunction (a plot legend's) runs only
+   when an output is evaluated as input, as with the Input cell's own code. The new Output cells also have the style
+   "EvaluationUnmatched", the front end's graying of an output that its input in the user's session did not give: they
+   come from the sandbox kernel, and evaluating the input replaces them. *)
+outputPlan // beginDefinition;
+
+outputPlan[ cell_, result_Association ] := With[ { boxes = Lookup[ result, "Boxes", None ] },
+    Which[
+        TrueQ @ result[ "Aborted" ],
+            { "Kept", "aborted after " <> ToString @ $cellCheckSeconds <> " s" },
+        boxes === None,
+            { "Delete" },
+        MemberQ[ boxes, "" ],
+            { "Kept", "too large" },
+        AnyTrue[ boxes, StringQ @ Catch[ requireInertText[ "\:3014" <> # <> "\:3015", "The output", $$codeShownInWrapper ]; Null, $toolErrorTag ] & ],
+            { "Kept", "it would run code when shown" },
+        True,
+            { "Insert", { "Insert", cell, "After", { $evaluatedOutputStyles, "\:3014" <> # <> "\:3015" } & /@ boxes } }
+    ]
+];
+
+outputPlan // endDefinition;
+
+$evaluatedOutputStyles = { "Output", "EvaluationUnmatched" };
+
+
+(* Whether this call's edits evaluate their Input cells: the model decides, with evaluate *)
+evaluateArgument // beginDefinition;
+evaluateArgument[ args_Association ] := booleanArgument[ args[ "evaluate" ], "evaluate", False ];
+evaluateArgument // endDefinition;
+
+
+outputStyleQ // beginDefinition;
+outputStyleQ[ style_ ] := MemberQ[ { "Output", "Print", "Message", "Echo" }, style ];
+outputStyleQ // endDefinition;
+
+
+(* Hand-written outputs are refused: the outputs are the real results *)
+requireNoOutputCells // beginDefinition;
+
+requireNoOutputCells[ _String, { } ] := Null;
+
+requireNoOutputCells[ handle_String, cells_List ] := With[
+    { entries = notebookFrontEnd[ "CellText", $snapshots[ handle, "Notebook" ], cells, 1, True ] },
+    If[ MatchQ[ entries, { __Association } ] && AnyTrue[ Lookup[ entries, "Style", None ], outputStyleQ ], toolError @ $outputCellText ]
+];
+
+requireNoOutputCells // endDefinition;
+
+$outputCellText = "\
+Output cells are never written by hand: they hold the real results. Give evaluate: true with the edit of the Input \
+cell, which replaces its outputs and those of the Input cells after it with their results, or delete outputs that \
+become stale.";
+
+
+(* results: one <| "Result" -> what the cell gave as InputForm ("" for nothing worth showing), "Messages", "Aborted" |>
+   for each cell in order, fewer if the check ran out of time *)
+codeCheckText // beginDefinition;
+
+codeCheckText[ ids_List, results_List ] := Module[ { lines, failed },
+    lines  = DeleteCases[ MapThread[ codeCheckLine, { Take[ ids, Length @ results ], results } ], "" ];
+    failed = Count[ results, KeyValuePattern[ "Messages" -> { __ } ] ];
+    StringJoin[
+        "\n\nCode check: the snapshot's ", ToString @ Length @ ids, " Input cells, evaluated in order in a fresh context ",
+        "of a separate kernel, ",
+        If[ failed === 0, "give no messages", "give messages in " <> ToString @ failed <> If[ failed === 1, " cell", " cells" ] ],
+        If[ lines === { }, ".", ":\n" <> StringRiffle[ lines, "\n" ] ],
+        If[ Length @ results < Length @ ids,
+            "\nThe check stopped after " <> ToString @ $codeCheckSeconds <> " s: #" <> ids[[ Length @ results + 1 ]] <>
+                " and later cells were not checked.",
+            ""
+        ]
+    ]
+];
+
+codeCheckText // endDefinition;
+
+
+codeCheckLine // beginDefinition;
+
+codeCheckLine[ id_String, result_Association ] := Module[ { shown, messages },
+    shown    = If[ TrueQ @ result[ "Aborted" ], "aborted after " <> ToString @ $cellCheckSeconds <> " s", result[ "Result" ] ];
+    messages = Replace[ result[ "Messages" ], { { } -> "", m_List :> "messages " <> StringRiffle[ m, ", " ] } ];
+    If[ shown === "" && messages === "", "", "#" <> id <> ": " <> StringRiffle[ DeleteCases[ { shown, messages }, "" ], "; " ] ]
+];
+
+codeCheckLine // endDefinition;
+
+
+codeCheckFailureText // beginDefinition;
+codeCheckFailureText[ Failure[ "TimedOut", _ ] ] := "the separate kernel did not answer in time";
+codeCheckFailureText[ Failure[ "KernelQuit", _ ] ] := "the code quit the separate kernel";
+codeCheckFailureText[ _ ] := "the separate kernel is not available";
+codeCheckFailureText // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*saveSnapshot*)
+
+(* Saves the edits of a snapshot (to the snapshot, never to the user's notebook): ShowChanges saves first *)
+saveSnapshot // beginDefinition;
+
+saveSnapshot[ handle_String ] := (
+    If[ notebookFrontEnd[ "Save", $snapshots[ handle, "Notebook" ] ] === $Failed,
+        toolError[ "The front end could not save `1`.", snapshotLabel @ handle ]
+    ];
+    $snapshots[[ handle, "Unsaved" ]] = False
+);
+
+saveSnapshot // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*ShowChanges*)
+
+(* Saves the snapshot if it has unsaved edits, has CellDiff show the source as a diff against the snapshot (in the
+   source notebook itself; a source file is opened; a new notebook is simply shown), then closes the snapshot (the front
+   end deletes its file). CellDiff reads the still open snapshot with NotebookGet rather than its file, which would have
+   to be evaluated. If the diff can't be shown, the snapshot stays open. *)
+showChanges // beginDefinition;
+
+showChanges[ args_Association ] := Module[ { handle, record, result },
+    handle = resolveSnapshot @ args[ "notebook" ];
+    record = $snapshots @ handle;
+    If[ ! TrueQ @ record[ "Edited" ],
+        Return[ "There are no changes to show: " <> handle <> " was not edited. Close it with CloseNotebook.", Module ]
+    ];
+    If[ TrueQ @ record[ "Unsaved" ], saveSnapshot @ handle ];
+    result = notebookFrontEnd[ "ShowDiff", record[ "Source" ], record[ "Notebook" ], Lookup[ record, "EditedCells", { } ] ];
+    If[ FailureQ @ result,
+        toolError[ "The changes of `1` could not be shown: `2`", snapshotLabel @ handle, diffFailureText @ result ]
+    ];
+    closeSnapshot @ handle;
+    StringJoin[
+        "The user now sees ", quoted @ inlineText @ record[ "Title" ], " as a diff against your edits, and accepts or \
+rejects each change there. ", handle, " is closed."
+    ]
+];
+
+showChanges // endDefinition;
+
+
+diffFailureText // beginDefinition;
+diffFailureText[ failure: Failure[ _, _Association ] ] := failureMessage @ failure;
+diffFailureText[ _ ] := "the comparison failed.";
+diffFailureText // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*CloseNotebook*)
+closeNotebook // beginDefinition;
+
+closeNotebook[ args_Association ] := Module[ { handle },
+    handle = resolveSnapshot @ args[ "notebook" ];
+    closeSnapshot @ handle;
+    "Closed " <> handle <> "; its edits were discarded."
+];
+
+closeNotebook // endDefinition;
+
+
+(* Closes a snapshot; the formulas read so far are forgotten when the last one closes *)
+closeSnapshot // beginDefinition;
+
+closeSnapshot[ handle_String ] := (
+    notebookFrontEnd[ "Close", $snapshots[ handle, "Notebook" ] ];
+    KeyDropFrom[ $snapshots, handle ];
+    If[ $snapshots === <| |>, $texReads = <| |>; $texOriginals = <| |> ];
+);
+
+closeSnapshot // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Package Footer*)
+addToMXInitialization[
+    Null
+];
+
+End[ ];
+EndPackage[ ];
