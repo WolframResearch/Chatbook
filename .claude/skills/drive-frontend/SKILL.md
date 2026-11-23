@@ -111,6 +111,11 @@ Notes:
   `` Wolfram`ChatbookFrontEndServer`FrontEndServerNotebook["title or id"] `` (and `FrontEndServerCell["id"]`),
   or use `SelectedNotebook[]` / `eval --cell`. `eval` code runs in `` Global` `` of the front end's kernel.
 - Use fully qualified names for Chatbook symbols (``Wolfram`Chatbook`...``); Chatbook is not on `$ContextPath`.
+- **Never send `` FrontEnd`UpdateDynamicObjectsSynchronous[] `` or `` FrontEnd`UpdateDynamicObjects[] `` with no
+  argument** (e.g. through `FrontEndExecute` or `MathLink`CallFrontEnd`): the front end doesn't expect the missing
+  argument and crashes. To make Dynamics update before reading state, call the documented System functions
+  `UpdateDynamicObjects[]` / `UpdateDynamicObjectsSynchronous[]`, which fill in the argument, or just wait
+  (`sleep 0.5`-`1`) between separate requests.
 - `locate`, and therefore `click --box/--text/--cell`, **moves the notebook's selection** to the target (and scrolls
   it into view). Keep that in mind when testing selection-dependent features (e.g. `AllowSelectionContext`).
   `--text` is case-sensitive; text the front end can't search (inside chat messages, buttons, docked/attached cells)
