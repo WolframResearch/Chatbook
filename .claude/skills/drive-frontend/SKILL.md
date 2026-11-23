@@ -58,6 +58,21 @@ overrides). While the Windows session is locked, screenshots and input fail with
 synthetic input; `click`/`type`/`key` then fail naming the window in front instead of pretending it worked (see
 Troubleshooting).
 
+**Which front end.** `launch` starts the newest installed one: `WOLFRAMNB`, `WolframNB` on the `PATH`, then on Windows
+the newest installation in the registry (`$fe info` shows its `FrontEndVersion`). `--front-end PATH` picks another.
+A **front end built from source** also needs the installation whose `SystemFiles` and kernel it should use:
+
+```bash
+$fe launch --chatbook --front-end C:/path/to/FrontEnd/build.NAME/bin/Mathematica.exe \
+  --top-directory "C:/Program Files/Wolfram Research/Wolfram/16.0"
+```
+
+`--top-directory DIR` passes `--topDirectory DIR` to the front end (release builds ignore the
+`WOLFRAM_FRONTEND_9999_TOPDIRECTORY` variable); the `WOLFRAMNB` and `WOLFRAMNB_TOPDIRECTORY` environment variables
+can stand in for both options. A source build reports a version like `99.99`. Front end packets that only it knows
+(``MathLink`CallFrontEnd[FrontEnd`NewPacket[...]]``) return `Null` in an installed front end and pop up the Messages
+window with `Could not process unknown packet "NewPacket".`
+
 **Memory:** each front end (with its kernels) uses about 1 GB. Run as few as possible at once and stop them promptly;
 running a machine out of memory gets unrelated processes killed, which can take down the user's desktop session.
 `launch` refuses to start when less than 2 GB is available. Don't launch front ends from parallel subagents.
