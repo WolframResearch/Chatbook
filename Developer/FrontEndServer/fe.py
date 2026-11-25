@@ -1011,6 +1011,14 @@ def cmd_launch(args):
         raise CLIError(f"Only {free} MB of memory available; a front end needs about 1 GB and starting one now could "
                        f"make the system run out of memory. Stop other front ends (`fe.py servers`) or pass --force.")
     front_end_path = find_front_end(native_path(args.front_end))
+    command = [front_end_path]
+    top_directory = native_path(args.top_directory or os.environ.get("WOLFRAMNB_TOPDIRECTORY"))
+    if top_directory:
+        # A front end built from source has no installation around it: it takes SystemFiles, the kernel etc. from
+        # an installed product's directory (WOLFRAM_FRONTEND_9999_TOPDIRECTORY only works in debug builds).
+        if not os.path.isdir(top_directory):
+            raise CLIError(f"Not a directory (--top-directory or WOLFRAMNB_TOPDIRECTORY): {top_directory}")
+        command += ["--topDirectory", top_directory]
     token = secrets.token_hex(16)
     port = reserve_port(args.port, token)
     record = {"port": port, "token": token, "startTime": time.time()}
@@ -1060,7 +1068,7 @@ def cmd_launch(args):
         # Its own session (process group on Windows), so that Ctrl-C in this terminal does not reach the front end:
         detach = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP} if WINDOWS else {"start_new_session": True}
         with open(log_path, "w") as log:
-            front_end = subprocess.Popen([front_end_path], env=env, stdout=log, stderr=subprocess.STDOUT,
+            front_end = subprocess.Popen(command, env=env, stdout=log, stderr=subprocess.STDOUT,
                                          stdin=subprocess.DEVNULL, **detach)
         record["launcherPID"] = front_end.pid
         write_launch_record(record)
@@ -2217,6 +2225,9 @@ def build_parser():
     p.add_argument("--wm", action="store_true", help="run a window manager (xfwm4/openbox) on the new Xvfb display (Linux)")
     p.add_argument("--wm-command", help="window manager executable to use with --wm")
     p.add_argument("--front-end", help="path to the WolframNB executable")
+    p.add_argument("--top-directory", metavar="DIR",
+                   help="pass --topDirectory DIR to the front end, e.g. the installation directory that a front end "
+                        "built from source should use (default: $WOLFRAMNB_TOPDIRECTORY)")
     p.add_argument("--keep-welcome", action="store_true", help="do not close the Welcome screen")
     p.add_argument("--timeout", type=float, default=180, help="seconds to wait for startup")
     p.add_argument("--force", action="store_true", help="launch even if little memory is available")
