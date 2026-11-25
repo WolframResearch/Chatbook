@@ -12,8 +12,16 @@ A script is a JSON file with a list of turns; each turn is a list of steps:
     {"turns": [[step, ...], [step, ...], ...], "chunk": 12, "delay": 0.03}
 The turn that answers a request is the number of assistant messages after the last user message (so the first turn
 answers the user's prompt, the second answers the first tool result, and so on); the last turn is repeated after that.
-"chunk" and "delay" are optional and override the command line. Steps:
-    {"content": "text"}     streamed as message.content (write "<think>...</think>" here for inline reasoning)
+"chunk", "delay" and "stop" are optional and override the command line (--chunk, --delay, --no-stop). Steps:
+    {"content": "text"}     streamed as message.content in chunks of --chunk characters
+                            (write "<think>...</think>" here for inline reasoning)
+    {"chunks": ["``", "`wl\\n", "x"]}
+                            streamed as message.content, exactly these chunks (to choose the split points)
+    {"fuzz": {"seed": 1, "length": 2000, "chunk": [1, 16], "fragments": [...], "extra": [...]}}
+                            random content built from Markdown/LaTeX/WL fragments, in random chunk sizes; every key is
+                            optional. "fragments" replaces the built-in list, "extra" adds to it. Without a seed each
+                            request gets a new one. The log records the seed and the exact chunks of each fuzzed
+                            response, so a failure can be replayed with a "chunks" step or the same seed.
     {"thinking": "text"}    streamed as message.thinking (reasoning that the provider reports separately)
     {"pause": 1.5}          wait this many seconds before the next chunk
     {"tool": "wolfram_language_evaluator", "short": "wl", "arguments": {"code": "1 + 1"}}
@@ -21,13 +29,16 @@ answers the user's prompt, the second answers the first tool result, and so on);
                               native tool_calls if the request lists "tools",
                               "TOOLCALL: name\\n{json}\\nENDARGUMENTS\\nENDTOOLCALL" if it stops at ENDTOOLCALL,
                               "/short\\nvalue\\n/exec" if it only stops at "\\n/exec"
-Content is cut at the first stop token of the request (options.stop), like a real server.
+Content is cut at the first stop token of the request (options.stop), like a real server, unless stop tokens are
+turned off with --no-stop or "stop": false. Turning them off lets any text through, but then a tool call isn't ended
+by the server (Chatbook still detects its own end tokens on the client side).
 The script file is read again for every chat request, so it can be edited while the server runs.
 
-Usage: ollama_replay.py --script FILE [--port 11435] [--chunk 12] [--delay 0.03] [--log requests.jsonl]
+Usage: ollama_replay.py --script FILE [--port 11435] [--chunk 12] [--delay 0.03] [--no-stop] [--log requests.jsonl]
 """
 import argparse
 import json
+import random
 import sys
 import threading
 import time
@@ -81,28 +92,90 @@ def tool_text(step, fmt):
     return "TOOLCALL: " + step["tool"] + "\n" + json.dumps(args) + "\nENDARGUMENTS\nENDTOOLCALL"
 
 
-def plan(steps, fmt, stops):
-    """Expand a turn into a list of ("content"|"thinking"|"pause"|"tool_calls", value) parts, applying stop tokens."""
-    parts = []
+# Fragments that fuzz text is built from: Markdown, LaTeX and Wolfram Language syntax that the formatter has to
+# recognize, in every combination and split at every point. Stop tokens and tool call syntax are left out (they end
+# the response or start a tool call); add them with "extra" when that's what you're testing.
+FUZZ_FRAGMENTS = [
+    "```", "```wl\n", "```wolfram\n", "```python\n", "\n```\n", "`", "``", "$", "$$", "\\(", "\\)", "\\[", "\\]",
+    "|", " | ", "\n|---|---|\n", "| a | b |\n", "**", "*", "_", "__", "~~", "#", "## ", "\n### ", "- ", "\n- ",
+    "\n1. ", "\n> ", "<think>", "</think>", "\n<think>\n", "\n</think>\n", "[", "](", ")", "![", "](attachment://",
+    "<!", "!>", "\\!\\(\\*", "RowBox[{", "}]", "\\:f442", "\\[Alpha]", "\\[", "Plot[Sin[x], {x, 0, Pi}]", "x^2",
+    "\\frac{1}{2}", "\\begin{matrix}", "\\end{matrix}", "{", "}", "[", "]", "\"", "\\", "<", ">", "&", "\n", "\n\n",
+    "\n\n\n", " ", "  ", "\t", "word ", "text ", "The answer is ", "1 + 1", "∑", "→", "日本語", "🎉", "👩‍👩‍👧", "é",
+    "\u200b", "\u00a0", "\uf3b5",
+]
+
+
+def fuzz_chunks(spec):
+    """Random text built from fragments, split into random chunk sizes. Returns (seed, chunks)."""
+    seed = spec.get("seed")
+    if seed is None:
+        seed = random.randrange(2 ** 32)
+    rng = random.Random(seed)
+    fragments = list(spec.get("fragments") or FUZZ_FRAGMENTS) + list(spec.get("extra") or [])
+    length = int(spec.get("length", 2000))
+    low, high = spec.get("chunk", [1, 16])
+    text = ""
+    while len(text) < length:
+        text += rng.choice(fragments)
+    chunks, i = [], 0
+    while i < len(text):
+        size = rng.randint(int(low), int(high))
+        chunks.append(text[i:i + size])
+        i += size
+    return seed, chunks
+
+
+def cut_at_stop(chunks, stops):
+    """Cut a list of chunks at the first stop token in their joined text, like a real server. Returns (chunks, cut)."""
+    text = "".join(chunks)
+    hits = [text.find(s) for s in stops if s and s in text]
+    if not hits:
+        return chunks, False
+    end, out, pos = min(hits), [], 0
+    for c in chunks:
+        if pos + len(c) >= end:
+            if end > pos:
+                out.append(c[:end - pos])
+            break
+        out.append(c)
+        pos += len(c)
+    return out, True
+
+
+def plan(steps, fmt, stops, chunk):
+    """Expand a turn into a list of ("content"|"thinking", [chunks]), ("pause", seconds) and ("tool_calls", calls)
+    parts, applying stop tokens to content. Also returns what was fuzzed, for the log."""
+    parts, fuzzed = [], []
+    split = lambda text: [text[i:i + chunk] for i in range(0, len(text), chunk)]
     for step in steps:
         if "pause" in step:
             parts.append(("pause", float(step["pause"])))
-        elif "thinking" in step:
-            parts.append(("thinking", step["thinking"]))
-        elif "content" in step or "tool" in step:
-            if "tool" in step and fmt == "service":
-                parts.append(("tool_calls", [{"function": {"name": step["tool"],
-                                                           "arguments": step.get("arguments") or {}}}]))
-                return parts
-            text = step["content"] if "content" in step else tool_text(step, fmt)
-            hits = [text.find(s) for s in stops if s and s in text]
-            if hits:
-                parts.append(("content", text[:min(hits)]))
-                return parts
-            parts.append(("content", text))
-            if "tool" in step:
-                return parts
-    return parts
+            continue
+        if "thinking" in step:
+            parts.append(("thinking", split(step["thinking"])))
+            continue
+        if "tool" in step and fmt == "service":
+            parts.append(("tool_calls", [{"function": {"name": step["tool"],
+                                                       "arguments": step.get("arguments") or {}}}]))
+            return parts, fuzzed
+        if "chunks" in step:
+            chunks = [str(c) for c in step["chunks"]]
+        elif "fuzz" in step:
+            seed, chunks = fuzz_chunks(step["fuzz"] or {})
+        elif "content" in step:
+            chunks = split(step["content"])
+        elif "tool" in step:
+            chunks = split(tool_text(step, fmt))
+        else:
+            continue
+        chunks, cut = cut_at_stop(chunks, stops)
+        if "fuzz" in step:
+            fuzzed.append({"seed": seed, "chunks": chunks, "cutAtStopToken": cut})
+        parts.append(("content", chunks))
+        if cut or "tool" in step:
+            return parts, fuzzed
+    return parts, fuzzed
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -177,16 +250,22 @@ class Handler(BaseHTTPRequestHandler):
         index = min(turn_index(messages), len(turns) - 1)
         fmt = tool_format(body)
         stops = (body.get("options") or {}).get("stop") or []
-        parts = plan(turns[index], fmt, stops)
-        chunk = int(script.get("chunk", ARGS.chunk))
+        if ARGS.no_stop or script.get("stop") is False:
+            stops = []
+        chunk = max(1, int(script.get("chunk", ARGS.chunk)))
         delay = float(script.get("delay", ARGS.delay))
-        log({"method": "POST", "path": "/api/chat", "n": n, "turn": index, "toolFormat": fmt,
-             "stream": body.get("stream"), "think": body.get("think"), "options": body.get("options"),
-             "roles": [m.get("role") for m in messages], "last": str((messages or [{}])[-1].get("content"))[:300]})
+        parts, fuzzed = plan(turns[index], fmt, stops, chunk)
+        entry = {"method": "POST", "path": "/api/chat", "n": n, "turn": index, "toolFormat": fmt,
+                 "stream": body.get("stream"), "think": body.get("think"), "options": body.get("options"),
+                 "roles": [m.get("role") for m in messages], "last": str((messages or [{}])[-1].get("content"))[:300]}
+        if fuzzed:
+            # Everything needed to replay this response exactly: the seeds, and the chunks as a "chunks" step.
+            entry["fuzz"] = fuzzed
+        log(entry)
         model = body.get("model") or MODEL
         if body.get("stream", True) is False:
-            msg = {"role": "assistant", "content": "".join(v for k, v in parts if k == "content")}
-            thinking = "".join(v for k, v in parts if k == "thinking")
+            msg = {"role": "assistant", "content": "".join("".join(v) for k, v in parts if k == "content")}
+            thinking = "".join("".join(v) for k, v in parts if k == "thinking")
             if thinking:
                 msg["thinking"] = thinking
             calls = [c for k, v in parts if k == "tool_calls" for c in v]
@@ -210,9 +289,9 @@ class Handler(BaseHTTPRequestHandler):
                                       "message": {"role": "assistant", "content": "", "tool_calls": value}})
                     count += 1
                     continue
-                for i in range(0, len(value), chunk):
+                for piece in value:
                     msg = {"role": "assistant", "content": ""}
-                    msg[kind] = value[i:i + chunk]
+                    msg[kind] = piece
                     self.write_chunk({"model": model, "created_at": now(), "message": msg, "done": False})
                     count += 1
                     time.sleep(delay)
@@ -240,6 +319,8 @@ def main():
     p.add_argument("--port", type=int, default=11435)
     p.add_argument("--chunk", type=int, default=12, help="characters per streamed chunk (default: %(default)s)")
     p.add_argument("--delay", type=float, default=0.03, help="seconds between chunks (default: %(default)s)")
+    p.add_argument("--no-stop", action="store_true",
+                   help="ignore the stop tokens of requests, so that any text can be streamed")
     p.add_argument("--log", help="append one JSON line per request to this file")
     ARGS = p.parse_args()
     with open(ARGS.script) as f:

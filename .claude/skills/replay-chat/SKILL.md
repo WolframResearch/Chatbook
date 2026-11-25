@@ -4,11 +4,13 @@ description: >-
   Run real Chatbook chats against a scripted, local fake LLM (a fake Ollama server, Developer/ReplayServer) instead of
   a real model, in a chat notebook, the Notebook Assistant window, or the sidebar. The answer streams through the whole
   real pipeline (LLMServices, streaming handlers, formatting, tool calls and the follow-up request) with exactly the
-  text, chunk size and timing you script, every time, offline and for free. Use this whenever a task needs a chat
+  text, chunk size and timing you script, every time, offline and for free. It can also send exact chunk boundaries,
+  text containing stop tokens, and seeded random (fuzz) text, for stress-testing the streaming formatter. Use this
+  whenever a task needs a chat
   response that is repeatable or specific - for example "reproduce this streaming/formatting bug", "check how a
   response with a table and a tool call renders", "run 100 chats to see if the front end crashes", "test what happens
-  when the model writes X", "measure time to first token without network noise" - or when no model or LLMKit
-  sign-in is available.
+  when the model writes X", "stress-test the formatter with garbage", "measure time to first token without network
+  noise" - or when no model or LLMKit sign-in is available.
 ---
 
 # Replaying scripted chats
@@ -36,6 +38,7 @@ python3 $R/ollama_replay.py --script $R/Scripts/sine-tool.json --log /tmp/replay
   agent's replay server) may be there. If so, use `--port N` and call `` Wolfram`ChatbookReplay`ReplaySetPort[N] ``
   in the front end's kernel (it lasts for that kernel session).
 - `--chunk` (characters per chunk, default 12) and `--delay` (seconds between chunks, default 0.03) set the speed.
+  `--no-stop` turns off stop tokens (see [Stress-testing the formatter](#stress-testing-the-formatter)).
 - Stop it with `kill %1` or `pkill -f ollama_replay.py` when done.
 
 ## 2. Send a chat
@@ -89,7 +92,8 @@ client-side stop). Then look at it: `$fe cells ReplayChat`, `$fe screenshot ...`
   answers the prompt, turn 1 the first tool result, and so on; the last turn repeats after that. A new prompt in the
   same chat starts at turn 0 again.
 - **Steps.** `content` (plain response text), `thinking` (reasoning the provider reports separately; Chatbook shows it
-  as a reasoning block), `pause` (seconds of silence, e.g. a slow model or a long tool argument), and `tool`.
+  as a reasoning block), `pause` (seconds of silence, e.g. a slow model or a long tool argument), and `tool`. For
+  stress tests there are also `chunks` and `fuzz` (see [Stress-testing the formatter](#stress-testing-the-formatter)).
 - **Tool calls.** Write them with `tool` rather than as text: the server writes them in the format the request asks
   for, which depends on the settings. With default tools Chatbook uses the "Simple" format (`/wl\ncode\n/exec`,
   stop token `"\n/exec"`), with custom tools `TOOLCALL: ... ENDTOOLCALL`, and with `"ToolMethod" -> "Service"` native
@@ -97,13 +101,42 @@ client-side stop). Then look at it: `$fe cells ReplayChat`, `$fe screenshot ...`
   `General::ChatbookInternal` failure from `parsePartialToolCallString` for `TOOLCALL:` text in a Simple-method chat).
   `short` is the tool's `"ShortName"` (`Source/Chatbook/Tools/DefaultToolDefinitions/*.wl`): `wl`, `wa`,
   `doc_search`, `create_nb`, ...
-- **Stop tokens.** Content is cut at the first stop token of the request, as a real server does. Text after the tool
-  call is never sent.
+- **Stop tokens.** Content is cut at the first stop token of the request, as a real server does, even when the token
+  falls across chunk boundaries. Text after the tool call is never sent.
 - Optional top-level `"chunk"` and `"delay"` override the command line for that script.
 - The script is read again for every request, so you can edit it between chats without restarting the server.
 
 To replay a real model's answer, copy it from a real chat (e.g. `` $fe read CELLID --format Markdown `` gives
 something close; the raw text is more faithful) into `content` steps, and split it where the model made tool calls.
+
+## Stress-testing the formatter
+
+These are optional tools, for when the task is about how streamed text is parsed or displayed (the streaming lexer,
+formatting rules, partial code blocks/tables/math, think tags). For ordinary UI checks, a realistic `content` script
+is the better test. Decide case by case whether you need them.
+
+- **Choose the split points** with `{"chunks": [...]}`: each string is sent as one chunk, exactly. Use it to put a
+  boundary inside a token (`` "`" | "``wl" ``, `"$" | "$x$"`, `"<thi" | "nk>"`, a table row split mid-cell). The
+  boundaries, not the text, are what break streaming code. `Scripts/split-points.json` is an example.
+- **Stream text that contains stop tokens** with `--no-stop` (or `"stop": false` in the script). By default the
+  server cuts content at the request's stop tokens, so strings such as `/end`, `ENDTOOLCALL`, `\n/exec` or `[INFO]`
+  never reach Chatbook. Without the cut, Chatbook's own client-side stop detection is what gets tested. Leave it on
+  for anything involving tool calls, since the server then no longer ends a tool call.
+- **Fuzz** with `{"fuzz": {...}}`: random text built from Markdown, LaTeX and WL fragments (fences, `$`, `\(`, table
+  pipes, `<think>`, box syntax, emoji, zero-width spaces, ...), sent in random chunk sizes. Keys, all optional:
+  `seed`, `length` (characters, default 2000), `chunk` (`[min, max]`, default `[1, 16]`), `fragments` (replaces the
+  built-in list), `extra` (adds to it, e.g. `["/end", "TOOLCALL: "]`). `Scripts/fuzz.json` is an example.
+  - Without a `seed`, every request gets a new one, so a loop of chats covers different text each time.
+  - Each fuzzed response's log entry has `fuzz: [{seed, chunks, cutAtStopToken}]`. When a run fails, take the
+    `chunks` from the log and replay them as a `chunks` step (the exact stream), or fix the `seed`.
+  - Fuzz text is nonsense, so judge the result by robustness, not appearance: no `ChatbookInternal` failure in the
+    output (`$fe cells`), no messages (`$fe messages`), the chat finishes (`done` in the log, kernel idle), and the
+    front end survives. Ugly output is expected.
+- `--delay 0` streams as fast as possible, to find races in the per-chunk handlers.
+
+Once a failing stream has been found, shrink it: delete chunks from the `chunks` list until the failure goes away,
+and keep the smallest one that still fails. That small stream belongs in a unit test (e.g. the formatter harness),
+not just a replay script.
 
 ## Repeated runs
 

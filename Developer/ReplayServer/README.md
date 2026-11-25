@@ -9,6 +9,8 @@ repeatable, offline, free, and at any speed. Agents: see `.claude/skills/replay-
 | `ReplayChat.wl` | Helpers (``Wolfram`ChatbookReplay` ``) that send chats to the server from a chat notebook, the Notebook Assistant window, or the sidebar |
 | `Scripts/sine-tool.json` | Reasoning, a code block, a table, a Wolfram Language evaluator tool call, and an answer to the tool result |
 | `Scripts/sine.json` | The same without the tool call |
+| `Scripts/split-points.json` | Exact chunks that split a code fence, inline math, a table and a think tag mid-token |
+| `Scripts/fuzz.json` | Random Markdown/LaTeX/WL text in random chunk sizes, different for every chat |
 
 ## How it works
 
@@ -20,6 +22,9 @@ everything after the HTTP request (streaming handlers, formatting, tool calls, f
 The server answers `/api/ps`, `/api/version`, `/api/tags`, `/api/show` and `/api/chat`. Chat responses are streamed
 as NDJSON in chunks of `--chunk` characters every `--delay` seconds, are cut at the request's stop tokens, and tool
 calls are written in whichever format the request expects (Simple `/exec`, `TOOLCALL:`, or native `tool_calls`).
+
+For stress-testing the formatter, a script can also send exact chunks (to choose the split points), fuzzed text with a
+logged seed, and `--no-stop` streams text that contains stop tokens.
 
 ## Quick start
 
