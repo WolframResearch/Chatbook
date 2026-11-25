@@ -44,6 +44,14 @@ front and mouse/keyboard commands use the real pointer and keyboard focus (see [
 taken from the `WOLFRAMNB` environment variable, `WolframNB` on the `PATH`, or the Wolfram installations registered
 in the Windows registry (newest version first); or pass `--front-end PATH`.
 
+A front end built from source has no installation around it: pass the installation whose `SystemFiles` and kernel it
+should use with `--top-directory DIR` (or `WOLFRAMNB_TOPDIRECTORY`), which `launch` hands to it as `--topDirectory DIR`:
+
+```bash
+fe.py launch --front-end C:/path/to/FrontEnd/build.NAME/bin/Mathematica.exe \
+  --top-directory "C:/Program Files/Wolfram Research/Wolfram/16.0"
+```
+
 `launch` starts `WolframNB` with `WOLFRAMINIT="-initfile <bootstrap>"`. The bootstrap file is written to a per-user
 directory in the temp directory (`<temp>/ChatbookFrontEndServer-<user>/`, i.e. `/tmp/...` on Linux and `%TEMP%\...` on
 Windows, which also holds logs, screenshots, and images exported by `eval`) because

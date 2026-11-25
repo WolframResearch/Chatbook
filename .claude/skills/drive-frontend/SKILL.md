@@ -58,6 +58,21 @@ overrides). While the Windows session is locked, screenshots and input fail with
 synthetic input; `click`/`type`/`key` then fail naming the window in front instead of pretending it worked (see
 Troubleshooting).
 
+**Which front end.** `launch` starts the newest installed one: `WOLFRAMNB`, `WolframNB` on the `PATH`, then on Windows
+the newest installation in the registry (`$fe info` shows its `FrontEndVersion`). `--front-end PATH` picks another.
+A **front end built from source** also needs the installation whose `SystemFiles` and kernel it should use:
+
+```bash
+$fe launch --chatbook --front-end C:/path/to/FrontEnd/build.NAME/bin/Mathematica.exe \
+  --top-directory "C:/Program Files/Wolfram Research/Wolfram/16.0"
+```
+
+`--top-directory DIR` passes `--topDirectory DIR` to the front end (release builds ignore the
+`WOLFRAM_FRONTEND_9999_TOPDIRECTORY` variable); the `WOLFRAMNB` and `WOLFRAMNB_TOPDIRECTORY` environment variables
+can stand in for both options. A source build reports a version like `99.99`. Front end packets that only it knows
+(``MathLink`CallFrontEnd[FrontEnd`NewPacket[...]]``) return `Null` in an installed front end and pop up the Messages
+window with `Could not process unknown packet "NewPacket".`
+
 **Memory:** each front end (with its kernels) uses about 1 GB. Run as few as possible at once and stop them promptly;
 running a machine out of memory gets unrelated processes killed, which can take down the user's desktop session.
 `launch` refuses to start when less than 2 GB is available. Don't launch front ends from parallel subagents.
@@ -111,6 +126,11 @@ Notes:
   `` Wolfram`ChatbookFrontEndServer`FrontEndServerNotebook["title or id"] `` (and `FrontEndServerCell["id"]`),
   or use `SelectedNotebook[]` / `eval --cell`. `eval` code runs in `` Global` `` of the front end's kernel.
 - Use fully qualified names for Chatbook symbols (``Wolfram`Chatbook`...``); Chatbook is not on `$ContextPath`.
+- **Never send `` FrontEnd`UpdateDynamicObjectsSynchronous[] `` or `` FrontEnd`UpdateDynamicObjects[] `` with no
+  argument** (e.g. through `FrontEndExecute` or `MathLink`CallFrontEnd`): the front end doesn't expect the missing
+  argument and crashes. To make Dynamics update before reading state, call the documented System functions
+  `UpdateDynamicObjects[]` / `UpdateDynamicObjectsSynchronous[]`, which fill in the argument, or just wait
+  (`sleep 0.5`-`1`) between separate requests.
 - `locate`, and therefore `click --box/--text/--cell`, **moves the notebook's selection** to the target (and scrolls
   it into view). Keep that in mind when testing selection-dependent features (e.g. `AllowSelectionContext`).
   `--text` is case-sensitive; text the front end can't search (inside chat messages, buttons, docked/attached cells)
