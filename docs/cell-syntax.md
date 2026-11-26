@@ -106,7 +106,7 @@ The body is the cell's content alone. What the tag says is not repeated: a headi
 Boxes with graphics (`GraphicsBox`, `Graphics3DBox`, `RasterBox`, `Raster3DBox`) or something dynamic (`DynamicBox`, `DynamicModuleBox`, `DynamicWrapperBox`, `Dynamic`), and boxes over 2000 characters, are an expression URI (`Tools/ExpressionURIs.wl`):
 
 - A graphic is `![Image](attachment://content-id)`, in the form that is made an image for multimodal chats. Other boxes have their head as the label (`![DynamicModuleBox](expression://content-id)`). In a cell tag the lossy body of a generated cell has the same link for each of its graphics, whatever `"ContentTypes"` is.
-- `$attachments` holds the boxes themselves for the URI. They are never interpreted, since that can run code in them. The evaluator tool reads them as input in its own kernel.
+- `$attachments` holds the boxes themselves for the URI. They are stored as they are and never interpreted. The evaluator tool reads them as input in its own kernel.
 - What exact reading adds to `$attachments` is bounded (`$notebookAttachments`): beyond 200 URIs or 2×10⁸ bytes the ones that were read longest ago are dropped. Reading a cell again brings its URIs back.
 
 ## Writing

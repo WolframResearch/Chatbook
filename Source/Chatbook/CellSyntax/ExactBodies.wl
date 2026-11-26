@@ -49,8 +49,8 @@ $$controlCharacter = RegularExpression[ "[" <> $controlCharacters <> "]" ];
 $$unwritableCharacter = RegularExpression[ "[" <> $controlCharacters <> "\\x{F7C0}-\\x{F7CD}]" ];
 
 (* Linear syntax: its characters, and how it is typed after a backslash that is not itself escaped (the opener \!\( and
-   the escapes of its characters). The front end reads it in the text of boxes, where it can run code, so it is not
-   written in an exact body and cellsFromString refuses it. A \! without \( opens nothing (the thin space of LaTeX).
+   the escapes of its characters). The front end reads it as boxes in the text of boxes, so it is not written in an
+   exact body and cellsFromString refuses it. A \! without \( opens nothing (the thin space of LaTeX).
    In code and in boxes \* is linear syntax too. In markdown it is the escape of an asterisk. *)
 $backslash           = "(?<!\\\\)(?:\\\\\\\\)*\\\\";
 $linearSyntaxInText  = "[\\x{F7C0}-\\x{F7CD}]|" <> $backslash <> "(?:!\\\\\\(|:[fF]7[cC][0-9a-dA-D]|\\|00[fF]7[cC][0-9a-dA-D]";
@@ -757,8 +757,8 @@ $$uriBox = Alternatives[
 (*boxesURI*)
 boxesURI // beginDefinition;
 
-(* The URI stands for the boxes themselves in $attachments, from which cellsFromString writes them back. They are not
-   interpreted, since that can run the code in them. A graphic (image: boxes that graphicsQ finds a graphic in, and
+(* The URI stands for the boxes themselves in $attachments, from which cellsFromString writes them back. They are stored
+   as they are and not interpreted. A graphic (image: boxes that graphicsQ finds a graphic in, and
    what a lossy body takes for one) is the image link ![Image](attachment://...), in the form that is made an image
    for multimodal chats. The key is moved to the end of $notebookAttachments, and the oldest keys are dropped from
    $attachments beyond the limits (the newest one is always kept). A key that something else also made is dropped with

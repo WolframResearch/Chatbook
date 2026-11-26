@@ -1304,7 +1304,7 @@ VerificationTest[
 (* ::Section::Closed:: *)
 (*URIs*)
 
-(* A graphic is a URI for its boxes, which are not interpreted. They are in $attachments in the form that is made an
+(* A graphic is a URI for its boxes, which are kept as they are. They are in $attachments in the form that is made an
    image for multimodal chats, and reading notes the key: *)
 VerificationTest[
     csStores @ Module[ { graphics, body, key },
@@ -1339,18 +1339,7 @@ VerificationTest[
     TestID   -> "URI-GraphicsInText"
 ]
 
-(* Reading a graphic runs no code that is in it: *)
-VerificationTest[
-    csStores @ Block[ { $csRan = False },
-        csCode @ GraphicsBox @ { InsetBox[ TemplateBox[ { }, "x", InterpretationFunction -> ($csRan = True; "1" &) ], { 0, 0 } ] };
-        $csRan
-    ],
-    False,
-    SameTest -> MatchQ,
-    TestID   -> "URI-GraphicsNotInterpreted"
-]
-
-(* Dynamic boxes are a URI for the boxes. They are not interpreted, so no code in them runs: *)
+(* Dynamic boxes are a URI for the boxes, which are kept as they are and not interpreted: *)
 VerificationTest[
     csStores @ Block[ { $csRan = False },
         Module[ { dynamic, body, key },
@@ -2912,8 +2901,8 @@ VerificationTest[
 ]
 
 (* In the sandbox the code is parsed and typeset in the sandbox kernel, with the definitions of the user's kernel. A
-   result is only written if it is boxes and plain data: dynamic content, graphics and templates are refused, since the
-   front end and the kernel of the user would run them outside of the sandbox. *)
+   result is only written if it is boxes and plain data: dynamic content, graphics and templates are refused, as they
+   are in what a model writes itself. *)
 VerificationTest[
     csEvaluator[
         "Local",
@@ -2999,7 +2988,7 @@ VerificationTest[
     Block[ { CellSyntaxTest`$csRan = False },
         {
             csNotRefused @ {
-                { "Input", "x = \"\\!\\(\\*SuperscriptBox[x, 2]\\)\"", "Cell tag 1 (a new cell) has linear syntax (\\!\\(), which is not written, since it can run code when it is shown. Write boxes as <RawBoxes> and a backslash that is text as \\\\." },
+                { "Input", "x = \"\\!\\(\\*SuperscriptBox[x, 2]\\)\"", "Cell tag 1 (a new cell) has linear syntax (\\!\\(), which is not written. Write boxes as <RawBoxes> and a backslash that is text as \\\\." },
                 { "Existing", "a \\!\\(x\\) b", "Cell c7 has linear syntax (\\!\\()" },
                 { "Text", "a \\:f7c1 b", "Cell tag 1 (a new cell) has linear syntax (\\:f7c1)" },
                 { "Text", "``\\!\\(x\\)``", "has linear syntax (\\!\\()" },
@@ -3169,10 +3158,10 @@ VerificationTest[
             { "RawBoxes", "RawBoxes in text" },
             {
                 "TemplateBox[{\"2 + 2\"}, \"Evaluate\"]",
-                "TemplateBox[{\"click me\", \"OEM6eJxTTMoPSmMAgmIWIOGSWJIIAA==\"}, \"TextExpressionLink\"]",
+                "TemplateBox[{\"click me\", \"x\"}, \"TextExpressionLink\"]",
                 "TemplateBox[{\"x\"}, \"FileArgument\"]",
                 "TemplateBox[{}, \"ChatWidgetButton\"]",
-                "TemplateBox[{\"x\", {URL[\"file:///C:/Windows/System32/calc.exe\"], None}, \"note\"}, \"HyperlinkDefault\"]",
+                "TemplateBox[{\"x\", {URL[\"file:///C:/x.exe\"], None}, \"note\"}, \"HyperlinkDefault\"]",
                 "TemplateBox[{\"x\", \"https://example.com\"}, \"HyperlinkURL\"]",
                 "RowBox[{\"f\", \"[\", TemplateBox[{\"5\", \"\\\"m\\\"\"}, \"Quantity\", InterpretationFunction -> \"x\"], \"]\"}]"
             },

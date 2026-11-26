@@ -1389,7 +1389,7 @@ requireInertText[ text_String, pattern_ ] :=
             { found_ } /; StringMatchQ[ found, $$controlCharacter ] :>
                 refuse[ "`1` has control characters, likely from broken escapes. Write the characters as they are." ],
             { found_ } :>
-                refuse[ "`1` has linear syntax (`2`), which is not written, since it can run code when it is shown. \
+                refuse[ "`1` has linear syntax (`2`), which is not written. \
 Write boxes as <RawBoxes> and a backslash that is text as \\\\.", StringReplace[ found, c: $$unwritableCharacter :> "\\:" <> IntegerString[ First @ ToCharacterCode @ c, 16, 4 ] ] ]
         }
     ];
@@ -1483,13 +1483,13 @@ evaluatedBoxes // endDefinition;
 resultBoxes // beginDefinition;
 
 (* What the evaluator gives is written as it is if it runs in the user's kernel, where the model's code runs anyway.
-   The result of a sandboxed evaluator is only released in this kernel, and written, if it is plain data: the kernel
-   and the front end of the user would run anything else outside of the sandbox. *)
+   The result of a sandboxed evaluator is only released in this kernel, and written, if it is plain data, as what a
+   model writes itself has to be (dataQ). *)
 resultBoxes[ held: HoldComplete[ _ ], what_String ] := (
     If[ ! useSessionQ[ ] && ! dataQ @ held,
         refuse[ "`1`: the boxes of `2` are not written. The evaluator runs in a sandbox, and they are not only \
 boxes and plain data: they have a TemplateBox, dynamic content, options that hold code, graphics or other \
-expressions, which would run outside of the sandbox. Write a result that is only typeset (numbers, formulas, grids), \
+expressions. Write a result that is only typeset (numbers, formulas, grids), \
 or write the code as an Input cell for the user to evaluate.", what ]
     ];
     original @@ held

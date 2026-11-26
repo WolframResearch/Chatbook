@@ -2293,7 +2293,7 @@ undefinedText // endDefinition;
    "EvaluationUnmatched", the front end's graying of an output that its input did not give in that session. A new
    output has the label of the output that it replaces if the cell has as many outputs as before.
    The outputs stay as they are
-   - if a statement gives no boxes (it ran out of time, or its boxes would run code outside of the sandbox),
+   - if a statement gives no boxes (it ran out of time, or a sandboxed evaluator gave boxes that are not plain data),
    - if the evaluator is the user's session, which only has the definitions that the user has evaluated, and what
      the statements gave still holds a symbol that a cell of the notebook defines and the kernel has no value for
      (undefinedSymbols). The text then says once for the cell which cells to evaluate first. A sandboxed evaluator
