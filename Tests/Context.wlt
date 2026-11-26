@@ -1208,7 +1208,10 @@ VerificationTest[
                     budget,
                     cellStringBudget
                 ];
-                { length[ 2^18, 16384 ] === length[ 2^10, 0 ], length[ 2^18, 16384 ] < 0.8 * 51 * 5000 },
+                {
+                    length[ 2^18, 16384 ] === length[ 2^10, 0 ],
+                    10 * 5000 < length[ 2^18, 16384 ] < 0.8 * 51 * 5000
+                },
                 NotebookClose @ nb
             ]
         ]
@@ -1216,6 +1219,49 @@ VerificationTest[
     { True, True },
     SameTest -> MatchQ,
     TestID   -> "NotebookContextLimits-ChatBudget"
+]
+
+(* The context is built in one pass over the cells whatever is selected, so a single selected cell or the caret in a
+   cell gives as much of the notebook as the caret between two cells: *)
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`Common`$contextPrompt   = None,
+            Wolfram`Chatbook`Common`$selectionPrompt = None,
+            Wolfram`Chatbook`$ChatHandlerData        = <| |>
+        },
+        UsingFrontEnd @ Module[ { nb, cell, settings, passes, results },
+            WithCleanup[
+                nb = NotebookPut @ Notebook @ Table[ Cell[ StringRepeat[ "word ", 1000 ], "Text" ], 60 ];
+                cell = Cells[ nb ][[ 30 ]];
+                settings = <| AbsoluteCurrentChatSettings @ nb, "MaxContextTokens" -> 2^18, "Multimodal" -> False |>;
+                results = Internal`InheritedBlock[ { Wolfram`Chatbook`Common`makeChatMessages },
+                    PrependTo[
+                        DownValues @ Wolfram`Chatbook`Common`makeChatMessages,
+                        HoldPattern @ Wolfram`Chatbook`Common`makeChatMessages[ ___ ] /; (passes++; False) :> Null
+                    ];
+                    Table[
+                        SelectionMove[ cell, Sequence @@ selection ];
+                        passes = 0;
+                        {
+                            chatContextLength[
+                                Wolfram`Chatbook`ChatModes`Common`getContextFromSelection[ None, nb, settings ],
+                                2^18,
+                                16384
+                            ],
+                            passes
+                        },
+                        { selection, { { After, Cell }, { All, Cell }, { Before, CellContents } } }
+                    ]
+                ];
+                { results[[ All, 2 ]], Min @ results[[ All, 1 ]] > 0.9 * Max @ results[[ All, 1 ]] },
+                NotebookClose @ nb
+            ]
+        ]
+    ],
+    { { 1, 1, 1 }, True },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookContextLimits-OnePassWithSelectedCell"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
