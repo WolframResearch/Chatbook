@@ -343,16 +343,6 @@ addCellsNotShown // endDefinition;
 
 getContextFromSelection0 // beginDefinition;
 
-(* In the cell syntax the cells are serialized once. The definition after this one evaluates its body twice (the
-   condition in the Block does that), so it serializes the cells twice, and what it gives is the second time, which in
-   a chat has only the token budget that the first time left. It is kept as it is, so that chats without the notebook
-   tools get the context that they always got. *)
-getContextFromSelection0[ selectionData: KeyValuePattern[ "Selected" -> { cell_CellObject } ], settings_ ] /;
-    TrueQ @ $includeCellXML && ! MatchQ[ $selectionInfo, None|_Association ] :=
-        Block[ { $selectionInfo = Replace[ getSelectionInfo @ cell, Except[ _Association ] -> None ] },
-            getContextFromSelection0[ selectionData, settings ]
-        ];
-
 (* With one selected cell, the context is built with the selection information of that cell. getSelectionInfo gives
    None or an association, so the call in the Block uses the next definition. That call must stay without a condition:
    for this left side, the 16.0 kernel evaluates a condition on the right side twice, and in a Block the body with it,

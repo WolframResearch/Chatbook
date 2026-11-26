@@ -1557,8 +1557,7 @@ VerificationTest[
 
 (* The context of a notebook that is longer than the token budget of the context stays within that budget, as it does
    without the tools: the budget, the last cell, which is always shown, and the text around the cells (one cell here
-   is about 1400 tokens). With the tools the cells are serialized once also when the selection is in a cell, so that
-   the budget is not spent on a serialization that is not used: the context is then the same but for the markers. *)
+   is about 1400 tokens). With one cell selected the context is the same but for the markers. *)
 VerificationTest[
     cellSyntaxNotebook[
         Table[ Cell[ "CELL-" <> ToString @ i <> " " <> StringRepeat[ "word ", 1000 ], "Text" ], { i, 60 } ],

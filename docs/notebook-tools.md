@@ -101,7 +101,6 @@ Nine default tools let the AI Assistant (the Notebook Assistant window and the s
 - A cell that a limit cuts says `truncated='true'` and keeps its tags (`cutCellString` for the token budget).
 - If the context does not show every cell, its last line names the others as ranges for ReadCells and says that cells that the user excluded stay hidden (`addCellsNotShown`, one `Cells` call).
 - A graphic is an image link in its cell. A multimodal chat gets the images of the first links (`$maxContextImages`).
-- With the tools the cells are serialized once. Without them a selection inside one cell serializes them twice (`getContextFromSelection0`), which is kept as it is.
 - `"CellSyntax"` says what a cell tag is, that `<RawBoxes>` and links are copied as they are, that the tags are never written in replies, and that a change is made with the tools and shown with ShowChanges in the same turn. It is empty for other chats.
 
 ## Where They Are Enabled
