@@ -63,4 +63,23 @@ VerificationTest[
     TestID   -> "ExplodeCell-Text"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*List Items*)
+
+(* An item keeps all of its content, with or without inline formatting: *)
+VerificationTest[
+    ExplodeCell @ FormatChatOutput[
+        "* An **important** item\n* plain\n  * A *nested* one with `code`",
+        <| "Status" -> "Finished" |>
+    ],
+    {
+        Cell[ TextData @ { "An ", StyleBox[ "important", FontWeight -> Bold ], " item" }, "Item" ],
+        Cell[ TextData @ { "plain" }, "Item" ],
+        Cell[ TextData @ { "A ", StyleBox[ "nested", FontSlant -> Italic ], " one with ", _ }, "Subitem" ]
+    },
+    SameTest -> MatchQ,
+    TestID   -> "ExplodeCell-ItemsWithInlineFormatting"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)
