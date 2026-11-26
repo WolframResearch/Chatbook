@@ -27,8 +27,8 @@ $notebookAssistanceBaseSettings = <|
     (* The notebook tools (Tools/NotebookTools.wl) are enabled only where they are supported (their "Enabled"): *)
     "Tools"                     -> {
         "NotebookReader",
-        "ListNotebooks", "OpenNotebook", "GetOutline", "ReadCells", "SearchNotebook", "GetSelection",
-        "EditInCell", "SetCells", "InsertCells", "DeleteCells", "ShowChanges", "CloseNotebook"
+        "ListNotebooks", "OpenNotebook", "GetOutline", "ReadCells", "SearchNotebook",
+        "EditInCell", "WriteCells", "ShowChanges", "CloseNotebook"
     },
     "ToolOptions"               -> <|
         "WolframLanguageEvaluator" -> <| "AppendURIPrompt" -> True, "Method" -> "Session" |>

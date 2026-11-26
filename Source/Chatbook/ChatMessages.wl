@@ -537,7 +537,10 @@ makeContextImageMessage // beginDefinition;
 makeContextImageMessage[ images_List ] := <|
     "Role"      -> "User",
     "Content"   -> Flatten @ {
-        <| "Type" -> "Text", "Data" -> $contextImagesLabel |>,
+        <|
+            "Type" -> "Text",
+            "Data" -> If[ TrueQ @ notebookToolsSelectedQ[ ], $contextImageLinksLabel, $contextImagesLabel ]
+        |>,
         Replace[
             images,
             {
@@ -554,6 +557,12 @@ makeContextImageMessage // endDefinition;
 
 $contextImagesLabel = "\
 [Original images for the MarkdownImageBoxes in the notebook context. Each image follows its markdown link. \
+The user's message follows the images.]";
+
+(* A chat with the notebook tools gets the notebook context in the cell syntax (see withContextCellSyntax), where an
+   image is only its link: *)
+$contextImageLinksLabel = "\
+[Original images for the image links in the notebook context. Each image follows its link. \
 The user's message follows the images.]";
 
 (* ::**************************************************************************************************************:: *)
@@ -600,7 +609,7 @@ contextImageMessageQ // beginDefinition;
 
 contextImageMessageQ[ KeyValuePattern @ {
     "Role"      -> "User",
-    "Content"   -> { KeyValuePattern[ "Data" -> $contextImagesLabel ], ___ },
+    "Content"   -> { KeyValuePattern[ "Data" -> $contextImagesLabel | $contextImageLinksLabel ], ___ },
     "Temporary" -> True
 } ] := True;
 
@@ -1064,7 +1073,7 @@ cutMessageContent[ as_, message: KeyValuePattern[ "Content" -> content_String ],
         (* A few characters can't be shortened any further (and wouldn't say anything), so nothing is left of the
            content when the budget is that small: *)
         resized = ConfirmBy[
-            If[ length < $minCutMessageLength, "", truncateString[ content, length ] ],
+            If[ length < $minCutMessageLength, "", cutCellString[ content, length ] ],
             StringQ,
             "Resized"
         ];
@@ -1088,6 +1097,37 @@ cutMessageContent[ as_, message_String, count_, budget_ ] :=
 cutMessageContent // endDefinition;
 
 $minCutMessageLength = 20;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*cutCellString*)
+(* The text of a cell shortened to about length characters. A cell in the cell syntax (docs/cell-syntax.md) keeps its
+   tags: its body is shortened, and its tag says so (truncated='true'), so that the body is not taken for the whole
+   cell and written back. Nothing is left of the cell if there is no room for a body. *)
+cutCellString // beginDefinition;
+
+cutCellString[ content_String, length_Integer ] /; TrueQ @ $includeCellXML := First[
+    StringCases[
+        content,
+        StartOfString ~~ tag: ("<cell" ~~ Except[ "\n" ]...) ~~ ">\n" ~~ body___ ~~ "\n</cell>" ~~ EndOfString :>
+            With[ { room = length - StringLength @ tag - 27 },
+                If[ room < $minCutMessageLength,
+                    "",
+                    StringJoin[
+                        tag, If[ StringEndsQ[ tag, " truncated='true'" ], "", " truncated='true'" ], ">\n",
+                        truncateString[ body, room ],
+                        "\n</cell>"
+                    ]
+                ]
+            ],
+        1
+    ],
+    truncateString[ content, length ]
+];
+
+cutCellString[ content_String, length_Integer ] := truncateString[ content, length ];
+
+cutCellString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1325,6 +1365,8 @@ needsSettingsBasePrompts[ settings_Association ] := (
     If[ settings[ "AutoFormat" ], needsBasePrompt[ "Formatting" ] ];
     If[ discourageExtraToolCallsQ @ settings, needsBasePrompt[ "DiscourageExtraToolCalls" ] ];
     If[ toolSelectedQ[ "WolframLanguageEvaluator" ], needsBasePrompt[ "WolframLanguageEvaluatorTool" ] ];
+    (* With the notebook tools, the notebook context, NotebookReader and the tools show cells in the cell syntax: *)
+    If[ notebookToolsSelectedQ[ ], needsBasePrompt[ "CellSyntax" ] ];
     (* Replaces the temporary message that is added after tool responses without prompt cache optimization: *)
     If[ toolCallRetryPromptQ @ settings, needsBasePrompt[ "ToolCallRetry" ] ];
     needsBasePrompt @ settings
@@ -1556,7 +1598,10 @@ allowedMultimodalRoles0 // endDefinition;
 (*expandMultimodalStrings*)
 expandMultimodalString // beginDefinition;
 
-expandMultimodalString[ string_String ] /; $multimodalMessages := Enclose[
+expandMultimodalString[ string_String ] := expandMultimodalString[ string, Infinity ];
+
+(* At most max images are attached, the first ones of the string. The other links stay as they are: *)
+expandMultimodalString[ string_String, max_ ] /; $multimodalMessages := Enclose[
     Module[ { split, joined, typed },
 
         split = Flatten @ StringSplit[
@@ -1574,14 +1619,16 @@ expandMultimodalString[ string_String ] /; $multimodalMessages := Enclose[
             }
         ];
 
+        split = Delete[ split, Drop[ Position[ split, Except[ _String ], { 1 }, Heads -> False ], UpTo @ max ] ];
+
         joined = Flatten @ Replace[ SplitBy[ split, StringQ ], s: { _String, ___ } :> StringJoin @ s, { 1 } ];
         typed  = ConfirmMatch[ inferMultimodalTypes @ joined, { ___? AssociationQ } | { ___? StringQ }, "Typed" ];
         Replace[ typed, { msg_String } :> msg ]
     ],
-    throwInternalFailure[ expandMultimodalString @ string, ## ] &
+    throwInternalFailure[ expandMultimodalString[ string, max ], ## ] &
 ];
 
-expandMultimodalString[ string_String ] :=
+expandMultimodalString[ string_String, _ ] :=
     string;
 
 expandMultimodalString // endDefinition;

@@ -115,8 +115,8 @@ $defaultToolOrder = {
 (* The notebook editing tools (Tools/NotebookTools.wl): *)
 $notebookTools := Keys @ Wolfram`Chatbook`Tools`NotebookTools`$notebookToolSpecs;
 
-(* One notebook edit takes several tool calls (open, read, edit, fix, show the changes), so a chat that has the
-   notebook tools allows at least this many tool responses per turn (the AI Assistant allows 5): *)
+(* One notebook edit takes several tool calls (read, edit, fix, show the changes), so a chat that has the notebook
+   tools allows at least this many tool responses per turn (the AI Assistant allows 5): *)
 $notebookToolResponses = 20;
 
 $toolNameAliases = <|
@@ -405,6 +405,15 @@ toolSelectedQ[ name_String ] := KeyExistsQ[ $selectedTools, name ];
 toolSelectedQ[ tools_List ] := AllTrue[ tools, toolSelectedQ ];
 toolSelectedQ[ tool_ ] := KeyExistsQ[ $selectedTools, toolName @ tool ];
 toolSelectedQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*notebookToolsSelectedQ*)
+(* True if the chat has any of the notebook editing tools. Its notebook context and its NotebookReader results are then
+   in the cell syntax, with the cell ids of those tools (see withContextCellSyntax in ChatModes/Context.wl): *)
+notebookToolsSelectedQ // beginDefinition;
+notebookToolsSelectedQ[ ] := IntersectingQ[ Keys @ $selectedTools, $notebookTools ];
+notebookToolsSelectedQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -700,7 +709,7 @@ resolveTools // endDefinition;
 notebookToolResponses // beginDefinition;
 
 notebookToolResponses[ settings: KeyValuePattern[ "MaxToolResponses" -> n_Integer ] ] /;
-    n < $notebookToolResponses && IntersectingQ[ Keys @ $selectedTools, $notebookTools ] :=
+    n < $notebookToolResponses && notebookToolsSelectedQ[ ] :=
         <| settings, "MaxToolResponses" -> $notebookToolResponses |>;
 
 notebookToolResponses[ settings_Association ] := settings;

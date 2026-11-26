@@ -113,6 +113,7 @@ PacletInfo.wl defines three kernel extensions loaded in order:
 - **CreateChatNotebook.wl** / **ConvertChatNotebook.wl** — Notebook creation/conversion
 
 **Subdirectories:**
+- **CellSyntax/** — The syntax that shows cells to an LLM and reads them back (see [cell-syntax.md](docs/cell-syntax.md)): `ExactBodies.wl` (the cell bodies that `CellToString` writes with `"PreserveBoxes"`) and `CellsFromString.wl` (`cellsFromString`, which reads the syntax). `Serialization.wl` loads the two files, which share its ``Wolfram`Chatbook`Serialization`Private` `` context
 - **ChatModes/** — Chat mode extensions (Evaluate, UI, Context, NotebookAssistance, ContentSuggestions)
 - **Formatting/** — LLM response formatting for notebook display (`Formatting.wl` loads the other files, which share its ``Wolfram`Chatbook`Formatting`Private` `` context)
 - **PromptGenerators/** — Prompt augmentation (RelatedDocumentation, WolframAlpha queries, VectorDatabases, NotebookChunking)
@@ -185,7 +186,8 @@ Developer documentation lives in the `docs/` directory:
 - **[adding-model-support.md](docs/adding-model-support.md)** — Guide for adding support for new LLM models
 - **[model-support-examples/](docs/model-support-examples/)** — Real-world case studies (e.g., GPT 5.4)
 - **[settings/](docs/settings/)** — Complete settings reference with per-group documentation
-- **[notebook-tools.md](docs/notebook-tools.md)** — The AI Assistant's notebook editing tools: snapshots, the front end packets and the gate, CellDiff, the code check, limits, tests
+- **[notebook-tools.md](docs/notebook-tools.md)** — The AI Assistant's notebook editing tools: the tools, snapshots and the gate, cell ids, evaluation, CellDiff, limits, tests
+- **[cell-syntax.md](docs/cell-syntax.md)** — The syntax that shows cells to an LLM and reads them back: who calls it, guarantees and known gaps, cell tags and exact bodies, `cellsFromString`, what is refused, tests and the corpus measure
 - **[docs-todo.md](docs/docs-todo.md)** — Backlog of documentation still needed
 
 ## Special Considerations

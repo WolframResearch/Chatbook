@@ -217,9 +217,49 @@ $rightSelectionIndicator = "\\["<>"EndSelection"<>"]"; *)
 $leftSelectionIndicator  = "<selection>";
 $rightSelectionIndicator = "</selection>";
 
-(* Determines if serialized cell content should be wrapped in <cell id=xxxx>...</cell> *)
-$includeCellXML    = False;
-$xmlCellAttributes = { "id" };
+(* Determines if each serialized cell is wrapped in <cell ...>...</cell> (see docs/cell-syntax.md) *)
+$includeCellXML = False;
+
+(* Determines if the body of a cell is exact (True), lossy markdown (False), or exact for all but generated cells
+   (Automatic) *)
+$preserveCellBoxes = False;
+
+(* Determines if a graphic in a lossy body is an image link to its boxes, as it is in an exact body. This is set for
+   the bodies of cell tags, so that a graphic has one spelling there whatever the content types are. *)
+$graphicsLinks = False;
+
+(* A function that gives the id of a cell tag for a cell (anything but a string means no id). With None, the cells of
+   one CellToString call are numbered c1, c2, ... *)
+$cellIDFunction = None;
+$cellIDCounter  = 0;
+
+(* When this is an association, it collects the boxes that pieces of exact bodies stand for, for each cell that has an
+   id: <| id -> <| text -> boxes |> |>. Reading a cell again replaces what was recorded for it. *)
+$cellOriginals = None;
+
+(* The id of the cell that is being read, which is its key in $cellOriginals (None for a cell without an id) *)
+$cellOriginalsKey = None;
+
+(* An exact body has no length limit unless "MaxCellStringLength" is given *)
+$exactBodyLimit = Infinity;
+
+(* Set when the string of the current cell is shortened to fit a length limit *)
+$cellTruncated = False;
+
+(* Options longer than this are left out of the options attribute of a cell tag *)
+$maxCellOptionLength = 200;
+
+(* Stands for the body of a cell while its decoration is made (see cellToString) *)
+$exactBodyMarker = "ExactBodyOfTheCell";
+
+(* Options that are not shown in a cell tag *)
+$$hiddenCellOption = ExpressionUUID | CellChangeTimes | CellID | GeneratedCell | CellAutoOverwrite | CellObject;
+
+(* Cells with these styles are made by evaluation, so "PreserveBoxes" -> Automatic leaves their bodies lossy *)
+$$generatedCellStyle = "Output" | "Print" | "Echo" | "Message" | "MSG" | $$chatOutputStyle;
+
+(* The start of a cell tag, which no body holds *)
+$$cellTagStart = "<" ~~ ("/" | "") ~~ "cell";
 
 (* Whether to include a stack trace for message cells *)
 $includeStackTrace = False;
@@ -485,7 +525,7 @@ CellToString // Options = {
     "WindowWidth"               -> $windowWidth,
     "IncludeStackTrace"         :> $includeStackTrace,
     "IncludeXML"                :> $includeCellXML,
-    "XMLCellAttributes"         :> $xmlCellAttributes
+    "PreserveBoxes"             :> $preserveCellBoxes
 };
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -498,6 +538,9 @@ CellToString[ cell_, opts: OptionsPattern[ ] ] :=
             $unhandledBoxFunction = OptionValue[ "UnhandledBoxFunction" ],
             $includeCellXML = TrueQ @ OptionValue[ "IncludeXML" ],
             $includeStackTrace = TrueQ @ OptionValue[ "IncludeStackTrace" ],
+            $preserveCellBoxes = OptionValue[ "PreserveBoxes" ],
+            $exactBodyLimit = Ceiling @ toSize[ OptionValue[ "MaxCellStringLength" ], Infinity ],
+            $cellIDCounter = 0,
             $cellPageWidth, $windowWidth, $maxCellStringLength, $maxOutputCellStringLength,
             $contentTypes, $multimodalImages
         },
@@ -598,9 +641,23 @@ cellToString[ Cell @ CellGroupData[ cells_List, _ ] ] := cellsToString @ cells;
 cellToString[ nbo_NotebookObject ] := cellToString @ Cells @ nbo;
 cellToString[ cells: { __CellObject } ] := cellsToString @ notebookRead @ cells;
 
-(* Wrap serialized cell in xml tags for the notebook editor tool: *)
+(* Wrap the serialized cell in a cell tag: *)
 cellToString[ cell_Cell? xmlCellQ ] :=
     cellToXMLString @ cell;
+
+(* Without cell tags, an exact body has the decoration of the default markdown around it (heading mark, bullet, code
+   fence, label): that of the cell with a marker as its content (as code, if the cell is code), with the body in the
+   place of the marker. *)
+cellToString[ cell: Cell[ Except[ _Verbatim ], args___ ] ] /; exactCellQ @ cell :=
+    With[
+        {
+            body   = exactBody @ cell,
+            marker = If[ MatchQ[ cell, Cell[ _BoxData, ___, $$plainStringStyle, ___ ] ], BoxData @ $exactBodyMarker, $exactBodyMarker ]
+        },
+        Block[ { $preserveCellBoxes = False },
+            StringReplace[ cellToString @ Cell[ marker, args ], $exactBodyMarker -> body ]
+        ]
+    ];
 
 (* Drop cell label for some styles *)
 cellToString[ Cell[ a__, style: $$noCellLabelStyle, b___, CellLabel -> _, c___ ] ] :=
@@ -795,9 +852,9 @@ cellToString[ cell: Cell[ __, "AnnotatedInput", ___ ] ] :=
         cellsToString @ cells /; MatchQ[ cells, { __Cell } ]
     ];
 
-(* Rasterize entire cell if it contains enough graphics boxes *)
+(* Rasterize entire cell if it contains enough graphics boxes (in a cell tag each of them is an image link) *)
 cellToString[ cell: Cell[ _, Except[ "Input"|"Code"|$$chatInputStyle|$$chatOutputStyle ], ___ ] ] /;
-    rasterWholeCellQ @ cell :=
+    ! TrueQ @ $graphicsLinks && rasterWholeCellQ @ cell :=
         MakeExpressionURI[ "cell image", RawBoxes @ StyleBox[ cell, "GraphicsRawBoxes" ] ];
 
 cellToString[ cell: Cell[ _, "Picture", ___ ] ] /; $multimodalImages :=
@@ -823,6 +880,10 @@ cellToString0[ cell0_ ] :=
 (* ::Subsubsection::Closed:: *)
 (*cellsToString*)
 cellsToString // SetFallthroughError;
+
+(* Cell tags keep the cells apart, and an exact body can hold any text, so nothing is merged or cleaned up: *)
+cellsToString[ cells_List ] /; $includeCellXML :=
+    StringRiffle[ Select[ cellToString /@ cells, StringQ ], "\n\n" ];
 
 cellsToString[ { a___, b: Cell[ _, "UsageInputs", ___ ], c: Cell[ _, "UsageDescription", ___ ], d___ } ] :=
     StringRiffle[
@@ -881,7 +942,8 @@ rasterWholeCellQ // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*xmlCellQ*)
 xmlCellQ // beginDefinition;
-xmlCellQ[ Cell[ __, $$chatInputStyle|$$chatOutputStyle, ___ ] ] := False;
+(* Selection markers that are inserted between cells (see insertSelectionIndicator) stay lines of their own: *)
+xmlCellQ[ Cell[ _Verbatim, ___ ] ] := False;
 xmlCellQ[ _Cell ] := TrueQ @ $includeCellXML;
 xmlCellQ // endDefinition;
 
@@ -890,16 +952,15 @@ xmlCellQ // endDefinition;
 (*cellToXMLString*)
 cellToXMLString // beginDefinition;
 
+(* The tag and its body are described in docs/cell-syntax.md: *)
 cellToXMLString[ cell_Cell ] := Enclose[
-    Catch @ Module[ { string, attributes, attributeString },
-        string = ConfirmBy[ Block[ { $includeCellXML = False }, cellToString @ cell ], StringQ, "String" ];
-        attributes = ConfirmBy[ cellXMLAttributes @ cell, AssociationQ, "XMLAttributes" ];
-        attributeString = StringTrim @ StringRiffle @ KeyValueMap[ StringJoin[ #1, "='", #2, "'" ] &, attributes ];
-        If[ StringLength @ attributeString > 0, attributeString = " " <> attributeString ];
-        StringJoin[
-            "<cell", attributeString, ">\n",
-            string,
-            "\n</cell>"
+    Block[ { $cellTruncated = False, $cellOriginalsKey },
+        Module[ { id, body },
+            id = If[ $cellIDFunction === None, "c" <> ToString[ ++$cellIDCounter ], $cellIDFunction @ cell ];
+            $cellOriginalsKey = If[ StringQ @ id, id, None ];
+            If[ StringQ @ id && AssociationQ @ $cellOriginals, KeyDropFrom[ $cellOriginals, id ] ];
+            body = ConfirmBy[ cellTagBody @ cell, StringQ, "Body" ];
+            "<cell" <> cellTagAttributes[ cell, id, $cellTruncated ] <> ">\n" <> body <> "\n</cell>"
         ]
     ],
     throwInternalFailure
@@ -909,46 +970,163 @@ cellToXMLString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*cellXMLAttributes*)
-cellXMLAttributes // beginDefinition;
+(*cellTagAttributes*)
+cellTagAttributes // beginDefinition;
 
-cellXMLAttributes[ cell_Cell ] := DeleteMissing @ AssociationMap[
-    Apply @ Rule,
-    KeyTake[
+cellTagAttributes[ cell_Cell, id_, truncated_ ] :=
+    Module[ { attributes },
+        attributes = <|
+            "id" -> id,
+            cellAttributes @ cell,
+            "truncated" -> If[ TrueQ @ truncated, "true", "" ]
+        |>;
+        (* An attribute without a value is left out: *)
+        StringJoin @ KeyValueMap[
+            { " ", #1, "='", StringReplace[ #2, $xmlAttributeEscapes ], "'" } &,
+            Select[ attributes, StringQ @ # && # =!= "" & ]
+        ]
+    ];
+
+cellTagAttributes // endDefinition;
+
+$xmlAttributeEscapes = { "&" -> "&amp;", "'" -> "&apos;", "<" -> "&lt;", "\n" -> "&#10;" };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*cellAttributes*)
+cellAttributes // beginDefinition;
+
+(* What the tag of a cell says about its styles and options ("" for nothing). cellsFromString uses it to tell what
+   an attribute of a tag stands for: *)
+cellAttributes[ Cell[ _, args___ ] ] :=
+    With[ { options = withoutDiffOptions @ Cases[ { args }, _Rule | _RuleDelayed ] },
         <|
-            "id"    :> xmlCellID @ cell,
-            "style" :> xmlCellStyle @ cell,
-            "label" :> xmlCellLabel @ cell
-        |>,
-        $xmlCellAttributes
-    ]
+            "style"     -> StringRiffle[ Cases[ { args }, _String ], ", " ],
+            "CellLabel" -> FirstCase[ options, (CellLabel -> label_String) :> label, "" ],
+            "CellTags"  -> StringRiffle[ Flatten @ Cases[ options, (CellTags -> tags: $$joinedTags) :> tags ], "," ],
+            "options"   -> StringRiffle[ cellOptionStrings @ options, ", " ]
+        |>
+    ];
+
+cellAttributes // endDefinition;
+
+(* Tags that can be joined with commas. Other values of CellTags are shown with the options: *)
+$$joinedTag  = _String? (StringMatchQ[ Except[ "," ].. ]);
+$$joinedTags = $$joinedTag | { $$joinedTag.. };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*withoutDiffOptions*)
+withoutDiffOptions // beginDefinition;
+
+(* A cell of a notebook that shows the changes of a notebook comparison (CellDiff, see ShowChanges in
+   docs/notebook-tools.md) has the comparison's tags, and options whose names start with CellDiff (the symbols need
+   not be System symbols in this kernel). They are not the user's, so the tag of the cell does not show them.
+   Not handled: the CellFrame of a cell that the comparison shows whole behind a colored frame. *)
+withoutDiffOptions[ options_List ] := Replace[
+    DeleteCases[ options, _[ name_Symbol /; StringStartsQ[ SymbolName @ Unevaluated @ name, "CellDiff" ], _ ] ],
+    (CellTags -> tags_) /; ! FreeQ[ tags, $$diffCellTag ] :>
+        Replace[ DeleteCases[ Flatten @ { tags }, $$diffCellTag ], { { } -> Nothing, kept_ :> (CellTags -> kept) } ],
+    { 1 }
 ];
 
-cellXMLAttributes // endDefinition;
+withoutDiffOptions // endDefinition;
+
+$$diffCellTag = "NotebookDiff" | "NotebookDiffDeleted" | "NotebookDiffInserted";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
-(*xmlCellID*)
-xmlCellID // beginDefinition;
-xmlCellID[ Cell[ __, CellObject -> cell_CellObject, ___ ] ] := cellReference @ cell;
-xmlCellID[ _Cell ] := Missing[ ];
-xmlCellID // endDefinition;
+(*cellOptionStrings*)
+cellOptionStrings // beginDefinition;
+
+(* LeafCount is checked first, since it is a lower bound of the length that needs no string: *)
+cellOptionStrings[ options_List ] := Select[
+    inputFormLine /@ Select[
+        DeleteCases[
+            options,
+            (Rule|RuleDelayed)[ $$hiddenCellOption, _ ] | (CellLabel -> _String) | (CellTags -> $$joinedTags)
+        ],
+        LeafCount @ # <= $maxCellOptionLength &
+    ],
+    StringLength @ # <= $maxCellOptionLength &
+];
+
+cellOptionStrings // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cellTagBody*)
+cellTagBody // beginDefinition;
+
+cellTagBody[ Cell[ __, $$delimiterStyle, ___ ] ] :=
+    "";
+
+cellTagBody[ cell_Cell ] /; exactCellQ @ cell :=
+    truncateString[ exactBody @ cell, $exactBodyLimit ];
+
+(* A cell tag in the text of a lossy body (e.g. in a chat output) is escaped, so that a body never holds one: *)
+cellTagBody[ cell_Cell ] :=
+    StringReplace[ lossyBody @ cell, tag: $$cellTagStart :> "&lt;" <> StringDrop[ tag, 1 ], IgnoreCase -> True ];
+
+cellTagBody // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
-(*xmlCellStyle*)
-xmlCellStyle // beginDefinition;
-xmlCellStyle[ Cell[ _, style__String, OptionsPattern[ ] ] ] := { style };
-xmlCellStyle[ _Cell ] := Missing[ ];
-xmlCellStyle // endDefinition;
+(*lossyBody*)
+lossyBody // beginDefinition;
+
+(* The markdown of the cell without what the tag says: the code fence, the label, the bullet and the heading marker.
+   Cells inside of the cell keep theirs. *)
+lossyBody[ Cell[ text_String, "Print", ___ ] ] :=
+    text;
+
+lossyBody[ Cell[ code_, "ExternalLanguage", ___, $$cellEvaluationLanguage -> _String, ___ ] ] :=
+    Block[ { $escapeMarkdown = False }, cellToString0 @ code ];
+
+lossyBody[ cell_Cell ] :=
+    Module[ { bare, string },
+        bare = bareCell @ cell;
+        string = Block[
+            {
+                $includeCellXML     = False,
+                $preserveCellBoxes  = False,
+                $graphicsLinks      = True,
+                $chatInputIndicator = False,
+                $delimitedCodeBlock = codeBlockQ @ bare
+            },
+            Replace[ cellToString @ bare, Except[ _String ] :> "" ]
+        ];
+        If[ MatchQ[ bare, Cell[ __, $$headingStyle, ___ ] ],
+            StringDelete[ string, StartOfString ~~ "#".. ~~ " " ],
+            string
+        ]
+    ];
+
+lossyBody // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
-(*xmlCellLabel*)
-xmlCellLabel // beginDefinition;
-xmlCellLabel[ Cell[ __, CellLabel -> label_String, ___ ] ] := label;
-xmlCellLabel[ _Cell ] := Missing[ ];
-xmlCellLabel // endDefinition;
+(*bareCell*)
+bareCell // beginDefinition;
+
+bareCell[ Cell[ a_, b___, $$itemStyle | $$subItemStyle | $$subSubItemStyle, c___ ] ] :=
+    bareCell @ Cell[ a, b, "Text", c ];
+
+bareCell[ Cell[ a_, b___, "Echo" | "EchoTiming", c___ ] ] :=
+    bareCell @ Cell[ a, b, c ];
+
+bareCell[ cell_Cell ] :=
+    DeleteCases[ cell, CellLabel -> _ ];
+
+bareCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*exactCellQ*)
+exactCellQ // beginDefinition;
+exactCellQ[ cell_Cell ] /; $preserveCellBoxes === Automatic := ! MatchQ[ cell, Cell[ __, $$generatedCellStyle, ___ ] ];
+exactCellQ[ _Cell ] := TrueQ @ $preserveCellBoxes;
+exactCellQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1072,6 +1250,15 @@ $$subsectionStyle = Alternatives[
 $$subsubsectionStyle = "Subsubsection"|"ExampleSubsection";
 $$subsubsubsectionStyle = "Subsubsubsection"|"ExampleSubsubsection";
 $$subsubsubsubsectionStyle = "Subsubsubsubsection"|"ExampleSubsubsubsection";
+
+$$headingStyle = Alternatives[
+    $$titleStyle,
+    $$sectionStyle,
+    $$subsectionStyle,
+    $$subsubsectionStyle,
+    $$subsubsubsectionStyle,
+    $$subsubsubsubsectionStyle
+];
 
 boxToString[ (Cell|StyleBox)[ a_, $$titleStyle              , ___ ] ] := makeSection[ 1, a ];
 boxToString[ (Cell|StyleBox)[ a_, $$sectionStyle            , ___ ] ] := makeSection[ 2, a ];
@@ -1385,6 +1572,11 @@ boxToString[ RowBox @ { "=[", query_String, "]" } ] := "\[FreeformPrompt]["<>que
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Graphics*)
+
+(* In a cell tag a graphic is an image link to its boxes, which are not interpreted (see $graphicsLinks): *)
+boxToString[ box: $$graphicsBox ] /; TrueQ @ $graphicsLinks :=
+    boxesURI[ box, True ];
+
 boxToString[ box: GraphicsBox[ TagBox[ RasterBox[ _, r___ ], t___ ], g___ ] ] /; ! TrueQ @ $multimodalImages :=
     StringJoin[
         "\\!\\(\\*",
@@ -2042,6 +2234,11 @@ boxToString[ FormBox[
 boxToString[ FormBox[ box: $$notTraditionalForm, TraditionalForm, ___ ] ] :=
     boxToString @ box;
 
+(* A formula with a graphic is not LaTeX. serializeTraditionalForm keeps what it gives for a box, which must not be the
+   image link of a cell tag (see $graphicsLinks): *)
+boxToString[ FormBox[ box_, TraditionalForm, ___ ] ] /; TrueQ @ $graphicsLinks && ! FreeQ[ box, $$graphicsBox ] :=
+    boxToString @ box;
+
 boxToString[ box: FormBox[ _, TraditionalForm, ___ ] ] :=
     serializeTraditionalForm @ box;
 
@@ -2458,6 +2655,7 @@ riffleTableString[ rows: { ___String } ] := Enclose[
         b = LengthWhile[ Accumulate @ Reverse @ lengths, # <= remaining & ];
         removed = ConfirmMatch[ count - (a + b), $$size, "Removed" ];
         If[ removed === 0, Throw @ StringRiffle[ rows, "\n" ] ];
+        $cellTruncated = True;
 
         message = ConfirmBy[
             Replace[
@@ -3551,7 +3749,11 @@ truncateString // beginDefinition;
 truncateString[ str_String? truncatedTableStringQ ] := str;
 truncateString[ str_String ] := truncateString[ str, $maxOutputCellStringLength ];
 truncateString[ str_String, Automatic ] := truncateString[ str, $defaultMaxOutputCellStringLength ];
-truncateString[ str_String, max: $$size ] := stringTrimMiddle[ str, max ];
+truncateString[ str_String, max: $$size ] :=
+    With[ { cut = stringTrimMiddle[ str, max ] },
+        If[ cut =!= str, $cellTruncated = True ];
+        cut
+    ];
 truncateString[ other_ ] := other;
 truncateString[ other_, _Integer ] := other;
 truncateString // endDefinition;
@@ -3776,6 +3978,14 @@ cellFlatten[ cells_ ] :=
 (* The resource function ExportMarkdownString depends on CellToString in the original context: *)
 Wolfram`Chatbook`Serialization`CellToString = CellToString;
 (* https://resources.wolframcloud.com/FunctionRepository/resources/ExportMarkdownString *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Load Files*)
+(* The cell syntax beyond the cell tag (docs/cell-syntax.md): the exact bodies of cells, and cellsFromString, which
+   reads the syntax. The files share this context, and use its patterns while they load: *)
+Get[ "Wolfram`Chatbook`CellSyntax`ExactBodies`"     ];
+Get[ "Wolfram`Chatbook`CellSyntax`CellsFromString`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

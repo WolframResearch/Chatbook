@@ -29,7 +29,7 @@ $cmn  = "Wolfram`Chatbook`Common`";
 (* { symbol name, label } where a label of Automatic means the short symbol name: *)
 $instrumented = {
     { $cmn  <> "autoCorrect",                "autoCorrect (LLM auto-correction rules)" },
-    { $fmt  <> "importHTMLEntities",         "importHTMLEntities" },
+    { $cmn  <> "importHTMLEntities",         "importHTMLEntities" },
     { $fmt  <> "importHTMLEntity",           "importHTMLEntity (ImportString HTML, memoized)" },
     { $fmt  <> "reformatTextData0",          "reformatTextData0 self: top-level StringSplit with $textDataFormatRules" },
     { $fmt  <> "reformatTextDataEscaped",    "reformatTextDataEscaped self: escaped-markdown path" },
@@ -44,7 +44,7 @@ $instrumented = {
     { $fmt  <> "cachedCodeBlockCell",        Automatic },
     { $fmt  <> "makeInteractiveCodeCell",    "makeInteractiveCodeCell self (code block cells)" },
     { $fmt  <> "parseCellGroupBlock",        "parseCellGroupBlock (In/Out transcript split)" },
-    { $fmt  <> "wlStringToBoxes",            "wlStringToBoxes self" },
+    { $cmn  <> "wlStringToBoxes",            "wlStringToBoxes self" },
     { $cmn  <> "preprocessSandboxString",    Automatic },
     { $fmt  <> "autoCorrectWLCodeBlock",     "autoCorrectWLCodeBlock (CodeCheckFix, memoized)" },
     { $cmn  <> "stringToBoxes",              "stringToBoxes (front end ReparseBoxStructurePacket)" },

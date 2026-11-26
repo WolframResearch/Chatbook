@@ -1218,4 +1218,515 @@ VerificationTest[
     TestID   -> "NotebookContextLimits-ChatBudget"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Cell Syntax*)
+
+(* A chat that has the notebook tools gets its notebook context in the cell syntax (docs/cell-syntax.md), with the
+   cell ids of the tools. cellSyntaxNotebook evaluates eval in such a Notebook Assistant chat about a notebook of the
+   given cells ($cellSyntaxNotebook), whose settings are $cellSyntaxSettings. The tools work on the notebook itself,
+   and the snapshot that an edit makes is a hidden copy of it ($cellSyntaxSnapshots; no released front end makes
+   snapshots yet). The tools' state, the selected tools and the stores that reading writes to are Blocked, so that
+   nothing is left for other tests. The tools are selected after the settings are resolved, which selects tools
+   itself. *)
+cellSyntaxNotebook // Attributes = { HoldRest };
+cellSyntaxNotebook[ cells_List, eval_ ] := Block[
+    {
+        Wolfram`Chatbook`$WorkspaceChat                             = True,
+        Wolfram`Chatbook`Common`$selectedTools                      = <| |>,
+        Wolfram`Chatbook`Common`$contextPrompt                      = None,
+        Wolfram`Chatbook`Common`$selectionPrompt                    = None,
+        Wolfram`Chatbook`Common`$attachments                        = <| |>,
+        Wolfram`Chatbook`Common`$notebookAttachments                = <| |>,
+        Wolfram`Chatbook`Tools`NotebookTools`Private`$snapshots     = <| |>,
+        Wolfram`Chatbook`Tools`NotebookTools`Private`$snapshotCount = 0,
+        Wolfram`Chatbook`Tools`NotebookTools`Private`$cellTables    = <| |>,
+        $cellSyntaxNotebook, $cellSyntaxSettings, $cellSyntaxSnapshots = { }
+    },
+    UsingFrontEnd @ WithCleanup[
+        $cellSyntaxNotebook = NotebookPut @ Notebook @ cells;
+        $cellSyntaxSettings = <|
+            AbsoluteCurrentChatSettings @ $cellSyntaxNotebook,
+            "AllowSelectionContext" -> True,
+            "FocusedNotebook"       -> $cellSyntaxNotebook,
+            "Multimodal"            -> False
+        |>;
+        Wolfram`Chatbook`Common`$selectedTools = KeyTake[ Wolfram`Chatbook`$DefaultTools, $cellSyntaxTools ];
+        Block[
+            {
+                Wolfram`Chatbook`Common`$evaluationNotebook = $cellSyntaxNotebook,
+                Wolfram`Chatbook`$ChatHandlerData           = <| "ChatNotebookSettings" -> $cellSyntaxSettings |>
+            },
+            Internal`InheritedBlock[ { Wolfram`Chatbook`Tools`NotebookTools`Private`notebookFrontEnd },
+                PrependTo[
+                    DownValues @ Wolfram`Chatbook`Tools`NotebookTools`Private`notebookFrontEnd,
+                    HoldPattern @ Wolfram`Chatbook`Tools`NotebookTools`Private`notebookFrontEnd[ "Snapshot", nb_NotebookObject ] :>
+                        Last @ AppendTo[ $cellSyntaxSnapshots, NotebookPut[ NotebookGet[ nb, "IncludeUUIDs" -> True ], Visible -> False ] ]
+                ];
+                eval
+            ]
+        ],
+        NotebookClose /@ Append[ $cellSyntaxSnapshots, $cellSyntaxNotebook ]
+    ]
+];
+
+$cellSyntaxTools = { "NotebookReader", "ReadCells", "EditInCell" };
+
+$cellSyntaxCells = {
+    Cell[ "A title", "Title" ],
+    Cell[ TextData @ { "Some ", StyleBox[ "bold", FontWeight -> "Bold" ], " text here" }, "Text", CellTags -> "intro" ],
+    Cell[ BoxData @ RowBox @ { "x", "=", FractionBox[ "1", "2" ] }, "Input", CellLabel -> "In[1]:=" ],
+    Cell[ BoxData @ FractionBox[ "1", "2" ], "Output", CellLabel -> "Out[1]=" ],
+    Cell[ "print('a*b')", "Program" ]
+};
+
+(* The notebook context of the chat, the cells in it, and what a tool gives the model *)
+cellSyntaxContext[ ] := Wolfram`Chatbook`ChatModes`Common`getContextFromSelection[ None, $cellSyntaxNotebook, $cellSyntaxSettings ];
+cellSyntaxContent[ context_String ] := First[ StringCases[ context, "<content>\n" ~~ content__ ~~ "\n</content>" :> content, 1 ], None ];
+cellSyntaxTool[ name_String, args_Association ] :=
+    Replace[ Wolfram`Chatbook`$DefaultTools[ name ][ args ], KeyValuePattern[ "String" -> text_String ] :> text ];
+
+(* The context as it is serialized in a chat, whose cells can be as long as cellStringBudget (see chatContextLength) *)
+cellSyntaxChatContext[ cellStringBudget_ ] := Block[
+    {
+        Wolfram`Chatbook`Common`$chatState               = True,
+        Wolfram`Chatbook`Common`$tokenBudget             = 2^18,
+        Wolfram`Chatbook`Common`$tokenPressure           = 0.0,
+        Wolfram`Chatbook`Common`$initialCellStringBudget = cellStringBudget,
+        Wolfram`Chatbook`Common`$cellStringBudget        = cellStringBudget
+    },
+    cellSyntaxContext[ ]
+];
+
+(* The cells are in cell tags with their ids, and the markers of selected cells are lines between the tags. The reminder
+   and the prompts for searches have the text without the cell tags, and the prompts for searches also without
+   typeset content. Nothing changes from one request to the next. *)
+VerificationTest[
+    cellSyntaxNotebook[
+        $cellSyntaxCells,
+        SelectionMove[ Cells[ $cellSyntaxNotebook ][[ 3 ]], All, Cell ];
+        With[ { context = cellSyntaxContext[ ] },
+            {
+                cellSyntaxContent @ context,
+                StringCases[ context, "Reminder: " ~~ ___ ~~ EndOfString ],
+                Wolfram`Chatbook`Common`$selectionPrompt,
+                Wolfram`Chatbook`Common`$contextPrompt,
+                context === cellSyntaxContext[ ]
+            }
+        ]
+    ],
+    {
+        "<cell id='c1' style='Title'>\nA title\n</cell>\n\n<cell id='c2' style='Text' CellTags='intro'>\nSome **bold** text here\n</cell>\n\n<selection>\n\n<cell id='c3' style='Input' CellLabel='In[1]:='>\nx = <RawBoxes>FractionBox[\"1\", \"2\"]</RawBoxes>\n</cell>\n\n</selection>\n\n<cell id='c4' style='Output' CellLabel='Out[1]='>\n(1/2)\n</cell>\n\n<cell id='c5' style='Program'>\nprint('a*b')\n</cell>",
+        { "Reminder: The user's currently selected text is: \"x = <RawBoxes>FractionBox[\"1\", \"2\"]</RawBoxes>\"" },
+        "x =",
+        "A title\n\nSome **bold** text here\n\n<selection>\n\nx = \n\n</selection>\n\n(1/2)\n\nprint('a*b')",
+        True
+    },
+    SameTest -> MatchQ,
+    TestID   -> "CellSyntax-Context"
+]
+
+(* Without the notebook tools the context is the markdown that it always was *)
+VerificationTest[
+    cellSyntaxNotebook[
+        $cellSyntaxCells,
+        SelectionMove[ Cells[ $cellSyntaxNotebook ][[ 3 ]], All, Cell ];
+        Block[ { Wolfram`Chatbook`Common`$selectedTools = KeyTake[ Wolfram`Chatbook`$DefaultTools, { "NotebookReader" } ] },
+            cellSyntaxContent @ cellSyntaxContext[ ]
+        ]
+    ],
+    "# A title\n\nSome **bold** text here\n\n<selection>\n\n```wl\nIn[1]:= x = (1/2)\n```\n\n</selection>\n\n```wl\nOut[1]= (1/2)\n```\n\n```\nprint('a*b')\n```",
+    SameTest -> MatchQ,
+    TestID   -> "CellSyntax-WithoutTools"
+]
+
+(* The context, the NotebookReader tool and the notebook tools give the same cells: the same ids and the same text,
+   also for a cell that has code blocks in its text, which the markdown context would merge. None of them makes a
+   snapshot. *)
+VerificationTest[
+    cellSyntaxNotebook[
+        Append[ $cellSyntaxCells, Cell[ "```wl\na = 1\n```\n\n```wl\nb = 2\n```", "Program" ] ],
+        SelectionMove[ Cells[ $cellSyntaxNotebook ][[ 3 ]], All, Cell ];
+        With[ { context = cellSyntaxContext[ ], read = cellSyntaxTool[ "ReadCells", <| |> ] },
+            {
+                StringDelete[ cellSyntaxContent @ context, "<selection>\n\n" | "\n\n</selection>" ] === read,
+                Wolfram`Chatbook`Common`readUserNotebook[ $cellSyntaxSettings, "selection", 1 ] === context,
+                cellSyntaxContent @ Wolfram`Chatbook`Common`readUserNotebook[ $cellSyntaxSettings, "all", 1 ] === read,
+                StringCount[ read, "<cell id='c" ],
+                $cellSyntaxSnapshots
+            }
+        ]
+    ],
+    { True, True, True, 6, { } },
+    SameTest -> MatchQ,
+    TestID   -> "CellSyntax-SameAsTools"
+]
+
+(* A cell is edited with the id and the text that the context has for it, without reading it first. The edit is in the
+   snapshot, and the user's notebook is as it was. *)
+VerificationTest[
+    cellSyntaxNotebook[
+        $cellSyntaxCells,
+        SelectionMove[ Cells[ $cellSyntaxNotebook ][[ 1 ]], All, Cell ];
+        Module[ { id, body },
+            { id, body } = First @ StringCases[
+                cellSyntaxContext[ ],
+                "<cell id='" ~~ i: WordCharacter.. ~~ "' style='Input'" ~~ Except[ "\n" ]... ~~ "\n" ~~ Shortest[ b__ ] ~~ "\n</cell>" :> { i, b },
+                1
+            ];
+            {
+                id,
+                StringStartsQ[
+                    cellSyntaxTool[ "EditInCell", <| "cell" -> id, "edits" -> { <| "oldText" -> body, "newText" -> StringReplace[ body, "x = " -> "y = 3 " ] |> } |> ],
+                    "Opened s1 "
+                ],
+                First @ NotebookRead[ Cells[ First @ $cellSyntaxSnapshots ][[ 3 ]] ],
+                First @ NotebookRead[ Cells[ $cellSyntaxNotebook ][[ 3 ]] ]
+            }
+        ]
+    ],
+    {
+        "c3",
+        True,
+        BoxData @ RowBox @ { "y", "=", RowBox @ { "3", " ", FractionBox[ "1", "2" ] } },
+        BoxData @ RowBox @ { "x", "=", FractionBox[ "1", "2" ] }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "CellSyntax-EditFromContext"
+]
+
+(* A selection inside a cell is marked in its body: in text, in a string of a code cell (a Program cell), and as a caret
+   in code. Styled text stays one piece of markdown, with the markers around it. Without the markers, the body is what
+   the tools read for the cell. A formula has no place for a marker, so the whole cell is selected. *)
+VerificationTest[
+    cellSyntaxNotebook[
+        Append[ $cellSyntaxCells, Cell[ BoxData @ FormBox[ RowBox @ { "x", "+", "y" }, TraditionalForm ], "DisplayFormula" ] ],
+        Module[ { cells = Cells @ $cellSyntaxNotebook, selected, cell },
+            cell[ text_, id_ ] := First[ StringCases[ text, "<cell id='" <> id <> "'" ~~ Shortest[ __ ] ~~ "</cell>" ], None ];
+            selected[ n_Integer, find_ ] := (
+                SelectionMove[ cells[[ n ]], Before, CellContents ];
+                If[ StringQ @ find, NotebookFind[ $cellSyntaxNotebook, find, Next ] ];
+                With[ { text = cellSyntaxContent @ cellSyntaxContext[ ], id = "c" <> ToString @ n },
+                    {
+                        StringCases[ text, StartOfLine ~~ Except[ "\n" ]... ~~ "selection>" ~~ Except[ "\n" ]... ~~ EndOfLine ],
+                        Wolfram`Chatbook`Common`$selectionPrompt,
+                        cell[ StringDelete[ text, "<selection>" | "</selection>" ], id ] === cellSyntaxTool[ "ReadCells", <| "cells" -> id |> ]
+                    }
+                ]
+            );
+            {
+                selected[ 2, "text" ], selected[ 2, "ol" ], selected[ 2, "old text" ], selected[ 3, None ],
+                selected[ 5, "a*b" ], selected[ 6, None ]
+            }
+        ]
+    ],
+    {
+        { { "Some **bold** <selection>text</selection> here" }, "text", True },
+        { { "Some <selection>**bold**</selection> text here" }, "**bold**", True },
+        { { "Some <selection>**bold** text</selection> here" }, "**bold** text", True },
+        { { "<selection></selection>x = <RawBoxes>FractionBox[\"1\", \"2\"]</RawBoxes>" }, None, True },
+        { { "print('<selection>a*b</selection>')" }, "a*b", True },
+        { { "<selection>", "</selection>" }, "$$x+y$$", True }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "CellSyntax-SelectionInCell"
+]
+
+(* A cell whose body the length limit of the context cuts says so in its tag (the tools refuse to write such a body
+   back), and keeps its tags *)
+VerificationTest[
+    cellSyntaxNotebook[
+        Table[ Cell[ "CELL-" <> ToString @ i <> " " <> StringRepeat[ "word ", 300 ] <> "END-" <> ToString @ i, "Text" ], { i, 4 } ],
+        Block[ { $cellSyntaxSettings = <| $cellSyntaxSettings, "MaxCellStringLength" -> 800 |> },
+            With[ { text = cellSyntaxContent @ cellSyntaxContext[ ] },
+                {
+                    StringCases[ text, "<cell" ~~ Except[ "\n" ]... ],
+                    StringCount[ text, "\n</cell>" ],
+                    StringLength @ text < 1200,
+                    StringStartsQ[ cellSyntaxTool[ "ReadCells", <| "cells" -> "c1" |> ], "<cell id='c1' style='Text'>\nCELL-1 word" ]
+                }
+            ]
+        ]
+    ],
+    {
+        {
+            "<cell id='c1' style='Text' truncated='true'>", "<cell id='c2' style='Text' truncated='true'>",
+            "<cell id='c3' style='Text' truncated='true'>", "<cell id='c4' style='Text' truncated='true'>"
+        },
+        4,
+        True,
+        True
+    },
+    SameTest -> MatchQ,
+    TestID   -> "CellSyntax-Truncated-CellLength"
+]
+
+(* The same for a cell that the token budget of the context cuts: here the one cell is larger than the whole budget *)
+VerificationTest[
+    cellSyntaxNotebook[
+        { Cell[ "START " <> StringRepeat[ "word ", 6000 ] <> "END", "Text" ] },
+        SelectionMove[ $cellSyntaxNotebook, After, Notebook ];
+        Block[
+            {
+                $cellSyntaxSettings = <| $cellSyntaxSettings, "MaxCellStringLength" -> 200000 |>,
+                Wolfram`Chatbook`ChatModes`Context`Private`$maxNotebookContextTokens = 1000
+            },
+            With[ { text = cellSyntaxContent @ cellSyntaxChatContext[ 50000 ] },
+                {
+                    StringCases[ text, "<cell" ~~ Except[ "\n" ]... ],
+                    StringEndsQ[ text, "END\n</cell>\n\n<selection></selection>" ],
+                    StringContainsQ[ text, "START word" ],
+                    StringLength @ text < 6000
+                }
+            ]
+        ]
+    ],
+    { { "<cell id='c1' style='Text' truncated='true'>" }, True, True, True },
+    SameTest -> MatchQ,
+    TestID   -> "CellSyntax-Truncated-TokenBudget"
+]
+
+(* What is cut is the body. A tag that says truncated already is not marked twice, nothing is left of a cell if there
+   is no room for a body, and text that is no cell is cut as before. *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Common`$includeCellXML = True },
+        With[ { cell = "<cell id='c1' style='Text'>\n" <> StringRepeat[ "word ", 100 ] <> "\n</cell>" },
+            {
+                Wolfram`Chatbook`ChatMessages`Private`cutCellString[ cell, 150 ],
+                Wolfram`Chatbook`ChatMessages`Private`cutCellString[ Wolfram`Chatbook`ChatMessages`Private`cutCellString[ cell, 150 ], 120 ],
+                Wolfram`Chatbook`ChatMessages`Private`cutCellString[ cell, 60 ],
+                Wolfram`Chatbook`ChatMessages`Private`cutCellString[ StringRepeat[ "word ", 100 ], 40 ]
+            }
+        ]
+    ],
+    {
+        _String? (StringMatchQ[ #, "<cell id='c1' style='Text' truncated='true'>\nword word " ~~ __ ~~ " word \n</cell>" ] && StringLength @ # <= 150 &),
+        _String? (StringMatchQ[ #, "<cell id='c1' style='Text' truncated='true'>\nword word " ~~ __ ~~ " word \n</cell>" ] && StringLength @ # <= 120 &),
+        "",
+        _String? (StringLength @ # <= 40 && StringFreeQ[ #, "cell" ] &)
+    },
+    SameTest -> MatchQ,
+    TestID   -> "CellSyntax-Truncated-CutCellString"
+]
+
+(* The context of a notebook that is longer than the token budget of the context stays within that budget, as it does
+   without the tools: the budget, the last cell, which is always shown, and the text around the cells (one cell here
+   is about 1400 tokens). With the tools the cells are serialized once also when the selection is in a cell, so that
+   the budget is not spent on a serialization that is not used: the context is then the same but for the markers. *)
+VerificationTest[
+    cellSyntaxNotebook[
+        Table[ Cell[ "CELL-" <> ToString @ i <> " " <> StringRepeat[ "word ", 1000 ], "Text" ], { i, 60 } ],
+        Module[ { tokens, on, off, selected },
+            tokens[ context_String ] :=
+                Wolfram`Chatbook`ChatMessages`Private`tokenCount[ $cellSyntaxSettings, <| "Role" -> "System", "Content" -> context |> ];
+            SelectionMove[ Cells[ $cellSyntaxNotebook ][[ 30 ]], After, Cell ];
+            on  = cellSyntaxChatContext[ 16384 ];
+            off = Block[ { Wolfram`Chatbook`Common`$selectedTools = <| |> }, cellSyntaxChatContext[ 16384 ] ];
+            SelectionMove[ Cells[ $cellSyntaxNotebook ][[ 30 ]], All, Cell ];
+            selected = cellSyntaxChatContext[ 16384 ];
+            {
+                tokens @ on <= Wolfram`Chatbook`ChatModes`Context`Private`$maxNotebookContextTokens + 2000,
+                Abs[ tokens @ on - tokens @ off ] < 1500,
+                20 < StringCount[ on, "\n</cell>" ] < 50,
+                StringDelete[ selected, "<selection>" | "</selection>" | "\n" ] === StringDelete[ on, "<selection>" | "</selection>" | "\n" ]
+            }
+        ]
+    ],
+    { True, True, True, True },
+    SameTest -> MatchQ,
+    TestID   -> "CellSyntax-TokenBudget"
+]
+
+(* If the context does not show every cell of the notebook, its last line names the others, as the ranges that ReadCells
+   takes. The line does not look for cells that are excluded from chats: it says that those stay hidden, and ReadCells
+   leaves them out and says so. WriteCells replaces a cell that the context showed, and not one that it only named. A context
+   that shows every cell, and one of a chat without the tools, have no such line. *)
+VerificationTest[
+    cellSyntaxNotebook[
+        ReplacePart[
+            Table[ Cell[ "Cell " <> ToString @ i, "Text" ], { i, 12 } ],
+            10 -> Cell[ "Not for chats", "Text", TaggingRules -> <| "ChatNotebookSettings" -> <| "ExcludeFromChat" -> True |> |> ]
+        ],
+        Module[ { context, write },
+            context[ opts___ ] := Wolfram`Chatbook`ChatModes`Common`getContextFromSelection[ None, $cellSyntaxNotebook, $cellSyntaxSettings, opts ];
+            write[ id_String ] := cellSyntaxTool[ "WriteCells", <| "cells" -> "<cell id='" <> id <> "'>\nNew text\n</cell>" |> ];
+            SelectionMove[ Cells[ $cellSyntaxNotebook ][[ 5 ]], All, Cell ];
+            With[ { some = context[ "MaxCellsBeforeSelection" -> 2, "MaxCellsAfterSelection" -> 3 ] },
+                {
+                    StringCases[ some, "<cell id='" ~~ id: WordCharacter.. :> id ],
+                    Last @ StringSplit[ some, "\n" ],
+                    StringStartsQ[ write[ "c9" ], "c9 has not been shown whole in this chat" ],
+                    StringContainsQ[ write[ "c4" ], "Wrote to s1: changed c4." ],
+                    cellSyntaxTool[ "ReadCells", <| "cells" -> "c10-c11" |> ],
+                    NotebookDelete @ Cells[ $cellSyntaxNotebook ][[ 10 ]];
+                    StringCount[ context[ ], "<cell id='" | "[Not shown" ],
+                    Block[ { Wolfram`Chatbook`Common`$selectedTools = KeyTake[ Wolfram`Chatbook`$DefaultTools, { "NotebookReader" } ] },
+                        StringFreeQ[ context[ "MaxCellsBeforeSelection" -> 2, "MaxCellsAfterSelection" -> 3 ], "Not shown" | "<cell" ]
+                    ]
+                }
+            ]
+        ]
+    ],
+    {
+        { "c3", "c4", "c5", "c6", "c7", "c8" },
+        "[Not shown: the cells c1-c2, c9-c12 of the notebook. ReadCells reads them, but not cells that the user excluded from AI chats: those stay hidden.]",
+        True,
+        True,
+        "<cell id='c11' style='Text'>\nCell 11\n</cell>\n\n[1 cell that the user excluded from AI chats is left out.]",
+        11,
+        True
+    },
+    SameTest -> MatchQ,
+    TestID   -> "CellSyntax-CellsNotShown"
+]
+
+(* A graphic is an image link in the body of its cell, in code and in an output, whether the chat gets images or not.
+   A multimodal chat gets the images of the links, each after its link and under a label that calls them image links
+   (there are no MarkdownImageBoxes in the cell syntax), and at most $maxContextImages of them, the ones next to the
+   selection first. A chat without images gets none. *)
+VerificationTest[
+    cellSyntaxNotebook[
+        {
+            Cell[ "Some text", "Text" ],
+            Cell[ BoxData @ RowBox @ { "ColorNegate", "[", ToBoxes @ Graphics[ { Red, Disk[ ] }, ImageSize -> 40 ], "]" }, "Input" ],
+            Cell[ BoxData @ ToBoxes @ Graphics[ { Blue, Disk[ ] }, ImageSize -> 40 ], "Output" ]
+        },
+        SelectionMove[ Cells[ $cellSyntaxNotebook ][[ 2 ]], All, Cell ];
+        Module[ { request, parts, messages, textOnly, links },
+            request[ multimodal_ ] := Block[ { Wolfram`Chatbook`Common`$multimodalMessages = multimodal },
+                Wolfram`Chatbook`Common`constructMessages[
+                    <|
+                        $cellSyntaxSettings,
+                        "Model"                   -> <| "Service" -> "OpenAI", "Name" -> "gpt-4.1" |>,
+                        "Multimodal"              -> multimodal,
+                        "PromptCacheOptimization" -> False,
+                        "PromptGenerators"        -> { },
+                        "Tools"                   -> { }
+                    |>,
+                    { <| "Role" -> "System", "Content" -> "sys" |>, <| "Role" -> "User", "Content" -> "What is this?" |> }
+                ]
+            ];
+            parts[ content_ ] := Replace[ content, KeyValuePattern @ { "Type" -> type_, "Data" -> data_ } :> If[ type === "Image", Image, data ], { 1 } ];
+            messages = request @ True;
+            textOnly = request @ False;
+            links = DeleteDuplicates @ StringCases[ messages[[ 1, "Content" ]], "![Image](attachment://content-" ~~ WordCharacter.. ~~ ")" ];
+            {
+                StringCases[ cellSyntaxContent @ messages[[ 1, "Content" ]], "<cell id='c" ~~ _ ~~ "' style='" ~~ ("Input" | "Output") ~~ "'>\n" ~~ Shortest[ body__ ] ~~ "\n</cell>" :> body ] ===
+                    { "ColorNegate[" <> First @ links <> "]", Last @ links },
+                cellSyntaxContent @ textOnly[[ 1, "Content" ]] === cellSyntaxContent @ messages[[ 1, "Content" ]],
+                parts @ messages[[ 2, "Content" ]],
+                { Length @ textOnly, textOnly[[ 2, "Content" ]], FreeQ[ textOnly, _Image | "Image" ] },
+                Block[ { Wolfram`Chatbook`ChatModes`Context`Private`$maxContextImages = 1 },
+                    Rest @ parts @ request[ True ][[ 2, "Content" ]] === { First @ links, Image, "What is this?" }
+                ]
+            }
+        ]
+    ],
+    {
+        True,
+        True,
+        {
+            "[Original images for the image links in the notebook context. Each image follows its link. The user's message follows the images.]",
+            _String? (StringMatchQ[ "![Image](attachment://content-" ~~ WordCharacter.. ~~ ")" ]),
+            Image,
+            _String? (StringMatchQ[ "![Image](attachment://content-" ~~ WordCharacter.. ~~ ")" ]),
+            Image,
+            "What is this?"
+        },
+        { 2, "What is this?", True },
+        True
+    },
+    SameTest -> MatchQ,
+    TestID   -> "CellSyntax-Images"
+]
+
+(* Without the notebook tools, the label of the images is the one for the MarkdownImageBoxes of the markdown context: *)
+VerificationTest[
+    Table[
+        Block[ { Wolfram`Chatbook`Common`$selectedTools = KeyTake[ Wolfram`Chatbook`$DefaultTools, tools ] },
+            {
+                Wolfram`Chatbook`ChatMessages`Private`makeContextImageMessage[ { { "![Image](attachment://content-abcde)", "image" } } ][[ "Content", 1, "Data" ]],
+                Wolfram`Chatbook`ChatModes`Context`Private`notebookContextImageMessage[ { { "![Image](attachment://content-abcde)", "image" } } ][[ "Content", 1, "Data" ]]
+            }
+        ],
+        { tools, { { "NotebookReader" }, $cellSyntaxTools } }
+    ],
+    {
+        {
+            "[Original images for the MarkdownImageBoxes in the notebook context. Each image follows its markdown link. The user's message follows the images.]",
+            "[Original images for the MarkdownImageBoxes in the notebook content above. Each image follows its markdown link.]"
+        },
+        {
+            "[Original images for the image links in the notebook context. Each image follows its link. The user's message follows the images.]",
+            "[Original images for the image links in the notebook content above. Each image follows its link.]"
+        }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "CellSyntax-ImageLabels"
+]
+
+(* A chat with the tools is told how to read the syntax, in its system prompt. Other chats are not. *)
+VerificationTest[
+    cellSyntaxNotebook[
+        $cellSyntaxCells,
+        Table[
+            Block[ { Wolfram`Chatbook`Common`$selectedTools = KeyTake[ Wolfram`Chatbook`$DefaultTools, tools ] },
+                StringContainsQ[
+                    First[
+                        Wolfram`Chatbook`Common`withBasePromptBuilder @ Wolfram`Chatbook`Common`constructMessages[
+                            <|
+                                $cellSyntaxSettings,
+                                "Model"                   -> <| "Service" -> "OpenAI", "Name" -> "gpt-4.1" |>,
+                                "PromptCacheOptimization" -> False,
+                                "PromptGenerators"        -> { },
+                                "Tools"                   -> { }
+                            |>,
+                            { <| "Role" -> "System", "Content" -> "<base-prompt></base-prompt>" |>, <| "Role" -> "User", "Content" -> "Hi" |> }
+                        ]
+                    ][ "Content" ],
+                    "Notebook cells are shown as <cell id='c3' style='Input'>"
+                ]
+            ],
+            { tools, { $cellSyntaxTools, { "NotebookReader" } } }
+        ]
+    ],
+    { True, False },
+    SameTest -> MatchQ,
+    TestID   -> "CellSyntax-BasePrompt"
+]
+
+(* With prompt cache optimization the context is sent once. When it has to be sent again (here there is no
+   NotebookReader tool to read the change with), the cells have the ids that they had: a cell that is new gets the next
+   id, wherever it is in the notebook. *)
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`Tools`NotebookTools`Private`$cellTables = <| |>,
+            Wolfram`Chatbook`Common`$attachments                     = <| |>,
+            Wolfram`Chatbook`Common`$notebookAttachments             = <| |>
+        },
+        Module[ { first, second, ids },
+            { first, second } = twoWorkspaceInputs[
+                $codenameCells,
+                (* the same chat for both requests (the test's requests only get handler data on the way) *)
+                <| "Tools" -> { "ReadCells", "EditInCell" }, "ConversationUUID" -> None |>,
+                (SelectionMove[ First @ Cells @ #, Before, Cell ]; NotebookWrite[ #, Cell[ "A new first cell", "Text" ] ]) &
+            ];
+            ids = StringCases[ contentString @ #, "<cell id='" ~~ id: WordCharacter.. ~~ "'" ~~ Except[ "\n" ]... ~~ "\n" ~~ line: Except[ "\n" ].. :> id -> line ] &;
+            {
+                ids @ first[[ 3 ]],
+                Take[ KeyTake[ second, { "Role", "Content" } ], Length @ first ] === KeyTake[ first, { "Role", "Content" } ],
+                ids @ Last @ second
+            }
+        ]
+    ],
+    {
+        { "c1" -> "Project codename: SILVERFISH", "c2" -> "1 + 1" },
+        True,
+        { "c3" -> "A new first cell", "c1" -> "Project codename: SILVERFISH", "c2" -> "1 + 1" }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "CellSyntax-PromptCacheCellIDs"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)

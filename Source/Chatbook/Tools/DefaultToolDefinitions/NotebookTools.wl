@@ -21,11 +21,8 @@ $notebookToolShortNames = <|
     "GetOutline"     -> "nb_outline",
     "ReadCells"      -> "nb_cells",
     "SearchNotebook" -> "nb_find",
-    "GetSelection"   -> "nb_selection",
     "EditInCell"     -> "nb_edit",
-    "SetCells"       -> "nb_set",
-    "InsertCells"    -> "nb_insert",
-    "DeleteCells"    -> "nb_delete",
+    "WriteCells"     -> "nb_write",
     "ShowChanges"    -> "nb_show",
     "CloseNotebook"  -> "nb_close"
 |>;
@@ -39,9 +36,9 @@ $notebookToolNames = <| "EditInCell" -> "edit_in_cell" |>;
 (*Specs*)
 
 (* The notebook editing tools ($notebookToolSpecs: ListNotebooks, OpenNotebook, GetOutline, ReadCells, SearchNotebook,
-   GetSelection, EditInCell, SetCells, InsertCells, DeleteCells, ShowChanges, CloseNotebook). They edit the user's
-   notebooks, so they are only enabled in the sidebar and the Notebook Assistant window, on 16.0+ with a front end that
-   has the agent notebook packets (the cheap checks first). *)
+   EditInCell, WriteCells, ShowChanges, CloseNotebook). They edit the user's notebooks, so they are only enabled in the
+   sidebar and the Notebook Assistant window, on 16.0+ with a front end that makes snapshots (the cheap checks
+   first). *)
 KeyValueMap[
     Function[ { name, spec },
         $defaultChatTools0[ name ] = <|

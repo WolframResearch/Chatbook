@@ -110,6 +110,14 @@ VerificationTest[
     TestID   -> "InputSegments-Macros"
 ]
 
+(* The inputs as text, as the notebook tools evaluate a code cell statement by statement: *)
+VerificationTest[
+    Wolfram`Chatbook`Common`sandboxStatements[ "a = 1;\n(* comment *)\nf[x_] :=\n    x + 1\nb" ],
+    { "a = 1;", "f[x_] :=\n    x + 1", "b" },
+    SameTest -> MatchQ,
+    TestID   -> "InputSegments-Statements"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Repairs*)
@@ -363,122 +371,71 @@ If[ $localEvaluatorAvailable,
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*TeX Boxes*)
+(*Expression URIs of Boxes*)
 
-(* The notebook tools' LaTeX formulas are read in the sandbox kernel: the TeX import evaluates \mathrm{...} content
-   as a string literal, so code smuggled into one runs there, never in this kernel *)
-If[ $localEvaluatorAvailable,
-    VerificationTest[
-        Block[ { Wolfram`ChatbookTests`$texInjected = False },
+(* An expression URI whose value is boxes (what typeset code and a graphic of a notebook are read as) is the expression
+   that the boxes stand for in code of the evaluator, which is not evaluated on the way. Boxes that stand for nothing
+   stay RawBoxes. *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Common`$attachments = <| |> },
+        With[
             {
-                Wolfram`Chatbook`Common`sandboxTeXBoxes[
-                    { "\\omega=\\sqrt{k/m}", "\\frac{1}{2", "\\mathrm{a\"<>ToString[Wolfram`ChatbookTests`$texInjected = True]<>\"b}", "\\ddot r=-g\\cos\\theta" },
-                    60
-                ],
-                Wolfram`ChatbookTests`$texInjected
-            }
-        ],
-        {
-            {
-                "RowBox[{\"\\[Omega]\", \"\\[LongEqual]\", SqrtBox[RowBox[{\"k\", \"/\", \"m\"}]]}]",
-                None,
-                _String,
-                "RowBox[{OverscriptBox[\"r\", \"..\"], \"\\[LongEqual]\", \"-\", \"g\", \"cos\", \" \", \"\\[Theta]\"}]"
+                power  = Wolfram`Chatbook`MakeExpressionURI[ "expression", "boxes", RawBoxes @ SuperscriptBox[ "3", "2" ] ],
+                broken = Wolfram`Chatbook`MakeExpressionURI[ "expression", "boxes", RawBoxes @ RowBox @ { "f", "[" } ]
             },
-            False
-        },
-        SameTest -> MatchQ,
-        TestID   -> "TeXBoxes"
-    ]
+            {
+                Wolfram`Chatbook`WolframLanguageToolEvaluate[ "Hold[" <> power <> "]", "Result", "Method" -> "Session" ],
+                Wolfram`Chatbook`WolframLanguageToolEvaluate[ power <> " + 1", "Result", "Method" -> "Session" ],
+                Wolfram`Chatbook`WolframLanguageToolEvaluate[ "Hold[" <> broken <> "]", "Result", "Method" -> "Session" ]
+            }
+        ]
+    ],
+    { HoldCompleteForm[ Hold[ 3^2 ] ], HoldCompleteForm[ 10 ], HoldCompleteForm[ Hold[ RawBoxes[ RowBox @ { "f", "[" } ] ] ] },
+    SameTest       -> MatchQ,
+    TimeConstraint -> 60,
+    TestID         -> "ExpressionURIs-Boxes"
 ]
 
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
-(*Check Cells*)
-
-(* A cell evaluated for its outputs gives the boxes of each of its statements with a result other than Null, as the
-   front end makes an Output cell for each, whether its boxes are one RowBox or a list of lines; a plot's boxes come
-   without their DynamicBoxes, a legend's included *)
-If[ $localEvaluatorAvailable,
-    VerificationTest[
-        Lookup[
-            Wolfram`Chatbook`Common`sandboxCheckCells[
-                {
-                    RowBox[ { RowBox[ { RowBox[ { "f", "[", "x_", "]" } ], ":=", RowBox[ { "x", "^", "2" } ] } ], "\n", RowBox[ { "f", "[", "3", "]" } ], "\n", RowBox[ { "f", "[", "4", "]" } ] } ],
-                    RowBox[ { RowBox[ { "y", "=", "1" } ], ";" } ],
-                    { RowBox[ { "y", "=", "2" } ], "\n", RowBox[ { "y", "+", "1" } ] },
-                    RowBox[ { "Plot", "[", RowBox[ { RowBox[ { "{", RowBox[ { "x", ",", RowBox[ { "x", "^", "2" } ] } ], "}" } ], ",", RowBox[ { "{", RowBox[ { "x", ",", "0", ",", "1" } ], "}" } ], ",", RowBox[ { "PlotLegends", "->", "Automatic" } ] } ], "]" } ]
-                },
-                20,
-                60,
-                { 1, 2, 3, 4 }
-            ],
-            { "Result", "Boxes" }
-        ],
-        {
-            { "{9, 16}", { "\"9\"", "\"16\"" } },
-            { "", None },
-            { "{2, 3}", { "\"2\"", "\"3\"" } },
-            { "", { s_String /; StringContainsQ[ s, "GraphicsBox" ] && ! StringContainsQ[ s, "DynamicBox" ] } }
-        },
-        SameTest -> MatchQ,
-        TestID   -> "CheckCells-Outputs"
-    ]
+(* Code can hold several image links. Each one is the expression of its own URI: on one line, on several lines, as a
+   string and in Import. *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Common`$attachments = <| |> },
+        With[
+            {
+                a = Wolfram`Chatbook`MakeExpressionURI[ "expression", "first", Hold[ 1, 2 ] ],
+                b = Wolfram`Chatbook`MakeExpressionURI[ "expression", "second", Hold[ 3 ] ]
+            },
+            {
+                StringMatchQ[ { a, b }, "![" ~~ ("first" | "second") ~~ "](expression://" ~~ Except[ ")" ].. ~~ ")" ],
+                Wolfram`Chatbook`WolframLanguageToolEvaluate[ "{Length[" <> a <> "], Length[" <> b <> "]}", "Result", "Method" -> "Session" ],
+                Wolfram`Chatbook`WolframLanguageToolEvaluate[
+                    "{Length[" <> b <> "],\n Length[\"" <> a <> "\"], Length[Import[\"" <> b <> "\"]], Length[" <> a <> "]}",
+                    "Result",
+                    "Method" -> "Session"
+                ]
+            }
+        ]
+    ],
+    { { True, True }, HoldCompleteForm[ { 2, 1 } ], HoldCompleteForm[ { 1, 2, 1, 2 } ] },
+    SameTest       -> MatchQ,
+    TimeConstraint -> 60,
+    TestID         -> "ExpressionURIs-SeveralLinks"
 ]
 
-(* The boxes are FullForm text: the front end reads them with its notebook file parser, which has no /@ (a StreamPlot's
-   boxes hold (f &) /@ m) *)
+(* The boxes are read in the kernel that evaluates the code *)
 If[ $localEvaluatorAvailable,
     VerificationTest[
-        Lookup[
-            Wolfram`Chatbook`Common`sandboxCheckCells[
-                { RowBox[ { "Interpretation", "[", RowBox[ { "1", ",", RowBox[ { "Hold", "[", RowBox[ { "Sin", "/@", "x" } ], "]" } ] } ], "]" } ] },
-                20,
-                60,
-                { 1 }
-            ],
-            "Boxes"
+        Block[ { Wolfram`Chatbook`Common`$attachments = <| |> },
+            Wolfram`Chatbook`WolframLanguageToolEvaluate[
+                Wolfram`Chatbook`MakeExpressionURI[ "expression", "boxes", RawBoxes @ SuperscriptBox[ "3", "2" ] ] <> " + 1",
+                "Result",
+                "Method" -> "Local"
+            ]
         ],
-        { { s_String /; StringContainsQ[ s, "Hold[Map[Sin, x]]" ] && ! StringContainsQ[ s, "/@" ] } },
-        SameTest -> MatchQ,
-        TestID   -> "CheckCells-OutputsFullForm"
-    ]
-]
-
-(* A cell that runs longer than cellSeconds is aborted, its messages and result left out, and the cells after it
-   still run; cells without outputs to evaluate get no "Boxes" *)
-If[ $localEvaluatorAvailable,
-    VerificationTest[
-        Wolfram`Chatbook`Common`sandboxCheckCells[
-            { RowBox[ { "While", "[", "True", "]" } ], RowBox[ { "1", "+", "1" } ] },
-            1,
-            60
-        ],
-        {
-            <| "Result" -> "", "Messages" -> { }, "Aborted" -> True |>,
-            <| "Result" -> "2", "Messages" -> { }, "Aborted" -> False |>
-        },
+        HoldCompleteForm[ 10 ],
         SameTest       -> MatchQ,
         TimeConstraint -> 60,
-        TestID         -> "CheckCells-CellAborted"
-    ]
-]
-
-(* No cell starts once the check has taken seconds: the result is cut short where it stopped *)
-If[ $localEvaluatorAvailable,
-    VerificationTest[
-        Lookup[
-            Wolfram`Chatbook`Common`sandboxCheckCells[
-                { RowBox[ { "While", "[", "True", "]" } ], RowBox[ { "1", "+", "1" } ] },
-                2,
-                1
-            ],
-            "Aborted"
-        ],
-        { True },
-        SameTest       -> MatchQ,
-        TimeConstraint -> 60,
-        TestID         -> "CheckCells-TimeBudget"
+        TestID         -> "ExpressionURIs-Boxes-Local"
     ]
 ]
 

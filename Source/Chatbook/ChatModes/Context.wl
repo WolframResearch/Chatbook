@@ -208,9 +208,7 @@ getSidebarPrompt // beginDefinition;
 
 getSidebarPrompt[ settings_Association ] :=
     If[ TrueQ @ $SidebarChat && TrueQ @ settings[ "AllowSelectionContext" ],
-        Block[ { $includeCellXML = False },
-            getContextFromSelection[ $evaluationNotebook, settings ]
-        ] // LogChatTiming[ "GetWorkspacePrompt" ],
+        getContextFromSelection[ $evaluationNotebook, settings ] // LogChatTiming[ "GetWorkspacePrompt" ],
         None
     ];
 
@@ -223,9 +221,7 @@ getWorkspacePrompt // beginDefinition;
 
 getWorkspacePrompt[ settings_Association ] :=
     If[ TrueQ @ $WorkspaceChat && TrueQ @ settings[ "AllowSelectionContext" ],
-        Block[ { $includeCellXML = False },
-            getContextFromSelection[ $evaluationNotebook, settings ]
-        ] // LogChatTiming[ "GetWorkspacePrompt" ],
+        getContextFromSelection[ $evaluationNotebook, settings ] // LogChatTiming[ "GetWorkspacePrompt" ],
         None
     ];
 
@@ -270,7 +266,7 @@ getContextFromSelection[
             $maxCellsAfterSelection     = OptionValue[ "MaxCellsAfterSelection"     ],
             $notebookMetadataString     = getNotebookMetadataString[ nbo, info ]
         },
-        Module[ { settings, selectionData, string },
+        Module[ { settings, selectionData },
             settings = ConfirmBy[ downScaledSettings @ settings0, AssociationQ, "Settings" ];
 
             selectionData = ConfirmMatch[
@@ -281,13 +277,14 @@ getContextFromSelection[
 
             If[ selectionData === None, Throw @ None ];
 
-            string = ConfirmBy[
-                withNotebookContextBudget @ getContextFromSelection0[ selectionData, settings ],
+            ConfirmBy[
+                withContextCellSyntax[
+                    nbo,
+                    withNotebookContextBudget @ getContextFromSelection0[ selectionData, settings ]
+                ],
                 StringQ,
                 "Context"
-            ];
-
-            ConfirmBy[ mergeCodeBlocks @ string, StringQ, "Merged" ]
+            ]
         ]
     ],
     throwInternalFailure
@@ -295,8 +292,66 @@ getContextFromSelection[
 
 getContextFromSelection // endDefinition;
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*withContextCellSyntax*)
+(* Evaluates eval, which serializes cells of the user's notebook nbo for the chat. If the chat has the notebook tools,
+   the cells are in the cell syntax (docs/cell-syntax.md) with the ids of those tools, so that a cell reads the same
+   and has the same id in the notebook context, in NotebookReader results and in the tools, and can be edited without
+   reading it again. Otherwise they are the markdown that they always were.
+   This must not be nested: an inner call would lose what the outer one records for the tools. *)
+withContextCellSyntax // beginDefinition;
+withContextCellSyntax // Attributes = { HoldRest };
+
+withContextCellSyntax[ nbo_NotebookObject, eval_ ] :=
+    If[ notebookToolsSelectedQ[ ],
+        withNotebookCellSyntax[ nbo, addCellsNotShown[ nbo, eval ] ],
+        Block[ { $includeCellXML = False }, eval ]
+    ];
+
+withContextCellSyntax // endDefinition;
+
+
+(* A notebook context in the cell syntax with a last line that names the cells of the notebook that it does not show,
+   as the ranges that the ReadCells tool takes, so that the model knows that there is more. A page of NotebookReader
+   says itself where it ends and is left as it is. This costs one Cells call. The cells are not checked for being
+   excluded from chats, which is a front end call for each of them: the line says that such cells stay hidden, and
+   ReadCells leaves them out. *)
+addCellsNotShown // beginDefinition;
+
+addCellsNotShown[ nbo_NotebookObject, context_String ] :=
+    Module[ { shown, ids, runs },
+        shown = StringCases[ context, StartOfLine ~~ "<cell id='" ~~ id: Except[ "'" ].. ~~ "'" :> id ];
+        ids   = $cellIDFunction /@ Cells @ nbo;
+        (* runs of cells that follow each other in the notebook: *)
+        runs  = Cases[ Split[ { #, MemberQ[ shown, # ] } & /@ ids, Last @ #1 === Last @ #2 & ], { { _, False }, ___ } ][[ All, All, 1 ]];
+        If[ runs === { },
+            context,
+            StringJoin[
+                context,
+                "\n\n[Not shown: the cells ",
+                StringRiffle[ If[ Length @ # === 1, First @ #, First @ # <> "-" <> Last @ # ] & /@ runs, ", " ],
+                " of the notebook. ReadCells reads them, but not cells that the user excluded from AI chats: those stay hidden.]"
+            ]
+        ]
+    ];
+
+addCellsNotShown[ _, other_ ] := other;
+
+addCellsNotShown // endDefinition;
+
 
 getContextFromSelection0 // beginDefinition;
+
+(* In the cell syntax the cells are serialized once. The definition after this one evaluates its body twice (the
+   condition in the Block does that), so it serializes the cells twice, and what it gives is the second time, which in
+   a chat has only the token budget that the first time left. It is kept as it is, so that chats without the notebook
+   tools get the context that they always got. *)
+getContextFromSelection0[ selectionData: KeyValuePattern[ "Selected" -> { cell_CellObject } ], settings_ ] /;
+    TrueQ @ $includeCellXML && ! MatchQ[ $selectionInfo, None|_Association ] :=
+        Block[ { $selectionInfo = Replace[ getSelectionInfo @ cell, Except[ _Association ] -> None ] },
+            getContextFromSelection0[ selectionData, settings ]
+        ];
 
 getContextFromSelection0[ selectionData: KeyValuePattern[ "Selected" -> { cell_CellObject } ], settings_ ] /;
     ! MatchQ[ $selectionInfo, None|_Association ] :=
@@ -352,7 +407,11 @@ getContextFromSelection0[ selectionData_Association, settings0_ ] := Enclose[
         nbCtx = ConfirmBy[ applyNotebookContextTemplate @ string, StringQ, "NotebookContext" ];
 
         (* FIXME: pass $selectionPrompt instead of extracting again: *)
-        postProcessNotebookContextString[ nbCtx, string ]
+        nbCtx = postProcessNotebookContextString[ nbCtx, string ];
+
+        (* Cell tags keep the cells apart, so there are no code blocks of adjacent cells to merge, and a body is left
+           as the tools read it: *)
+        If[ TrueQ @ $includeCellXML, nbCtx, ConfirmBy[ mergeCodeBlocks @ nbCtx, StringQ, "Merged" ] ]
     ],
     throwInternalFailure
 ];
@@ -578,7 +637,7 @@ extractSelectionPrompt[ prompt_String ] := Enclose[
     Catch @ Module[ { selections, selected },
         selections = StringCases[ prompt, $leftSelectionIndicator ~~ s___ ~~ $rightSelectionIndicator :> s, 1 ];
         If[ selections === { }, Throw @ None ];
-        selected = StringTrim @ ConfirmBy[ First @ selections, StringQ, "Selected" ];
+        selected = StringTrim @ stripRawBoxes @ selectedText @ ConfirmBy[ First @ selections, StringQ, "Selected" ];
         If[ selected === "", Throw @ None, selected ]
     ],
     throwInternalFailure
@@ -593,7 +652,7 @@ processContextPromptString // beginDefinition;
 
 processContextPromptString[ prompt_String ] := Enclose[
     Module[ { noXML, noSelection },
-        noXML = ConfirmBy[ stripCellXML @ prompt, StringQ, "NoXML" ];
+        noXML = ConfirmBy[ stripRawBoxes @ stripCellXML @ prompt, StringQ, "NoXML" ];
         noSelection = ConfirmBy[ noXML, StringQ, "NoSelection" ];
         ConfirmBy[ mergeCodeBlocks @ noSelection, StringQ, "Merged" ]
     ],
@@ -610,6 +669,26 @@ stripCellXML[ prompt_String ] := StringDelete[ prompt, { "<cell" ~~ Except[ "\n"
 stripCellXML // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*stripRawBoxes*)
+(* The prompts for searches are plain text: typeset content of the cell syntax (<RawBoxes>) has no text that is worth
+   searching for: *)
+stripRawBoxes // beginDefinition;
+
+stripRawBoxes[ text_String ] :=
+    If[ TrueQ @ $includeCellXML, StringDelete[ text, RegularExpression[ "(?s)" <> $rawBoxesTag ] ], text ];
+
+stripRawBoxes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*selectedText*)
+(* In the cell syntax, selected cells have their tags between the selection markers, which are not selected text: *)
+selectedText // beginDefinition;
+selectedText[ text_String ] := If[ TrueQ @ $includeCellXML, stripCellXML @ text, text ];
+selectedText // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*postProcessNotebookContextString*)
 postProcessNotebookContextString // beginDefinition;
@@ -620,7 +699,7 @@ postProcessNotebookContextString[ prompt_String, string_String ] /; ! $notebookI
 postProcessNotebookContextString[ prompt_String, string_String ] :=
     Module[ { selected, selectedString },
         selected = StringCases[ string, $leftSelectionIndicator ~~ s__ ~~ $rightSelectionIndicator :> s, 1 ];
-        selectedString = First[ selected, None ];
+        selectedString = Replace[ First[ selected, None ], s_String :> selectedText @ s ];
         If[ StringQ @ selectedString && StringLength @ selectedString < 100,
             StringJoin[
                 prompt,
@@ -667,9 +746,10 @@ applyNotebookContextTemplate // endDefinition;
 (*insertSelectionIndicator*)
 insertSelectionIndicator // beginDefinition;
 
+(* In the cell syntax, a cell that is selected as a whole has the markers around it, as cells (see fullSelection): *)
 insertSelectionIndicator[ { { beforeCells___Cell }, { selectedCell_Cell }, { afterCells___Cell } } ] :=
     With[ { info = $selectionInfo },
-        { beforeCells, insertSelectionMarkers[ selectedCell, info ], afterCells } /; AssociationQ @ info
+        Flatten @ { beforeCells, insertSelectionMarkers[ selectedCell, info ], afterCells } /; AssociationQ @ info
     ];
 
 insertSelectionIndicator[ cells_ ] :=
@@ -971,7 +1051,11 @@ insertSelectionMarkers[ cell: Cell[ content_, a___ ], { before0_Integer, after0_
         before = before0;
         after = after0;
         result = Catch[ insertSelectionMarkers0[ { before, after }, content ], $insertTag ];
-        If[ MissingQ @ result, fullSelection @ cell, Cell[ result, a ] ]
+        Which[
+            MissingQ @ result,       fullSelection @ cell,
+            TrueQ @ $includeCellXML, placeSelectionMarkers[ cell, result ],
+            True,                    Cell[ result, a ]
+        ]
     ];
 
 insertSelectionMarkers[ cell_, "CellBracket"|None ] :=
@@ -995,6 +1079,43 @@ insertSelectionMarkers0[ { before_, after_ }, cell_Cell ] :=
 
 insertSelectionMarkers0[ state_, boxes_List ] :=
     insertSelectionMarkers0[ state, # ] & /@ boxes;
+
+(* In the cell syntax a marker is an item of its own (Verbatim), which CellToString writes as it is: in a string it
+   would be content, which an exact body escapes. The string is split where the markers go (a caret is one marker),
+   and placeSelectionMarkers puts the pieces where the string was. *)
+insertSelectionMarkers0[ { before_, after_ }, str_String ] /; TrueQ @ $includeCellXML :=
+    With[
+        {
+            len   = StringLength @ str,
+            marks = SortBy[
+                Select[
+                    If[ before === after,
+                        { { before, $leftSelectionIndicator <> $rightSelectionIndicator } },
+                        { { before, $leftSelectionIndicator }, { after, $rightSelectionIndicator } }
+                    ],
+                    0 <= First @ # <= StringLength @ str &
+                ],
+                First
+            ]
+        },
+        WithCleanup[
+            If[ marks === { },
+                str,
+                markedString @@ DeleteCases[
+                    Riffle[
+                        StringTake[ str, Transpose @ { Prepend[ marks[[ All, 1 ]], 0 ] + 1, Append[ marks[[ All, 1 ]], len ] } ],
+                        Verbatim /@ marks[[ All, 2 ]]
+                    ],
+                    ""
+                ]
+            ],
+            (* A marker that is placed is not placed again: *)
+            If[ 0 <= before <= len, before = -1 ];
+            If[ 0 <= after  <= len, after  = -1 ];
+            before -= len;
+            after  -= len;
+        ]
+    ];
 
 insertSelectionMarkers0[ { before_, after_ }, str_String ] :=
     With[ { len = StringLength @ str },
@@ -1053,8 +1174,50 @@ insertSelectionMarkers0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*placeSelectionMarkers*)
+(* The cell with the pieces of its marked strings (insertSelectionMarkers0 in the cell syntax) in place: in the list
+   that had the string, or as the list of a string that was the whole text or code. A StyleBox stays one piece: the
+   end of a selection in it goes after it, and its start or a caret before it. A string that is the whole content of
+   a code cell (e.g. of a Program cell) becomes its tokens. Boxes in a cell of text are not written as text or code,
+   so a marker has no place in them, and the whole cell is selected.
+   Not handled: where a marker splits something that the reader writes as one piece (an operator of several
+   characters, an escape), the body is not what the tools read for the cell, and an edit has to read the cell first. *)
+placeSelectionMarkers // beginDefinition;
+
+placeSelectionMarkers[ cell: Cell[ content_, a___ ], marked_ ] :=
+    With[ { code = MatchQ[ cell, Cell[ _, ___, $$plainStringStyle, ___ ] ] },
+        If[ MatchQ[ content, _BoxData ] && ! code,
+            fullSelection @ cell,
+            Cell[
+                ReplaceRepeated[
+                    Replace[ marked, m_markedString :> If[ code, BoxData, TextData ][ m ] ],
+                    {
+                        box_StyleBox /; ! FreeQ[ box, _markedString ] :> markedString[
+                            Sequence @@ Cases[ box, Verbatim[ Verbatim ][ Except[ $rightSelectionIndicator ] ], Infinity ],
+                            box /. markedString[ pieces__ ] :> StringJoin @ Cases[ { pieces }, _String ],
+                            Sequence @@ Cases[ box, Verbatim[ Verbatim ][ $rightSelectionIndicator ], Infinity ]
+                        ],
+                        { b___, markedString[ pieces__ ], c___ } :> { b, pieces, c },
+                        TextData[ markedString[ pieces__ ], b___ ] :> TextData[ { pieces }, b ],
+                        BoxData[ markedString[ pieces__ ], b___ ] :> BoxData[ RowBox @ { pieces }, b ]
+                    }
+                ],
+                a
+            ]
+        ]
+    ];
+
+placeSelectionMarkers // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*fullSelection*)
 fullSelection // beginDefinition;
+
+(* In the cell syntax the markers of a cell that is selected as a whole are lines around its tags: *)
+fullSelection[ cell_Cell ] /; TrueQ @ $includeCellXML :=
+    { Cell @ Verbatim @ $leftSelectionIndicator, cell, Cell @ Verbatim @ $rightSelectionIndicator };
+
 fullSelection[ Cell[ a_, b___ ] ] := Cell[ fullSelection @ a, b ];
 fullSelection[ text_String ] := TextData @ { $leftSelectionIndicator, text, $rightSelectionIndicator };
 fullSelection[ BoxData[ { a___ }, b___ ] ] := BoxData[ { $leftSelectionIndicator, a, $rightSelectionIndicator }, b ];
@@ -1082,6 +1245,10 @@ fullSelection // endDefinition;
 (*Configuration*)
 $notebookContextImagesLabel = "\
 [Original images for the MarkdownImageBoxes in the notebook content above. Each image follows its markdown link.]";
+
+(* In the cell syntax (see withContextCellSyntax) an image is only its link: *)
+$notebookContextImageLinksLabel = "\
+[Original images for the image links in the notebook content above. Each image follows its link.]";
 
 $notebookChangeHintTemplate = StringTemplate[ "\
 <system-hint>
@@ -1168,21 +1335,22 @@ contextFromSelectionData // beginDefinition;
 contextFromSelectionData[ nbo_NotebookObject, info_, selectionData_Association, settings0_Association ] := Enclose[
     Block[
         {
-            $includeCellXML         = False,
             (* The context is sent again unchanged in later requests, where relative times would be out of date: *)
             $includeRelativeTimes   = False,
             $notebookMetadataString
         },
         (* Set here, since Block initializers are evaluated before $includeRelativeTimes is changed: *)
         $notebookMetadataString = getNotebookMetadataString[ nbo, info ];
-        Module[ { settings, string },
+        Module[ { settings },
             settings = ConfirmBy[ downScaledSettings @ settings0, AssociationQ, "Settings" ];
-            string = ConfirmBy[
-                withNotebookContextBudget @ getContextFromSelection0[ selectionData, settings ],
+            ConfirmBy[
+                withContextCellSyntax[
+                    nbo,
+                    withNotebookContextBudget @ getContextFromSelection0[ selectionData, settings ]
+                ],
                 StringQ,
                 "Context"
-            ];
-            ConfirmBy[ mergeCodeBlocks @ string, StringQ, "Merged" ]
+            ]
         ]
     ],
     throwInternalFailure
@@ -1250,7 +1418,10 @@ notebookContextImageMessage // beginDefinition;
 notebookContextImageMessage[ images_List ] := <|
     "Role"            -> "User",
     "Content"         -> Flatten @ {
-        <| "Type" -> "Text", "Data" -> $notebookContextImagesLabel |>,
+        <|
+            "Type" -> "Text",
+            "Data" -> If[ TrueQ @ notebookToolsSelectedQ[ ], $notebookContextImageLinksLabel, $notebookContextImagesLabel ]
+        |>,
         Replace[
             images,
             {
@@ -1396,7 +1567,7 @@ Below is the content of the user's notebook, cells %%First%% to %%Last%% of %%To
 (* ::Subsection::Closed:: *)
 (*readUserNotebook*)
 (* Gives the current content of the user's notebook for the NotebookReader tool, from the same notebook and in the same
-   format as the automatic notebook context: *)
+   format as the automatic notebook context (see withContextCellSyntax): *)
 readUserNotebook // beginDefinition;
 
 readUserNotebook[ settings_Association, scope: "selection"|"all", offset_Integer? Positive ] :=
@@ -1407,8 +1578,6 @@ readUserNotebook[ settings_, scope_, offset_, { nbo_NotebookObject, info_ } ] :=
         {
             (* Leave the chat's own notebook context state as it is: *)
             $contextImages, $contextPrompt, $selectionPrompt, $lastContextPrompt, $lastSelectionPrompt,
-            (* Use the same format as getSidebarPrompt and getWorkspacePrompt: *)
-            $includeCellXML = False,
             $includeRelativeTimes = False
         },
         (* During a chat, serializing cells would otherwise use (and use up) what's left of the chat's token budget, so
@@ -1444,11 +1613,14 @@ readUserNotebook0[ nbo_, info_, settings_, "all", offset_ ] := Enclose[
         ];
 
         { content, last } = ConfirmMatch[
-            readNotebookPage[
-                cells,
-                downScaledSettings @ settings,
-                offset,
-                Min[ total, offset + $notebookReaderPageSize - 1 ]
+            withContextCellSyntax[
+                nbo,
+                readNotebookPage[
+                    cells,
+                    downScaledSettings @ settings,
+                    offset,
+                    Min[ total, offset + $notebookReaderPageSize - 1 ]
+                ]
             ],
             { _String, _Integer },
             "Page"
@@ -1463,7 +1635,7 @@ readUserNotebook0[ nbo_, info_, settings_, "all", offset_ ] := Enclose[
                 "Last"             -> last,
                 "Total"            -> total,
                 "NotebookMetadata" -> metadata,
-                "NotebookContent"  -> ConfirmBy[ mergeCodeBlocks @ content, StringQ, "Merged" ],
+                "NotebookContent"  -> content,
                 "Paging"           -> If[ last < total,
                                           "To read the next cells, use scope \"all\" with offset " <>
                                               ToString[ last + 1 ] <> ".",

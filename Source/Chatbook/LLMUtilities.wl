@@ -520,12 +520,18 @@ toolRequestToString // beginDefinition;
 toolRequestToString[ req_ ] /; $receivedToolCall := "";
 
 toolRequestToString[ req: HoldPattern[ _LLMToolRequest ] ] /; $simpleToolMethod := Enclose[
-    Module[ { name, tool, command, params, argString },
+    Module[ { name, tool, command, declared, params, argString },
         name = ConfirmBy[ req[ "Name" ], StringQ, "Name" ];
         tool = ConfirmMatch[ getToolByName @ name, _LLMTool, "Tool" ];
         command = ConfirmBy[ toolShortName @ tool, StringQ, "Command" ];
-        params = simpleParameterValue /@ ConfirmBy[ Association @ req[ "ParameterValues" ], AssociationQ, "ParameterValues" ];
-        argString = ConfirmBy[ simpleParameterString[ params, Length @ tool[ "Parameters" ] ], StringQ, "ArgumentString" ];
+        declared = Keys @ ConfirmMatch[ tool[ "Parameters" ], KeyValuePattern @ { }, "Parameters" ];
+        (* A parameter that the tool does not have is left out: simpleToolRequestParser only knows the tool's own
+           names, so it would read "name: value" as more text of the value before it: *)
+        params = simpleParameterValue /@ KeyTake[
+            ConfirmBy[ Association @ req[ "ParameterValues" ], AssociationQ, "ParameterValues" ],
+            declared
+        ];
+        argString = ConfirmBy[ simpleParameterString[ params, Length @ declared ], StringQ, "ArgumentString" ];
         $receivedToolCall = True;
         StringJoin[ "\n/", command, "\n", argString ]
     ],

@@ -644,6 +644,48 @@ VerificationTest[
     TestID   -> "StructuredParameters-NativeCall-ParameterOrder"
 ]
 
+(* A native call can have parameters that the tool does not have. They are left out of the Simple tool call: the parser
+   only knows the tool's own names, so "name: value" would be read as more text of the value before it (and, for a
+   tool with one parameter, of that parameter's value): *)
+VerificationTest[
+    Module[ { oneParameterTool, call },
+        oneParameterTool = LLMTool @ <|
+            "Name"        -> "one_parameter_test",
+            "Description" -> "Evaluates code.",
+            "Parameters"  -> { "code" -> <| "Interpreter" -> "String", "Help" -> "Code", "Required" -> True |> },
+            "Function"    -> Function[ "Done" ]
+        |>;
+        call[ name_, values_ ] := With[ { text = nativeCallText[ "Simple", LLMToolRequest[ name, values ] ] },
+            { text, structuredValues @ Last @ Wolfram`Chatbook`Common`simpleToolRequestParser @ text }
+        ];
+        Block[
+            {
+                Wolfram`Chatbook`Common`$selectedTools = <|
+                    "StructuredTest"   -> $structuredTool,
+                    "OneParameterTest" -> oneParameterTool
+                |>
+            },
+            {
+                call[ "structured_test", <| "notebook" -> "nb1", "cells" -> { <| "cell" -> "c3", "text" -> "x" |> }, "after" -> "c26" |> ],
+                call[ "structured_test", <| "after" -> "c26", "notebook" -> "two\nlines" |> ],
+                call[ "one_parameter_test", <| "code" -> "1 + 1", "timeout" -> 5 |> ],
+                call[ "one_parameter_test", <| "timeout" -> 5 |> ]
+            }
+        ]
+    ],
+    {
+        {
+            "\n/structured_test\nnotebook: nb1\ncells: [{\"cell\":\"c3\",\"text\":\"x\"}]",
+            <| "notebook" -> "nb1", "cells" -> { <| "cell" -> "c3", "text" -> "x" |> } |>
+        },
+        { "\n/structured_test\nnotebook: two\nlines", <| "notebook" -> "two\nlines", "cells" -> "" |> },
+        { "\n/one_parameter_test\n1 + 1", <| "code" -> "1 + 1" |> },
+        { "\n/one_parameter_test\n", <| "code" -> "" |> }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "StructuredParameters-NativeCall-UnknownParameter"
+]
+
 (* Only parameters that take structured data are read as JSON. A string parameter keeps text that looks like JSON: *)
 VerificationTest[
     withStructuredTool @ structuredValues @ Last @ Wolfram`Chatbook`Common`simpleToolRequestParser[
@@ -847,6 +889,27 @@ VerificationTest[
     { True, { }, { }, { } },
     SameTest -> MatchQ,
     TestID   -> "ToolResponseImagesMessage"
+]
+
+(* A tool's output can link to many images (the cells of a notebook). Only the first ones are attached, and the other
+   links stay text: *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Common`$multimodalMessages = True, Wolfram`Chatbook`Common`$attachments = <| |> },
+        With[ { output = StringRiffle[ Table[ Wolfram`Chatbook`MakeExpressionURI[ Image @ { { i/10. } } ], { i, 7 } ], "\n" ] },
+            {
+                Wolfram`Chatbook`SendChat`Private`$maxToolResponseImages,
+                Count[ Wolfram`Chatbook`Common`expandMultimodalString @ output, KeyValuePattern[ "Type" -> "Image" ] ],
+                Count[ Wolfram`Chatbook`Common`expandMultimodalString[ output, 5 ], KeyValuePattern[ "Type" -> "Image" ] ],
+                StringJoin @ Cases[
+                    Wolfram`Chatbook`Common`expandMultimodalString[ output, 5 ],
+                    KeyValuePattern @ { "Type" -> "Text", "Data" -> text_String } :> text
+                ] === output
+            }
+        ]
+    ],
+    { 5, 7, 5, True },
+    SameTest -> MatchQ,
+    TestID   -> "ToolResponseImages-Limit"
 ]
 
 (* The message with the images comes right after the tool's output. It is not taken for the user's input, and is only
