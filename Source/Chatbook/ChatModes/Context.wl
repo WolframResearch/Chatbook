@@ -353,10 +353,14 @@ getContextFromSelection0[ selectionData: KeyValuePattern[ "Selected" -> { cell_C
             getContextFromSelection0[ selectionData, settings ]
         ];
 
+(* With one selected cell, the context is built with the selection information of that cell. getSelectionInfo gives
+   None or an association, so the call in the Block uses the next definition. That call must stay without a condition:
+   for this left side, the 16.0 kernel evaluates a condition on the right side twice, and in a Block the body with it,
+   so the whole context would be built twice. *)
 getContextFromSelection0[ selectionData: KeyValuePattern[ "Selected" -> { cell_CellObject } ], settings_ ] /;
     ! MatchQ[ $selectionInfo, None|_Association ] :=
         Block[ { $selectionInfo = getSelectionInfo @ cell },
-            getContextFromSelection0[ selectionData, settings ] /; MatchQ[ $selectionInfo, None|_Association ]
+            getContextFromSelection0[ selectionData, settings ]
         ];
 
 getContextFromSelection0[ selectionData_Association, settings0_ ] := Enclose[
