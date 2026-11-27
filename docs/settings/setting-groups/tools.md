@@ -39,6 +39,15 @@ A built-in tool can be version-gated through its `"Enabled"` and `"Hidden"` keys
 - Leaves out the "user does not see the output of this tool call" notice that other tool results with images get (`checkMarkdownOutput` in `SendChat.wl`), since the content comes from the user's own notebook.
 - Does not change the chat's own notebook context state (`$contextPrompt`, `$selectionPrompt`, `$contextImages`, and so on).
 
+#### Notebook Tools
+
+The notebook tools (ListNotebooks, OpenNotebook, GetOutline, ReadCells, SearchNotebook, EditInCell, WriteCells, ShowChanges, CloseNotebook; `Tools/NotebookTools.wl`, registered in `Tools/DefaultToolDefinitions/NotebookTools.wl`) let the model read the user's notebooks and edit them through hidden snapshots, which ShowChanges shows to the user as a comparison. See [Notebook Tools](../../notebook-tools.md). Like NotebookReader, they are listed in `$notebookAssistanceBaseSettings["Tools"]` and in no persona's tool list, and:
+
+- Are enabled only in sidebar and Notebook Assistant window chats, and only where `notebookToolsSupportedQ[]` is `True`: Wolfram 16.0 or later, not in the cloud, with a front end that makes snapshots (probed once per session).
+- Are hidden from the tool manager UI, since they are enabled only in those chats.
+- Are dropped with NotebookReader when `"AllowSelectionContext"` is not `True`, since they read the user's notebooks. So the sidebar only offers them when "Ignore notebook content" is unchecked.
+- Raise `"MaxToolResponses"` to at least 20 when any of them is selected, since one edit takes several calls (read, edit, fix, show). A larger value is kept.
+
 The `getToolNames` function (`Tools/Common.wl`) determines the initial tool name list through a two-level dispatch:
 
 - If the persona declares tools (via `LLMEvaluator["Tools"]`), persona tools and setting-level tools are combined.
@@ -231,6 +240,8 @@ When `Automatic`, resolved by `chooseToolMethod` (`Settings.wl`): if all resolve
 **Tool Call Parsing:**
 - `"Simple"`: Uses `simpleToolRequestParser`.
 - Other methods: Uses `toolRequestParser`.
+
+**Structured parameters with `"Simple"`:** Simple tool calls give every parameter as text. A parameter whose interpreter takes a list or an object (`RepeatingElement`, `CompoundElement` or `AnySubset`, such as EditInCell's `edits` among the [notebook tools](#notebook-tools)) is listed with the type `JSON`, and `simpleToolRequestParser` reads its value as JSON (`readJSONParameters` in `Tools/Common.wl`) before the tool's interpreter gets it. A value that isn't a JSON array or object stays a string, so the interpreter reports it.
 
 **Native calls with the hybrid tool method:** `toolRequestToString` (`LLMUtilities.wl`) writes a native tool call into the response text as a Simple tool call: lists and associations as compact JSON, and, for a tool with more than one parameter, each value as a `name: value` line, since a native call can leave out optional parameters or give them in any order, and values without names would be assigned in the tool's parameter order. Only the value of a tool's only parameter is written without its name.
 

@@ -37,12 +37,27 @@ VerificationTest[
         nbtWriteCells, nbtEditCell, nbtRealFE
     ];
 
-    $nbtNames = { "ListNotebooks", "OpenNotebook", "GetOutline", "ReadCells", "SearchNotebook", "CloseNotebook" };
+    $nbtNames = {
+        "ListNotebooks", "OpenNotebook", "GetOutline", "ReadCells", "SearchNotebook", "EditInCell", "WriteCells",
+        "ShowChanges", "CloseNotebook"
+    };
     $nbtTools = AssociationMap[ Wolfram`Chatbook`$DefaultTools, $nbtNames ];
 
     (* What a tool gives the model: its result, or the text of its error *)
     nbt[ name_String, args_Association ] := Replace[ $nbtTools[ name ][ args ], KeyValuePattern[ "String" -> text_String ] :> text ];
     nbt[ name_String ] := nbt[ name, <| |> ];
+
+    (* The result of an editing tool without what all of them have: the line about the snapshot that the first edit of
+       a notebook opens, and the last line about ShowChanges (NotebookTools-SnapshotAtFirstEdit has the two) *)
+    nbtEdit[ name_String, args_Association ] := StringDelete[
+        nbt[ name, args ],
+        { StartOfString ~~ "Opened s" ~~ DigitCharacter.. ~~ " (" ~~ Shortest[ __ ] ~~ "), a snapshot of the notebook.\n\n", $nbtNotShown ~~ EndOfString }
+    ];
+    nbtWriteCells[ cells_String, more___Rule ] := nbtEdit[ "WriteCells", <| "cells" -> cells, more |> ];
+    nbtEditCell[ cell_String, edits_, more___Rule ] := nbtEdit[
+        "EditInCell",
+        <| "cell" -> cell, "edits" -> (<| "oldText" -> First @ #, "newText" -> Last @ # |> & /@ Flatten @ { edits }), more |>
+    ];
 
     (* The user's notebook: cells with the ExpressionUUIDs u1, u2, ... *)
     $nbtSource = NotebookObject[ "abcdef11-0000-4000-8000-000000000001" ];
@@ -68,6 +83,7 @@ VerificationTest[
     (* A made-up front end. A notebook is a list of { uuid, cell }: the user's notebooks are in $nbtSources, and the
        snapshots in $nbtNotebooks. A snapshot has the cells that its source has when it is made, with the same uuids.
        A cell that is written has its ExpressionUUID as an option. A cell is locked by its own options. *)
+    nbtFE[ "Snapshot", "fail" ] := $Failed;
     nbtFE[ "Snapshot", source_ ] := With[ { nb = NotebookObject[ "snapshot-" <> ToString[ ++$nbtCount ] ] },
         $nbtNotebooks[ nb ] = Lookup[ $nbtSources, Key @ source, { } ];
         nb
@@ -76,7 +92,26 @@ VerificationTest[
     nbtList[ nb_ ] := Lookup[ $nbtNotebooks, nb, Lookup[ $nbtSources, nb, { } ] ];
     nbtFE[ "Cells", nb_ ] := CellObject[ #, "instance" ] & /@ nbtList[ nb ][[ All, 1 ]];
     nbtFE[ "Read", nb_, cells_List ] := Lookup[ Association[ Rule @@@ nbtList @ nb ], First /@ cells ];
+    nbtFE[ "Locks", nb_, cells_List ] := { FreeQ[ #, Editable -> False ], FreeQ[ #, Deletable -> False ] } & /@ nbtFE[ "Read", nb, cells ];
+    nbtFE[ "Write", nb_, writes_List ] := If[ TrueQ @ $nbtWriteFails, $Failed, AppendTo[ $nbtWrites, writes ]; Scan[ nbtWrite[ nb, # ] &, writes ] ];
     nbtFE[ "Close", nb_ ] := (AppendTo[ $nbtClosed, nb ]; KeyDropFrom[ $nbtNotebooks, nb ];);
+    nbtFE[ "DiffCells", nb_ ] := Lookup[ $nbtDiffCells, nb, { } ];
+    (* the comparison against a snapshot gives $nbtDiffResult, and the one against a Notebook expression marks 1 cell *)
+    nbtFE[ "ShowDiff", source_, snapshot_NotebookObject, edited_ ] := (AppendTo[ $nbtShown, { source, snapshot, edited } ]; $nbtDiffResult);
+    nbtFE[ "ShowDiff", source_, notebook_Notebook ] := (AppendTo[ $nbtShown, { source, notebook } ]; 1);
+
+    nbtWrite[ nb_, { "Replace", uuid_, cell_ } ] :=
+        $nbtNotebooks[ nb ] = Replace[ $nbtNotebooks @ nb, { uuid, _ } :> { uuid, DeleteCases[ cell, ExpressionUUID -> uuid ] }, { 1 } ];
+    nbtWrite[ nb_, { "Delete", uuids_ } ] := $nbtNotebooks[ nb ] = DeleteCases[ $nbtNotebooks @ nb, { Alternatives @@ uuids, _ } ];
+    nbtWrite[ nb_, { "Insert", anchor_, position_, cells_ } ] := With[
+        {
+            list = $nbtNotebooks @ nb,
+            new  = { FirstCase[ #, (ExpressionUUID -> uuid_) :> uuid ], DeleteCases[ #, ExpressionUUID -> _ ] } & /@ cells
+        },
+        With[ { at = If[ anchor === None, 0, First @ FirstPosition[ list[[ All, 1 ]], anchor ] - Boole[ position === "Before" ] ] },
+            $nbtNotebooks[ nb ] = Join[ Take[ list, at ], new, Drop[ list, at ] ]
+        ]
+    ];
 
     (* Evaluates with the tools on the made-up front end, where the user is working in $nbtSource, and with nothing
        left of the tools' state afterwards *)
@@ -98,17 +133,56 @@ VerificationTest[
             $nbtSources    = <| $nbtSource -> $nbtSourceCells, $nbtOther -> { { "o1", Cell[ "Another notebook", "Text" ] } } |>,
             $nbtNotebooks  = <| |>,
             $nbtCount      = 0,
+            $nbtWrites     = { },
             $nbtClosed     = { },
-            $nbtExcluded   = False
+            $nbtShown      = { },
+            $nbtDiffResult = 1,
+            $nbtDiffCells  = <| |>,
+            $nbtExcluded   = False,
+            $nbtWriteFails = False
         },
         eval
     ];
+
+    (* The cells of the n-th snapshot, and their styles *)
+    nbtCells[ n_Integer ] := $nbtNotebooks[ NotebookObject[ "snapshot-" <> ToString @ n ] ][[ All, 2 ]];
+    nbtCells[ ] := nbtCells[ 1 ];
 
     (* Evaluates as a tool call of the chat with this ConversationUUID *)
     nbtChat // Attributes = { HoldRest };
     nbtChat[ id_String, eval_ ] :=
         Block[ { Wolfram`Chatbook`$ChatHandlerData = <| "ChatNotebookSettings" -> <| "ConversationUUID" -> id |> |> }, eval ];
 
+    (* The real front end with a hidden copy of the notebook as its snapshot. copies is a symbol that gets the copies,
+       which the test closes. *)
+    nbtRealFE // Attributes = { HoldAll };
+    nbtRealFE[ copies_Symbol, eval_ ] := UsingFrontEnd @ Block[
+        {
+            Wolfram`Chatbook`Tools`NotebookTools`Private`$snapshots     = <| |>,
+            Wolfram`Chatbook`Tools`NotebookTools`Private`$snapshotCount = 0,
+            Wolfram`Chatbook`Tools`NotebookTools`Private`$cellTables    = <| |>,
+            Wolfram`Chatbook`$ChatHandlerData                           = <| |>
+        },
+        Internal`InheritedBlock[ { Wolfram`Chatbook`Tools`NotebookTools`Private`notebookFrontEnd },
+            PrependTo[
+                DownValues @ Wolfram`Chatbook`Tools`NotebookTools`Private`notebookFrontEnd,
+                HoldPattern @ Wolfram`Chatbook`Tools`NotebookTools`Private`notebookFrontEnd[ "Snapshot", source_ ] :> Last @ AppendTo[
+                    copies,
+                    NotebookPut[
+                        Replace[ source, { None :> Notebook @ { }, file_String :> Get @ file, nb_ :> NotebookGet[ nb, "IncludeUUIDs" -> True ] } ],
+                        Visible -> False
+                    ]
+                ]
+            ];
+            eval
+        ]
+    ];
+
+    (* How a result that leaves edits in a snapshot ends, and what WriteCells gives if it changes nothing *)
+    $nbtNotShown = "\n\nThe user does not see this yet: call ShowChanges when your edits are done, before you reply.";
+    $nbtNothing  = "Nothing was changed: the cells read as before. Attributes that a tag leaves out keep their values: to remove one, give it empty, e.g. <cell id='c3' CellTags=''/>.";
+
+    $nbtNew   = "<cell style='Text'>\nNew text\n</cell>";
     $nbtText2 = "<cell id='c2' style='Text' CellTags='intro'>\nThe **simple** pendulum, see [the docs](https://www.wolfram.com).\n</cell>";
     $nbtBody3 = "H = <RawBoxes>FractionBox[SuperscriptBox[\"p\", \"2\"], RowBox[{\"2\", \" \", \"m\"}]]</RawBoxes> - g";
     $nbtText3 = "<cell id='c3' style='Input' CellLabel='In[1]:='>\n" <> $nbtBody3 <> "\n</cell>";
@@ -122,7 +196,7 @@ VerificationTest[
 (* ::Section::Closed:: *)
 (*Registration*)
 
-(* The six tools are default tools, in order, hidden from the tool manager. Each is found by the machine name a model
+(* The nine tools are default tools, in order, hidden from the tool manager. Each is found by the machine name a model
    calls it by (EditInCell's canonical name from "edit_incell" would be "EditIncell", so its "Name" is "edit_in_cell"). *)
 VerificationTest[
     {
@@ -137,8 +211,11 @@ VerificationTest[
         $nbtNames,
         $nbtNames,
         { True },
-        { "list_notebooks", "open_notebook", "get_outline", "read_cells", "search_notebook", "close_notebook" },
-        { "nb_list", "nb_open", "nb_outline", "nb_cells", "nb_find", "nb_close" },
+        {
+            "list_notebooks", "open_notebook", "get_outline", "read_cells", "search_notebook", "edit_in_cell",
+            "write_cells", "show_changes", "close_notebook"
+        },
+        { "nb_list", "nb_open", "nb_outline", "nb_cells", "nb_find", "nb_edit", "nb_write", "nb_show", "nb_close" },
         True
     },
     SameTest -> MatchQ,
@@ -167,6 +244,9 @@ VerificationTest[
         "GetOutline"     -> { { "notebook", "offset", "limit" }, { } },
         "ReadCells"      -> { { "notebook", "cells", "full" }, { } },
         "SearchNotebook" -> { { "query", "notebook", "regex", "cells", "styles", "limit" }, { "query" } },
+        "EditInCell"     -> { { "cell", "edits", "notebook" }, { "cell", "edits" } },
+        "WriteCells"     -> { { "cells", "notebook" }, { "cells" } },
+        "ShowChanges"    -> { { "notebook" }, { } },
         "CloseNotebook"  -> { { "notebook" }, { } }
     |>,
     SameTest -> MatchQ,
@@ -326,6 +406,141 @@ VerificationTest[
     TestID   -> "NotebookTools-DefaultNotebook"
 ]
 
+(* The first edit makes the snapshot, of the notebook as the user has it then, and says so, and that the user does not
+   see the edit yet. After it the reading tools read the snapshot, which has the edit, also when they name the
+   notebook. *)
+VerificationTest[
+    nbtWithFE @ {
+        nbt[ "ReadCells", <| "cells" -> "c5" |> ],
+        $nbtSources[ $nbtSource ] = ReplacePart[ $nbtSourceCells, { 1, 2 } -> Cell[ "Lagrangian Mechanics", "Title" ] ];
+        nbt[ "EditInCell", <| "cell" -> "c5", "edits" -> { <| "oldText" -> "motion", "newText" -> "rest" |> } |> ],
+        $nbtCount,
+        nbtCells[ ][[ 1 ]],
+        nbt[ "ReadCells", <| "cells" -> "c5" |> ],
+        nbt[ "ReadCells", <| "notebook" -> "abcdef11", "cells" -> "c5" |> ],
+        Developer`ReadRawJSONString[ nbt[ "ListNotebooks" ] ][ "snapshots" ],
+        $nbtSources[ $nbtSource ][[ 5, 2 ]]
+    },
+    {
+        "<cell id='c5' style='Section'>\nEquations of motion\n</cell>",
+        "Opened s1 (\"Hamiltonian Mechanics\"), a snapshot of the notebook.\n\nEdited c5 of s1. It now reads:\n<cell id='c5' style='Section'>\nEquations of rest\n</cell>" <> $nbtNotShown,
+        1,
+        Cell[ "Lagrangian Mechanics", "Title" ],
+        "<cell id='c5' style='Section'>\nEquations of rest\n</cell>",
+        "<cell id='c5' style='Section'>\nEquations of rest\n</cell>",
+        { <| "notebook" -> "s1", "title" -> "Hamiltonian Mechanics", "source" -> "abcdef11", "edited" -> True |> },
+        Cell[ "Equations of motion", "Section" ]
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-SnapshotAtFirstEdit"
+]
+
+(* An edit that fails, and one that changes nothing, leave no snapshot, and the next one is s1 again *)
+VerificationTest[
+    nbtWithFE @ {
+        nbtEditCell[ "c2", "Pendulum" -> "x" ],
+        nbt[ "ReadCells", <| "cells" -> "c2" |> ]; nbt[ "WriteCells", <| "cells" -> $nbtText2 |> ],
+        { $nbtCount, $nbtClosed, Wolfram`Chatbook`Tools`NotebookTools`Private`$snapshots },
+        nbt[ "ShowChanges" ],
+        nbtWriteCells @ $nbtNew
+    },
+    {
+        "The oldText \"Pendulum\" does not occur in the content of c2. Copy it exactly from ReadCells. Nothing was written.",
+        $nbtNothing,
+        { 2, { NotebookObject[ "snapshot-1" ], NotebookObject[ "snapshot-2" ] }, <| |> },
+        "No snapshot is open.",
+        "Wrote to s1: new c7 (Text) at the end."
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-NoSnapshotWithoutEdits"
+]
+
+(* Models guess a handle: one that is not open in a chat without snapshots is the user's notebook too. Another open
+   notebook is named by its id, its title or its file, and is read as it is. Once the chat has a snapshot of a notebook,
+   that is what is read. With several snapshots the tool says which there are, and a name that is nothing, or more
+   than one notebook, is an error. *)
+VerificationTest[
+    nbtWithFE @ {
+        StringStartsQ[ nbt[ "GetOutline", <| "notebook" -> "s1" |> ], "abcdef11 (\"Hamiltonian Mechanics\"), 6 cells" ],
+        StringStartsQ[ nbt[ "GetOutline", <| "notebook" -> "12345678" |> ], "12345678 (\"Other\"), 1 cells" ],
+        StringStartsQ[ nbt[ "GetOutline", <| "notebook" -> " Other " |> ], "12345678 (\"Other\"), 1 cells" ],
+        nbt[ "GetOutline", <| "notebook" -> "nothing" |> ],
+        Block[ { $nbtListed = Append[ $nbtListed, <| First @ $nbtListed, "ID" -> "abcdef22" |> ] }, nbt[ "GetOutline", <| "notebook" -> "Hamiltonian Mechanics" |> ] ],
+        $nbtCount,
+        nbtWriteCells @ $nbtNew; nbtWriteCells[ $nbtNew, "notebook" -> "12345678" ]; nbt[ "GetOutline" ],
+        StringStartsQ[ nbt[ "GetOutline", <| "notebook" -> "12345678" |> ], "s2 (\"Other\"), 2 cells" ],
+        nbt[ "GetOutline", <| "notebook" -> "s7" |> ],
+        nbt[ "ShowChanges", <| "notebook" -> "s7" |> ],
+        $nbtCount
+    },
+    {
+        True,
+        True,
+        True,
+        "\"nothing\" is not an open snapshot, and no open notebook or .nb file matches it.",
+        "\"Hamiltonian Mechanics\" matches more than one notebook: abcdef11 (\"Hamiltonian Mechanics\"), abcdef22 (\"Hamiltonian Mechanics\"). Give its id, its title or its file.",
+        0,
+        "Several snapshots are open: s1 (\"Hamiltonian Mechanics\"), s2 (\"Other\"). Give one of them as notebook.",
+        True,
+        "\"s7\" is not an open snapshot (open: s1 (\"Hamiltonian Mechanics\"), s2 (\"Other\")), and no open notebook or .nb file matches it.",
+        "\"s7\" is not an open snapshot (open: s1 (\"Hamiltonian Mechanics\"), s2 (\"Other\")).",
+        2
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-NotebookArgument"
+]
+
+(* Without a notebook that the user is working in, the tools say what to do, and ShowChanges and CloseNotebook open
+   nothing *)
+VerificationTest[
+    nbtWithFE @ Block[ { $nbtUser = None },
+        { nbt[ "ReadCells" ], nbt[ "ShowChanges" ], nbt[ "CloseNotebook" ], $nbtCount }
+    ],
+    {
+        "The notebook the user is working in was not found. OpenNotebook opens a notebook that ListNotebooks lists.",
+        "No snapshot is open.",
+        "No snapshot is open.",
+        0
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-NoUserNotebook"
+]
+
+(* OpenNotebook reads a listed notebook, named by its id (or a start of it, or its whole UUID), its title or its file,
+   as it is: it gives a line about the notebook and its cells, and makes no snapshot. Once the chat has edited the
+   notebook, it gives the snapshot. The name is taken without the quotes and the white space that a model puts around
+   it: a file, a title and a handle in quotes are the same notebooks (the file is not read from the disk). *)
+VerificationTest[
+    nbtWithFE @ {
+        nbt[ "OpenNotebook", <| "notebook" -> "12345678" |> ],
+        nbt[ "OpenNotebook", <| "notebook" -> " Other " |> ],
+        StringStartsQ[ nbt[ "OpenNotebook", <| "notebook" -> "ABCDEF" |> ], "abcdef11 (\"Hamiltonian Mechanics\"): an open notebook, 6 cells.\n\n<cell id='c1' style='Title'>\nHamiltonian Mechanics\n</cell>\n\n" ],
+        StringStartsQ[ nbt[ "OpenNotebook", <| "notebook" -> "abcdef11-0000-4000-8000-000000000001" |> ], "abcdef11 (\"Hamiltonian Mechanics\"): an open notebook, 6 cells." ],
+        StringStartsQ[ nbt[ "OpenNotebook", <| "notebook" -> "/tmp/Hamiltonian.nb" |> ], "abcdef11 " ],
+        StringStartsQ[ nbt[ "OpenNotebook", <| "notebook" -> " \"/tmp/Hamiltonian.nb\"" |> ], "abcdef11 (\"Hamiltonian Mechanics\"): an open notebook, 6 cells." ],
+        StringStartsQ[ nbt[ "ReadCells", <| "notebook" -> "'Other'" |> ], "<cell id='c1' style='Text'>\nAnother notebook\n</cell>" ],
+        nbt[ "OpenNotebook", <| "notebook" -> "abc" |> ],
+        $nbtCount,
+        nbtWriteCells[ $nbtNew, "notebook" -> "12345678" ]; nbt[ "OpenNotebook", <| "notebook" -> "12345678" |> ],
+        StringStartsQ[ nbt[ "OpenNotebook", <| "notebook" -> "\"s1\"" |> ], "s1 (\"Other\"): a snapshot of the notebook 12345678 with your edits, 2 cells." ]
+    },
+    {
+        "12345678 (\"Other\"): an open notebook, 1 cells.\n\n<cell id='c1' style='Text'>\nAnother notebook\n</cell>",
+        "12345678 (\"Other\"): an open notebook, 1 cells.\n\n<cell id='c1' style='Text'>\nAnother notebook\n</cell>",
+        True,
+        True,
+        True,
+        True,
+        True,
+        "\"abc\" is not an open snapshot, and no open notebook or .nb file matches it.",
+        0,
+        "s1 (\"Other\"): a snapshot of the notebook 12345678 with your edits, 2 cells.\n\n<cell id='c1' style='Text'>\nAnother notebook\n</cell>\n\n<cell id='c2' style='Text'>\nNew text\n</cell>",
+        True
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-OpenNotebook"
+]
+
 (* The names of files are compared as text: expanded, with one kind of separator, and without regard to letter case
    where the file system has none. A listed notebook is found by its file in any such spelling and read as it is.
    Nothing is asked of the disk or the network: where letter case counts, the name of a file that exists in another
@@ -409,6 +624,63 @@ VerificationTest[
     },
     SameTest -> MatchQ,
     TestID   -> "NotebookTools-OpenNotebook-FileAndNew"
+]
+
+(* A snapshot belongs to the chat that opened it: another chat does not see it and reads the notebook, and when that
+   chat edits the same notebook the stale snapshot is closed. At most $maxSnapshots are open, and a snapshot of an
+   earlier chat makes room. *)
+VerificationTest[
+    nbtWithFE @ Block[ { Wolfram`Chatbook`Tools`NotebookTools`Private`$maxSnapshots = 3 },
+        {
+            nbtChat[ "chat-1", nbtWriteCells @ $nbtNew; nbt[ "OpenNotebook" ]; nbt[ "OpenNotebook" ]; nbt[ "OpenNotebook" ] ],
+            nbtChat[ "chat-1", nbt[ "CloseNotebook", <| "notebook" -> "s3" |> ] ],
+            nbtChat[ "chat-2", nbt[ "CloseNotebook" ] ],
+            nbtChat[ "chat-2", StringStartsQ[ nbt[ "GetOutline" ], "abcdef11 (\"Hamiltonian Mechanics\"), 6 cells" ] ],
+            (* two snapshots are open, so there is room: s1 is closed because it is of the same notebook *)
+            nbtChat[ "chat-2", StringStartsQ[ nbt[ "WriteCells", <| "cells" -> $nbtNew |> ], "Opened s4 " ] ],
+            $nbtClosed,
+            (* the second one is the fourth snapshot: s2 of chat-1 makes room *)
+            nbtChat[ "chat-2", nbt[ "OpenNotebook" ]; StringStartsQ[ nbt[ "OpenNotebook" ], "s6 " ] ],
+            $nbtClosed,
+            nbtChat[ "chat-1", nbt[ "CloseNotebook" ] ]
+        }
+    ],
+    {
+        "3 snapshots are open already, the most there can be: s1 (\"Hamiltonian Mechanics\"), s2 (\"Untitled\"), s3 (\"Untitled\"). Show the changes of one with ShowChanges, or close one with CloseNotebook, before opening another.",
+        "Closed s3; its edits were discarded.",
+        "No snapshot is open.",
+        True,
+        True,
+        { NotebookObject[ "snapshot-3" ], NotebookObject[ "snapshot-1" ] },
+        True,
+        { NotebookObject[ "snapshot-3" ], NotebookObject[ "snapshot-1" ], NotebookObject[ "snapshot-2" ] },
+        "No snapshot is open."
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-ChatSnapshots"
+]
+
+(* CloseNotebook closes the snapshot and discards its edits: the user's notebook is as it was. A snapshot that the
+   front end can't make is an error. *)
+VerificationTest[
+    nbtWithFE @ {
+        nbtWriteCells @ $nbtNew; nbt[ "CloseNotebook" ],
+        $nbtClosed,
+        Developer`ReadRawJSONString[ nbt[ "ListNotebooks" ] ][ "snapshots" ],
+        $nbtSources[ $nbtSource ] === $nbtSourceCells,
+        Block[ { $nbtListed = { <| "NotebookObject" -> "fail", "ID" -> "ffffffff", "Title" -> "Broken", "File" -> None, "Modified" -> False |> } },
+            nbtWriteCells[ $nbtNew, "notebook" -> "ffffffff" ]
+        ]
+    },
+    {
+        "Closed s1; its edits were discarded.",
+        { NotebookObject[ "snapshot-1" ] },
+        { },
+        True,
+        "The front end could not make a snapshot of \"Broken\"."
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-CloseNotebook"
 ]
 
 (* An error is a failure whose text Chatbook gives the model *)
@@ -531,6 +803,74 @@ VerificationTest[
     TestID   -> "NotebookTools-SearchNotebook"
 ]
 
+(* A cell that the user excluded from chats (by its settings or its style, as in the notebook context) is not shown,
+   and the result says how many were left out. A search does not find it, and it is not edited, moved or deleted. A
+   new cell can still be placed next to it. *)
+VerificationTest[
+    nbtWithFE @ Block[ { $nbtSources = <| $nbtSource -> {
+            { "u1", Cell[ "A title", "Title" ] },
+            { "u2", Cell[ "A private note", "Text", TaggingRules -> <| "ChatNotebookSettings" -> <| "ExcludeFromChat" -> True |> |> ] },
+            { "u3", Cell[ "Another private note", "Text", "ChatExcluded" ] },
+            { "u4", Cell[ "Some text", "Text" ] }
+        } |> },
+        {
+            nbt[ "ReadCells" ],
+            nbt[ "ReadCells", <| "cells" -> "c2" |> ],
+            nbt[ "GetOutline" ],
+            nbt[ "OpenNotebook", <| "notebook" -> "abcdef11" |> ] === "abcdef11 (\"Hamiltonian Mechanics\"): an open notebook, 4 cells.\n\n" <> nbt[ "ReadCells" ],
+            nbt[ "SearchNotebook", <| "query" -> "private" |> ],
+            nbtEditCell[ "c2", "private" -> "public" ],
+            nbtWriteCells[ "<cell id='c3'>\nA public note\n</cell>" ] === nbtWriteCells[ "<cell id='c3' before='c1'/>" ] === nbtWriteCells[ "<cell id='c3' delete='true'/>" ],
+            nbtWriteCells[ "<cell id='c3' delete='true'/>" ],
+            { $nbtWrites, Wolfram`Chatbook`Tools`NotebookTools`Private`$snapshots },
+            nbtWriteCells[ "<cell style='Text' after='c2'>\nNew text\n</cell>" ],
+            First /@ nbtCells @ $nbtCount
+        }
+    ],
+    {
+        "<cell id='c1' style='Title'>\nA title\n</cell>\n\n<cell id='c4' style='Text'>\nSome text\n</cell>\n\n[2 cells that the user excluded from AI chats are left out.]",
+        "[1 cell that the user excluded from AI chats is left out.]",
+        "abcdef11 (\"Hamiltonian Mechanics\"), 4 cells (id, style, start of content):\nc1 (Title) A title\nc4 (Text) Some text\n[2 cells that the user excluded from AI chats are left out.]",
+        True,
+        "No matches for \"private\" in abcdef11 (\"Hamiltonian Mechanics\").",
+        "c2 is a cell that the user excluded from AI chats, so it is not read or changed. Nothing was written.",
+        True,
+        "c3 is a cell that the user excluded from AI chats, so it is not read or changed. Nothing was written.",
+        { { }, <| |> },
+        "Wrote to s1: new c5 (Text) after c2.",
+        { "A title", "A private note", "New text", "Another private note", "Some text" }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-ExcludedCells"
+]
+
+(* A cell has one id in a chat: the notebook context (withNotebookCellSyntax on the user's notebook) and the tools (on
+   a snapshot of it) give the same id to the same cell, and a cell that either sees later gets the next number *)
+VerificationTest[
+    nbtWithFE @ Module[ { context },
+        context[ uuid_String ] := Wolfram`Chatbook`Common`withNotebookCellSyntax[
+            $nbtSource,
+            CellToString @ Cell[ "Some text", "Text", CellObject -> CellObject[ uuid, "another instance" ] ]
+        ];
+        {
+            context[ "u5" ],
+            context[ "new-in-the-notebook" ],
+            nbtWriteCells @ $nbtNew,
+            context[ "another-new-one" ],
+            StringCases[ nbt[ "GetOutline" ], StartOfLine ~~ id: ("c" ~~ DigitCharacter..) ~~ " " :> id ]
+        }
+    ],
+    {
+        "<cell id='c5' style='Text'>\nSome text\n</cell>",
+        "<cell id='c7' style='Text'>\nSome text\n</cell>",
+        "Wrote to s1: new c8 (Text) at the end.",
+        "<cell id='c9' style='Text'>\nSome text\n</cell>",
+        { "c1", "c2", "c3", "c4", "c5", "c6", "c8" }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-SharedCellIDs"
+]
+
 (* The ids of a notebook are kept for each chat, for the $maxCellTables pairs of chat and notebook that were used
    last *)
 VerificationTest[
@@ -567,6 +907,830 @@ VerificationTest[
     "<cell id='c1' style='Text' CellTags='intro'>\nChanged text\n</cell>\n\n<cell id='c2' style='Text'>\n\n</cell>\n\n<cell id='c3' style='Text' options='Background -> RGBColor[1, 0, 0]'>\nInserted\n</cell>\n\n<cell id='c4' style='Text' CellTags='a,b'>\nTagged\n</cell>",
     SameTest -> MatchQ,
     TestID   -> "NotebookTools-ReadCells-DiffOptions"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*EditInCell*)
+
+(* EditInCell replaces text in the body of a cell and gives the cell as it now reads. The cell is replaced as a
+   whole, with its ExpressionUUID, so it keeps its id, and what the edit leaves alone is the boxes that it was. *)
+VerificationTest[
+    nbtWithFE @ {
+        nbtEditCell[ "c2", "pendulum" -> "*ideal* pendulum" ],
+        nbtCells[ ][[ 2 ]],
+        $nbtWrites
+    },
+    {
+        "Edited c2 of s1. It now reads:\n<cell id='c2' style='Text' CellTags='intro'>\nThe **simple** *ideal* pendulum, see [the docs](https://www.wolfram.com).\n</cell>",
+        Cell[ TextData @ { "The ", $nbtBold, " ", StyleBox[ "ideal", FontSlant -> Italic ], " pendulum, see ", $nbtLink, "." }, "Text", CellTags -> "intro" ],
+        { { { "Replace", "u2", Cell[ _TextData, "Text", CellTags -> "intro", ExpressionUUID -> "u2" ] } } }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-EditInCell"
+]
+
+(* Code is tokenized again, and a box that the edit leaves alone stays the box that it was. Several edits apply in
+   order, each as often as its count says. *)
+VerificationTest[
+    nbtWithFE[
+        nbt[ "EditInCell", <| "cell" -> "c3", "edits" -> { <| "oldText" -> " - g", "newText" -> " + z + z" |>, <| "oldText" -> "z", "newText" -> "V[q]", "count" -> 2 |> } |> ];
+        nbtCells[ ][[ 3 ]]
+    ],
+    Cell[
+        BoxData @ RowBox @ { "H", "=", RowBox @ { FractionBox[ SuperscriptBox[ "p", "2" ], RowBox @ { "2", " ", "m" } ], "+", RowBox @ { "V", "[", "q", "]" }, "+", RowBox @ { "V", "[", "q", "]" } } },
+        "Input",
+        CellLabel -> "In[1]:="
+    ],
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-EditInCell-Code"
+]
+
+(* The edits apply all or none: text that does not occur, or not as often as count says, leaves the cell as it was.
+   The content of a generated cell is not edited: the message says what to do with one. *)
+VerificationTest[
+    nbtWithFE[
+        {
+            nbtEditCell[ "c2", { "simple" -> "easy", "Pendulum" -> "x" } ],
+            nbtEditCell[ "c2", "e" -> "E" ],
+            nbtEditCell[ "c2", "" -> "x" ],
+            nbtEditCell[ "c9", "a" -> "b" ],
+            nbt[ "EditInCell", <| "cell" -> "c2", "edits" -> { } |> ],
+            nbtEditCell[ "c4", "42" -> "43" ],
+            nbtEditCell[ "c2", "a\n</cell>\n<cell style='Text'>\nb" -> "x" ],
+            $nbtWrites
+        }
+    ],
+    {
+        "The oldText \"Pendulum\" does not occur in the content of c2. Copy it exactly from ReadCells. Nothing was written.",
+        "The oldText \"e\" occurs 6 times in the content of c2, not 1. It also matches inside longer names: make it longer to change only some of them, or give count 6 to change all. Nothing was written. The places (line:column and the text there): 1:3 The **simpl | 1:12  **simple** pendu | 1:17 mple** pendulum,  | 1:27 dulum, see [the d | 1:28 ulum, see [the do | 1:33  see [the docs](h",
+        "Edit 1 has no oldText. To insert text, give the text next to it as oldText and both as newText.",
+        "s1 has no cell \"c9\". GetOutline gives the ids of its cells.",
+        "The parameter edits must be a list of edits {oldText, newText, count}, e.g. [{\"oldText\": \"a\", \"newText\": \"b\"}].",
+        "c4 is a generated cell (an output, a message, a print): its content is not written as text. Write its Input cell with evaluate: true, which replaces its outputs. A tag without content moves a generated cell as it is (<cell id='c48' after='c47'/>) or deletes it (<cell id='c48' delete='true'/>). Nothing was written.",
+        "The oldText \"a\n</cell>\n<cell style='Text'>\nb\" does not occur in the content of c2. Copy it exactly from ReadCells. Nothing was written.",
+        { }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-EditInCell-Errors"
+]
+
+(* An edit can't make two cells of one, and what cellsFromString refuses is not written *)
+VerificationTest[
+    nbtWithFE[
+        {
+            nbtEditCell[ "c1", "Hamiltonian" -> "A\n</cell>\nB" ],
+            nbtEditCell[ "c1", "Hamiltonian" -> "<RawBoxes>DynamicBox[ToBoxes[1]]</RawBoxes>" ],
+            $nbtWrites
+        }
+    ],
+    {
+        "The edits put a cell tag into c1, which is one cell. Write a < that is text as &lt;. Nothing was written.",
+        _String? (StringStartsQ[ #, "Cell c1 has <RawBoxes> that " ] && StringEndsQ[ #, " Nothing was written." ] &),
+        { }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-EditInCell-Refused"
+]
+
+(* The notebook context shows the markers of a selection in a body. They are not content: an oldText that has them is
+   matched without them, and the writer takes them out of new text. In a string of code that the model writes a
+   marker is content, which is written. *)
+VerificationTest[
+    nbtWithFE[
+        nbt[ "ReadCells" ];
+        {
+            nbtEditCell[ "c5", "<selection>Equations</selection> of" -> "Laws of<selection></selection>" ],
+            nbtWriteCells[ "<cell id='c6'>\ns = \"<selection>\";<selection></selection>\n</cell>" ]; nbtCells[ ][[ 6 ]],
+            nbtEditCell[ "c3", " - g" -> " - \"</selection>\"" ]; nbtCells[ ][[ 3, 1 ]]
+        }
+    ],
+    {
+        "Edited c5 of s1. It now reads:\n<cell id='c5' style='Section'>\nLaws of motion\n</cell>",
+        Cell[ BoxData @ RowBox @ { RowBox @ { "s", "=", "\"<selection>\"" }, ";" }, "Input" ],
+        BoxData @ RowBox @ { "H", "=", RowBox @ { FractionBox[ SuperscriptBox[ "p", "2" ], RowBox @ { "2", " ", "m" } ], "-", "\"</selection>\"" } }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-SelectionMarkers"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*WriteCells*)
+
+(* One call replaces content, changes attributes, makes new cells (after the cell before them in the text, where after
+   or before says, or at the end), moves and deletes cells. An id is read as models write it. The result says where
+   each run of new cells is. Only the cells that read differently afterwards are edits: a cell that is only moved is
+   not. *)
+VerificationTest[
+    nbtWithFE @ {
+        nbt[ "ReadCells", <| "cells" -> "c5" |> ];
+        nbtWriteCells[ "
+<cell id='c5'>
+Equations of **motion**
+</cell>
+<cell style='Text'>
+After the section.
+</cell>
+
+<cell id=\"C1\" style='Chapter' CellTags='top'/>
+<cell id='#2' CellTags=''/>
+<cell id='c4' delete='true'/>
+<cell style='Item' before='c2'>
+First
+</cell>
+<cell id='c6' after='c1'/>
+<cell style='Text' after='c6'>
+Right after the moved cell.
+</cell>
+<cell style='Input'>
+1 + 1
+</cell>
+" ],
+        nbtCells[ ],
+        Wolfram`Chatbook`Tools`NotebookTools`Private`$snapshots[ "s1", "Edits" ]
+    },
+    {
+        "Wrote to s1: changed c5, c1, c2; new c9 (Text), c10 (Input), c8 (Item) after c6; new c7 (Text) at the end; moved c6; deleted c4.",
+        {
+            Cell[ "Hamiltonian Mechanics", "Chapter", CellTags -> "top" ],
+            Cell[ BoxData @ RowBox @ { "f", "[", "x", "]" }, "Input" ],
+            Cell[ "Right after the moved cell.", "Text" ],
+            Cell[ BoxData @ RowBox @ { "1", "+", "1" }, "Input" ],
+            Cell[ "First", "Item" ],
+            Cell[ TextData @ { "The ", $nbtBold, " pendulum, see ", $nbtLink, "." }, "Text" ],
+            Cell[ BoxData @ $nbtCode, "Input", CellLabel -> "In[1]:=" ],
+            Cell[ TextData @ { "Equations of ", StyleBox[ "motion", FontWeight -> Bold ] }, "Section" ],
+            Cell[ "After the section.", "Text" ]
+        },
+        { "u1", "u2", "u5" }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-WriteCells"
+]
+
+(* Cells that name the same place keep the order of the text: new cells and moved ones, with the new cells without a
+   place of their own that follow them. A cell placed after a cell with outputs comes after the outputs, also where
+   the cell is only named, and a generated cell that is moved goes right after the cell. A cell that names itself as
+   its place is told so. *)
+VerificationTest[
+    {
+        nbtWithFE @ {
+            nbtWriteCells[ "<cell style='Section' after='c1'>\nA\n</cell><cell style='Text' after='c1'>\nB\n</cell>\n<cell style='Text'>\nB2\n</cell>\n<cell id='c6' after='c1'/>\n<cell style='Item' after='c1'>\nC\n</cell>" ],
+            nbtWriteCells[ "<cell style='Text' after='c3'>\nAfter the output\n</cell>\n<cell id='c3'/>\n<cell style='Text'>\nAlso after it\n</cell>" ],
+            First /@ nbtCells[ ],
+            nbtWriteCells[ "<cell id='c5' after='c5'/>" ]
+        },
+        nbtWithFE @ Block[ { $nbtSources = <| $nbtSource -> {
+                { "u1", Cell[ BoxData @ "x", "Input" ] },
+                { "u2", Cell[ "printed", "Print" ] },
+                { "u3", Cell[ BoxData @ "1", "Output" ] },
+                { "u4", Cell[ "Some text", "Text" ] }
+            } |> },
+            nbtWriteCells[ "<cell id='c3' after='c1'/>\n<cell style='Text' after='c1'>\nNote\n</cell>" ];
+            First /@ nbtCells[ ]
+        ]
+    },
+    {
+        {
+            "Wrote to s1: new c7 (Section), c8 (Text), c9 (Text) after c1; new c10 (Item) after c6; moved c6.",
+            "Wrote to s1: new c11 (Text), c12 (Text) after c4.",
+            {
+                "Hamiltonian Mechanics", "A", "B", "B2", BoxData @ RowBox @ { "f", "[", "x", "]" }, "C", _TextData, BoxData @ $nbtCode,
+                BoxData[ "42" ], "After the output", "Also after it", "Equations of motion"
+            },
+            "c5 names itself as its place (after='c5'). To change a cell where it is, leave after out; to move it, name another cell. Nothing was written."
+        },
+        { BoxData[ "x" ], BoxData[ "1" ], "printed", "Note", "Some text" }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-WriteCells-Places"
+]
+
+(* What the result calls a cell that a tag rewrites and places: changed and moved if it gets another place, and only
+   changed if it is at that place already, which then takes one write and no move. A cell that is named at the place
+   that it has is not moved, and nothing is written. A cell that an earlier call deleted is told apart from an id
+   that the notebook never had: a model that deletes a cell and writes it again elsewhere is told what to do instead.
+   WriteCells' description says where math is $$...$$. *)
+VerificationTest[
+    nbtWithFE[
+        nbt[ "ReadCells" ];
+        {
+            nbtWriteCells[ "<cell id='c1' delete='true'/>\n<cell id='c5' after='c4'>ONE</cell>" ],
+            $nbtWrites,
+            nbtWriteCells[ "<cell id='c6' before='c2'>\ng[x]\n</cell>" ],
+            First /@ nbtCells[ ],
+            nbtWriteCells[ "<cell id='c5' after='c4'/><cell id='c2' before='c3'/>" ],
+            Length @ $nbtWrites,
+            nbtWriteCells[ "<cell id='c1' style='Title' before='c2'>\nHamiltonian Mechanics\n</cell>" ],
+            nbt[ "ReadCells", <| "cells" -> "c1, c2" |> ],
+            nbtWriteCells[ "<cell id='c9'/>" ],
+            StringContainsQ[ $nbtTools[ "WriteCells" ][ "Description" ], "In a text cell, math is $$...$$ (in a code cell it is code;" ]
+        }
+    ],
+    {
+        "Wrote to s1: changed c5; deleted c1.",
+        { { { "Delete", { "u1" } }, { "Replace", "u5", Cell[ "ONE", "Section", ExpressionUUID -> "u5" ] } } },
+        "Wrote to s1: changed c6; moved c6.",
+        { BoxData @ RowBox @ { "g", "[", "x", "]" }, _TextData, BoxData @ $nbtCode, BoxData[ "42" ], "ONE" },
+        $nbtNothing,
+        2,
+        "c1 is not in s1 any more: an earlier call of this chat deleted it, with its content. If the cell is still needed, write it as a new cell (<cell style='...'>...</cell>, with after= or before= for its place). To move a cell, do not delete it: <cell id='c7' before='c2'/> moves it as it is.",
+        "c1 is not in s1 any more: an earlier call of this chat deleted it, with its content. If the cell is still needed, write it as a new cell (<cell style='...'>...</cell>, with after= or before= for its place). To move a cell, do not delete it: <cell id='c7' before='c2'/> moves it as it is.",
+        "s1 has no cell \"c9\". GetOutline gives the ids of its cells.",
+        True
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-WriteCells-ChangedMovedDeleted"
+]
+
+(* New cells have ids at once, and are read and written like the others *)
+VerificationTest[
+    nbtWithFE[
+        nbt[ "WriteCells", <| "cells" -> "<cell style='Input'>\nx = 1\n</cell>" |> ];
+        {
+            nbt[ "ReadCells", <| "cells" -> "c7" |> ],
+            nbtEditCell[ "c7", "1" -> "2" ];
+            Last @ nbtCells[ ],
+            Last[ $nbtWrites ][[ 1, 2 ]] === First[ $nbtWrites ][[ 1, 4, 1, -1, 2 ]]
+        }
+    ],
+    {
+        "<cell id='c7' style='Input'>\nx = 1\n</cell>",
+        Cell[ BoxData @ RowBox @ { "x", "=", "2" }, "Input" ],
+        True
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-WriteCells-NewCellIDs"
+]
+
+(* Everything is converted before anything is written: one tag that is refused, and nothing is written. The message
+   names the cell, and a new cell by the number of its tag in the text. Text outside of cell tags is refused too. *)
+VerificationTest[
+    nbtWithFE[
+        nbt[ "ReadCells" ];
+        {
+            nbtWriteCells[ "<cell id='c1'>\nNew title\n</cell>\n<cell style='Text' color='red'>\nx\n</cell>" ],
+            nbtWriteCells[ "<cell id='c1'>\nNew title\n</cell>\n<cell id='c2'>\nA \\!\\(\\*DynamicBox[1]\\)\n</cell>" ],
+            nbtWriteCells[ "<cell id='c1'>\nNew title\n</cell>\n<cell id='c9'>\nx\n</cell>" ],
+            nbtWriteCells[ "<cell id='c1' delete='true'/>\n<cell id='c1'>\nNew title\n</cell>" ],
+            nbtWriteCells[ "<cell id='c1' delete='true'/>\n<cell style='Text' after='c1'>\nx\n</cell>" ],
+            nbtWriteCells[ "<cell style='Text' delete='true'>\nx\n</cell>" ],
+            nbtWriteCells[ "<cell id='c1'>\nNew title\n</cell>\n<cell style=Text>\nx\n</cell>" ],
+            nbtWriteCells[ "<cell id='c1'>\nNew title\n</cell>\n\nSome text." ],
+            nbtWriteCells[ " " ],
+            $nbtWrites,
+            Wolfram`Chatbook`Tools`NotebookTools`Private`$snapshots
+        }
+    ],
+    {
+        "Cell tag 2 (a new cell) has the attribute color, which is not one of id, style, CellLabel, CellTags, options, after, before and delete. Nothing was written.",
+        _String? (StringStartsQ[ #, "Cell c2 has linear syntax" ] && StringEndsQ[ #, " Nothing was written." ] &),
+        "s1 has no cell \"c9\". GetOutline gives the ids of its cells.",
+        "c1 is written after this call deleted it. To move a cell, do not delete it: <cell id='c1' before='c5'/> (or after=) moves it with its content. Nothing was written.",
+        "c1 is not in the notebook where after names it: this call deletes or moves it. Nothing was written.",
+        "Cell tag 1 (a new cell) has delete, which needs the id of a cell. Nothing was written.",
+        _String? (StringStartsQ[ #, "The text outside of cell tags has a cell tag that could not be read." ] && StringEndsQ[ #, " Nothing was written." ] &),
+        _String? (StringStartsQ[ #, "The text outside of cell tags is not read (Some text.). Write each new cell as its own <cell style='...'> block" ] && StringEndsQ[ #, " Nothing was written." ] &),
+        "The parameter cells is missing or empty.",
+        { },
+        <| |>
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-WriteCells-AllOrNothing"
+]
+
+(* The content of a generated cell is not written as text, also not that of a new one or of a cell that the tag makes
+   one. It can be moved, deleted and given tags. *)
+VerificationTest[
+    nbtWithFE[
+        {
+            StringStartsQ[ nbtWriteCells[ "<cell id='c4'>\n43\n</cell>" ], "c4 is a generated cell (an output, a message, a print): its content is not written as text." ],
+            StringStartsQ[ nbtWriteCells[ "<cell style='Output'>\n43\n</cell>" ], "Cell tag 1 (a new cell) is a generated cell " ],
+            nbt[ "ReadCells" ]; StringStartsQ[ nbtWriteCells[ "<cell id='c5' style='Print, Extra'>\nprinted\n</cell>" ], "c5 is a generated cell " ],
+            $nbtWrites,
+            nbtWriteCells[ "<cell id='c4' CellTags='result' after='c6'/>" ],
+            Last @ nbtCells @ $nbtCount
+        }
+    ],
+    {
+        True,
+        True,
+        True,
+        { },
+        "Wrote to s1: changed c4; moved c4.",
+        Cell[ BoxData @ "42", "Output", CellLabel -> "Out[1]=", CellTags -> "result" ]
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-WriteCells-GeneratedCells"
+]
+
+(* A cell that is written as it reads is left alone: it is not written, and it is not an edit that the user is shown.
+   The text can be taken from a reading tool as it is. *)
+VerificationTest[
+    nbtWithFE @ {
+        nbt[ "WriteCells", <| "cells" -> nbt[ "ReadCells", <| "cells" -> "c2, c3" |> ] <> "\n<cell id='c5'/>" |> ],
+        $nbtWrites,
+        nbt[ "ShowChanges" ]
+    },
+    { $nbtNothing, { }, "No snapshot is open." },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-WriteCells-Unchanged"
+]
+
+(* What reading recorded is kept for each cell: two cells whose text reads the same and is different boxes are both
+   written back as the boxes that they were *)
+VerificationTest[
+    nbtWithFE @ Block[ { $nbtSources = <| $nbtSource -> {
+            { "u1", Cell[ TextData @ { "A ", StyleBox[ "word", FontWeight -> "Bold" ], " here" }, "Text" ] },
+            { "u2", Cell[ TextData @ { "A ", StyleBox[ "word", FontWeight -> Bold ], " there" }, "Text" ] }
+        } |> },
+        nbt[ "ReadCells" ];
+        nbt[ "WriteCells", <| "cells" -> "<cell id='c1'>\nA **word** here.\n</cell>\n<cell id='c2'>\nA **word** there.\n</cell>" |> ];
+        nbtCells[ ]
+    ],
+    {
+        Cell[ TextData @ { "A ", StyleBox[ "word", FontWeight -> "Bold" ], " here." }, "Text" ],
+        Cell[ TextData @ { "A ", StyleBox[ "word", FontWeight -> Bold ], " there." }, "Text" ]
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-WriteCells-OriginalsPerCell"
+]
+
+(* The content of a cell is replaced only if the chat has been given all of it: by ReadCells, by the result of an
+   edit, or by the notebook context, but not by a body that was cut, an outline or a search. A tag without a body
+   needs nothing, and a cell that the chat wrote is known to it. *)
+VerificationTest[
+    nbtWithFE @ Block[ { Wolfram`Chatbook`Tools`NotebookTools`Private`$cellLength = 30 },
+        Module[ { write },
+            write[ id_String ] := nbtWriteCells[ "<cell id='" <> id <> "'>\nNew content\n</cell>" ];
+            {
+                nbt[ "GetOutline" ]; nbt[ "SearchNotebook", <| "query" -> "Equations" |> ]; write[ "c5" ],
+                { StringContainsQ[ nbt[ "ReadCells", <| "cells" -> "c2" |> ], "truncated='true'" ], StringStartsQ[ write[ "c2" ], "c2 has not been shown whole" ] },
+                nbt[ "ReadCells", <| "cells" -> "c2", "full" -> True |> ]; write[ "c2" ],
+                nbtWriteCells[ "<cell id='c1' CellTags='t'/>\n<cell id='c6' before='c1'/>\n<cell id='c4' delete='true'/>\n" <> $nbtNew ],
+                nbtEditCell[ "c5", "motion" -> "rest" ]; write[ "c5" ],
+                write[ "c7" ],
+                (* what the notebook context gives: c3 whole, and c1 cut *)
+                Wolfram`Chatbook`Common`withNotebookCellSyntax[ $nbtSource, "<notebook>\n<cell id='c3' style='Input'>\nx\n</cell>\n\n<cell id='c1' style='Title' truncated='true'>\nHam\n</cell>\n</notebook>" ];
+                { write[ "c3" ], StringStartsQ[ write[ "c1" ], "c1 has not been shown whole" ] }
+            }
+        ]
+    ],
+    {
+        "c5 has not been shown whole in this chat (only cut, or as a line of an outline or a search), so its content is not replaced: read it with ReadCells first (full: true shows a long cell whole), or change a part of it with EditInCell. Nothing was written.",
+        { True, True },
+        "Wrote to s1: changed c2.",
+        "Wrote to s1: changed c1; new c7 (Text) after c6; moved c6; deleted c4.",
+        "Wrote to s1: changed c5.",
+        "Wrote to s1: changed c7.",
+        { "Wrote to s1: changed c3.", True }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-WriteCells-SeenCells"
+]
+
+(* A cell that is locked in the notebook (not deletable, or not editable) is not edited, changed in its attributes,
+   moved or deleted: nothing of the call is written, and the message names the cells. A generated cell that is not
+   editable by its style (a message) is no locked cell. A tag that only names a locked cell is fine. *)
+VerificationTest[
+    nbtWithFE @ Block[ { $nbtSources = <| $nbtSource -> {
+            { "u1", Cell[ "A function", "Title" ] },
+            { "u2", Cell[ "Documentation", "Section", Deletable -> False ] },
+            { "u3", Cell[ "Locked text", "Text", Editable -> False ] },
+            { "u4", Cell[ BoxData @ "\"A message\"", "Message", "MSG", Editable -> False ] },
+            { "u5", Cell[ "Some text", "Text" ] }
+        } |> },
+        nbt[ "ReadCells" ];
+        {
+            nbtEditCell[ "c2", "Documentation" -> "Docs" ],
+            nbtWriteCells[ "<cell id='c5'>\nOther text\n</cell>\n<cell id='c3' CellTags='t'/>\n<cell id='c2' after='c5'/>" ],
+            StringStartsQ[ nbtWriteCells[ "<cell id='c2' delete='true'/>" ], "Locked in the notebook: c2. " ],
+            { $nbtWrites, Wolfram`Chatbook`Tools`NotebookTools`Private`$snapshots },
+            nbtWriteCells[ "<cell id='c4' delete='true'/>\n<cell id='c2'/>\n" <> $nbtNew ]
+        }
+    ],
+    {
+        "Locked in the notebook: c2. A cell that the user or the author of the notebook made not editable or not deletable is not changed, moved or deleted. Nothing was written.",
+        "Locked in the notebook: c3, c2. A cell that the user or the author of the notebook made not editable or not deletable is not changed, moved or deleted. Nothing was written.",
+        True,
+        { { }, <| |> },
+        "Wrote to s1: new c6 (Text) after c2; deleted c4."
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-WriteCells-LockedCells"
+]
+
+(* A write that the front end can't apply is an error *)
+VerificationTest[
+    nbtWithFE @ Block[ { $nbtWriteFails = True }, nbtWriteCells @ $nbtNew ],
+    "The front end could not write all of it to s1 (\"Hamiltonian Mechanics\"). ReadCells shows what it holds now.",
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-WriteCells-FrontEndFailure"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*ShowChanges*)
+
+(* ShowChanges shows the user their notebook as a comparison against the snapshot, of which CellDiff reads only the
+   changed cells (it is given the ExpressionUUIDs of the edited ones), and closes the snapshot. If it can't be shown,
+   the snapshot stays open. *)
+VerificationTest[
+    nbtWithFE[
+        nbtEditCell[ "c1", "Mechanics" -> "Dynamics" ];
+        nbtWriteCells @ $nbtNew;
+        {
+            Block[ { $nbtDiffResult = Failure[ "DiffShown", <| "MessageTemplate" -> "`1` already shows a notebook diff.", "MessageParameters" -> { "It" } |> ] },
+                nbt[ "ShowChanges" ]
+            ],
+            $nbtClosed,
+            nbt[ "ShowChanges" ],
+            $nbtShown,
+            $nbtClosed,
+            nbt[ "ShowChanges" ]
+        }
+    ],
+    {
+        "The changes of s1 (\"Hamiltonian Mechanics\") could not be shown: It already shows a notebook diff. It is still open.",
+        { },
+        "The user now sees \"Hamiltonian Mechanics\" as a diff against your edits, and accepts or rejects each change there. s1 is closed.",
+        { { $nbtSource, NotebookObject[ "snapshot-1" ], { "u1" } }, { $nbtSource, NotebookObject[ "snapshot-1" ], { "u1" } } },
+        { NotebookObject[ "snapshot-1" ] },
+        "No snapshot is open."
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-ShowChanges"
+]
+
+(* A notebook that the user excluded from chats after the snapshot was made is not shown the edits: nothing is
+   written to it, and the snapshot stays open *)
+VerificationTest[
+    nbtWithFE[
+        nbtEditCell[ "c1", "Mechanics" -> "Dynamics" ];
+        {
+            Block[ { $nbtExcluded = True }, nbt[ "ShowChanges" ] ],
+            { $nbtShown, $nbtClosed },
+            StringEndsQ[ nbt[ "ShowChanges" ], " s1 is closed." ]
+        }
+    ],
+    {
+        "\"Hamiltonian Mechanics\" is a notebook that the user excluded from AI chats, so it is not read or edited. s1 is still open: close it with CloseNotebook.",
+        { { }, { } },
+        True
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-ShowChanges-ExcludedSince"
+]
+
+(* If the comparison marks no cell (the edits only changed cell tags, or the notebook already had them), the result
+   says what became of the edits and that there is nothing to accept *)
+VerificationTest[
+    nbtWithFE @ Block[ { $nbtDiffResult = 0 },
+        nbtWriteCells[ "<cell id='c2' CellTags=''/>" ];
+        { nbt[ "ShowChanges" ], $nbtClosed }
+    ],
+    {
+        "\"Hamiltonian Mechanics\" shows no diff, since no cell differs in content, style or options. A change of cell tags is applied as it is, a change of a cell label alone is not applied, and any other change the notebook already had. The user has nothing to accept or reject. s1 is closed.",
+        { NotebookObject[ "snapshot-1" ] }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-ShowChanges-NothingMarked"
+]
+
+(* If the changed cells alone do not do (CellDiff then asks for the whole snapshot, which NotebookGet does not give
+   right), the source is compared against a Notebook expression that the tools make: the cells of the snapshot in
+   their order, each with its ExpressionUUID. A cell that no call changed is the source's own, as the user has it now.
+   A moved cell has another ExpressionUUID and CellDiff's tag, so that it is shown as deleted at the old place and
+   inserted at the new one. *)
+VerificationTest[
+    nbtWithFE @ Block[ { $nbtDiffResult = Failure[ "InvalidSnapshot", <| |> ] },
+        nbtEditCell[ "c1", "Mechanics" -> "Dynamics" ];
+        nbtWriteCells[ "<cell id='c5' before='c2'/>\n" <> $nbtNew <> "\n<cell id='c4' delete='true'/>" ];
+        $nbtSources[ $nbtSource ] = ReplacePart[ $nbtSources @ $nbtSource, { 6, 2 } -> Cell[ BoxData @ RowBox @ { "g", "[", "x", "]" }, "Input" ] ];
+        { StringEndsQ[ nbt[ "ShowChanges" ], " s1 is closed." ], Most /@ $nbtShown, Last @ Last @ $nbtShown, $nbtClosed }
+    ],
+    {
+        True,
+        { { $nbtSource, NotebookObject[ "snapshot-1" ] }, { $nbtSource } },
+        Notebook @ {
+            Cell[ "Hamiltonian Dynamics", "Title", ExpressionUUID -> "u1" ],
+            Cell[ "Equations of motion", "Section", CellTags -> { "NotebookDiff" }, ExpressionUUID -> Except[ "u5", _String ] ],
+            Cell[ "New text", "Text", ExpressionUUID -> _String ],
+            Cell[ TextData @ { "The ", $nbtBold, " pendulum, see ", $nbtLink, "." }, "Text", CellTags -> "intro", ExpressionUUID -> "u2" ],
+            Cell[ BoxData @ $nbtCode, "Input", CellLabel -> "In[1]:=", ExpressionUUID -> "u3" ],
+            Cell[ BoxData @ RowBox @ { "g", "[", "x", "]" }, "Input", ExpressionUUID -> "u6" ]
+        },
+        { NotebookObject[ "snapshot-1" ] }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-ShowChanges-WholeNotebook"
+]
+
+(* The moved cells are those outside of the longest run of cells that the notebook and the snapshot have in the same
+   order: nine cells that are moved before one are shown as that one cell moved *)
+VerificationTest[
+    nbtWithFE @ Block[
+        {
+            $nbtDiffResult = Failure[ "InvalidSnapshot", <| |> ],
+            $nbtSources    = <| $nbtSource -> Table[ { "u" <> ToString @ i, Cell[ "Cell " <> ToString @ i, "Text" ] }, { i, 12 } ] |>
+        },
+        nbt[ "WriteCells", <| "cells" -> StringRiffle[ "<cell id='c" <> ToString @ # <> "' before='c2'/>" & /@ Range[ 3, 11 ], "\n" ] |> ];
+        nbt[ "ShowChanges" ];
+        Cases[ Last @ Last @ $nbtShown, Cell[ text_, ___, ExpressionUUID -> uuid_ ] :> { text, StringStartsQ[ uuid, "u" ] }, { 2 } ]
+    ],
+    Join[
+        { { "Cell 1", True } },
+        Table[ { "Cell " <> ToString @ i, True }, { i, 3, 11 } ],
+        { { "Cell 2", False }, { "Cell 12", True } }
+    ],
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-ShowChanges-MovedCells"
+]
+
+(* A new notebook has no source to compare with: it is shown as it is, as a Notebook expression of its cells *)
+VerificationTest[
+    nbtWithFE[
+        nbt[ "OpenNotebook" ];
+        { nbtWriteCells[ "<cell style='Title'>\nA title\n</cell>\n" <> $nbtNew ], nbtCells[ ], nbt[ "ShowChanges" ], $nbtShown }
+    ],
+    {
+        "Wrote to s1: new c1 (Title), c2 (Text) at the end.",
+        { Cell[ "A title", "Title" ], Cell[ "New text", "Text" ] },
+        "The user now sees the new notebook. s1 is closed.",
+        { { None, Notebook @ { Cell[ "A title", "Title", ExpressionUUID -> _String ], Cell[ "New text", "Text", ExpressionUUID -> _String ] } } }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-ShowChanges-NewNotebook"
+]
+
+(* A notebook that still shows the changes of a comparison is not edited: the first edit makes no snapshot, and says
+   what the user has to do first. Reading it, and editing another notebook, is as always. *)
+VerificationTest[
+    nbtWithFE @ Block[ { $nbtDiffCells = <| $nbtSource -> { CellObject[ "u2", "instance" ] } |> },
+        {
+            nbtEditCell[ "c5", "motion" -> "rest" ],
+            nbtWriteCells @ $nbtNew === nbtEditCell[ "c5", "motion" -> "rest" ],
+            { $nbtCount, $nbtWrites },
+            nbt[ "ReadCells", <| "cells" -> "c5" |> ],
+            nbtWriteCells[ $nbtNew, "notebook" -> "12345678" ]
+        }
+    ],
+    {
+        "\"Hamiltonian Mechanics\" still shows the changes of an earlier ShowChanges, which the user has not all accepted or rejected. It can't be edited until they have: tell the user to accept or reject the changes that are shown (the toolbar has Accept All and Reject All), and make this edit after that. Nothing was written.",
+        True,
+        { 0, { } },
+        "<cell id='c5' style='Section'>\nEquations of motion\n</cell>",
+        "Wrote to s1: new c2 (Text) at the end."
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-UnresolvedDiff"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Front End*)
+
+(* The real operations on a hidden copy of a notebook (a stand-in for a snapshot: it has the ExpressionUUIDs of its
+   source): a cell that is replaced keeps its ExpressionUUID, new cells get the ones they are written with, and a cell
+   that is moved keeps its own. A write that names a cell that is not there fails. Needs CellObjects with
+   ExpressionUUIDs. *)
+VerificationTest[
+    UsingFrontEnd @ Module[ { source, copy, fe, uuids, u, a, b, result },
+        fe = Wolfram`Chatbook`Tools`NotebookTools`Private`notebookFrontEnd;
+        WithCleanup[
+            source = NotebookPut @ Notebook @ {
+                Cell[ "A title", "Title" ], Cell[ "A section", "Section" ], Cell[ "Some text", "Text" ],
+                Cell[ BoxData @ RowBox @ { "1", "+", "1" }, "Input" ], Cell[ BoxData @ "2", "Output" ]
+            };
+            copy = NotebookPut[ NotebookGet[ source, "IncludeUUIDs" -> True ], Visible -> False ];
+            uuids[ ] := Replace[ fe[ "Cells", copy ], CellObject[ uuid_, ___ ] :> uuid, { 1 } ];
+            u = uuids[ ];
+            If[ ! MatchQ[ u, { __String } ],
+                Missing[ "TestSkipped" ],
+                { a, b } = { CreateUUID[ ], CreateUUID[ ] };
+                result = fe[ "Write", copy, {
+                    { "Replace", u[[ 3 ]], Cell[ "Other text", "Text", ExpressionUUID -> u[[ 3 ]] ] },
+                    { "Insert", u[[ 2 ]], "After", { Cell[ "new", "Text", ExpressionUUID -> a ] } },
+                    { "Insert", u[[ 1 ]], "Before", { Cell[ "first", "Text", ExpressionUUID -> b ] } },
+                    { "Delete", { u[[ 5 ]] } },
+                    { "Delete", { u[[ 4 ]] } },
+                    { "Insert", u[[ 1 ]], "After", { Cell[ BoxData @ RowBox @ { "1", "+", "1" }, "Input", ExpressionUUID -> u[[ 4 ]] ] } }
+                } ];
+                {
+                    u === Replace[ Cells @ source, CellObject[ uuid_, ___ ] :> uuid, { 1 } ],
+                    result,
+                    uuids[ ] === { b, u[[ 1 ]], u[[ 4 ]], u[[ 2 ]], a, u[[ 3 ]] },
+                    fe[ "Read", copy, fe[ "Cells", copy ] ],
+                    fe[ "Write", copy, { { "Replace", "not-there", Cell[ "x", "Text" ] } } ]
+                }
+            ],
+            NotebookClose /@ { source, copy }
+        ]
+    ],
+    Missing[ "TestSkipped" ] | {
+        True,
+        Null,
+        True,
+        {
+            Cell[ "first", "Text", ___ ], Cell[ "A title", "Title", ___ ], Cell[ BoxData @ RowBox @ { "1", "+", "1" }, "Input", ___ ],
+            Cell[ "A section", "Section", ___ ], Cell[ "new", "Text", ___ ], Cell[ "Other text", "Text", ___ ]
+        },
+        $Failed
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-FrontEnd-Writes"
+]
+
+(* The tools on a real notebook, with only the snapshot made up (a hidden copy): the notebook is read as it is, an
+   edit and new cells end up in the snapshot, and ShowChanges has CellDiff show the source as a comparison, which marks
+   the two changes. While the notebook shows them, it is not edited. A new notebook is shown as a notebook that is
+   visible. *)
+VerificationTest[
+    Module[ { source, copies = { }, listed, id },
+        nbtRealFE[ copies,
+            WithCleanup[
+                source = NotebookPut @ Notebook @ { Cell[ "A title", "Title" ], Cell[ "Some text", "Text" ] };
+                If[ ! MatchQ[ Cells @ source, { CellObject[ _String, ___ ].. } ],
+                    Missing[ "TestSkipped" ],
+                    listed = SelectFirst[ Developer`ReadRawJSONString[ nbt[ "ListNotebooks" ] ][ "notebooks" ], StringStartsQ[ First @ source, #[ "id" ] ] & ];
+                    id     = listed[ "id" ];
+                    {
+                        KeyDrop[ listed, { "id", "title" } ],
+                        nbt[ "OpenNotebook", <| "notebook" -> id |> ],
+                        nbtEditCell[ "c2", "Some" -> "More", "notebook" -> id ],
+                        nbtWriteCells[ "<cell style='Text' before='c1'>\nA preface\n</cell>" ],
+                        First /@ NotebookRead @ Cells @ First @ copies,
+                        nbt[ "ShowChanges" ],
+                        { ! FreeQ[ NotebookGet @ source, "More text" ], Length @ Cells[ source, CellTags -> "NotebookDiff" ] },
+                        nbtWriteCells[ $nbtNew, "notebook" -> id ],
+                        nbt[ "OpenNotebook" ]; nbtWriteCells @ $nbtNew,
+                        With[ { before = Notebooks[ ] },
+                            {
+                                nbt[ "ShowChanges" ],
+                                With[ { new = Complement[ Notebooks[ ], before ] },
+                                    copies = Join[ copies, new ];
+                                    { First /@ NotebookRead @ Cells @ First @ new, AbsoluteCurrentValue[ First @ new, Visible ] }
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                NotebookClose /@ Append[ copies, source ]
+            ]
+        ]
+    ],
+    Missing[ "TestSkipped" ] | {
+        <| "file" -> Null, "modified" -> _, "cells" -> 2, "current" -> False, "snapshot" -> Null |>,
+        _String? (StringEndsQ[ ": an open notebook, 2 cells.\n\n<cell id='c1' style='Title'>\nA title\n</cell>\n\n<cell id='c2' style='Text'>\nSome text\n</cell>" ]),
+        "Edited c2 of s1. It now reads:\n<cell id='c2' style='Text'>\nMore text\n</cell>",
+        "Wrote to s1: new c3 (Text) at the start.",
+        { "A preface", "A title", "More text" },
+        _String? (StringEndsQ[ " as a diff against your edits, and accepts or rejects each change there. s1 is closed." ]),
+        { True, 2 },
+        _String? (StringContainsQ[ " still shows the changes of an earlier ShowChanges" ]),
+        "Wrote to s2: new c1 (Text) at the end.",
+        { "The user now sees the new notebook. s2 is closed.", { { "New text" }, True } }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-FrontEnd-Tools"
+]
+
+(* A move and an edit on a real notebook with cell groups. NotebookGet of a hidden notebook leaves out the cells after
+   a cell that was written inside a cell group, so CellDiff is kept from reading the snapshot that way, and gets the
+   cells from the tools. The comparison marks the moved cell as deleted at the old place and inserted at the new one,
+   and the changed cell: nothing else. *)
+VerificationTest[
+    Module[ { source, copies = { }, id },
+        nbtRealFE[ copies,
+            WithCleanup[
+                source = NotebookPut @ Notebook @ {
+                    Cell[ "A title", "Title" ], Cell[ "First section", "Section" ], Cell[ "one", "Text" ], Cell[ "two", "Text" ],
+                    Cell[ "three", "Text" ], Cell[ "Second section", "Section" ], Cell[ "four", "Text" ], Cell[ "five", "Text" ]
+                };
+                If[ ! MatchQ[ Cells @ source, { CellObject[ _String, ___ ].. } ],
+                    Missing[ "TestSkipped" ],
+                    id = ToLowerCase @ StringTake[ First @ source, 8 ];
+                    {
+                        nbt[ "OpenNotebook", <| "notebook" -> id |> ];
+                        nbtEditCell[ "c7", "four" -> "FOUR", "notebook" -> id ];
+                        nbtWriteCells[ "<cell id='c5' before='c3'/>" ],
+                        StringEndsQ[ nbt[ "ShowChanges" ], " as a diff against your edits, and accepts or rejects each change there. s1 is closed." ],
+                        Length @ Cells @ source,
+                        Length /@ { Cells[ source, CellTags -> "NotebookDiff" ], Cells[ source, CellTags -> "NotebookDiffDeleted" ], Cells[ source, CellTags -> "NotebookDiffInserted" ] },
+                        First /@ NotebookRead @ Cells[ source, CellTags -> "NotebookDiffInserted" ],
+                        Attributes @ NotebookGet
+                    }
+                ],
+                NotebookClose /@ Append[ copies, source ]
+            ]
+        ]
+    ],
+    Missing[ "TestSkipped" ] | {
+        "Wrote to s1: moved c5.",
+        True,
+        9,
+        { 3, 1, 1 },
+        { "three" },
+        { Protected, ReadProtected }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-FrontEnd-Move"
+]
+
+(* An edit that only changes cell tags is applied by the comparison as it is: no cell is marked, the result says that
+   there is nothing to accept, and the notebook has the stylesheet and the dynamic expression that it had (the
+   comparison sets its own). An edit of the content of a cell marks it, and the comparison's options stay until the
+   user resolves it. *)
+VerificationTest[
+    Module[ { source, copies = { }, id, options },
+        nbtRealFE[ copies,
+            WithCleanup[
+                source  = NotebookPut @ Notebook @ { Cell[ "A title", "Title" ], Cell[ "Some text", "Text", CellTags -> "old" ] };
+                options = Options[ source, { StyleDefinitions, NotebookDynamicExpression } ];
+                If[ ! MatchQ[ Cells @ source, { CellObject[ _String, ___ ].. } ],
+                    Missing[ "TestSkipped" ],
+                    id = ToLowerCase @ StringTake[ First @ source, 8 ];
+                    {
+                        nbtWriteCells[ "<cell id='c2' CellTags='new'/>", "notebook" -> id ],
+                        StringContainsQ[ nbt[ "ShowChanges" ], " shows no diff, since no cell differs" ],
+                        Rest @ NotebookRead[ Cells[ source ][[ 2 ]] ],
+                        Options[ source, { StyleDefinitions, NotebookDynamicExpression } ] === options,
+                        nbtWriteCells[ "<cell id='c1' style='Chapter'/>", "notebook" -> id ];
+                        StringContainsQ[ nbt[ "ShowChanges" ], " as a diff against your edits" ],
+                        Options[ source, { StyleDefinitions, NotebookDynamicExpression } ] === options
+                    }
+                ],
+                NotebookClose /@ Append[ copies, source ]
+            ]
+        ]
+    ],
+    Missing[ "TestSkipped" ] | { "Wrote to s1: changed c2.", True, Cell[ "Text", CellTags -> "new" ], True, True, False },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-FrontEnd-NothingMarked"
+]
+
+(* The locks and the exclusions of real notebooks: a cell that is not deletable is not edited, and a message cell,
+   which the stylesheet makes not editable, is deleted. A cell that the user excludes from chats is left out. The file
+   of an open notebook that the user excluded from chats is not opened, also not by its name in another letter case
+   where the file system takes that for the file, and neither is a file that is not open and says itself that it is
+   excluded. *)
+VerificationTest[
+    Module[ { source, copies = { }, id, file, excluded },
+        nbtRealFE[ copies,
+            WithCleanup[
+                source = NotebookPut @ Notebook @ {
+                    Cell[ "A function", "Title" ], Cell[ "Documentation", "Section", Deletable -> False ],
+                    Cell[ BoxData @ "\"A message\"", "Message", "MSG" ], Cell[ "Private", "Text" ], Cell[ "Last", "Text" ]
+                };
+                file = FileNameJoin @ { $TemporaryDirectory, "nbt-" <> CreateUUID[ ] <> ".nb" };
+                Export[ file, Notebook @ { Cell[ "Secret", "Text" ] }, "NB" ];
+                excluded = NotebookOpen[ file, Visible -> False ];
+                If[ ! MatchQ[ Cells @ source, { CellObject[ _String, ___ ].. } ],
+                    Missing[ "TestSkipped" ],
+                    id = ToLowerCase @ StringTake[ First @ source, 8 ];
+                    CurrentChatSettings[ Cells[ source ][[ 4 ]], "ExcludeFromChat" ] = True;
+                    {
+                        nbtEditCell[ "c2", "Documentation" -> "Docs", "notebook" -> id ],
+                        copies,
+                        StringCases[ nbt[ "ReadCells", <| "notebook" -> id |> ], "<cell id='" ~~ i: WordCharacter.. :> i ],
+                        nbtWriteCells[ "<cell id='c3' delete='true'/>", "notebook" -> id ],
+                        First /@ NotebookRead @ Cells @ Last @ copies,
+                        nbt[ "CloseNotebook" ],
+                        SetOptions[ excluded, Visible -> True ];
+                        CurrentChatSettings[ excluded, "ExcludeFromChat" ] = True;
+                        StringEndsQ[ nbt[ "ReadCells", <| "notebook" -> file |> ], " is a notebook that the user excluded from AI chats, so it is not read or edited." ],
+                        With[ { result = nbt[ "ReadCells", <| "notebook" -> ToUpperCase @ file |> ] },
+                            {
+                                StringFreeQ[ result, "Secret" ],
+                                FileExistsQ @ ToUpperCase @ file === StringEndsQ[ result, " is a notebook that the user excluded from AI chats, so it is not read or edited." ]
+                            }
+                        ],
+                        NotebookSave @ excluded;
+                        NotebookClose @ excluded;
+                        StringEndsQ[ nbt[ "OpenNotebook", <| "notebook" -> file |> ], " is a notebook that the user excluded from AI chats, so it is not read or edited." ],
+                        Keys @ Wolfram`Chatbook`Tools`NotebookTools`Private`$snapshots
+                    }
+                ],
+                NotebookClose /@ Join[ copies, { source, excluded } ];
+                DeleteFile @ file
+            ]
+        ]
+    ],
+    Missing[ "TestSkipped" ] | {
+        "Locked in the notebook: c2. A cell that the user or the author of the notebook made not editable or not deletable is not changed, moved or deleted. Nothing was written.",
+        { _NotebookObject },
+        { "c1", "c2", "c3", "c5" },
+        "Wrote to s1: deleted c3.",
+        { "A function", "Documentation", "Private", "Last" },
+        "Closed s1; its edits were discarded.",
+        True,
+        { True, True },
+        True,
+        { }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-FrontEnd-LockedAndExcluded"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

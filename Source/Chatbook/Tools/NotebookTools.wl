@@ -53,7 +53,16 @@ $maxCellTables    = 20;    (* tables of cell ids that are kept: one for each cha
    compare them. Not a value of its own: the MX is built on another system. *)
 $ignoreFileCase := $OperatingSystem =!= "Unix";
 
+(* The function of CellDiff's notebook comparison (Assets/CellDiff/CellDiffNotebookDiff.wl, see notebookDiffFunction),
+   and the cell tag that it gives every cell that shows a change *)
+$notebookDiffFunction = "CellDiffNotebookDiff`ShowNotebookDiff";
+$diffTag              = "NotebookDiff";
+
 $toolErrorTag = "Wolfram`Chatbook`Tools`NotebookTools`ToolError";
+$writeTag     = "Wolfram`Chatbook`Tools`NotebookTools`Write";
+
+(* The attributes of a cell tag that are WriteCells' own: cellsFromString gives them back as it finds them *)
+$writeAttributes = { "after", "before", "delete" };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -153,6 +162,31 @@ $searchNotebookDescription = "\
 Finds text in the cells of a notebook: a literal string, or with regex true a regular expression (PCRE), in each \
 cell's content as ReadCells shows it. Gives one line per match: id (style) line:column: the line.";
 
+$editInCellDescription = "\
+Edits the content of one cell by exact text replacement: each edit replaces oldText, which must occur exactly count \
+times (default 1) in the cell's content, with newText. The cell's id and text can be taken directly from the \
+notebook context, NotebookReader or ReadCells. The edits apply in order, all or none, in a hidden snapshot (see \
+ShowChanges). Gives the cell as it now reads.";
+
+$writeCellsDescription = "\
+Writes cells of a notebook, in a hidden snapshot (see ShowChanges). cells is cell tags in the cell syntax and \
+nothing else, with the cell ids of the notebook context, NotebookReader and ReadCells. \
+<cell id='c3'>new content</cell> replaces the content of c3: keep its <RawBoxes> and links as they are, and read a \
+cell that you have not seen whole first. <cell id='c3' CellTags=''/> changes attributes only: those you leave out \
+keep their values, and an empty one is removed. <cell style='Text' after='c5'>...</cell> is a new cell after c5 (or \
+before='c1'; these are attributes of the tag, not parameters). Without them it comes after the cell before it in \
+cells, or at the end. <cell id='c5'/> changes nothing: it marks a place, or names a cell for evaluate. \
+<cell id='c7' before='c2'/> moves c7 as it is: never delete and rewrite a cell to move it. \
+<cell id='c9' delete='true'/> deletes it. In a text cell, math is $$...$$ (in a code cell it is code; a displayed \
+formula is <cell style='DisplayFormula'>$$...$$</cell>), <MakeBoxes>expr</MakeBoxes> typesets an expression in place \
+without evaluating it and <ToBoxes>expr</ToBoxes> evaluates it first. All of it applies or \
+nothing does. Gives the ids of the cells it wrote and where the new ones are.";
+
+$showChangesDescription = "\
+Shows the user the edits of this chat: their notebook as a diff against the hidden snapshot that the edits went to, \
+where they accept or reject each change. Closes the snapshot. Always call it once when your edits are done, before \
+your final reply. It needs no permission from the user, who sees none of your edits until it is called.";
+
 $closeNotebookDescription = "Closes a snapshot and discards its edits, without showing them to the user.";
 
 (* ::**************************************************************************************************************:: *)
@@ -244,6 +278,36 @@ $notebookToolSpecs = <|
             parameter[ "limit", "Integer", "The largest number of matches to show (default 50)" ]
         }
     |>,
+    "EditInCell" -> <|
+        "DisplayName" -> "Edit In Cell",
+        "Description" -> $editInCellDescription,
+        "Function"    -> toolFunction[ "EditInCell", editInCell ],
+        "Parameters"  -> {
+            parameter[ "cell", "String", "The id of the cell, e.g. c3", True ],
+            parameter[
+                "edits",
+                RepeatingElement @ CompoundElement @ <| "oldText" -> "String", "newText" -> "String", "count" -> "Integer" |>,
+                "A JSON array of {oldText, newText, count}, e.g. [{\"oldText\": \"x^2\", \"newText\": \"x^3\"}]",
+                True
+            ],
+            $notebookParameter
+        }
+    |>,
+    "WriteCells" -> <|
+        "DisplayName" -> "Write Cells",
+        "Description" -> $writeCellsDescription,
+        "Function"    -> toolFunction[ "WriteCells", writeCells ],
+        "Parameters"  -> {
+            parameter[ "cells", "String", "The cells, as cell tags in the cell syntax", True ],
+            $notebookParameter
+        }
+    |>,
+    "ShowChanges" -> <|
+        "DisplayName" -> "Show Changes",
+        "Description" -> $showChangesDescription,
+        "Function"    -> toolFunction[ "ShowChanges", showChanges ],
+        "Parameters"  -> { $snapshotParameter }
+    |>,
     "CloseNotebook" -> <|
         "DisplayName" -> "Close Notebook",
         "Description" -> $closeNotebookDescription,
@@ -324,6 +388,19 @@ requireFrontEnd[ ] := If[ $FrontEnd === Null,
 
 requireFrontEnd // endDefinition;
 
+
+(* The message of a Failure as plain text: its template with its parameters (Failure's own "Message" formats them as
+   boxes). The first parameter of a failure of evaluateToBoxes is what it is about: name is put in its place. *)
+failureMessage // beginDefinition;
+
+failureMessage[ Failure[ _, KeyValuePattern @ { "MessageTemplate" -> template_String, "MessageParameters" -> parameters: { __ } } ] ] :=
+    Replace[ Quiet @ TemplateApply[ StringTemplate @ template, parameters ], Except[ _String ] -> template ];
+
+failureMessage[ Failure[ _, KeyValuePattern[ "MessageTemplate" -> template_String ] ] ] := template;
+failureMessage[ _ ] := "";
+
+failureMessage // endDefinition;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Arguments*)
@@ -338,6 +415,13 @@ toolArguments // endDefinition;
 missingArgument // beginDefinition;
 missingArgument[ name_String ] := toolError[ "The parameter `1` is missing or empty.", name ];
 missingArgument // endDefinition;
+
+
+(* A required string argument, trimmed *)
+stringArgument // beginDefinition;
+stringArgument[ s_String, _String ] := StringTrim @ s;
+stringArgument[ _, name_String ] := missingArgument @ name;
+stringArgument // endDefinition;
 
 
 (* A positive whole number, or the default if it is not given *)
@@ -369,6 +453,36 @@ listArgument[ items: { ___String }, separators_ ] := listArgument[ StringRiffle[
 
 listArgument // endDefinition;
 
+
+(* EditInCell's edits as { { oldText, newText, count }, ... }. The notebook context shows the markers of a selection in
+   a body. No body has them as it is read, so they are taken out of oldText. What a marker in newText is, the writer
+   decides (docs/cell-syntax.md). *)
+editsArgument // beginDefinition;
+
+editsArgument[ edits: { __Association } ] := MapIndexed[ editArgument[ #1, First @ #2 ] &, edits ];
+
+editsArgument[ _ ] :=
+    toolError[ "The parameter edits must be a list of edits {oldText, newText, count}, e.g. [{\"oldText\": \"a\", \"newText\": \"b\"}]." ];
+
+editsArgument // endDefinition;
+
+
+editArgument // beginDefinition;
+
+editArgument[ edit_Association, i_Integer ] := With[
+    {
+        old = Replace[ edit[ "oldText" ], s_String :> StringDelete[ s, $leftSelectionIndicator | $rightSelectionIndicator ] ],
+        new = edit[ "newText" ]
+    },
+    If[ ! StringQ @ old || old === "",
+        toolError[ "Edit `1` has no oldText. To insert text, give the text next to it as oldText and both as newText.", i ]
+    ];
+    If[ ! StringQ @ new, toolError[ "Edit `1` has no newText (\"\" deletes oldText).", i ] ];
+    { old, new, countArgument[ Lookup[ edit, "count", Missing[ ] ], "count", 1 ] }
+];
+
+editArgument // endDefinition;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Front End*)
@@ -385,7 +499,30 @@ listArgument // endDefinition;
                                                               (a snapshot of a file has the settings of the file)
      notebookFrontEnd[ "Cells", nb ]                          its cells in order: { CellObject[ uuid, ... ], ... }
      notebookFrontEnd[ "Read", nb, { cell, ... } ]            their Cell expressions
-     notebookFrontEnd[ "Close", nb ]                          closes the snapshot; the front end deletes its file *)
+     notebookFrontEnd[ "Locks", nb, { cell, ... } ]           { Editable, Deletable } of each cell, as the front end
+                                                              resolves them
+     notebookFrontEnd[ "Write", nb, { write, ... } ]          applies the writes in order; $Failed if one can't be applied.
+                                                              Cells are named by their ExpressionUUIDs:
+                                                                { "Replace", uuid, Cell[ ... ] }
+                                                                { "Insert", uuid | None, "After" | "Before", { Cell[ ... ], ... } }
+                                                                { "Delete", { uuid, ... } }
+                                                              A cell that is written has its ExpressionUUID as an option,
+                                                              which the front end keeps (a move is a "Delete" and an
+                                                              "Insert" of the cell). None stands for an empty notebook.
+     notebookFrontEnd[ "Close", nb ]                          closes the snapshot; the front end deletes its file
+     notebookFrontEnd[ "DiffCells", nb ]                      the cells of a notebook that show a change of a comparison
+                                                              that the user has not resolved ({ } for none)
+     notebookFrontEnd[ "ShowDiff", source, snapshot, edited ] shows the source as a comparison against the snapshot,
+                                                              of which only the cells that changed are read. Gives the
+                                                              number of cells that then show a change, or
+                                                              Failure[ "InvalidSnapshot", ... ] if the comparison takes
+                                                              all of the snapshot's cells (showNotebookDiff).
+     notebookFrontEnd[ "ShowDiff", source, notebook ]         the same against a Notebook expression. A source None is
+                                                              a new notebook, which is shown as it is.
+   The writes of one call are applied one after another, so a failure of the front end in one of them leaves the ones
+   before it applied. The model's text is converted and checked before the first write, which leaves little to fail.
+   NotebookGet is not used on a snapshot: for a hidden notebook it leaves out the cells after a cell that NotebookWrite
+   wrote inside a cell group (a front end defect, also of 16.0.0). *)
 notebookFrontEnd // beginDefinition;
 
 notebookFrontEnd[ "Snapshot", source_ ] :=
@@ -396,9 +533,114 @@ notebookFrontEnd[ "Excluded", nb_NotebookObject ] :=
 
 notebookFrontEnd[ "Cells", nb_NotebookObject ] := Quiet @ Cells @ nb;
 notebookFrontEnd[ "Read", _NotebookObject, cells: { __CellObject } ] := Quiet @ NotebookRead @ cells;
+
+notebookFrontEnd[ "Locks", _NotebookObject, cells: { __CellObject } ] :=
+    Quiet @ Transpose @ { AbsoluteCurrentValue[ cells, Editable ], AbsoluteCurrentValue[ cells, Deletable ] };
+
+notebookFrontEnd[ "Write", nb_NotebookObject, writes_List ] :=
+    Quiet @ Catch[ Scan[ frontEndWrite[ nb, # ] &, writes ], $writeTag ];
+
 notebookFrontEnd[ "Close", nb_NotebookObject ] := Quiet @ NotebookClose @ nb;
+notebookFrontEnd[ "DiffCells", nb_NotebookObject ] := Quiet @ Cells[ nb, CellTags -> $diffTag ];
+notebookFrontEnd[ "ShowDiff", source_, snapshot_NotebookObject, edited_List ] := showNotebookDiff[ source, snapshot, edited ];
+notebookFrontEnd[ "ShowDiff", source_, notebook_Notebook ] := showNotebookDiff[ source, notebook ];
 
 notebookFrontEnd // endDefinition;
+
+
+frontEndWrite // beginDefinition;
+
+frontEndWrite[ nb_, { "Replace", uuid_String, cell_Cell } ] := NotebookWrite[ uuidCell[ nb, uuid ], cell ];
+frontEndWrite[ nb_, { "Delete", uuids: { __String } } ] := NotebookDelete[ uuidCell[ nb, # ] & /@ uuids ];
+
+frontEndWrite[ nb_, { "Insert", anchor_, position: "After" | "Before", cells: { __Cell } } ] := (
+    If[ StringQ @ anchor,
+        SelectionMove[ uuidCell[ nb, anchor ], Symbol @ position, Cell ],
+        SelectionMove[ nb, After, Notebook ]
+    ];
+    NotebookWrite[ nb, cells ]
+);
+
+frontEndWrite // endDefinition;
+
+
+(* A write gives a cell another CellObject, so the cell of an ExpressionUUID is looked up for each write *)
+uuidCell // beginDefinition;
+uuidCell[ nb_NotebookObject, uuid_String ] := FirstCase[ Cells @ nb, CellObject[ uuid, ___ ], Throw[ $Failed, $writeTag ] ];
+uuidCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*showNotebookDiff*)
+
+(* Shows a source (an open notebook, or a file) as a comparison, in the notebook itself.
+   - CellDiff's ShowNotebookDiff[ source, snapshot, "Lines", edited ] reads only the cells that changed: the edited
+     ones, and those that only one of the two notebooks has (it knows them by their ExpressionUUIDs). That takes the
+     same time for a small notebook and for one with a gigabyte of graphics. If the cells do not line up (cells moved,
+     or most cells changed), it compares the whole notebooks instead and would NotebookGet the snapshot, which gives a
+     wrong notebook (see notebookFrontEnd). NotebookGet is kept from giving the snapshot, so CellDiff then gives
+     Failure[ "InvalidSnapshot", ... ], before it has written anything.
+   - ShowNotebookDiff[ source, notebook, "Lines" ] compares the whole source against a Notebook expression, whose
+     cells it pairs with the source's by their ExpressionUUIDs. It hashes every cell of both: 1.9 s for 790 cells, and
+     33 s for a notebook of 57 MB.
+   A new notebook has nothing to compare with: its content is shown as a notebook. *)
+showNotebookDiff // beginDefinition;
+
+showNotebookDiff[ source_, snapshot_NotebookObject, edited_List ] := shownDiff[
+    source,
+    Function[ notebook,
+        Internal`InheritedBlock[ { NotebookGet },
+            Unprotect @ NotebookGet;
+            PrependTo[ DownValues @ NotebookGet, HoldPattern @ NotebookGet[ snapshot, ___ ] :> $Failed ];
+            Protect @ NotebookGet;
+            notebookDiffFunction[ ][ notebook, snapshot, "Lines", edited ]
+        ]
+    ]
+];
+
+showNotebookDiff[ None, notebook_Notebook ] := NotebookPut @ notebook;
+showNotebookDiff[ source_, notebook_Notebook ] := shownDiff[ source, notebookDiffFunction[ ][ #, notebook, "Lines" ] & ];
+
+showNotebookDiff // endDefinition;
+
+
+(* What show gives for the notebook of a source, if that is a Failure, and else the number of cells that show a change
+   afterwards. A file is opened here, so that the options of its notebook are known before the comparison.
+   CellDiff marks no cell if the edits only changed cell tags, which it applies as they are, or cell labels, which
+   it does not compare, or if the notebook already had the changes. There is then no toolbar that would give the
+   notebook its stylesheet and its dynamic expression back, as Accept All and Reject All do, so that is done here. *)
+shownDiff // beginDefinition;
+
+shownDiff[ source_, show_ ] := Module[ { notebook, options, result, marked },
+    notebook = Replace[ source, file_String /; FileExistsQ @ file :> NotebookOpen @ file ];
+    options  = If[ MatchQ[ notebook, _NotebookObject ], Options[ notebook, { StyleDefinitions, NotebookDynamicExpression } ], { } ];
+    result   = show @ notebook;
+    If[ ! MatchQ[ result, _NotebookObject ], Return[ result, Module ] ];
+    marked = Length @ Cells[ result, CellTags -> $diffTag ];
+    If[ marked === 0, SetOptions[ result, options ] ];
+    marked
+];
+
+shownDiff // endDefinition;
+
+
+(* The files in Assets/CellDiff (CellDiffNotebookDiff.wl, which loads CellDiffControlStyles.wl from its own directory)
+   are copied from the FE repository's docs/CellDiff (as of its commit cb4e2cdb163) until the front end ships
+   the comparison; keep them in sync. They are loaded once per session, at the first ShowChanges, with their contexts
+   kept off $ContextPath; the function is kept only once it is defined. *)
+notebookDiffFunction // beginDefinition;
+
+notebookDiffFunction[ ] := Module[ { file },
+    file = FileNameJoin @ { $thisPaclet[ "AssetLocation", "CellDiff" ], "CellDiffNotebookDiff.wl" };
+    If[ ! FileExistsQ @ file, toolError[ "ShowChanges is not available: the notebook comparison was not found." ] ];
+    Quiet @ Block[ { $ContextPath = $ContextPath }, Get @ file ];
+    If[ Names @ $notebookDiffFunction === { },
+        toolError[ "ShowChanges is not available: the notebook comparison could not be loaded." ]
+    ];
+    notebookDiffFunction[ ] = Symbol @ $notebookDiffFunction
+];
+
+notebookDiffFunction // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -812,6 +1054,45 @@ withRecord[ record_Association, function_ ] :=
 withRecord // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*withSnapshot*)
+
+(* The text that an editing tool gives for its notebook argument: what function gives for the record of the snapshot
+   that it edits. That is the chat's snapshot of the notebook if it has one. Else a snapshot is made now, so that it
+   is the notebook as the user has it at the first edit, and the result says that it was opened. If the call then
+   edits nothing (it fails, or it changes nothing), the snapshot is closed again and its handle is free: the next
+   edit starts from the notebook as it is then.
+   A failed edit costs a snapshot this way. Converting the text before the snapshot is made would avoid that. *)
+withSnapshot // beginDefinition;
+
+withSnapshot[ spec_, function_ ] := With[ { target = resolveNotebook[ spec, True ] },
+    If[ StringQ @ target,
+        withRecord[ $snapshots @ target, function ],
+        (* A notebook that shows changes holds the cells of the comparison: the user resolves them first *)
+        If[ MatchQ[ target[ "Source" ], _NotebookObject ] && notebookFrontEnd[ "DiffCells", target[ "Source" ] ] =!= { },
+            toolError[ $diffShownText, quoted @ inlineText @ target[ "Title" ] ]
+        ];
+        With[ { opened = newSnapshot @ target },
+            With[ { handle = opened[ "Name" ] },
+                WithCleanup[
+                    With[ { text = withRecord[ opened, function ] },
+                        If[ $snapshots[ handle, "Edits" ] === None, text, $openedText[ notebookLabel @ opened ] <> text ]
+                    ],
+                    If[ $snapshots[ handle, "Edits" ] === None, closeSnapshot @ handle; $snapshotCount-- ]
+                ]
+            ]
+        ]
+    ]
+];
+
+withSnapshot // endDefinition;
+
+$diffShownText = "\
+`1` still shows the changes of an earlier ShowChanges, which the user has not all accepted or rejected. It can't be \
+edited until they have: tell the user to accept or reject the changes that are shown (the toolbar has Accept All and \
+Reject All), and make this edit after that. Nothing was written.";
+
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Cells*)
 
@@ -1043,6 +1324,19 @@ excludedNote[ n_Integer ] := "[" <> ToString @ n <> " cells that the user exclud
 excludedNote // endDefinition;
 
 
+(* The entry of the cell that the model names, with its whole text *)
+namedEntry // beginDefinition;
+
+namedEntry[ record_Association, cells_List, spec_String ] := With[ { cell = cells[[ cellPosition[ record, cells, spec ] ]] },
+    First[
+        readEntries[ record, { cell }, Infinity ],
+        toolError[ "`1` is a cell that the user excluded from AI chats, so it is not read or changed. Nothing was written.", cell[ "ID" ] ]
+    ]
+];
+
+namedEntry // endDefinition;
+
+
 (* A cell in the cell syntax. The body of a generated cell is not exact, and a graphic in it is a link, as it is in
    the other cells (a multimodal chat gets the images of the first links of a result). *)
 cellText // beginDefinition;
@@ -1072,6 +1366,54 @@ cellBody[ text_String ] := First[
 ];
 
 cellBody // endDefinition;
+
+
+(* Cells that an evaluation makes are not written as text *)
+generatedCellQ // beginDefinition;
+generatedCellQ[ cell_Cell ] := MatchQ[ cell, Cell[ __, $$generatedCellStyle, ___ ] ];
+generatedCellQ // endDefinition;
+
+$generatedCellText = "\
+`1` is a generated cell (an output, a message, a print): its content is not written as text. Write its Input cell \
+with evaluate: true, which replaces its outputs. A tag without content moves a generated cell as it is \
+(<cell id='c48' after='c47'/>) or deletes it (<cell id='c48' delete='true'/>). Nothing was written.";
+
+
+(* Ends the tool if one of the cells (entries) is locked in the notebook: it is not deletable, or not editable, as the
+   front end resolves the two options (the cell's own, or those of its notebook or stylesheet). The front end does
+   not delete a cell that is not deletable, so a write to one would leave the old cell next to the new one. *)
+requireUnlocked // beginDefinition;
+
+requireUnlocked[ record_Association, entries_List ] := Replace[
+    lockedEntries[ record, entries ],
+    locked: { __ } :> toolError[
+        "Locked in the notebook: `1`. A cell that the user or the author of the notebook made not editable or not \
+deletable is not changed, moved or deleted. Nothing was written.",
+        StringRiffle[ DeleteDuplicates @ locked[[ All, "ID" ]], ", " ]
+    ]
+];
+
+requireUnlocked // endDefinition;
+
+
+(* Those of the entries that are locked. Some generated cells are not editable by their style (a Message), and none is
+   edited by hand: a generated cell is only locked if it is not deletable. *)
+lockedEntries // beginDefinition;
+
+lockedEntries[ _Association, { } ] := { };
+
+lockedEntries[ record_Association, entries: { __Association } ] := With[
+    { locks = notebookFrontEnd[ "Locks", record[ "Notebook" ], entries[[ All, "Object" ]] ] },
+    Pick[
+        entries,
+        MapThread[
+            Function[ { entry, lock }, Last @ lock === False || (First @ lock === False && ! generatedCellQ @ entry[ "Cell" ]) ],
+            { entries, locks }
+        ]
+    ]
+];
+
+lockedEntries // endDefinition;
 
 
 (* Cells in the cell syntax, as many as fit into $readBudget (at least one), with a note on the ones that do not, and
@@ -1351,11 +1693,552 @@ cellMatches[ entry_Association, pattern_ ] := Module[ { body, lines },
 
 cellMatches // endDefinition;
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*EditInCell*)
+
+(* The body of the cell as ReadCells shows it, the replacements, and then cellsFromString with the cell as the
+   existing one, so that what the edits leave alone is written back as it was *)
+editInCell // beginDefinition;
+
+editInCell[ args_Association ] := withSnapshot[ args[ "notebook" ], Function[ record,
+    Module[ { entry, id, uuid, body, cell },
+        entry    = namedEntry[ record, notebookCells @ record, stringArgument[ args[ "cell" ], "cell" ] ];
+        id       = entry[ "ID" ];
+        uuid     = entry[ "UUID" ];
+        If[ generatedCellQ @ entry[ "Cell" ], toolError[ $generatedCellText, id ] ];
+        requireUnlocked[ record, { entry } ];
+        body     = Fold[ editedText[ id, ## ] &, entry[ "Body" ], editsArgument @ args[ "edits" ] ];
+        (* No body has a cell tag as it is read, so one that is there now is the model's: *)
+        If[ StringContainsQ[ body, "</cell>" | ("<cell" ~~ (WhitespaceCharacter | ">" | "/")) ],
+            toolError[ "The edits put a cell tag into `1`, which is one cell. Write a < that is text as &lt;. Nothing was written.", id ]
+        ];
+        cell     = First[ convertCells[ "<cell id='" <> id <> "'>\n" <> body <> "\n</cell>", <| id -> entry[ "Cell" ] |> ] ][ "Cell" ];
+        applyWrites[ record, { { "Replace", uuid, withUUID[ cell, uuid ] } }, { uuid } ];
+        StringJoin[
+            "Edited ", id, " of ", record[ "Name" ], ". It now reads:\n",
+            StringRiffle[ readEntries[ record, Select[ notebookCells @ record, #[ "UUID" ] === uuid & ], $cellLength ][[ All, "Text" ]], "\n\n" ],
+            $notShownText
+        ]
+    ]
+] ];
+
+editInCell // endDefinition;
+
+$notShownText = "\n\nThe user does not see this yet: call ShowChanges when your edits are done, before you reply.";
+
+
+(* Text with an edit { oldText, newText, count } applied *)
+editedText // beginDefinition;
+
+editedText[ id_String, text_String, { old_String, new_String, count_Integer } ] := With[ { n = StringCount[ text, old ] },
+    Which[
+        n === 0,
+            toolError[
+                "The oldText `1` does not occur in the content of `2`. Copy it exactly from ReadCells. Nothing was written.",
+                quoted @ old, id
+            ],
+        n =!= count,
+            toolError[
+                "The oldText `1` occurs `2` times in the content of `3`, not `4`. It also matches inside longer names: \
+make it longer to change only some of them, or give count `2` to change all. Nothing was written. The places \
+(line:column and the text there): `5`",
+                quoted @ old, n, id, count, matchPlaces[ text, old ]
+            ],
+        True,
+            StringReplace[ text, old -> new ]
+    ]
+];
+
+editedText // endDefinition;
+
+
+(* Where a text occurs in a body, for a message: the line and column of each place (the first $maxPlaces) with the
+   text around it *)
+matchPlaces // beginDefinition;
+
+matchPlaces[ body_String, text_String ] := With[
+    { starts = StringPosition[ body, text, Overlaps -> False ][[ All, 1 ]], lines = lineStarts @ body },
+    StringRiffle[
+        Append[
+            Function[ start,
+                With[ { line = LengthWhile[ lines, LessEqualThan @ start ] },
+                    StringJoin[
+                        ToString @ line, ":", ToString[ start - lines[[ line ]] + 1 ], " ",
+                        inlineText @ StringTake[ body, { Max[ 1, start - 8 ], Min[ StringLength @ body, start + StringLength @ text + 7 ] } ]
+                    ]
+                ]
+            ] /@ Take[ starts, UpTo @ $maxPlaces ],
+            If[ Length @ starts > $maxPlaces, "...", Nothing ]
+        ],
+        " | "
+    ]
+];
+
+matchPlaces // endDefinition;
+
 
 (* The positions at which the lines of a text start *)
 lineStarts // beginDefinition;
 lineStarts[ text_String ] := Prepend[ StringPosition[ text, "\n" ][[ All, 1 ]] + 1, 1 ];
 lineStarts // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*convertCells*)
+
+(* What cellsFromString makes of text, with what reading recorded for the cells: a record for each cell tag. cells
+   gives the existing cell of an id: an association, or a function that is asked for each tag with an id. A text that
+   cellsFromString refuses ends the tool with its message, which names the cell (a new one by the number of its tag). *)
+convertCells // beginDefinition;
+
+convertCells[ text_String, cells_ ] := Replace[
+    cellsFromString[ text, "Cells" -> cells, "Originals" -> $cellOriginals, "ExtraAttributes" -> $writeAttributes ],
+    {
+        records: { KeyValuePattern[ "Cell" -> _ ]... } :> records,
+        failure: Failure[ "CellSyntax", _Association ] :> toolError[ "`1` Nothing was written.", failureMessage @ failure ],
+        other_ :> throwInternalFailure @ convertCells[ text, cells, other ]
+    }
+];
+
+convertCells // endDefinition;
+
+
+(* A cell as the tools write it: with its ExpressionUUID, which the front end gives the cell that it writes *)
+withUUID // beginDefinition;
+withUUID[ cell_Cell, uuid_String ] := Append[ DeleteCases[ cell, (ExpressionUUID | CellObject) -> _ ], ExpressionUUID -> uuid ];
+withUUID // endDefinition;
+
+
+(* Applies writes to a snapshot. edited are the ExpressionUUIDs of the cells that were replaced. *)
+applyWrites // beginDefinition;
+
+applyWrites[ _Association, { }, _List ] := Null;
+
+applyWrites[ record_Association, writes_List, edited_List ] := With[ { handle = record[ "Name" ] },
+    If[ notebookFrontEnd[ "Write", record[ "Notebook" ], writes ] === $Failed,
+        toolError[ "The front end could not write all of it to `1`. ReadCells shows what it holds now.", notebookLabel @ record ]
+    ];
+    $snapshots[[ handle, "Edits" ]] = Union[ Replace[ $snapshots[ handle, "Edits" ], None -> { } ], edited ];
+];
+
+applyWrites // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*WriteCells*)
+writeCells // beginDefinition;
+
+writeCells[ args_Association ] := withSnapshot[ args[ "notebook" ], Function[ record,
+    Module[ { plan, parts },
+        plan      = writePlan[ record, notebookCells @ record, Replace[ args[ "cells" ], Except[ _String ] :> missingArgument[ "cells" ] ] ];
+        requireUnlocked[ record, plan[ "Touched" ] ];
+        applyWrites[ record, plan[ "Writes" ], plan[ "Edited" ] ];
+        If[ plan[ "Deleted" ] =!= { },
+            $snapshots[[ record[ "Name" ], "Deleted" ]] = Join[ $snapshots[ record[ "Name" ], "Deleted" ], plan[ "Deleted" ] ]
+        ];
+        (* what was done, with the new cells by their places: "changed c5; new c7 (Text) after c5; deleted c4" *)
+        parts     = Cases[
+            Flatten @ { "changed" -> plan[ "Changed" ], "new" -> { # } & /@ newCellPlaces @ plan, "moved" -> plan[ "Moved" ], "deleted" -> plan[ "Deleted" ] },
+            (name_ -> ids: { __ }) :> name <> " " <> StringRiffle[ ids, ", " ]
+        ];
+        StringJoin[
+            If[ parts === { }, $nothingChangedText, "Wrote to " <> record[ "Name" ] <> ": " <> StringRiffle[ parts, "; " ] <> "." ],
+            If[ $snapshots[ record[ "Name" ], "Edits" ] === None, "", $notShownText ]
+        ]
+    ]
+] ];
+
+writeCells // endDefinition;
+
+$nothingChangedText = "\
+Nothing was changed: the cells read as before. Attributes that a tag leaves out keep their values: to remove one, \
+give it empty, e.g. <cell id='c3' CellTags=''/>.";
+
+
+(* The new cells of a plan for the result, a text for each run of them in the notebook that says where the run is:
+   "c7 (Text), c8 (Text) after c5" *)
+newCellPlaces // beginDefinition;
+
+newCellPlaces[ plan_Association ] := With[ { order = plan[ "Order" ], new = plan[ "New" ] },
+    Function[ run,
+        StringJoin[
+            StringRiffle[ Lookup[ new, order[[ run ]] ], ", " ],
+            Which[
+                Last @ run === Length @ order, " at the end",
+                First @ run === 1, " at the start",
+                True, " after " <> $cellIDFunction @ order[[ First @ run - 1 ]]
+            ]
+        ]
+    ] /@ Split[ Flatten @ Position[ order, _? (KeyExistsQ[ new, # ] &), { 1 }, Heads -> False ], #2 === #1 + 1 & ]
+];
+
+newCellPlaces // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*writePlan*)
+
+(* What a WriteCells call does to a snapshot whose cells are given:
+     "Writes"   the writes for the front end
+     "Edited"   the ExpressionUUIDs of the cells that read differently afterwards
+     "Written"  those of the cells that the text names or makes, which evaluate evaluates
+     "Touched"  the entries of the cells that the writes replace, move or delete, which must not be locked
+     "Changed", "Moved", "Deleted"  their ids, for the result
+     "New"      ExpressionUUID -> "id (styles)" of the new cells, for the result
+     "Order"    the ExpressionUUIDs of the notebook's cells as the writes so far leave them
+     "Place"    the number of cells that the next new cell comes after (the end of the notebook at first)
+     "Anchor"   the ExpressionUUID of the cell of the notebook that the place is after (planAfter), or None
+     "Placed"   the cells that the writes put somewhere: ExpressionUUID -> the anchor that the place was after
+   cellsFromString reads the whole text and gives a record for each cell tag, with the attributes after, before and
+   delete as the tag has them. It asks for the cell of each id, which is read then (old has the entries by their ids).
+   Everything is converted before anything is written, so a text that is refused ends the tool with nothing
+   written. *)
+writePlan // beginDefinition;
+
+writePlan[ record_Association, cells_List, text_String ] := Module[ { old = <| |>, tags },
+    tags = convertCells[ text, Function[ id, (old[ id ] = namedEntry[ record, cells, id ])[ "Cell" ] ] ];
+    Fold[
+        planTag[ record, cells, #1, #2, Lookup[ old, #2[ "ID" ], None ] ] &,
+        <|
+            "Writes" -> { }, "Edited" -> { }, "Written" -> { }, "Touched" -> { }, "Changed" -> { }, "New" -> <| |>, "Moved" -> { },
+            "Deleted" -> { }, "Order" -> cells[[ All, "UUID" ]], "Place" -> Length @ cells, "Anchor" -> None, "Placed" -> <| |>
+        |>,
+        tags
+    ]
+];
+
+writePlan // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*planTag*)
+
+(* The plan with what one cell tag does. tag is its record of cellsFromString, and entry the cell that its id names
+   (None for a tag without an id). *)
+planTag // beginDefinition;
+
+(* A new cell *)
+planTag[ record_Association, cells_List, plan_Association, tag_Association, None ] :=
+    With[ { name = "Cell tag " <> ToString @ tag[ "Tag" ] <> " (a new cell)" },
+        Which[
+            KeyExistsQ[ tag[ "Extra" ], "delete" ],
+                toolError[ "`1` has delete, which needs the id of a cell. Nothing was written.", name ],
+            generatedStyleQ @ tag,
+                toolError[ $generatedCellText, name ],
+            True,
+                planNew[ planPlace[ record, cells, plan, tag[ "Extra" ], None ], tag[ "Cell" ] ]
+        ]
+    ];
+
+(* A cell of the notebook. A tag without a body gives the styles and options of the cell, which keeps its content.
+   A cell that reads as it did is left as it is, so that it stays the user's own cell (it is read without a record of
+   it, since it is not the cell of the notebook). *)
+planTag[ record_Association, cells_List, plan_Association, tag_Association, entry_Association ] :=
+    Module[ { id, uuid, extra, body, cell, edited, moved },
+        id    = entry[ "ID" ];
+        uuid  = entry[ "UUID" ];
+        extra = tag[ "Extra" ];
+        body  = MatchQ[ tag[ "Cell" ], _Cell ];
+        (* What an evaluation makes is not written as text: *)
+        If[ body && (generatedCellQ @ entry[ "Cell" ] || generatedStyleQ @ tag), toolError[ $generatedCellText, id ] ];
+        (* A body replaces all of a cell, so the model has to have seen all of it (seeCells): *)
+        If[ body && ! MemberQ[ $cellTables[ $tableKey, "Seen" ], id ], toolError[ $notSeenText, id ] ];
+        Which[
+            ! MemberQ[ plan[ "Order" ], uuid ],
+                toolError[
+                    "`1` is written after this call deleted it. To move a cell, do not delete it: \
+<cell id='`1`' before='c5'/> (or after=) moves it with its content. Nothing was written.",
+                    id
+                ],
+
+            MatchQ[ ToLowerCase @ Lookup[ extra, "delete", "false" ], "true" | "yes" | "1" ],
+                <| planRemove[ plan, uuid ], "Deleted" -> Append[ plan[ "Deleted" ], id ], "Touched" -> Append[ plan[ "Touched" ], entry ] |>,
+
+            True,
+                cell = withUUID[
+                    Replace[
+                        tag[ "Cell" ],
+                        _Missing :> Cell[ First @ entry[ "Cell" ], Sequence @@ tag[ "Attributes", "Styles" ], Sequence @@ tag[ "Attributes", "Options" ] ]
+                    ],
+                    uuid
+                ];
+                (* a cell that is only moved is no edit *)
+                edited = Block[ { $cellOriginals = None }, cellText[ cell, Infinity ] ] =!= entry[ "Text" ];
+                (* the plan with the cell at the place that the tag names; a cell that is there already is not moved *)
+                moved  = If[ IntersectingQ[ Keys @ extra, { "after", "before" } ],
+                    planInsert[ planPlace[ record, cells, planRemove[ plan, uuid ], extra, entry ], { cell } ],
+                    plan
+                ];
+                Which[
+                    moved[ "Order" ] =!= plan[ "Order" ],
+                        <|
+                            moved,
+                            "Edited"  -> Join[ plan[ "Edited" ], If[ edited, { uuid }, { } ] ],
+                            "Changed" -> Join[ plan[ "Changed" ], If[ edited, { id }, { } ] ],
+                            "Moved"   -> Append[ plan[ "Moved" ], id ],
+                            "Touched" -> Append[ plan[ "Touched" ], entry ]
+                        |>,
+                    edited,
+                        planAfter[
+                            record,
+                            cells,
+                            <|
+                                plan,
+                                "Writes"  -> Append[ plan[ "Writes" ], { "Replace", uuid, cell } ],
+                                "Edited"  -> Append[ plan[ "Edited" ], uuid ],
+                                "Changed" -> Append[ plan[ "Changed" ], id ],
+                                "Touched" -> Append[ plan[ "Touched" ], entry ],
+                                "Written" -> Append[ plan[ "Written" ], uuid ]
+                            |>,
+                            entry,
+                            True
+                        ],
+                    True,
+                        planAfter[ record, cells, <| plan, "Written" -> Append[ plan[ "Written" ], uuid ] |>, entry, True ]
+                ]
+        ]
+    ];
+
+planTag // endDefinition;
+
+$notSeenText = "\
+`1` has not been shown whole in this chat (only cut, or as a line of an outline or a search), so its content is not \
+replaced: read it with ReadCells first (full: true shows a long cell whole), or change a part of it with EditInCell. \
+Nothing was written.";
+
+
+(* Whether a tag gives its cell the style of a generated cell *)
+generatedStyleQ // beginDefinition;
+generatedStyleQ[ tag_Association ] := AnyTrue[ tag[ "Attributes", "Styles" ], MatchQ[ $$generatedCellStyle ] ];
+generatedStyleQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*Plan steps*)
+
+(* A new cell at the place of the plan. It gets its ExpressionUUID here, so that its id is known at once. *)
+planNew // beginDefinition;
+
+planNew[ plan_Association, cell_Cell ] := With[ { new = withUUID[ cell, CreateUUID[ ] ] },
+    (* the model wrote the cell, so it has seen all of it *)
+    seeCells @ { $cellIDFunction @ new };
+    <|
+        planInsert[ plan, { new } ],
+        "New" -> <| plan[ "New" ], cellUUID @ new -> $cellIDFunction @ new <> " (" <> StringRiffle[ cellStyles @ new, ", " ] <> ")" |>
+    |>
+];
+
+planNew // endDefinition;
+
+
+planInsert // beginDefinition;
+
+planInsert[ plan_Association, new: { __Cell } ] := With[
+    { order = plan[ "Order" ], place = plan[ "Place" ], uuids = cellUUID /@ new },
+    <|
+        plan,
+        "Writes"  -> Append[
+            plan[ "Writes" ],
+            { "Insert", Sequence @@ If[ place === 0, { First[ order, None ], "Before" }, { order[[ place ]], "After" } ], new }
+        ],
+        "Order"   -> Join[ Take[ order, place ], uuids, Drop[ order, place ] ],
+        "Place"   -> place + Length @ new,
+        "Placed"  -> <| plan[ "Placed" ], Thread[ uuids -> plan[ "Anchor" ] ] |>,
+        "Written" -> Join[ plan[ "Written" ], uuids ]
+    |>
+];
+
+planInsert // endDefinition;
+
+
+planRemove // beginDefinition;
+
+planRemove[ plan_Association, uuid_String ] := With[ { position = First @ FirstPosition[ plan[ "Order" ], uuid ] },
+    <|
+        plan,
+        "Writes" -> Append[ plan[ "Writes" ], { "Delete", { uuid } } ],
+        "Order"  -> Delete[ plan[ "Order" ], position ],
+        "Place"  -> plan[ "Place" ] - Boole[ position <= plan[ "Place" ] ]
+    |>
+];
+
+planRemove // endDefinition;
+
+
+(* The plan with the place that the attributes after and before of a tag name, if it has one of them. entry is the
+   cell of the notebook that is placed (None for a new cell), which is taken out of the plan before. *)
+planPlace // beginDefinition;
+
+planPlace[ record_Association, cells_List, plan_Association, extra_Association, entry_ ] := Fold[
+    Function[ { p, name },
+        With[ { anchor = cells[[ cellPosition[ record, cells, extra @ name ] ]] },
+            Which[
+                entry =!= None && anchor[ "UUID" ] === entry[ "UUID" ],
+                    toolError[
+                        "`1` names itself as its place (`2`='`1`'). To change a cell where it is, leave `2` out; to \
+move it, name another cell. Nothing was written.",
+                        entry[ "ID" ], name
+                    ],
+                ! MemberQ[ p[ "Order" ], anchor[ "UUID" ] ],
+                    toolError[
+                        "`1` is not in the notebook where `2` names it: this call deletes or moves it. Nothing was written.",
+                        extra @ name, name
+                    ],
+                name === "before",
+                    <| p, "Place" -> First @ FirstPosition[ p[ "Order" ], anchor[ "UUID" ] ] - 1, "Anchor" -> None |>,
+                True,
+                    planAfter[ record, cells, p, anchor, entry === None || ! generatedCellQ @ entry[ "Cell" ] ]
+            ]
+        ]
+    ],
+    plan,
+    Intersection[ Keys @ extra, { "after", "before" } ]
+];
+
+planPlace // endDefinition;
+
+
+(* The plan with its place after a cell of the notebook: after the cell and what follows it there already, which is
+   - its outputs (the generated cells right after it), so that a cell is not put between a cell and its outputs
+     (outputs is False for a generated cell that is placed, which belongs right after the cell), and
+   - the cells that this call has already placed after it, so that cells that name the same place keep the order of
+     the text. *)
+planAfter // beginDefinition;
+
+planAfter[ record_Association, cells_List, plan_Association, cell_Association, outputs: True | False ] := With[
+    {
+        uuid     = cell[ "UUID" ],
+        position = First @ FirstPosition[ plan[ "Order" ], cell[ "UUID" ] ],
+        skipped  = If[ outputs, outputEntries[ record, cell, cells ][[ All, "UUID" ]], { } ]
+    },
+    <|
+        plan,
+        "Place"  -> position + LengthWhile[ Drop[ plan[ "Order" ], position ], MemberQ[ skipped, # ] || plan[ "Placed", # ] === uuid & ],
+        "Anchor" -> uuid
+    |>
+];
+
+planAfter // endDefinition;
+
+
+(* The outputs of a cell: the generated cells right after it among the cells of the notebook, which are read one at a
+   time. A cell that the user excluded from chats is not replaced, so the outputs end before it. *)
+outputEntries // beginDefinition;
+
+outputEntries[ record_Association, entry_Association, cells_List ] := Module[ { outputs, next },
+    outputs = { };
+    Do[
+        next = First @ cellEntries[ record, { cell } ];
+        If[ generatedCellQ @ next[ "Cell" ] && ! chatExcludedQ @ next[ "Cell" ], AppendTo[ outputs, next ], Break[ ] ],
+        { cell, Drop[ cells, First @ FirstPosition[ cells[[ All, "UUID" ]], entry[ "UUID" ] ] ] }
+    ];
+    outputs
+];
+
+outputEntries // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*ShowChanges*)
+
+(* Shows the source as a comparison against the snapshot (in the source notebook itself; a source file is opened; a
+   new notebook is shown as it is), then closes the snapshot (the front end deletes its file). If the comparison can't
+   be shown, the snapshot stays open. The comparison applies the edits to the notebook, and the cells that then show a
+   change are what the user accepts or rejects: if there is none, the result says that. *)
+showChanges // beginDefinition;
+
+showChanges[ args_Association ] := Module[ { handle, record, source, title, result },
+    handle = resolveNotebook[ args[ "notebook" ], False ];
+    record = $snapshots @ handle;
+    source = record[ "Source" ];
+    title  = quoted @ inlineText @ record[ "Title" ];
+    If[ record[ "Edits" ] === None,
+        Return[ handle <> " has no edits to show. CloseNotebook closes it.", Module ]
+    ];
+    (* The user may have excluded the notebook from chats since the snapshot was made: *)
+    If[ Replace[ source, { nb_NotebookObject :> TrueQ @ notebookFrontEnd[ "Excluded", nb ], file_String :> excludedFileQ @ file, _ -> False } ],
+        toolError[ $excludedNotebookText <> " `2` is still open: close it with CloseNotebook.", title, handle ]
+    ];
+    (* A new notebook is shown whole, and so is a snapshot of which the changed cells alone do not do: *)
+    result = Replace[
+        If[ source === None, None, notebookFrontEnd[ "ShowDiff", source, record[ "Notebook" ], record[ "Edits" ] ] ],
+        None | Failure[ "InvalidSnapshot", _ ] :> notebookFrontEnd[ "ShowDiff", source, withRecord[ record, comparedNotebook ] ]
+    ];
+    If[ FailureQ @ result,
+        toolError[
+            "The changes of `1` could not be shown: `2` It is still open.",
+            notebookLabel @ record,
+            Replace[ failureMessage @ result, "" -> "the comparison failed." ]
+        ]
+    ];
+    closeSnapshot @ handle;
+    StringJoin[
+        Which[
+            source === None,
+                "The user now sees the new notebook.",
+            result === 0,
+                title <> " shows no diff, since no cell differs in content, style or options. A change of cell tags is \
+applied as it is, a change of a cell label alone is not applied, and any other change the notebook already had. The \
+user has nothing to accept or reject.",
+            True,
+                "The user now sees " <> title <> " as a diff against your edits, and accepts or rejects each change there."
+        ],
+        " ", handle, " is closed."
+    ]
+];
+
+showChanges // endDefinition;
+
+
+(* What the source of a snapshot is compared against: the cells of the snapshot in their order, as a Notebook
+   expression whose cells have their ExpressionUUIDs. A cell of an open source that no call changed is read from the
+   source, so that it compares as unchanged: the snapshot's copy of it was saved and opened again, which can group the
+   boxes of code differently.
+   CellDiff does not mark a cell that only moved, and its Reject All leaves such a cell where it is. So a moved cell is
+   given to it as another cell (movedCell), which it shows as a cell deleted at the old place and one inserted at the
+   new place. The moved cells are those outside of the longest run of cells that both notebooks have in the same order.
+   Known gaps: the cells of a file that is not open are all the snapshot's. The expression has no cell groups, so a
+   comparison that rewrites the whole notebook (CellDiff does that for moved cells, or if most cells changed) leaves
+   closed groups open. *)
+comparedNotebook // beginDefinition;
+
+comparedNotebook[ record_Association ] := Module[ { cells, uuids, source, own, kept, read, order, moved },
+    cells  = notebookCells @ record;
+    uuids  = cells[[ All, "UUID" ]];
+    (* own: the cells of an open source that the snapshot has too, in the order of the source; kept: those of them that
+       no call changed, read from the source *)
+    { own, kept } = If[ MatchQ[ record[ "Source" ], _NotebookObject ],
+        source = <| record, "Notebook" -> record[ "Source" ] |>;
+        With[ { entries = Select[ notebookCells @ source, MemberQ[ uuids, #[ "UUID" ] ] & ] },
+            { entries[[ All, "UUID" ]], cellEntries[ source, Select[ entries, ! MemberQ[ record[ "Edits" ], #[ "UUID" ] ] & ] ] }
+        ],
+        { { }, { } }
+    ];
+    read  = cellEntries[ record, Select[ cells, ! MemberQ[ kept[[ All, "UUID" ]], #[ "UUID" ] ] & ] ];
+    order = DeleteMissing @ Lookup[ AssociationThread[ own -> Range @ Length @ own ], uuids ];
+    moved = own[[ Complement[ order, LongestOrderedSequence @ order ] ]];
+    Notebook[
+        If[ MemberQ[ moved, #[ "UUID" ] ], movedCell @ #[ "Cell" ], withUUID[ #[ "Cell" ], #[ "UUID" ] ] ] & /@
+            Lookup[ Association[ #[ "UUID" ] -> # & /@ Join[ kept, read ] ], uuids ]
+    ]
+];
+
+comparedNotebook // endDefinition;
+
+
+(* A moved cell as CellDiff gets it: with another ExpressionUUID, so that it is not paired with the cell at the old
+   place by its identity, and with CellDiff's tag of a cell that shows a change, so that it is not paired with it by
+   its content either (the tags of a cell are part of what CellDiff aligns cells by). CellDiff gives an inserted cell
+   that tag anyway, and takes it off when the user resolves the change. *)
+movedCell // beginDefinition;
+
+movedCell[ cell_Cell ] := Join[
+    DeleteCases[ cell, (ExpressionUUID | CellObject | CellTags) -> _ ],
+    Cell[ CellTags -> Flatten @ { Cases[ cell, (CellTags -> tags_) :> tags ], $diffTag }, ExpressionUUID -> CreateUUID[ ] ]
+];
+
+movedCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

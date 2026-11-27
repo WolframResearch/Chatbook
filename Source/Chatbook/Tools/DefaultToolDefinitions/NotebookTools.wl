@@ -21,21 +21,29 @@ $notebookToolShortNames = <|
     "GetOutline"     -> "nb_outline",
     "ReadCells"      -> "nb_cells",
     "SearchNotebook" -> "nb_find",
+    "EditInCell"     -> "nb_edit",
+    "WriteCells"     -> "nb_write",
+    "ShowChanges"    -> "nb_show",
     "CloseNotebook"  -> "nb_close"
 |>;
+
+(* The machine names that differ from toolDefaultData's: toMachineToolName gives "edit_incell" for EditInCell, whose
+   canonical name "EditIncell" is not its key, so getToolByName would not find it *)
+$notebookToolNames = <| "EditInCell" -> "edit_in_cell" |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Specs*)
 
 (* The notebook editing tools ($notebookToolSpecs: ListNotebooks, OpenNotebook, GetOutline, ReadCells, SearchNotebook,
-   CloseNotebook). They read the user's notebooks, so they are only enabled in the
+   EditInCell, WriteCells, ShowChanges, CloseNotebook). They edit the user's notebooks, so they are only enabled in the
    sidebar and the Notebook Assistant window, on 16.0+ with a front end that makes snapshots (the cheap checks
    first). *)
 KeyValueMap[
     Function[ { name, spec },
         $defaultChatTools0[ name ] = <|
             toolDefaultData[ name ],
+            "Name"               -> Lookup[ $notebookToolNames, name, toMachineToolName @ name ],
             "ShortName"          -> $notebookToolShortNames[ name ],
             (* TODO: give these tools their own icons instead of reusing the ones from CreateNotebook *)
             "Icon"               -> $createNotebookIcon,
