@@ -30,7 +30,7 @@ VerificationTest[
 VerificationTest[
     (* CI runs every test file in one kernel and one context: these helpers are only defined here *)
     ClearAll[
-        csTag, csExact, csBody, csExactBody, csCode
+        csTag, csExact, csBody, csExactBody, csCode, csText, csStores, csKey, csFormula
     ];
 
     (* Cells in cell tags, with lossy and with exact bodies *)
@@ -50,6 +50,30 @@ VerificationTest[
 
     (* The exact body of an Input cell with these boxes, and of a Text cell with these items *)
     csCode[ boxes_ ] := csExactBody @ Cell[ BoxData @ boxes, "Input" ];
+    csText[ items_ ] := csExactBody @ Cell[ TextData @ items, "Text" ];
+
+    (* Evaluates with empty stores *)
+    csStores // Attributes = { HoldFirst };
+    csStores[ eval_ ] := Block[
+        {
+            Wolfram`Chatbook`Common`$attachments         = <| |>,
+            Wolfram`Chatbook`Common`$notebookAttachments = <| |>,
+            Wolfram`Chatbook`Common`$cellOriginals       = <| |>
+        },
+        eval
+    ];
+
+    (* The key of the URI in a body *)
+    csKey[ body_String ] := First[ StringCases[ body, "://" ~~ key: ("content-" ~~ WordCharacter..) ~~ ")" :> key ], None ];
+
+    (* An inline formula of the TeX input assistant that was typed as this input *)
+    csFormula[ input_String ] := Cell @ BoxData @ FormBox[
+        TemplateBox[
+            <| "boxes" -> FormBox[ StyleBox[ "x", "TI" ], TraditionalForm ], "errors" -> { }, "input" -> input, "state" -> "Boxes" |>,
+            "TeXAssistantTemplate"
+        ],
+        TraditionalForm
+    ];
 
     True,
     True,
@@ -185,6 +209,29 @@ VerificationTest[
 (* ::Subsection::Closed:: *)
 (*Without Tags*)
 
+(* Without cell tags, "PreserveBoxes" gives exact bodies with the decoration of the default markdown around them: *)
+VerificationTest[
+    CellToString[
+        Notebook @ {
+            Cell[ "Stuff", "Section" ],
+            Cell[ TextData @ { "An ", StyleBox[ "x", FontColor -> RGBColor[ 1, 0, 0 ] ] }, "Item" ],
+            Cell[ BoxData @ RowBox @ { "a", "+", SuperscriptBox[ "b", "2" ] }, "Input", CellLabel -> "In[1]:=" ],
+            Cell[ BoxData @ FormBox[ RowBox @ { "a", "=", "b" }, TraditionalForm ], "DisplayFormula" ],
+            Cell[ "", "Delimiter" ]
+        },
+        "PreserveBoxes" -> True
+    ],
+    StringJoin[
+        "## Stuff\n\n",
+        "* An <RawBoxes>StyleBox[\"x\", FontColor -> RGBColor[1, 0, 0]]</RawBoxes>\n\n",
+        "```wl\nIn[1]:= a + <RawBoxes>SuperscriptBox[\"b\", \"2\"]</RawBoxes>\n```\n\n",
+        "$$a=b$$\n\n",
+        "---"
+    ],
+    SameTest -> MatchQ,
+    TestID   -> "PreserveBoxes-WithoutTags"
+]
+
 (* The default of "PreserveBoxes" is a hook for callers, as the one of "IncludeXML" is: *)
 VerificationTest[
     Block[ { Wolfram`Chatbook`Common`$preserveCellBoxes = True },
@@ -226,10 +273,10 @@ VerificationTest[
         }
     ],
     {
-        { "Stuff", "<RawBoxes>\"Stuff\"</RawBoxes>" },
-        { "Top", "<RawBoxes>\"Top\"</RawBoxes>" },
-        { "First", "<RawBoxes>\"First\"</RawBoxes>" },
-        { "Second", "<RawBoxes>\"Second\"</RawBoxes>" },
+        { "Stuff", "Stuff" },
+        { "Top", "Top" },
+        { "First", "First" },
+        { "Second", "Second" },
         { "1 + 1", "1 + 1" },
         { "2", "2" },
         { "", "" },
@@ -598,7 +645,716 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Exact Text*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Plain Text*)
+VerificationTest[
+    csExactBody @ Cell[ "a*b `c` $d | e\\f [x](y) [1] f[x] snake_case _x_ ~~q~~ ~5 # h", "Text" ],
+    "a\\*b \\`c\\` \\$d \\| e\\\\f [x\\](y) [1] f[x] snake_case \\_x\\_ \\~\\~q\\~\\~ ~5 # h",
+    SameTest -> MatchQ,
+    TestID   -> "Text-MarkdownEscapes"
+]
+
+VerificationTest[
+    csExactBody @ Cell[ "<cell> </cell> <RawBoxes> <ToBoxes form='x'> <selection> <!attachment://content-abcde!> a<b &lt; &amp; &#65; &#x41; R&D; a & b", "Text" ],
+    "&lt;cell> &lt;/cell> &lt;RawBoxes> &lt;ToBoxes form='x'> &lt;selection> &lt;!attachment://content-abcde!> a<b &amp;lt; &amp;amp; &amp;#65; &amp;#x41; R&amp;D; a & b",
+    SameTest -> MatchQ,
+    TestID   -> "Text-TagAndEntityEscapes"
+]
+
+VerificationTest[
+    csText @ { "a \[FormalX] ", "\[Alpha]", " \[Rule] b" },
+    "a \\[FormalX] \[Alpha] \\[Rule] b",
+    SameTest -> MatchQ,
+    TestID   -> "Text-PrivateUseCharacters"
+]
+
+(* A character that is not in the private use area is written as itself, whatever its name is: a typographic
+   apostrophe (U+2019), a dash and typographic quotes stay those characters, in text and in code. *)
+VerificationTest[
+    With[ { text = FromCharacterCode @ { 105, 116, 8217, 115, 32, 8211, 32, 8220, 120, 8221 } },
+        {
+            csExactBody @ Cell[ text, "Text" ] === text,
+            csCode @ RowBox @ { "f", "[", "\"" <> text <> "\"", "]" } === "f[\"" <> text <> "\"]"
+        }
+    ],
+    { True, True },
+    SameTest -> MatchQ,
+    TestID   -> "Text-OtherCharactersAsTheyAre"
+]
+
+(* Adjacent strings are one text, so what they make together is escaped: *)
+VerificationTest[
+    csText @ { "[x]", "(y) ~", "~z" },
+    "[x\\](y) \\~\\~z",
+    SameTest -> MatchQ,
+    TestID   -> "Text-AdjacentStrings"
+]
+
+(* Linear syntax and control characters can't be in the text, so that part of the string is in <RawBoxes>: *)
+VerificationTest[
+    csText @ { "ab \!\(\*SuperscriptBox[x, 2]\) cd" <> FromCharacterCode[ 7 ] <> " ef" },
+    "ab <RawBoxes>\"\\!\\(\\*SuperscriptBox[x, 2]\\) cd\\007\"</RawBoxes> ef",
+    SameTest -> MatchQ,
+    TestID   -> "Text-RawCharacters"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Styles*)
+VerificationTest[
+    csText @ {
+        StyleBox[ "bold", FontWeight -> "Bold" ],
+        " ",
+        StyleBox[ "italic", FontSlant -> Italic ],
+        " ",
+        StyleBox[ "both", FontWeight -> Bold, FontSlant -> "Italic" ],
+        " ",
+        StyleBox[ "struck", FontVariations -> { "StrikeThrough" -> True } ],
+        " ",
+        StyleBox[ "all*", StripOnInput -> False, FontVariations -> { "StrikeThrough" -> True }, FontSlant -> Italic, FontWeight -> Bold ]
+    },
+    "**bold** *italic* ***both*** ~~struck~~ ~~***all\\****~~",
+    SameTest -> MatchQ,
+    TestID   -> "Text-Styles"
+]
+
+(* A style that markdown can't say is in <RawBoxes>, whole: *)
+VerificationTest[
+    csText @ {
+        StyleBox[ "red", FontColor -> RGBColor[ 1, 0, 0 ] ],
+        StyleBox[ "big", FontWeight -> "Bold", FontSize -> 20 ],
+        StyleBox[ "two\nlines", FontWeight -> "Bold" ],
+        StyleBox[ "a~b", FontVariations -> { "StrikeThrough" -> True } ],
+        StyleBox[ RowBox @ { "x", "y" }, FontSlant -> "Italic" ]
+    },
+    StringJoin[
+        "<RawBoxes>StyleBox[\"red\", FontColor -> RGBColor[1, 0, 0]]</RawBoxes>",
+        "<RawBoxes>StyleBox[\"big\", FontWeight -> \"Bold\", FontSize -> 20]</RawBoxes>",
+        "<RawBoxes>StyleBox[\"two\\nlines\", FontWeight -> \"Bold\"]</RawBoxes>",
+        "<RawBoxes>StyleBox[\"a~b\", FontVariations -> {\"StrikeThrough\" -> True}]</RawBoxes>",
+        "<RawBoxes>StyleBox[RowBox[{\"x\", \"y\"}], FontSlant -> \"Italic\"]</RawBoxes>"
+    ],
+    SameTest -> MatchQ,
+    TestID   -> "Text-StylesAsRawBoxes"
+]
+
+(* Emphasis opens before and closes after a character that is not white space, so text with a space at an end is not
+   written with markers: *)
+VerificationTest[
+    csText @ { StyleBox[ "Note: ", FontWeight -> "Bold" ], StyleBox[ " x", FontSlant -> "Italic" ], StyleBox[ "a b", FontWeight -> "Bold" ] },
+    StringJoin[
+        "<RawBoxes>StyleBox[\"Note: \", FontWeight -> \"Bold\"]</RawBoxes>",
+        "<RawBoxes>StyleBox[\" x\", FontSlant -> \"Italic\"]</RawBoxes>",
+        "**a b**"
+    ],
+    SameTest -> MatchQ,
+    TestID   -> "Text-EmphasisWithSpacesAtItsEnds"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Links*)
+VerificationTest[
+    csText @ {
+        ButtonBox[ "Wolfram", BaseStyle -> "Hyperlink", ButtonData -> { URL[ "https://www.wolfram.com" ], None }, ButtonNote -> "https://www.wolfram.com" ],
+        " ",
+        ButtonBox[ "Plot", BaseStyle -> "Link", ButtonData -> "paclet:ref/Plot" ],
+        " ",
+        Cell @ BoxData @ TemplateBox[ { "site", "https://example.com/a" }, "HyperlinkURL" ],
+        " ",
+        TemplateBox[ { "site", { URL[ "https://example.com/b" ], None }, "https://example.com/b", "HyperlinkActionRecycled", { "HyperlinkActive" }, BaseStyle -> { "Hyperlink" } }, "HyperlinkTemplate" ],
+        " ",
+        Cell[ BoxData @ TemplateBox[ { Cell @ TextData @ "Table", "paclet:ref/Table" }, "RefLink", BaseStyle -> { "InlineFormula" } ], "InlineFormula" ],
+        " ",
+        Cell @ BoxData @ TemplateBox[ { "Sin", "paclet:ref/Sin", "https://reference.wolfram.com/language/ref/Sin.html" }, "TextRefLink" ]
+    },
+    StringJoin[
+        "[Wolfram](https://www.wolfram.com) [Plot](paclet:ref/Plot) [site](https://example.com/a) ",
+        "[site](https://example.com/b) [Table](paclet:ref/Table) [Sin](paclet:ref/Sin)"
+    ],
+    SameTest -> MatchQ,
+    TestID   -> "Text-Links"
+]
+
+(* A link whose label would not read back as one label is in <RawBoxes>. A backslash in a label escapes the character
+   after it, so a label can't end with one: *)
+VerificationTest[
+    csText @ {
+        ButtonBox[ "a]b", BaseStyle -> "Hyperlink", ButtonData -> { URL[ "https://example.com" ], None } ],
+        ButtonBox[ "a\\", BaseStyle -> "Link", ButtonData -> "paclet:ref/Plot" ],
+        ButtonBox[ "a_b", BaseStyle -> "Link", ButtonData -> "paclet:ref/Plot" ]
+    },
+    StringJoin[
+        "<RawBoxes>ButtonBox[\"a]b\", BaseStyle -> \"Hyperlink\", ButtonData -> {URL[\"https://example.com\"], None}]</RawBoxes>",
+        "<RawBoxes>ButtonBox[\"a\\\\\", BaseStyle -> \"Link\", ButtonData -> \"paclet:ref/Plot\"]</RawBoxes>",
+        "[a_b](paclet:ref/Plot)"
+    ],
+    SameTest -> MatchQ,
+    TestID   -> "Text-LinkAsRawBoxes"
+]
+
+(* The label of a link keeps the spaces at its ends: *)
+VerificationTest[
+    csText @ { "Read the", ButtonBox[ " research ", BaseStyle -> "Hyperlink", ButtonData -> { URL[ "https://example.com" ], None } ], "on this." },
+    "Read the[ research ](https://example.com)on this.",
+    SameTest -> MatchQ,
+    TestID   -> "Text-LinkLabelSpaces"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Inline Code*)
+VerificationTest[
+    csText @ {
+        Cell[ BoxData @ TemplateBox[ { Cell[ "foo[x]", Background -> None ] }, "ChatCodeInlineTemplate" ], "ChatCodeActive" ],
+        " ",
+        StyleBox[ "x", "TI" ],
+        " ",
+        Cell[ BoxData @ RowBox @ { "Plot", "[", RowBox @ { "x", ",", RowBox @ { "y", "\[Rule]", "1" } }, "]" }, "InlineFormula" ],
+        " ",
+        Cell[ "Global`x", "InlineCode" ]
+    },
+    "``foo[x]`` ``x`` ``Plot[x, y -> 1]`` ``Global`x``",
+    SameTest -> MatchQ,
+    TestID   -> "Text-InlineCode"
+]
+
+(* Inline code that is more than code, or that the backticks can't hold, is in <RawBoxes>: *)
+VerificationTest[
+    csText @ { Cell[ BoxData @ SuperscriptBox[ "x", "2" ], "InlineFormula" ], StyleBox[ "a``b", "InlineCode" ] },
+    StringJoin[
+        "<RawBoxes>Cell[BoxData[SuperscriptBox[\"x\", \"2\"]], \"InlineFormula\"]</RawBoxes>",
+        "<RawBoxes>StyleBox[\"a``b\", \"InlineCode\"]</RawBoxes>"
+    ],
+    SameTest -> MatchQ,
+    TestID   -> "Text-InlineCodeAsRawBoxes"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Math*)
+
+(* A formula that was made from LaTeX is written as that LaTeX: *)
+VerificationTest[
+    csText @ {
+        "so ",
+        Cell @ BoxData @ FormBox[
+            TemplateBox[
+                <| "boxes" -> FormBox[ "x", TraditionalForm ], "errors" -> { }, "input" -> "\\lim_{x \\to 2} f(x) = 5", "state" -> "Boxes" |>,
+                "TeXAssistantTemplate"
+            ],
+            TraditionalForm
+        ],
+        "."
+    },
+    "so $$\\lim_{x \\to 2} f(x) = 5$$.",
+    SameTest -> MatchQ,
+    TestID   -> "Text-MathFromTeX"
+]
+
+(* Another TraditionalForm formula is converted if it is only layout. This also has to work without a front end, where
+   exporting to "TeXFragment" gives an empty formula: *)
+VerificationTest[
+    csText @ {
+        Cell[
+            BoxData @ FormBox[ RowBox @ { SuperscriptBox[ "x", "2" ], "+", FractionBox[ "1", "2" ] }, TraditionalForm ],
+            FormatType -> TraditionalForm
+        ]
+    },
+    "$$x^2+\\frac{1}{2}$$",
+    SameTest -> MatchQ,
+    TestID   -> "Text-MathFromBoxes"
+]
+
+VerificationTest[
+    csText @ {
+        Cell @ BoxData @ FormBox[ TagBox[ "x", HoldForm ], TraditionalForm ],
+        Cell[ BoxData @ FormBox[ "y", TraditionalForm ], "InlineFormula" ]
+    },
+    StringJoin[
+        "<RawBoxes>Cell[BoxData[FormBox[TagBox[\"x\", HoldForm], TraditionalForm]]]</RawBoxes>",
+        "<RawBoxes>Cell[BoxData[FormBox[\"y\", TraditionalForm]], \"InlineFormula\"]</RawBoxes>"
+    ],
+    SameTest -> MatchQ,
+    TestID   -> "Text-MathAsRawBoxes"
+]
+
+(* The input of the TeX input assistant can be in dollars of its own, which are not written: *)
+VerificationTest[
+    csText @ { "from 1 to ", csFormula[ "$n$" ], " or ", csFormula[ "$$x<y$$" ], " or ", csFormula[ "$ {n\\choose 9} $" ] },
+    "from 1 to $$n$$ or $$x<y$$ or $$ {n\\choose 9} $$",
+    SameTest -> MatchQ,
+    TestID   -> "Text-MathWithDollarSigns"
+]
+
+(* LaTeX that would make a "$$" with the dollar signs around it can't be written between them: input with a dollar at
+   one end only, and input that is more than one formula: *)
+VerificationTest[
+    csText @ { csFormula[ "$x" ], csFormula[ "x$" ], csFormula[ "$a$ and $b$" ] },
+    _String? (StringCount[ #, "<RawBoxes>Cell[BoxData[FormBox[TemplateBox[<|\"boxes\" -> " ] === 3 && StringFreeQ[ #, "$$" ] &),
+    SameTest -> MatchQ,
+    TestID   -> "Text-MathWithOtherDollarSigns"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Boxes in Cells of Text*)
+
+(* A cell of text whose content is boxes (a formula, a table) has the body that the boxes would have as an inline cell
+   in text, and is written from it: *)
+VerificationTest[
+    {
+        csExactBody @ Cell[ BoxData @ FormBox[ RowBox @ { "a", "=", "b" }, TraditionalForm ], "DisplayFormula" ],
+        csExactBody @ Cell[ BoxData @ GridBox @ { { SqrtBox[ "1" ], "2" } }, "Text" ],
+        csExactBody @ Cell[ BoxData @ RowBox @ { "a", "+", "b" }, "Program" ]
+    },
+    { "$$a=b$$", "<RawBoxes>Cell[BoxData[GridBox[{{SqrtBox[\"1\"], \"2\"}}]]]</RawBoxes>", "a + b" },
+    SameTest -> MatchQ,
+    TestID   -> "Body-BoxesInCellsOfText"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Grids of Text*)
+
+(* In a cell of text, a grid whose entries are all plain text is a markdown table, also in the wrappers that TableForm,
+   Grid and Column put around it: with the headings that it has, and with an empty header row otherwise. *)
+VerificationTest[
+    With[
+        {
+            table = TagBox[
+                TagBox[
+                    GridBox[
+                        { { TagBox[ "First", HoldForm ], TagBox[ "Second", HoldForm ], TagBox[ "Third", HoldForm ] }, { "a", "b", "c" }, { "d", "e", "f" } },
+                        GridBoxAlignment -> { "Columns" -> { { Left } }, "Rows" -> { { Baseline } } },
+                        GridBoxDividers -> { "Columns" -> { { False } }, "Rows" -> { False, True, { False }, False } }
+                    ],
+                    { None, OutputFormsDump`HeadedColumns }
+                ],
+                Function[ BoxForm`e$, TableForm[ BoxForm`e$, TableHeadings -> { None, { "First", "Second", "Third" } } ] ]
+            ]
+        },
+        {
+            csExactBody @ Cell[ BoxData @ table, "Text" ],
+            csExactBody @ Cell[ BoxData @ TagBox[ GridBox[ { { "\"a\"", "\"b\"" }, { "\"c\"", "\"d\"" } }, AutoDelete -> False ], "Grid" ], "Text" ],
+            csExactBody @ Cell[ BoxData @ TagBox[ GridBox[ { { "\"a\"" }, { "\"b\"" } }, DefaultBaseStyle -> "Column" ], "Column" ], "Text" ],
+            csExactBody @ Cell[ BoxData @ GridBox @ { { "1", "2" } }, "Text" ]
+        }
+    ],
+    {
+        "| First | Second | Third |\n| :---- | :----- | :---- |\n| a     | b      | c     |\n| d     | e      | f     |",
+        "|   |   |\n| - | - |\n| a | b |\n| c | d |",
+        "|   |\n| - |\n| a |\n| b |",
+        "|   |   |\n| - | - |\n| 1 | 2 |"
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Body-GridOfText"
+]
+
+(* A grid stays boxes if an entry is not plain text on one line, if it has no text at all (the default markdown has no
+   table for it), and in code, where it is a matrix: *)
+VerificationTest[
+    {
+        csExactBody @ Cell[ BoxData @ GridBox @ { { "1", RowBox @ { "-", "2" } } }, "Text" ],
+        csExactBody @ Cell[ BoxData @ GridBox @ { { "a\nb", "c" } }, "Text" ],
+        csExactBody @ Cell[ BoxData @ GridBox @ { { "", "" }, { "", "" } }, "Text" ],
+        csCode @ RowBox @ { "m", "=", GridBox @ { { "1", "2" }, { "3", "4" } } },
+        csCode @ GridBox @ { { "1", "2" }, { "3", "4" } }
+    },
+    {
+        "<RawBoxes>Cell[BoxData[GridBox[{{\"1\", RowBox[{\"-\", \"2\"}]}}]]]</RawBoxes>",
+        "<RawBoxes>Cell[BoxData[GridBox[{{\"a\\nb\", \"c\"}}]]]</RawBoxes>",
+        "<RawBoxes>Cell[BoxData[GridBox[{{\"\", \"\"}, {\"\", \"\"}}]]]</RawBoxes>",
+        "m = <RawBoxes>GridBox[{{\"1\", \"2\"}, {\"3\", \"4\"}}]</RawBoxes>",
+        "<RawBoxes>GridBox[{{\"1\", \"2\"}, {\"3\", \"4\"}}]</RawBoxes>"
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Body-GridAsRawBoxes"
+]
+
+(* An inline cell with such a grid is a table if it is on lines of its own. Anywhere else the text after it would read
+   as part of its last row, so it is boxes there. This also holds for the table that the chat formatter makes. *)
+VerificationTest[
+    With[ { grid = Cell @ BoxData @ TagBox[ GridBox @ { { "\"a\"", "\"b\"" }, { "\"c\"", "\"d\"" } }, "Grid" ] },
+        {
+            csText @ { "A table:\n", grid, "\nand text." },
+            csText @ { grid },
+            csText @ { "A table ", grid, "\nand text." },
+            csText @ { "A table:\n", grid, " and text." },
+            StringCount[ csText @ Append[ FormatMarkdown[ "Before\n\n| Name | Value |\n| --- | --- |\n| a | 1 |" ], " and text." ], "<RawBoxes>Cell[BoxData[" ]
+        }
+    ],
+    {
+        "A table:\n|   |   |\n| - | - |\n| a | b |\n| c | d |\nand text.",
+        "|   |   |\n| - | - |\n| a | b |\n| c | d |",
+        _String? (StringStartsQ[ "A table <RawBoxes>Cell[BoxData[TagBox[GridBox[" ]),
+        _String? (StringMatchQ[ "A table:\n<RawBoxes>Cell[BoxData[TagBox[GridBox[" ~~ __ ~~ "</RawBoxes> and text." ]),
+        1
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Text-GridOfText"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Raw Boxes*)
+VerificationTest[
+    csText @ { "a ", Cell[ BoxData @ RowBox @ { "x", "+", "y" }, "Output", FontSize -> 10 ], " b ", Cell[ "c", "MyStyle" ] },
+    StringJoin[
+        "a <RawBoxes>Cell[BoxData[RowBox[{\"x\", \"+\", \"y\"}]], \"Output\", FontSize -> 10]</RawBoxes>",
+        " b <RawBoxes>Cell[\"c\", \"MyStyle\"]</RawBoxes>"
+    ],
+    SameTest -> MatchQ,
+    TestID   -> "Text-RawBoxes"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Originals*)
+
+(* Reading records what each piece of a body stands for, for the writer (see "Writing Text" and "Writing Code" for
+   what it does with the records). Nothing is recorded unless the caller asks for it, and nothing for a cell without
+   an id: *)
+VerificationTest[
+    {
+        csText @ { StyleBox[ "x", FontWeight -> "Bold" ], StyleBox[ "red", FontColor -> RGBColor[ 1, 0, 0 ] ] },
+        Wolfram`Chatbook`Common`$cellOriginals,
+        csStores @ Block[ { Wolfram`Chatbook`Common`$cellIDFunction = None & },
+            { csExact @ Cell[ TextData @ { StyleBox[ "x", FontWeight -> "Bold" ] }, "Text" ], Wolfram`Chatbook`Common`$cellOriginals }
+        ]
+    },
+    {
+        "**x**<RawBoxes>StyleBox[\"red\", FontColor -> RGBColor[1, 0, 0]]</RawBoxes>",
+        None,
+        { "<cell style='Text'>\n**x**\n</cell>", <| |> }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Originals-NoneByDefault"
+]
+
+(* The ExpressionUUID of an inline cell is left out, so that inline cells that read the same are the same piece: *)
+VerificationTest[
+    csText @ {
+        Cell[ BoxData @ RowBox @ { "f", "[", "x", "]" }, "InlineFormula", ExpressionUUID -> "5ec7a6f0-4a9d-4b62-8d0c-0d4f4a3c2b1a" ],
+        Cell[ BoxData @ RowBox @ { "f", "[", "x", "]" }, "InlineFormula", ExpressionUUID -> "0d4f4a3c-4a9d-4b62-8d0c-5ec7a6f02b1a" ],
+        Cell[ BoxData @ SqrtBox[ "x" ], "InlineFormula", ExpressionUUID -> "8d0c0d4f-4a9d-4b62-8d0c-0d4f4a3c2b1a" ]
+    },
+    "``f[x]````f[x]``<RawBoxes>Cell[BoxData[SqrtBox[\"x\"]], \"InlineFormula\"]</RawBoxes>",
+    SameTest -> MatchQ,
+    TestID   -> "Originals-InlineCellUUIDs"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*URIs*)
+
+(* A graphic is a URI for its boxes, which are kept as they are. They are in $attachments in the form that is made an
+   image for multimodal chats, and reading notes the key: *)
+VerificationTest[
+    csStores @ Module[ { graphics, body, key },
+        graphics = GraphicsBox[ { RGBColor[ 1, 0, 0 ], DiskBox[ { 0, 0 } ] }, ImageSize -> 50 ];
+        body = csCode @ RowBox @ { "ImageResize", "[", RowBox @ { graphics, ",", "100" }, "]" };
+        key = csKey @ body;
+        {
+            body === "ImageResize[![Image](attachment://" <> key <> "), 100]",
+            Wolfram`Chatbook`Common`$attachments[ key ] === With[ { boxes = graphics }, HoldComplete @ RawBoxes @ StyleBox[ boxes, "GraphicsRawBoxes" ] ],
+            Wolfram`Chatbook`Common`graphicsQ @@ Wolfram`Chatbook`Common`$attachments[ key ],
+            Keys @ Wolfram`Chatbook`Common`$notebookAttachments === { key }
+        }
+    ],
+    { True, True, True, True },
+    SameTest -> MatchQ,
+    TestID   -> "URI-Graphics"
+]
+
+(* An inline cell with a graphic is a URI for the cell: *)
+VerificationTest[
+    csStores @ Module[ { cell, body, key },
+        cell = Cell[ BoxData @ GraphicsBox[ { DiskBox[ { 0, 0 } ] }, ImageSize -> 20 ], FontSize -> 10 ];
+        body = csText @ { "see ", cell, " here" };
+        key = csKey @ body;
+        {
+            body === "see ![Image](attachment://" <> key <> ") here",
+            Wolfram`Chatbook`Common`$attachments[ key ] === With[ { boxes = cell }, HoldComplete @ RawBoxes @ StyleBox[ boxes, "GraphicsRawBoxes" ] ]
+        }
+    ],
+    { True, True },
+    SameTest -> MatchQ,
+    TestID   -> "URI-GraphicsInText"
+]
+
+(* Dynamic boxes are a URI for the boxes, which are kept as they are and not interpreted: *)
+VerificationTest[
+    csStores @ Block[ { $csRan = False },
+        Module[ { dynamic, body, key },
+            dynamic = DynamicModuleBox[
+                { },
+                InterpretationBox[ "x", $csRan = True ],
+                Initialization :> ($csRan = True)
+            ];
+            body = csCode @ RowBox @ { "f", "[", dynamic, "]" };
+            key = csKey @ body;
+            {
+                body === "f[![DynamicModuleBox](expression://" <> key <> ")]",
+                Wolfram`Chatbook`Common`$attachments[ key ] === With[ { boxes = dynamic }, HoldComplete @ RawBoxes @ boxes ],
+                $csRan
+            }
+        ]
+    ],
+    { True, True, False },
+    SameTest -> MatchQ,
+    TestID   -> "URI-DynamicBoxes"
+]
+
+(* Boxes are a URI when they are longer than 2000 characters as <RawBoxes>: *)
+VerificationTest[
+    csStores @ Module[ { small, large, bodies },
+        small  = GridBox @ Table[ ToString[ i + j ], { i, 10 }, { j, 10 } ];
+        large  = GridBox @ Table[ ToString[ i + j ], { i, 20 }, { j, 20 } ];
+        bodies = csCode /@ { small, large };
+        {
+            StringStartsQ[ bodies[[ 1 ]], "<RawBoxes>GridBox[" ],
+            StringMatchQ[ bodies[[ 2 ]], "![GridBox](expression://content-" ~~ WordCharacter.. ~~ ")" ],
+            Wolfram`Chatbook`Common`$attachments[ csKey @ bodies[[ 2 ]] ] === With[ { boxes = large }, HoldComplete @ RawBoxes @ boxes ],
+            Length @ Wolfram`Chatbook`Common`$attachments
+        }
+    ],
+    { True, True, True, 1 },
+    SameTest -> MatchQ,
+    TestID   -> "URI-LargeBoxes"
+]
+
+(* What exact reading adds to $attachments is bounded by number and by size: the boxes that were read longest ago are
+   dropped first, and reading boxes again makes them the newest. Other attachments stay. *)
+VerificationTest[
+    csStores @ Module[ { boxes, other, keys },
+        (* GraphicsBox holds its arguments *)
+        boxes = Function[ r, GraphicsBox[ { DiskBox[ { 0, 0 }, r ] } ] ] /@ { 1, 2, 3 };
+        other = csKey @ MakeExpressionURI[ "kept" ];
+        {
+            Block[ { Wolfram`Chatbook`Serialization`Private`$maxNotebookAttachments = 2 },
+                keys = csKey @* csCode /@ boxes[[ { 1, 2, 1, 3 } ]];
+                { keys[[ 1 ]] === keys[[ 3 ]], Keys @ Wolfram`Chatbook`Common`$attachments === { other, keys[[ 3 ]], keys[[ 4 ]] } }
+            ],
+            Block[ { Wolfram`Chatbook`Serialization`Private`$maxNotebookAttachmentBytes = ByteCount @ First @ boxes + 1 },
+                keys = csKey @* csCode /@ boxes;
+                Keys @ Wolfram`Chatbook`Common`$attachments === { other, keys[[ 3 ]] }
+            ]
+        }
+    ],
+    { { True, True }, True },
+    SameTest -> MatchQ,
+    TestID   -> "URI-AttachmentsBound"
+]
+
+(* The default serialization of graphics is not changed by any of this: *)
+VerificationTest[
+    csStores @ {
+        CellToString[ Cell[ BoxData @ GraphicsBox[ { DiskBox[ { 0, 0 } ] } ], "Output" ], "ContentTypes" -> { "Text", "Image" } ],
+        Wolfram`Chatbook`Common`$notebookAttachments
+    },
+    { _String? (StringContainsQ[ "\\!\\(\\*MarkdownImageBox[\"![Image](attachment://content-" ]), <| |> },
+    SameTest -> MatchQ,
+    TestID   -> "URI-DefaultUnchanged"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Automatic*)
+
+(* With "PreserveBoxes" -> Automatic, cells that evaluation made keep the lossy body and its length limit: *)
+VerificationTest[
+    CellToString[
+        Notebook @ {
+            Cell[ BoxData @ RowBox @ { SuperscriptBox[ "x", "2" ], "+", "1" }, "Input", CellLabel -> "In[1]:=" ],
+            Cell[ BoxData @ RowBox @ { SuperscriptBox[ "x", "2" ], "+", "1" }, "Output", CellLabel -> "Out[1]=" ],
+            Cell[ BoxData @ SuperscriptBox[ "y", "2" ], "Print" ],
+            Cell[ BoxData @ SuperscriptBox[ "z", "2" ], "Echo" ],
+            Cell[ BoxData @ TemplateBox[ { "Power", "infy", "\"Infinite expression 1/0 encountered.\"", 2, 1, 1, 123, "Local" }, "MessageTemplate" ], "Message", "MSG" ],
+            Cell[ TextData @ { "A ", StyleBox[ "red", FontColor -> RGBColor[ 1, 0, 0 ] ], " word" }, "ChatOutput" ],
+            Cell[ TextData @ { "A ", StyleBox[ "red", FontColor -> RGBColor[ 1, 0, 0 ] ], " word" }, "Text" ]
+        },
+        "IncludeXML"    -> True,
+        "PreserveBoxes" -> Automatic
+    ],
+    StringJoin[
+        "<cell id='c1' style='Input' CellLabel='In[1]:='>\n<RawBoxes>SuperscriptBox[\"x\", \"2\"]</RawBoxes> + 1\n</cell>\n\n",
+        "<cell id='c2' style='Output' CellLabel='Out[1]='>\nx^2 + 1\n</cell>\n\n",
+        "<cell id='c3' style='Print'>\ny^2\n</cell>\n\n",
+        "<cell id='c4' style='Echo'>\nz^2\n</cell>\n\n",
+        "<cell id='c5' style='Message, MSG'>\nPower::infy: Infinite expression 1/0 encountered.\n</cell>\n\n",
+        "<cell id='c6' style='ChatOutput'>\nA red word\n</cell>\n\n",
+        "<cell id='c7' style='Text'>\nA <RawBoxes>StyleBox[\"red\", FontColor -> RGBColor[1, 0, 0]]</RawBoxes> word\n</cell>"
+    ],
+    SameTest -> MatchQ,
+    TestID   -> "Automatic-GeneratedCellsStayLossy"
+]
+
+VerificationTest[
+    With[ { output = Cell[ BoxData @ RowBox @ Riffle[ ToString /@ Range[ 400 ], "," ], "Output" ] },
+        {
+            StringLength @ CellToString[ output, "IncludeXML" -> True, "PreserveBoxes" -> Automatic ],
+            StringLength @ csExactBody @ output
+        }
+    ],
+    { _Integer? (# < 600 &), 1890 },
+    SameTest -> MatchQ,
+    TestID   -> "Automatic-OutputLengthLimit"
+]
+
+(* In a cell tag, a graphic in a lossy body is an image link to its boxes as in an exact body, whatever the content
+   types are: an image, a plot, a plot with a legend and a graphic in text. The boxes are not interpreted, and reading
+   notes their keys. Without cell tags the lossy body is the default one. *)
+VerificationTest[
+    csStores @ Module[ { image, plot, legended, cells, text, keys },
+        image    = ToBoxes @ Image[ { { { 1., 0., 0. } } } ];
+        plot     = GraphicsBox[ { RGBColor[ 1, 0, 0 ], DiskBox[ { 0, 0 } ] }, ImageSize -> 40 ];
+        legended = TemplateBox[ { plot, "\"legend\"" }, "Legended" ];
+        cells    = {
+            Cell[ BoxData @ image, "Output", CellLabel -> "Out[1]=" ],
+            Cell[ BoxData @ RowBox @ { "{", RowBox @ { plot, ",", "5" }, "}" }, "Output" ],
+            Cell[ BoxData @ legended, "Print" ],
+            Cell[ TextData @ { "A plot: ", Cell @ BoxData @ plot, "." }, "ChatOutput" ],
+            Cell[ BoxData @ RowBox @ { "f", "[", legended, "]" }, "Input" ]
+        };
+        text = CellToString[ Notebook @ cells, "IncludeXML" -> True, "PreserveBoxes" -> Automatic ];
+        keys = StringCases[ text, "![Image](attachment://" ~~ key: (WordCharacter | "-").. ~~ ")" :> key ];
+        {
+            StringReplace[ text, "content-" ~~ WordCharacter.. -> "KEY" ],
+            text === CellToString[ Notebook @ cells, "IncludeXML" -> True, "PreserveBoxes" -> Automatic, "ContentTypes" -> { "Text", "Image" } ],
+            Wolfram`Chatbook`Common`$attachments[ First @ keys ] === With[ { boxes = image }, HoldComplete @ RawBoxes @ StyleBox[ boxes, "GraphicsRawBoxes" ] ],
+            Sort @ Keys @ Wolfram`Chatbook`Common`$notebookAttachments === Union @ keys,
+            StringFreeQ[ CellToString[ Notebook @ cells[[ ;; 2 ]], "PreserveBoxes" -> Automatic ], "](attachment://" ]
+        }
+    ],
+    {
+        StringJoin[
+            "<cell id='c1' style='Output' CellLabel='Out[1]='>\n![Image](attachment://KEY)\n</cell>\n\n",
+            "<cell id='c2' style='Output'>\n{![Image](attachment://KEY), 5}\n</cell>\n\n",
+            "<cell id='c3' style='Print'>\n![Image](attachment://KEY)\n</cell>\n\n",
+            "<cell id='c4' style='ChatOutput'>\nA plot: ![Image](attachment://KEY).\n</cell>\n\n",
+            "<cell id='c5' style='Input'>\nf[![Image](attachment://KEY)]\n</cell>"
+        ],
+        True,
+        True,
+        True,
+        True
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Automatic-GraphicsAreImageLinks"
+]
+
+(* A cell with many graphics, which the default markdown shows as one image of the cell, has a link for each of them.
+   What a cell tag writes is not kept for the default serialization: a TraditionalForm output with a graphic (whose
+   text the serializer keeps for its boxes) reads without cell tags as it does in a kernel that never read it with
+   them. *)
+VerificationTest[
+    csStores @ With[
+        {
+            many    = Cell[ BoxData @ RowBox @ Riffle[ Table[ GraphicsBox[ { DiskBox[ { 0, 0 }, r ] }, ImageSize -> 20 ], { r, 8 } ], "," ], "Output" ],
+            formula = Cell[ BoxData @ FormBox[ RowBox @ { "{", GraphicsBox[ { DiskBox[ { 0, 0 }, 7 ] }, ImageSize -> 33 ], "}" }, TraditionalForm ], "Output" ]
+        },
+        {
+            StringCount[ CellToString[ many, "IncludeXML" -> True, "PreserveBoxes" -> Automatic ], "![Image](attachment://content-" ],
+            StringCount[ CellToString @ many, "![cell image](attachment://content-" ],
+            CellToString[ formula, "IncludeXML" -> True, "PreserveBoxes" -> Automatic ],
+            CellToString @ formula
+        }
+    ],
+    {
+        8,
+        1,
+        _String? (StringMatchQ[ "<cell id='c1' style='Output'>\n{![Image](attachment://content-" ~~ WordCharacter.. ~~ ")}\n</cell>" ]),
+        _String? (StringFreeQ[ "attachment://" ])
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Automatic-GraphicsLinksNotKept"
+]
+
+(* A multimodal chat gets the image of such a link, and a chat without images gets the text as it is: *)
+VerificationTest[
+    csStores @ With[ { text = CellToString[ Cell[ BoxData @ ToBoxes @ Image[ { { { 1., 0., 0. } } } ], "Output" ], "IncludeXML" -> True, "PreserveBoxes" -> Automatic ] },
+        {
+            Block[ { Wolfram`Chatbook`Common`$multimodalMessages = True }, Wolfram`Chatbook`Common`expandMultimodalString @ text ],
+            Block[ { Wolfram`Chatbook`Common`$multimodalMessages = False }, Wolfram`Chatbook`Common`expandMultimodalString @ text ] === text
+        }
+    ],
+    {
+        {
+            KeyValuePattern @ { "Type" -> "Text", "Data" -> _String? (StringEndsQ[ "![Image](attachment://content-" ~~ WordCharacter.. ~~ ")" ]) },
+            KeyValuePattern @ { "Type" -> "Image", "Data" -> _Image },
+            KeyValuePattern @ { "Type" -> "Text", "Data" -> "\n</cell>" }
+        },
+        True
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Automatic-GraphicsForMultimodalChats"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Selections*)
+
+(* The markers that the notebook context puts between cells are lines of their own, and use no id: *)
+VerificationTest[
+    csExact @ Notebook @ {
+        Cell[ "a", "Text" ],
+        Cell @ Verbatim[ "<selection>" ],
+        Cell[ "b", "Text" ],
+        Cell @ Verbatim[ "</selection>" ],
+        Cell[ "c", "Text" ],
+        Cell @ Verbatim[ "<selection></selection>" ]
+    },
+    StringJoin[
+        "<cell id='c1' style='Text'>\na\n</cell>\n\n",
+        "<selection>\n\n",
+        "<cell id='c2' style='Text'>\nb\n</cell>\n\n",
+        "</selection>\n\n",
+        "<cell id='c3' style='Text'>\nc\n</cell>\n\n",
+        "<selection></selection>"
+    ],
+    SameTest -> MatchQ,
+    TestID   -> "Selection-LinesBetweenCells"
+]
+
+(* A marker inside of a cell is given as Verbatim. The same text as content is escaped: *)
+VerificationTest[
+    {
+        csCode @ RowBox @ { "Pl", Verbatim[ "<selection>" ], "ot", Verbatim[ "</selection>" ], "[", "\"<selection>\"", "]" },
+        csText @ { "x", Verbatim[ "<selection></selection>" ], "y <selection>" }
+    },
+    {
+        "Pl<selection>ot</selection>[<RawBoxes>\"\\\"\\.3cselection>\\\"\"</RawBoxes>]",
+        "x<selection></selection>y &lt;selection>"
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Selection-InsideCells"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Truncated*)
+
+(* An exact body has no length limit unless the caller gives one. A body that was cut says so: *)
+VerificationTest[
+    With[ { cell = Cell[ StringRepeat[ "abcdefghi ", 2000 ], "Text" ] },
+        {
+            csExact @ cell === "<cell id='c1' style='Text'>\n" <> StringRepeat[ "abcdefghi ", 2000 ] <> "\n</cell>",
+            StringStartsQ[
+                csExact[ cell, "MaxCellStringLength" -> 100 ],
+                "<cell id='c1' style='Text' truncated='true'>\nabcdefghi "
+            ],
+            StringLength @ csExactBody[ cell, "MaxCellStringLength" -> 100 ],
+            StringStartsQ[ csExact[ cell, "MaxCellStringLength" -> 50000 ], "<cell id='c1' style='Text'>\nabcdefghi " ]
+        }
+    ],
+    { True, True, _Integer? (50 < # <= 100 &), True },
+    SameTest -> MatchQ,
+    TestID   -> "Truncated-ExactBody"
+]
 
 VerificationTest[
     {
@@ -614,6 +1370,29 @@ VerificationTest[
     { True, True },
     SameTest -> MatchQ,
     TestID   -> "Truncated-LossyBody"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Linear Syntax*)
+
+(* The front end reads linear syntax in the text of boxes, so a token or a piece of markdown with it is not written as
+   it is. In a plain string it is only text, and a \! without \( opens nothing: *)
+VerificationTest[
+    {
+        csCode @ RowBox @ { "f", "[", "\"\\!\\(\\*SuperscriptBox[x, 2]\\)\"", "]" },
+        csCode @ RowBox @ { "g", "[", "\"a\\\\!b\"", "]" },
+        csText @ { StyleBox[ "a\\!\\(b\\)", "InlineCode" ], " ", StyleBox[ "a\\!b", "InlineCode" ] },
+        csExactBody @ Cell[ "re.sub(r\"\\*\", \"\", s)  # \\!", "Program" ]
+    },
+    {
+        "f[<RawBoxes>\"\\\"\\\\!\\\\(\\\\*SuperscriptBox[x, 2]\\\\)\\\"\"</RawBoxes>]",
+        "g[\"a\\\\!b\"]",
+        "<RawBoxes>StyleBox[\"a\\\\!\\\\(b\\\\)\", \"InlineCode\"]</RawBoxes> ``a\\!b``",
+        "re.sub(r\"\\*\", \"\", s)  # \\!"
+    },
+    SameTest -> MatchQ,
+    TestID   -> "LinearSyntax-NotWrittenAsText"
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

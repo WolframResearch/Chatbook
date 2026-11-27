@@ -1,6 +1,7 @@
 BeginPackage[ "Wolfram`Chatbook`Common`" ];
 
 `$$attachmentURI;
+`$$generatedCellStyle;
 `$$ignoredBox;
 `$absoluteCurrentSettingsCache;
 `$allowConnectionDialog;
@@ -15,6 +16,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$baseStyle;
 `$cachedTokenizers;
 `$cellIDFunction;
+`$cellOriginals;
 `$cellStringBudget;
 `$chatDataTag;
 `$chatEvaluationBlock;
@@ -75,6 +77,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$nextTaskEvaluation;
 `$noSemanticSearch;
 `$notebookAssistanceExtraInstructions;
+`$notebookAttachments;
 `$openToolCallBoxes;
 `$popOutSettings;
 `$preferencesScope;

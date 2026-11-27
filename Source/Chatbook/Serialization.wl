@@ -224,10 +224,21 @@ $includeCellXML = False;
    (Automatic) *)
 $preserveCellBoxes = False;
 
+(* Determines if a graphic in a lossy body is an image link to its boxes, as it is in an exact body. This is set for
+   the bodies of cell tags, so that a graphic has one spelling there whatever the content types are. *)
+$graphicsLinks = False;
+
 (* A function that gives the id of a cell tag for a cell (anything but a string means no id). With None, the cells of
    one CellToString call are numbered c1, c2, ... *)
 $cellIDFunction = None;
 $cellIDCounter  = 0;
+
+(* When this is an association, it collects the boxes that pieces of exact bodies stand for, for each cell that has an
+   id: <| id -> <| text -> boxes |> |>. Reading a cell again replaces what was recorded for it. *)
+$cellOriginals = None;
+
+(* The id of the cell that is being read, which is its key in $cellOriginals (None for a cell without an id) *)
+$cellOriginalsKey = None;
 
 (* An exact body has no length limit unless "MaxCellStringLength" is given *)
 $exactBodyLimit = Infinity;
@@ -243,6 +254,9 @@ $exactBodyMarker = "ExactBodyOfTheCell";
 
 (* Options that are not shown in a cell tag *)
 $$hiddenCellOption = ExpressionUUID | CellChangeTimes | CellID | GeneratedCell | CellAutoOverwrite | CellObject;
+
+(* Cells with these styles are made by evaluation, so "PreserveBoxes" -> Automatic leaves their bodies lossy *)
+$$generatedCellStyle = "Output" | "Print" | "Echo" | "Message" | "MSG" | $$chatOutputStyle;
 
 (* The start of a cell tag, which no body holds *)
 $$cellTagStart = "<" ~~ ("/" | "") ~~ "cell";
@@ -838,9 +852,9 @@ cellToString[ cell: Cell[ __, "AnnotatedInput", ___ ] ] :=
         cellsToString @ cells /; MatchQ[ cells, { __Cell } ]
     ];
 
-(* Rasterize entire cell if it contains enough graphics boxes *)
+(* Rasterize entire cell if it contains enough graphics boxes (in a cell tag each of them is an image link) *)
 cellToString[ cell: Cell[ _, Except[ "Input"|"Code"|$$chatInputStyle|$$chatOutputStyle ], ___ ] ] /;
-    rasterWholeCellQ @ cell :=
+    ! TrueQ @ $graphicsLinks && rasterWholeCellQ @ cell :=
         MakeExpressionURI[ "cell image", RawBoxes @ StyleBox[ cell, "GraphicsRawBoxes" ] ];
 
 cellToString[ cell: Cell[ _, "Picture", ___ ] ] /; $multimodalImages :=
@@ -940,9 +954,11 @@ cellToXMLString // beginDefinition;
 
 (* The tag and its body are described in docs/cell-syntax.md: *)
 cellToXMLString[ cell_Cell ] := Enclose[
-    Block[ { $cellTruncated = False },
+    Block[ { $cellTruncated = False, $cellOriginalsKey },
         Module[ { id, body },
             id = If[ $cellIDFunction === None, "c" <> ToString[ ++$cellIDCounter ], $cellIDFunction @ cell ];
+            $cellOriginalsKey = If[ StringQ @ id, id, None ];
+            If[ StringQ @ id && AssociationQ @ $cellOriginals, KeyDropFrom[ $cellOriginals, id ] ];
             body = ConfirmBy[ cellTagBody @ cell, StringQ, "Body" ];
             "<cell" <> cellTagAttributes[ cell, id, $cellTruncated ] <> ">\n" <> body <> "\n</cell>"
         ]
@@ -1074,6 +1090,7 @@ lossyBody[ cell_Cell ] :=
             {
                 $includeCellXML     = False,
                 $preserveCellBoxes  = False,
+                $graphicsLinks      = True,
                 $chatInputIndicator = False,
                 $delimitedCodeBlock = codeBlockQ @ bare
             },
@@ -1107,6 +1124,7 @@ bareCell // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*exactCellQ*)
 exactCellQ // beginDefinition;
+exactCellQ[ cell_Cell ] /; $preserveCellBoxes === Automatic := ! MatchQ[ cell, Cell[ __, $$generatedCellStyle, ___ ] ];
 exactCellQ[ _Cell ] := TrueQ @ $preserveCellBoxes;
 exactCellQ // endDefinition;
 
@@ -1554,6 +1572,11 @@ boxToString[ RowBox @ { "=[", query_String, "]" } ] := "\[FreeformPrompt]["<>que
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Graphics*)
+
+(* In a cell tag a graphic is an image link to its boxes, which are not interpreted (see $graphicsLinks): *)
+boxToString[ box: $$graphicsBox ] /; TrueQ @ $graphicsLinks :=
+    boxesURI[ box, True ];
+
 boxToString[ box: GraphicsBox[ TagBox[ RasterBox[ _, r___ ], t___ ], g___ ] ] /; ! TrueQ @ $multimodalImages :=
     StringJoin[
         "\\!\\(\\*",
@@ -2209,6 +2232,11 @@ boxToString[ FormBox[
 (* ::Subsubsubsection::Closed:: *)
 (*FormBox*)
 boxToString[ FormBox[ box: $$notTraditionalForm, TraditionalForm, ___ ] ] :=
+    boxToString @ box;
+
+(* A formula with a graphic is not LaTeX. serializeTraditionalForm keeps what it gives for a box, which must not be the
+   image link of a cell tag (see $graphicsLinks): *)
+boxToString[ FormBox[ box_, TraditionalForm, ___ ] ] /; TrueQ @ $graphicsLinks && ! FreeQ[ box, $$graphicsBox ] :=
     boxToString @ box;
 
 boxToString[ box: FormBox[ _, TraditionalForm, ___ ] ] :=
