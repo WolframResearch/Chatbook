@@ -495,6 +495,239 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Structured Parameters*)
+
+(* A tool with a parameter that takes a list of objects. Its value is JSON text in the Simple tool method, and a list in
+   a native call (e.g. with the hybrid tool method, where native calls are written as Simple tool calls): *)
+VerificationTest[
+    $structuredTool = LLMTool @ <|
+        "Name"        -> "structured_test",
+        "Description" -> "Sets the text of cells.",
+        "Parameters"  -> {
+            "notebook" -> <| "Interpreter" -> "String", "Help" -> "The notebook", "Required" -> True |>,
+            "cells"    -> <|
+                "Interpreter" -> RepeatingElement @ CompoundElement @ <| "cell" -> "String", "text" -> "String" |>,
+                "Help"        -> "The cells",
+                "Required"    -> True
+            |>
+        },
+        "Function"    -> Function[ "Done" ]
+    |>;
+
+    (* Text with backslashes, quotes, a line break and non-ASCII characters: *)
+    $structuredCells = {
+        <| "cell" -> "c3", "text" -> "a \\ b \"quoted\" \:3014x\:3015 \[Alpha]\[Beta]\nnext line \\n" |>,
+        <| "cell" -> "c4", "text" -> "plain" |>
+    };
+
+    SetAttributes[ withStructuredTool, HoldFirst ];
+    withStructuredTool[ eval_ ] :=
+        Block[ { Wolfram`Chatbook`Common`$selectedTools = <| "StructuredTest" -> $structuredTool |> }, eval ];
+
+    (* The text that a native tool call is written as in the response with the given tool method: *)
+    nativeCallText[ method_String, request_ ] := Block[
+        {
+            Wolfram`Chatbook`$ChatHandlerData         = <| "ChatNotebookSettings" -> <| "ToolMethod" -> method |> |>,
+            Wolfram`Chatbook`Common`$receivedToolCall = False
+        },
+        Wolfram`Chatbook`LLMUtilities`Private`toolRequestToString @ request
+    ];
+
+    structuredValues[ request_ ] := Association @ request[ "ParameterValues" ];
+
+    interpretedStructuredValues[ request_ ] := GenerateLLMToolResponse[
+        LLMConfiguration @ <| "Tools" -> { $structuredTool } |>,
+        request
+    ][ "InterpretedParameterValues" ];
+
+    $structuredTool,
+    _LLMTool,
+    SameTest -> MatchQ,
+    TestID   -> "StructuredParameters-Definitions"
+]
+
+(* A Simple tool call gives the list as JSON, which is read before the tool's interpreter gets it. The JSON can also
+   span several lines: *)
+VerificationTest[
+    withStructuredTool @ Map[
+        Module[ { request = Last @ Wolfram`Chatbook`Common`simpleToolRequestParser @ # },
+            { structuredValues @ request, interpretedStructuredValues @ request }
+        ] &,
+        {
+            "Let me change them.\n/structured_test\nnotebook: nb1\ncells: [{\"cell\":\"c3\",\"text\":\"x\"},{\"cell\":\"c4\",\"text\":\"y\"}]",
+            "/structured_test\nnotebook: nb1\ncells: [\n  {\"cell\": \"c3\", \"text\": \"x\"},\n  {\"cell\": \"c4\", \"text\": \"y\"}\n]"
+        }
+    ],
+    With[
+        {
+            values = <|
+                "notebook" -> "nb1",
+                "cells"    -> { <| "cell" -> "c3", "text" -> "x" |>, <| "cell" -> "c4", "text" -> "y" |> }
+            |>
+        },
+        { { values, values }, { values, values } }
+    ],
+    SameTest -> MatchQ,
+    TestID   -> "StructuredParameters-SimpleToolCall"
+]
+
+(* A native call's list is written as JSON on one line, and is read back as the same list, also next to a value with
+   line breaks: *)
+VerificationTest[
+    withStructuredTool @ Map[
+        Module[ { native, request },
+            native  = LLMToolRequest[ "structured_test", <| "notebook" -> #, "cells" -> $structuredCells |> ];
+            request = Last @ Wolfram`Chatbook`Common`simpleToolRequestParser @ nativeCallText[ "Simple", native ];
+            { structuredValues @ request, interpretedStructuredValues @ request } === ConstantArray[ structuredValues @ native, 2 ]
+        ] &,
+        { "nb1", "a notebook\nwith two lines \\ \[Gamma]" }
+    ],
+    { True, True },
+    SameTest -> MatchQ,
+    TestID   -> "StructuredParameters-NativeCall-RoundTrip"
+]
+
+(* A native call can leave out optional parameters and give the others in any order, so its values are written with
+   their names (a value without a name would go to the parameter in its place in the tool's order). Blank values, which
+   models give for optional parameters, are left out. Only the value of a tool's only parameter is written without its
+   name: *)
+VerificationTest[
+    Module[ { stringParameter, insertTool, oneParameterTool, roundTrip },
+        stringParameter[ required_ ] := <| "Interpreter" -> "String", "Help" -> "Text", "Required" -> required |>;
+        insertTool = LLMTool @ <|
+            "Name"        -> "insert_test",
+            "Description" -> "Inserts cells.",
+            "Parameters"  -> {
+                "notebook" -> stringParameter @ True,
+                "cells"    -> <|
+                    "Interpreter" -> RepeatingElement @ CompoundElement @ <| "cell" -> "String", "text" -> "String" |>,
+                    "Help"        -> "The cells",
+                    "Required"    -> True
+                |>,
+                "cell"     -> stringParameter @ False,
+                "position" -> stringParameter @ False
+            },
+            "Function"    -> Function[ "Done" ]
+        |>;
+        oneParameterTool = LLMTool @ <|
+            "Name"        -> "one_parameter_test",
+            "Description" -> "Evaluates code.",
+            "Parameters"  -> { "code" -> stringParameter @ True },
+            "Function"    -> Function[ "Done" ]
+        |>;
+        roundTrip[ values_ ] := Lookup[
+            structuredValues @ Last @ Wolfram`Chatbook`Common`simpleToolRequestParser @ nativeCallText[
+                "Simple",
+                LLMToolRequest[ "insert_test", values ]
+            ],
+            { "notebook", "cells", "cell", "position" }
+        ];
+        Block[
+            {
+                Wolfram`Chatbook`Common`$selectedTools = <|
+                    "InsertTest"       -> insertTool,
+                    "OneParameterTest" -> oneParameterTool
+                |>
+            },
+            {
+                roundTrip @ <| "position" -> "before", "cells" -> $structuredCells, "notebook" -> "s1" |>,
+                roundTrip @ <| "position" -> "before" |>,
+                roundTrip @ <| "notebook" -> "s1", "cell" -> " ", "position" -> "" |>,
+                nativeCallText[ "Simple", LLMToolRequest[ "one_parameter_test", <| "code" -> "1 + 1" |> ] ]
+            }
+        ]
+    ],
+    {
+        { "s1", $structuredCells, "", "before" },
+        { "", "", "", "before" },
+        { "s1", "", "", "" },
+        "\n/one_parameter_test\n1 + 1"
+    },
+    SameTest -> MatchQ,
+    TestID   -> "StructuredParameters-NativeCall-ParameterOrder"
+]
+
+(* A native call can have parameters that the tool does not have. They are left out of the Simple tool call: the parser
+   only knows the tool's own names, so "name: value" would be read as more text of the value before it (and, for a
+   tool with one parameter, of that parameter's value): *)
+VerificationTest[
+    Module[ { oneParameterTool, call },
+        oneParameterTool = LLMTool @ <|
+            "Name"        -> "one_parameter_test",
+            "Description" -> "Evaluates code.",
+            "Parameters"  -> { "code" -> <| "Interpreter" -> "String", "Help" -> "Code", "Required" -> True |> },
+            "Function"    -> Function[ "Done" ]
+        |>;
+        call[ name_, values_ ] := With[ { text = nativeCallText[ "Simple", LLMToolRequest[ name, values ] ] },
+            { text, structuredValues @ Last @ Wolfram`Chatbook`Common`simpleToolRequestParser @ text }
+        ];
+        Block[
+            {
+                Wolfram`Chatbook`Common`$selectedTools = <|
+                    "StructuredTest"   -> $structuredTool,
+                    "OneParameterTest" -> oneParameterTool
+                |>
+            },
+            {
+                call[ "structured_test", <| "notebook" -> "nb1", "cells" -> { <| "cell" -> "c3", "text" -> "x" |> }, "after" -> "c26" |> ],
+                call[ "structured_test", <| "after" -> "c26", "notebook" -> "two\nlines" |> ],
+                call[ "one_parameter_test", <| "code" -> "1 + 1", "timeout" -> 5 |> ],
+                call[ "one_parameter_test", <| "timeout" -> 5 |> ]
+            }
+        ]
+    ],
+    {
+        {
+            "\n/structured_test\nnotebook: nb1\ncells: [{\"cell\":\"c3\",\"text\":\"x\"}]",
+            <| "notebook" -> "nb1", "cells" -> { <| "cell" -> "c3", "text" -> "x" |> } |>
+        },
+        { "\n/structured_test\nnotebook: two\nlines", <| "notebook" -> "two\nlines", "cells" -> "" |> },
+        { "\n/one_parameter_test\n1 + 1", <| "code" -> "1 + 1" |> },
+        { "\n/one_parameter_test\n", <| "code" -> "" |> }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "StructuredParameters-NativeCall-UnknownParameter"
+]
+
+(* Only parameters that take structured data are read as JSON. A string parameter keeps text that looks like JSON: *)
+VerificationTest[
+    withStructuredTool @ structuredValues @ Last @ Wolfram`Chatbook`Common`simpleToolRequestParser[
+        "/structured_test\nnotebook: [\"nb1\", {\"a\": 1}]\ncells: [{\"cell\":\"c3\",\"text\":\"x\"}]"
+    ],
+    <| "notebook" -> "[\"nb1\", {\"a\": 1}]", "cells" -> { <| "cell" -> "c3", "text" -> "x" |> } |>,
+    SameTest -> MatchQ,
+    TestID   -> "StructuredParameters-StringParameter"
+]
+
+(* The Simple tool listing says which parameters take JSON. Other interpreters that aren't types (e.g. the delimited
+   sequence of DocumentationLookup, whose JSON schema is a string) are still listed as text: *)
+VerificationTest[
+    {
+        StringEndsQ[
+            Wolfram`Chatbook`Tools`Private`simpleToolSchema @ $structuredTool,
+            "Arguments\n\tnotebook - The notebook\n\tcells - The cells (JSON)"
+        ],
+        StringFreeQ[ Wolfram`Chatbook`Tools`Private`simpleToolSchema @ $DefaultTools[ "DocumentationLookup" ], "(JSON" ]
+    },
+    { True, True },
+    SameTest -> MatchQ,
+    TestID   -> "StructuredParameters-SimpleToolListing"
+]
+
+(* The other tool methods write native calls as JSON already (TOOLCALL), so the list reaches the interpreter unchanged: *)
+VerificationTest[
+    withStructuredTool @ Module[ { native, request },
+        native  = LLMToolRequest[ "structured_test", <| "notebook" -> "nb1", "cells" -> $structuredCells |> ];
+        request = Last @ Wolfram`Chatbook`Common`toolRequestParser @ nativeCallText[ "Service", native ];
+        interpretedStructuredValues @ request === structuredValues @ native
+    ],
+    True,
+    SameTest -> MatchQ,
+    TestID   -> "StructuredParameters-ToolCallMethod"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*End Markers in Tool Output*)
 
 (* Text in a tool's output that looks like the end marker doesn't end the result or change its request ID (GH#314): *)
