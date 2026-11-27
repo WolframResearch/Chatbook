@@ -262,7 +262,7 @@ VerificationTest[
     TestID   -> "NotebookTools-SelectionDefinitions"
 ]
 
-(* The Notebook Assistant window and the sidebar have the 6 tools where the front end supports them, but not when
+(* The Notebook Assistant window and the sidebar have the 9 tools where the front end supports them, but not when
    notebook content is turned off (the sidebar's default), like NotebookReader. A chat that has them allows at least 20
    tool responses, since one edit takes several calls: *)
 VerificationTest[
@@ -280,7 +280,7 @@ VerificationTest[
         ],
         notebookToolSelection[ <| |>, True ]
     },
-    { { 6, 20 }, { 0, 5 }, { 0, 5 }, { 0, 5 }, { 6, 20 }, { 0, 5 } },
+    { { 9, 20 }, { 0, 5 }, { 0, 5 }, { 0, 5 }, { 9, 20 }, { 0, 5 } },
     SameTest -> SameQ,
     TestID   -> "NotebookTools-SelectedTools"
 ]
@@ -291,7 +291,7 @@ VerificationTest[
         <| Wolfram`Chatbook`ChatModes`Common`$notebookAssistanceWorkspaceSettings, "MaxToolResponses" -> 30 |>,
         True
     ],
-    { 6, 30 },
+    { 9, 30 },
     SameTest -> SameQ,
     TestID   -> "NotebookTools-MaxToolResponses-Larger"
 ]

@@ -148,6 +148,7 @@ UI colors are `LightDarkSwitched` pairs looked up by name with `color["Name"]` (
 - `Assets/Tokenizers/` — Token counting resources
 - `Assets/AIAssistant/` — AI assistant configurations
 - `Assets/Skills/` — Built-in agent skills (`<name>/SKILL.md` plus supporting files), declared as the `"Skills"` asset in PacletInfo.wl
+- `Assets/CellDiff/` — CellDiff's notebook comparison (a copy of the FE repository's `docs/CellDiff`; keep it in sync), used by the ShowChanges notebook tool, declared as the `"CellDiff"` asset in PacletInfo.wl
 
 ## Code Conventions
 

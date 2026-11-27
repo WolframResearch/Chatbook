@@ -28,7 +28,7 @@ $notebookAssistanceBaseSettings = <|
     "Tools"                     -> {
         "NotebookReader",
         "ListNotebooks", "OpenNotebook", "GetOutline", "ReadCells", "SearchNotebook",
-        "CloseNotebook"
+        "EditInCell", "WriteCells", "ShowChanges", "CloseNotebook"
     },
     "ToolOptions"               -> <|
         "WolframLanguageEvaluator" -> <| "AppendURIPrompt" -> True, "Method" -> "Session" |>

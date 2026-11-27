@@ -35,6 +35,7 @@ PacletObject[ <|
             "Root"    -> "Assets",
             "Assets"  -> {
                 { "AIAssistant"         , "AIAssistant"              },
+                { "CellDiff"            , "CellDiff"                 },
                 { "DisplayFunctions"    , "DisplayFunctions.wxf"     },
                 { "Snippets"            , "Snippets"                 },
                 { "SandboxMessages"     , "SandboxMessages.wl"       },
