@@ -2900,54 +2900,69 @@ VerificationTest[
     TestID   -> "Evaluated-NeedsEvaluatorTool"
 ]
 
+(* The next two tests launch a separate sandbox kernel, which isn't possible in every test environment: *)
+VerificationTest[
+    $localEvaluatorAvailable = MatchQ[
+        Quiet @ Wolfram`Chatbook`WolframLanguageToolEvaluate[ "1 + 1", "Result", "Method" -> "Local" ],
+        HoldCompleteForm[ 2 ]
+    ],
+    True|False,
+    SameTest -> MatchQ,
+    TestID   -> "Evaluated-SandboxAvailable"
+]
+
 (* In the sandbox the code is parsed and typeset in the sandbox kernel, with the definitions of the user's kernel. A
    result is only written if it is boxes and plain data: dynamic content, graphics and templates are refused, as they
    are in what a model writes itself. *)
-VerificationTest[
-    csEvaluator[
-        "Local",
-        Block[ { $csDefined },
-            $csDefined[ x_ ] := x^2;
-            {
-                csCells[ "<cell style='Input'>\n<ToBoxes>$csDefined[3]</ToBoxes> + <MakeBoxes>csOnlyInTheSandbox[1/2]</MakeBoxes>\n</cell>" ],
-                Names[ "*`csOnlyInTheSandbox" ],
-                csMessage[ "<cell style='Input'>\n<ToBoxes>Slider[Dynamic[x]]</ToBoxes>\n</cell>" ],
-                csMessage[ "<cell style='Input'>\n<MakeBoxes>Button[\"go\", Beep[]]</MakeBoxes>\n</cell>" ],
-                csMessage[ "<cell style='Input'>\n<ToBoxes>Graphics[Disk[]]</ToBoxes>\n</cell>" ],
-                csMessage[ "<cell style='Input'>\n<ToBoxes>RawBoxes[TemplateBox[{\"2 + 2\"}, \"Evaluate\"]]</ToBoxes>\n</cell>" ],
-                csMessage[ "<cell style='Input'>\n<ToBoxes>1, 2</ToBoxes>\n</cell>" ]
-            }
-        ]
-    ],
-    {
-        { Cell[ BoxData @ RowBox @ { "9", "+", RowBox @ { "csOnlyInTheSandbox", "[", FractionBox[ "1", "2" ], "]" } }, "Input" ] },
-        { },
-        _String? (StringContainsQ[ "The evaluator runs in a sandbox" ~~ __ ~~ "dynamic content" ]),
-        _String? (StringContainsQ[ "The evaluator runs in a sandbox" ]),
-        _String? (StringContainsQ[ "The evaluator runs in a sandbox" ]),
-        _String? (StringContainsQ[ "The evaluator runs in a sandbox" ~~ __ ~~ "a TemplateBox" ]),
-        _String? (StringContainsQ[ "<ToBoxes> gave no boxes for 1, 2." ])
-    },
-    SameTest -> MatchQ,
-    TestID   -> "Evaluated-Sandbox"
+If[ $localEvaluatorAvailable,
+    VerificationTest[
+        csEvaluator[
+            "Local",
+            Block[ { CellSyntaxTest`csDefined },
+                CellSyntaxTest`csDefined[ x_ ] := x^2;
+                {
+                    csCells[ "<cell style='Input'>\n<ToBoxes>CellSyntaxTest`csDefined[3]</ToBoxes> + <MakeBoxes>csOnlyInTheSandbox[1/2]</MakeBoxes>\n</cell>" ],
+                    Names[ "*`csOnlyInTheSandbox" ],
+                    csMessage[ "<cell style='Input'>\n<ToBoxes>Slider[Dynamic[x]]</ToBoxes>\n</cell>" ],
+                    csMessage[ "<cell style='Input'>\n<MakeBoxes>Button[\"go\", Beep[]]</MakeBoxes>\n</cell>" ],
+                    csMessage[ "<cell style='Input'>\n<ToBoxes>Graphics[Disk[]]</ToBoxes>\n</cell>" ],
+                    csMessage[ "<cell style='Input'>\n<ToBoxes>RawBoxes[TemplateBox[{\"2 + 2\"}, \"Evaluate\"]]</ToBoxes>\n</cell>" ],
+                    csMessage[ "<cell style='Input'>\n<ToBoxes>1, 2</ToBoxes>\n</cell>" ]
+                }
+            ]
+        ],
+        {
+            { Cell[ BoxData @ RowBox @ { "9", "+", RowBox @ { "csOnlyInTheSandbox", "[", FractionBox[ "1", "2" ], "]" } }, "Input" ] },
+            { },
+            _String? (StringContainsQ[ "The evaluator runs in a sandbox" ~~ __ ~~ "dynamic content" ]),
+            _String? (StringContainsQ[ "The evaluator runs in a sandbox" ]),
+            _String? (StringContainsQ[ "The evaluator runs in a sandbox" ]),
+            _String? (StringContainsQ[ "The evaluator runs in a sandbox" ~~ __ ~~ "a TemplateBox" ]),
+            _String? (StringContainsQ[ "<ToBoxes> gave no boxes for 1, 2." ])
+        },
+        SameTest -> MatchQ,
+        TestID   -> "Evaluated-Sandbox"
+    ]
 ]
 
 (* The result of a sandboxed evaluator is checked before it is evaluated in this kernel: a symbol that only has a
    value here is not read into the cell. With "Session" the result is written as it is. *)
-VerificationTest[
-    Block[ { CellSyntaxTest`$csRan = False, CellSyntaxTest`csValue },
-        CellSyntaxTest`csValue := (CellSyntaxTest`$csRan = True; "\"secret\"");
-        With[ { text = "<cell style='Input'>\n<ToBoxes>RawBoxes[RowBox[{Symbol[\"CellSyntaxTest`csVal\" <> \"ue\"]}]]</ToBoxes>\n</cell>" },
-            {
-                csEvaluator[ "Local", csMessage @ text ],
-                CellSyntaxTest`$csRan,
-                csEvaluator[ "Session", csCells[ "<cell style='Input'>\n<ToBoxes>Graphics[Disk[]]</ToBoxes>\n</cell>" ] ]
-            }
-        ]
-    ],
-    { _String? (StringContainsQ[ "The evaluator runs in a sandbox" ]), False, { Cell[ BoxData[ _GraphicsBox ], "Input" ] } },
-    SameTest -> MatchQ,
-    TestID   -> "Evaluated-SandboxResultNotEvaluated"
+If[ $localEvaluatorAvailable,
+    VerificationTest[
+        Block[ { CellSyntaxTest`$csRan = False, CellSyntaxTest`csValue },
+            CellSyntaxTest`csValue := (CellSyntaxTest`$csRan = True; "\"secret\"");
+            With[ { text = "<cell style='Input'>\n<ToBoxes>RawBoxes[RowBox[{Symbol[\"CellSyntaxTest`csVal\" <> \"ue\"]}]]</ToBoxes>\n</cell>" },
+                {
+                    csEvaluator[ "Local", csMessage @ text ],
+                    CellSyntaxTest`$csRan,
+                    csEvaluator[ "Session", csCells[ "<cell style='Input'>\n<ToBoxes>Graphics[Disk[]]</ToBoxes>\n</cell>" ] ]
+                }
+            ]
+        ],
+        { _String? (StringContainsQ[ "The evaluator runs in a sandbox" ]), False, { Cell[ BoxData[ _GraphicsBox ], "Input" ] } },
+        SameTest -> MatchQ,
+        TestID   -> "Evaluated-SandboxResultNotEvaluated"
+    ]
 ]
 
 (* The notebook tools get what a tag does from evaluateToBoxes: the boxes and what the evaluator printed, or the
