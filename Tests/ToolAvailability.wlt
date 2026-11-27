@@ -226,4 +226,101 @@ VerificationTest[
     SameTest -> SameQ,
     TestID   -> "NotebookReader-SelectedTools"
 ]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Notebook Tools*)
+
+(* The number of notebook tools selected with the given settings, and the resolved "MaxToolResponses", where the
+   front end does or doesn't support the tools: *)
+VerificationTest[
+    notebookToolSelection[ settings_Association, supported_ ] := Block[
+        {
+            Wolfram`Chatbook`Tools`NotebookTools`notebookToolsSupportedQ = supported &,
+            Wolfram`Chatbook`$ChatHandlerData       = Wolfram`Chatbook`$ChatHandlerData,
+            Wolfram`Chatbook`Common`$lastCellObject = Wolfram`Chatbook`Common`$lastCellObject,
+            Wolfram`Chatbook`Common`$lastTask       = Wolfram`Chatbook`Common`$lastTask,
+            Wolfram`Chatbook`Common`$tokenBudgetLog = Wolfram`Chatbook`Common`$tokenBudgetLog
+        },
+        With[
+            {
+                resolved = Wolfram`Chatbook`Common`withChatState @ Wolfram`Chatbook`Common`resolveAutoSettings[
+                    <| Wolfram`Chatbook`Common`$defaultChatSettings, settings |>
+                ]
+            },
+            {
+                Length @ Intersection[
+                    #[ "Data" ][ "CanonicalName" ] & /@ resolved[ "Tools" ],
+                    Keys @ Wolfram`Chatbook`Tools`NotebookTools`$notebookToolSpecs
+                ],
+                resolved[ "MaxToolResponses" ]
+            }
+        ]
+    ],
+    Null,
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-SelectionDefinitions"
+]
+
+(* The Notebook Assistant window and the sidebar have the 6 tools where the front end supports them, but not when
+   notebook content is turned off (the sidebar's default), like NotebookReader. A chat that has them allows at least 20
+   tool responses, since one edit takes several calls: *)
+VerificationTest[
+    {
+        notebookToolSelection[ Wolfram`Chatbook`ChatModes`Common`$notebookAssistanceWorkspaceSettings, True ],
+        notebookToolSelection[ Wolfram`Chatbook`ChatModes`Common`$notebookAssistanceWorkspaceSettings, False ],
+        notebookToolSelection[
+            <| Wolfram`Chatbook`ChatModes`Common`$notebookAssistanceWorkspaceSettings, "AllowSelectionContext" -> False |>,
+            True
+        ],
+        notebookToolSelection[ Wolfram`Chatbook`NotebookAssistanceSidebarSettings[ ], True ],
+        notebookToolSelection[
+            <| Wolfram`Chatbook`NotebookAssistanceSidebarSettings[ ], "AllowSelectionContext" -> True |>,
+            True
+        ],
+        notebookToolSelection[ <| |>, True ]
+    },
+    { { 6, 20 }, { 0, 5 }, { 0, 5 }, { 0, 5 }, { 6, 20 }, { 0, 5 } },
+    SameTest -> SameQ,
+    TestID   -> "NotebookTools-SelectedTools"
+]
+
+(* A larger "MaxToolResponses" is kept: *)
+VerificationTest[
+    notebookToolSelection[
+        <| Wolfram`Chatbook`ChatModes`Common`$notebookAssistanceWorkspaceSettings, "MaxToolResponses" -> 30 |>,
+        True
+    ],
+    { 6, 30 },
+    SameTest -> SameQ,
+    TestID   -> "NotebookTools-MaxToolResponses-Larger"
+]
+
+(* A chat that has any of the tools gets its notebook context in the cell syntax (notebookToolsSelectedQ): the
+   Notebook Assistant where the front end supports the tools, also with only some of them, and no other chat *)
+VerificationTest[
+    Function[ { settings, supported },
+        Block[
+            {
+                Wolfram`Chatbook`Tools`NotebookTools`notebookToolsSupportedQ = supported &,
+                Wolfram`Chatbook`$ChatHandlerData       = Wolfram`Chatbook`$ChatHandlerData,
+                Wolfram`Chatbook`Common`$lastCellObject = Wolfram`Chatbook`Common`$lastCellObject,
+                Wolfram`Chatbook`Common`$lastTask       = Wolfram`Chatbook`Common`$lastTask,
+                Wolfram`Chatbook`Common`$tokenBudgetLog = Wolfram`Chatbook`Common`$tokenBudgetLog
+            },
+            Wolfram`Chatbook`Common`withChatState[
+                Wolfram`Chatbook`Common`resolveAutoSettings[ <| Wolfram`Chatbook`Common`$defaultChatSettings, settings |> ];
+                Wolfram`Chatbook`Common`notebookToolsSelectedQ[ ]
+            ]
+        ]
+    ] @@@ {
+        { Wolfram`Chatbook`ChatModes`Common`$notebookAssistanceWorkspaceSettings, True },
+        { Wolfram`Chatbook`ChatModes`Common`$notebookAssistanceWorkspaceSettings, False },
+        { <| Wolfram`Chatbook`ChatModes`Common`$notebookAssistanceWorkspaceSettings, "Tools" -> { "NotebookReader", "ReadCells" } |>, True },
+        { <| |>, True }
+    },
+    { True, False, True, False },
+    SameTest -> SameQ,
+    TestID   -> "NotebookTools-SelectedQ"
+]
 (* :!CodeAnalysis::EndBlock:: *)

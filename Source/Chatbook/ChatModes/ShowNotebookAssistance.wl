@@ -24,7 +24,12 @@ $notebookAssistanceBaseSettings = <|
     "MaxToolResponses"          -> 5,
     "Model"                     -> <| "Service" -> "LLMKit", "Name" -> Automatic |>,
     "PromptGenerators"          -> { "RelatedDocumentationList" },
-    "Tools"                     -> { "NotebookReader" },
+    (* The notebook tools (Tools/NotebookTools.wl) are enabled only where they are supported (their "Enabled"): *)
+    "Tools"                     -> {
+        "NotebookReader",
+        "ListNotebooks", "OpenNotebook", "GetOutline", "ReadCells", "SearchNotebook",
+        "CloseNotebook"
+    },
     "ToolOptions"               -> <|
         "WolframLanguageEvaluator" -> <| "AppendURIPrompt" -> True, "Method" -> "Session" |>
     |>
