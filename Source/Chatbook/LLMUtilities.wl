@@ -520,12 +520,18 @@ toolRequestToString // beginDefinition;
 toolRequestToString[ req_ ] /; $receivedToolCall := "";
 
 toolRequestToString[ req: HoldPattern[ _LLMToolRequest ] ] /; $simpleToolMethod := Enclose[
-    Module[ { name, tool, command, params, argString },
+    Module[ { name, tool, command, declared, params, argString },
         name = ConfirmBy[ req[ "Name" ], StringQ, "Name" ];
         tool = ConfirmMatch[ getToolByName @ name, _LLMTool, "Tool" ];
         command = ConfirmBy[ toolShortName @ tool, StringQ, "Command" ];
-        params = ToString /@ ConfirmBy[ Association @ req[ "ParameterValues" ], AssociationQ, "ParameterValues" ];
-        argString = ConfirmBy[ simpleParameterString @ params, StringQ, "ArgumentString" ];
+        declared = Keys @ ConfirmMatch[ tool[ "Parameters" ], KeyValuePattern @ { }, "Parameters" ];
+        (* A parameter that the tool does not have is left out: simpleToolRequestParser only knows the tool's own
+           names, so it would read "name: value" as more text of the value before it: *)
+        params = simpleParameterValue /@ KeyTake[
+            ConfirmBy[ Association @ req[ "ParameterValues" ], AssociationQ, "ParameterValues" ],
+            declared
+        ];
+        argString = ConfirmBy[ simpleParameterString[ params, Length @ declared ], StringQ, "ArgumentString" ];
         $receivedToolCall = True;
         StringJoin[ "\n/", command, "\n", argString ]
     ],
@@ -550,19 +556,29 @@ toolRequestToString // endDefinition;
 (*simpleParameterString*)
 simpleParameterString // beginDefinition;
 
-simpleParameterString[ params_Association ] /; Length @ params === 1 :=
+(* The value of a tool's only parameter is written as is: *)
+simpleParameterString[ params_Association, 1 ] /; Length @ params === 1 :=
     ToString @ First @ params;
 
-simpleParameterString[ params_Association ] /; AllTrue[ params, StringFreeQ[ "\n" ] ] :=
-    StringRiffle[ Values @ params, "\n" ];
-
-simpleParameterString[ params_Association ] :=
+(* Otherwise each value is written with its name: a native call can leave out optional parameters or give them in any
+   order, and simpleToolRequestParser gives values without names to the parameters in the tool's order: *)
+simpleParameterString[ params_Association, _Integer ] :=
     StringRiffle[ KeyValueMap[ simpleParameterString, params ], "\n" ];
 
 simpleParameterString[ name_String, value_ ] :=
     StringJoin[ name, ": ", ToString @ value ];
 
 simpleParameterString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*simpleParameterValue*)
+(* Lists and associations (e.g. a parameter that takes a list of objects) are written as JSON, which
+   simpleToolRequestParser reads back. Compact JSON has no line breaks, so the value stays on one line: *)
+simpleParameterValue // beginDefinition;
+simpleParameterValue[ value: _List | _Association ] := Developer`WriteRawJSONString[ value, "Compact" -> True ];
+simpleParameterValue[ value_ ] := ToString @ value;
+simpleParameterValue // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

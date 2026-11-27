@@ -231,6 +231,8 @@ When `Automatic`, resolved by `chooseToolMethod` (`Settings.wl`): if all resolve
 - `"Simple"`: Uses `simpleToolRequestParser`.
 - Other methods: Uses `toolRequestParser`.
 
+**Native calls with the hybrid tool method:** `toolRequestToString` (`LLMUtilities.wl`) writes a native tool call into the response text as a Simple tool call: lists and associations as compact JSON, and, for a tool with more than one parameter, each value as a `name: value` line, since a native call can leave out optional parameters or give them in any order, and values without names would be assigned in the tool's parameter order. Only the value of a tool's only parameter is written without its name.
+
 **Tool Response Formatting:**
 - `"Service"`: Tool response role is forced to `"Tool"` regardless of `ToolResponseRole`.
 - Other methods: Uses the `ToolResponseRole` value.
