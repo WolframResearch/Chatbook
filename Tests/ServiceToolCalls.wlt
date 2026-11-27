@@ -891,6 +891,27 @@ VerificationTest[
     TestID   -> "ToolResponseImagesMessage"
 ]
 
+(* A tool's output can link to many images (the cells of a notebook). Only the first ones are attached, and the other
+   links stay text: *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Common`$multimodalMessages = True, Wolfram`Chatbook`Common`$attachments = <| |> },
+        With[ { output = StringRiffle[ Table[ Wolfram`Chatbook`MakeExpressionURI[ Image @ { { i/10. } } ], { i, 7 } ], "\n" ] },
+            {
+                Wolfram`Chatbook`SendChat`Private`$maxToolResponseImages,
+                Count[ Wolfram`Chatbook`Common`expandMultimodalString @ output, KeyValuePattern[ "Type" -> "Image" ] ],
+                Count[ Wolfram`Chatbook`Common`expandMultimodalString[ output, 5 ], KeyValuePattern[ "Type" -> "Image" ] ],
+                StringJoin @ Cases[
+                    Wolfram`Chatbook`Common`expandMultimodalString[ output, 5 ],
+                    KeyValuePattern @ { "Type" -> "Text", "Data" -> text_String } :> text
+                ] === output
+            }
+        ]
+    ],
+    { 5, 7, 5, True },
+    SameTest -> MatchQ,
+    TestID   -> "ToolResponseImages-Limit"
+]
+
 (* The message with the images comes right after the tool's output. It is not taken for the user's input, and is only
    part of the request that follows the tool call: *)
 VerificationTest[

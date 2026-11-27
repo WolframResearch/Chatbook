@@ -681,7 +681,7 @@ VerificationTest[
                 Wolfram`Chatbook`Common`removeBasePrompt                  = #1 &,
                 Wolfram`Chatbook`Common`removeToolPreferencePrompt        = Identity,
                 Wolfram`Chatbook`Common`allowedMultimodalRoles            = All &,
-                Wolfram`Chatbook`Common`expandMultimodalString            = Identity,
+                Wolfram`Chatbook`Common`expandMultimodalString            = #1 &,
                 Wolfram`Chatbook`Common`toolRequestParser                 = { None, $testToolRequest } &,
                 Wolfram`Chatbook`SendChat`Private`checkForBadRetry        = #2 &,
                 Wolfram`Chatbook`SendChat`Private`insertToolID            = #1 &,
