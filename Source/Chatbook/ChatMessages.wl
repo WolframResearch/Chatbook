@@ -1556,7 +1556,10 @@ allowedMultimodalRoles0 // endDefinition;
 (*expandMultimodalStrings*)
 expandMultimodalString // beginDefinition;
 
-expandMultimodalString[ string_String ] /; $multimodalMessages := Enclose[
+expandMultimodalString[ string_String ] := expandMultimodalString[ string, Infinity ];
+
+(* At most max images are attached, the first ones of the string. The other links stay as they are: *)
+expandMultimodalString[ string_String, max_ ] /; $multimodalMessages := Enclose[
     Module[ { split, joined, typed },
 
         split = Flatten @ StringSplit[
@@ -1574,14 +1577,16 @@ expandMultimodalString[ string_String ] /; $multimodalMessages := Enclose[
             }
         ];
 
+        split = Delete[ split, Drop[ Position[ split, Except[ _String ], { 1 }, Heads -> False ], UpTo @ max ] ];
+
         joined = Flatten @ Replace[ SplitBy[ split, StringQ ], s: { _String, ___ } :> StringJoin @ s, { 1 } ];
         typed  = ConfirmMatch[ inferMultimodalTypes @ joined, { ___? AssociationQ } | { ___? StringQ }, "Typed" ];
         Replace[ typed, { msg_String } :> msg ]
     ],
-    throwInternalFailure[ expandMultimodalString @ string, ## ] &
+    throwInternalFailure[ expandMultimodalString[ string, max ], ## ] &
 ];
 
-expandMultimodalString[ string_String ] :=
+expandMultimodalString[ string_String, _ ] :=
     string;
 
 expandMultimodalString // endDefinition;

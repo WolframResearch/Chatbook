@@ -18,6 +18,9 @@ $resizeDingbats            = True;
 $defaultHandlerKeys        = { "Body", "BodyChunk", "BodyChunkProcessed", "StatusCode", "TaskStatus", "EventName" };
 $chatSubmitDroppedHandlers = { "ChatPost", "ChatPre", "Resolved" };
 
+(* Images that one tool result attaches in a multimodal chat. Its other image links are text only: *)
+$maxToolResponseImages = 5;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Severity Tag String Patterns*)
@@ -2695,10 +2698,11 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
         roles = ConfirmMatch[ allowedMultimodalRoles @ settings, All | { __String }, "Roles" ];
 
         (* With the responses endpoint, the images in a tool's output are sent in a user message: the one from
-           toolResponseImagesMessage, or the tool response itself, which is a user message there (chooseToolResponseRole): *)
+           toolResponseImagesMessage, or the tool response itself, which is a user message there (chooseToolResponseRole).
+           A result can link to many images (the cells of a notebook), so only the first ones are attached: *)
         response =
             If[ roles === All || MemberQ[ roles, If[ responsesRequestQ @ settings, "User", "System" ] ],
-                expandMultimodalString @ ToString @ output,
+                expandMultimodalString[ ToString @ output, $maxToolResponseImages ],
                 ToString @ output
             ];
 
