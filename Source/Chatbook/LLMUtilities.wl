@@ -526,10 +526,15 @@ toolRequestToString[ req: HoldPattern[ _LLMToolRequest ] ] /; $simpleToolMethod 
         command = ConfirmBy[ toolShortName @ tool, StringQ, "Command" ];
         declared = Keys @ ConfirmMatch[ tool[ "Parameters" ], KeyValuePattern @ { }, "Parameters" ];
         (* A parameter that the tool does not have is left out: simpleToolRequestParser only knows the tool's own
-           names, so it would read "name: value" as more text of the value before it: *)
-        params = simpleParameterValue /@ KeyTake[
-            ConfirmBy[ Association @ req[ "ParameterValues" ], AssociationQ, "ParameterValues" ],
-            declared
+           names, so it would read "name: value" as more text of the value before it. A blank value is left out too
+           (the parser gives "" to a parameter without a value): a last line "name:" with nothing after it would make
+           the parser read each line as a value without a name: *)
+        params = DeleteCases[
+            simpleParameterValue /@ KeyTake[
+                ConfirmBy[ Association @ req[ "ParameterValues" ], AssociationQ, "ParameterValues" ],
+                declared
+            ],
+            _String? (StringMatchQ[ WhitespaceCharacter... ])
         ];
         argString = ConfirmBy[ simpleParameterString[ params, Length @ declared ], StringQ, "ArgumentString" ];
         $receivedToolCall = True;

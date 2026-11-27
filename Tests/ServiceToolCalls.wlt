@@ -588,8 +588,9 @@ VerificationTest[
 ]
 
 (* A native call can leave out optional parameters and give the others in any order, so its values are written with
-   their names (a value without a name would go to the parameter in its place in the tool's order). Only the value of a
-   tool's only parameter is written without its name: *)
+   their names (a value without a name would go to the parameter in its place in the tool's order). Blank values, which
+   models give for optional parameters, are left out. Only the value of a tool's only parameter is written without its
+   name: *)
 VerificationTest[
     Module[ { stringParameter, insertTool, oneParameterTool, roundTrip },
         stringParameter[ required_ ] := <| "Interpreter" -> "String", "Help" -> "Text", "Required" -> required |>;
@@ -631,6 +632,7 @@ VerificationTest[
             {
                 roundTrip @ <| "position" -> "before", "cells" -> $structuredCells, "notebook" -> "s1" |>,
                 roundTrip @ <| "position" -> "before" |>,
+                roundTrip @ <| "notebook" -> "s1", "cell" -> " ", "position" -> "" |>,
                 nativeCallText[ "Simple", LLMToolRequest[ "one_parameter_test", <| "code" -> "1 + 1" |> ] ]
             }
         ]
@@ -638,6 +640,7 @@ VerificationTest[
     {
         { "s1", $structuredCells, "", "before" },
         { "", "", "", "before" },
+        { "s1", "", "", "" },
         "\n/one_parameter_test\n1 + 1"
     },
     SameTest -> MatchQ,
