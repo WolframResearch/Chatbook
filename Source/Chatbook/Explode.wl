@@ -225,10 +225,10 @@ $preprocessingRules := $preprocessingRules = Dispatch @ {
     Cell @ BoxData[ cell_Cell, ___ ] :> cell,
 
     Cell[ TextData @ { StyleBox[ "\[Bullet]", ___ ], " ", content___ }, "InlineItem", ___ ] :>
-        Cell[ TextData @ content, "Item" ],
+        Cell[ TextData @ { content }, "Item" ],
 
     Cell[ TextData @ { _String, StyleBox[ "\[Bullet]", ___ ], " ", content___ }, "InlineSubitem", ___ ] :>
-        Cell[ TextData @ content, "Subitem" ],
+        Cell[ TextData @ { content }, "Subitem" ],
 
     (* Format text tables: *)
     Cell[ content__, "TextTableForm", opts: OptionsPattern[ ] ] :>
