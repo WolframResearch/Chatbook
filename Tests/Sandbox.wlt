@@ -110,6 +110,14 @@ VerificationTest[
     TestID   -> "InputSegments-Macros"
 ]
 
+(* The inputs as text, as the notebook tools evaluate a code cell statement by statement: *)
+VerificationTest[
+    Wolfram`Chatbook`Common`sandboxStatements[ "a = 1;\n(* comment *)\nf[x_] :=\n    x + 1\nb" ],
+    { "a = 1;", "f[x_] :=\n    x + 1", "b" },
+    SameTest -> MatchQ,
+    TestID   -> "InputSegments-Statements"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Repairs*)

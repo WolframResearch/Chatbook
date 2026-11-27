@@ -186,6 +186,7 @@ Developer documentation lives in the `docs/` directory:
 - **[adding-model-support.md](docs/adding-model-support.md)** — Guide for adding support for new LLM models
 - **[model-support-examples/](docs/model-support-examples/)** — Real-world case studies (e.g., GPT 5.4)
 - **[settings/](docs/settings/)** — Complete settings reference with per-group documentation
+- **[notebook-tools.md](docs/notebook-tools.md)** — The AI Assistant's notebook editing tools: the tools, snapshots and the gate, cell ids, evaluation, CellDiff, limits, tests
 - **[cell-syntax.md](docs/cell-syntax.md)** — The syntax that shows cells to an LLM and reads them back: who calls it, guarantees and known gaps, cell tags and exact bodies, `cellsFromString`, what is refused, tests and the corpus measure
 - **[docs-todo.md](docs/docs-todo.md)** — Backlog of documentation still needed
 
