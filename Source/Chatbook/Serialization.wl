@@ -220,16 +220,26 @@ $rightSelectionIndicator = "</selection>";
 (* Determines if each serialized cell is wrapped in <cell ...>...</cell> (see docs/cell-syntax.md) *)
 $includeCellXML = False;
 
+(* Determines if the body of a cell is exact (True), lossy markdown (False), or exact for all but generated cells
+   (Automatic) *)
+$preserveCellBoxes = False;
+
 (* A function that gives the id of a cell tag for a cell (anything but a string means no id). With None, the cells of
    one CellToString call are numbered c1, c2, ... *)
 $cellIDFunction = None;
 $cellIDCounter  = 0;
+
+(* An exact body has no length limit unless "MaxCellStringLength" is given *)
+$exactBodyLimit = Infinity;
 
 (* Set when the string of the current cell is shortened to fit a length limit *)
 $cellTruncated = False;
 
 (* Options longer than this are left out of the options attribute of a cell tag *)
 $maxCellOptionLength = 200;
+
+(* Stands for the body of a cell while its decoration is made (see cellToString) *)
+$exactBodyMarker = "ExactBodyOfTheCell";
 
 (* Options that are not shown in a cell tag *)
 $$hiddenCellOption = ExpressionUUID | CellChangeTimes | CellID | GeneratedCell | CellAutoOverwrite | CellObject;
@@ -500,7 +510,8 @@ CellToString // Options = {
     "UnhandledBoxFunction"      -> None,
     "WindowWidth"               -> $windowWidth,
     "IncludeStackTrace"         :> $includeStackTrace,
-    "IncludeXML"                :> $includeCellXML
+    "IncludeXML"                :> $includeCellXML,
+    "PreserveBoxes"             :> $preserveCellBoxes
 };
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -513,6 +524,8 @@ CellToString[ cell_, opts: OptionsPattern[ ] ] :=
             $unhandledBoxFunction = OptionValue[ "UnhandledBoxFunction" ],
             $includeCellXML = TrueQ @ OptionValue[ "IncludeXML" ],
             $includeStackTrace = TrueQ @ OptionValue[ "IncludeStackTrace" ],
+            $preserveCellBoxes = OptionValue[ "PreserveBoxes" ],
+            $exactBodyLimit = Ceiling @ toSize[ OptionValue[ "MaxCellStringLength" ], Infinity ],
             $cellIDCounter = 0,
             $cellPageWidth, $windowWidth, $maxCellStringLength, $maxOutputCellStringLength,
             $contentTypes, $multimodalImages
@@ -617,6 +630,20 @@ cellToString[ cells: { __CellObject } ] := cellsToString @ notebookRead @ cells;
 (* Wrap the serialized cell in a cell tag: *)
 cellToString[ cell_Cell? xmlCellQ ] :=
     cellToXMLString @ cell;
+
+(* Without cell tags, an exact body has the decoration of the default markdown around it (heading mark, bullet, code
+   fence, label): that of the cell with a marker as its content (as code, if the cell is code), with the body in the
+   place of the marker. *)
+cellToString[ cell: Cell[ Except[ _Verbatim ], args___ ] ] /; exactCellQ @ cell :=
+    With[
+        {
+            body   = exactBody @ cell,
+            marker = If[ MatchQ[ cell, Cell[ _BoxData, ___, $$plainStringStyle, ___ ] ], BoxData @ $exactBodyMarker, $exactBodyMarker ]
+        },
+        Block[ { $preserveCellBoxes = False },
+            StringReplace[ cellToString @ Cell[ marker, args ], $exactBodyMarker -> body ]
+        ]
+    ];
 
 (* Drop cell label for some styles *)
 cellToString[ Cell[ a__, style: $$noCellLabelStyle, b___, CellLabel -> _, c___ ] ] :=
@@ -1018,6 +1045,9 @@ cellTagBody // beginDefinition;
 cellTagBody[ Cell[ __, $$delimiterStyle, ___ ] ] :=
     "";
 
+cellTagBody[ cell_Cell ] /; exactCellQ @ cell :=
+    truncateString[ exactBody @ cell, $exactBodyLimit ];
+
 (* A cell tag in the text of a lossy body (e.g. in a chat output) is escaped, so that a body never holds one: *)
 cellTagBody[ cell_Cell ] :=
     StringReplace[ lossyBody @ cell, tag: $$cellTagStart :> "&lt;" <> StringDrop[ tag, 1 ], IgnoreCase -> True ];
@@ -1043,6 +1073,7 @@ lossyBody[ cell_Cell ] :=
         string = Block[
             {
                 $includeCellXML     = False,
+                $preserveCellBoxes  = False,
                 $chatInputIndicator = False,
                 $delimitedCodeBlock = codeBlockQ @ bare
             },
@@ -1071,6 +1102,13 @@ bareCell[ cell_Cell ] :=
     DeleteCases[ cell, CellLabel -> _ ];
 
 bareCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*exactCellQ*)
+exactCellQ // beginDefinition;
+exactCellQ[ _Cell ] := TrueQ @ $preserveCellBoxes;
+exactCellQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
