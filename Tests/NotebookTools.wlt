@@ -23,9 +23,9 @@ VerificationTest[
    The tools are called through their LLMTools, on a made-up front end: what the tools do with a notebook goes through
    notebookFrontEnd, which the tests replace. Cells are converted for real, and writing code needs a front end to
    tokenize it, so the tests run under UsingFrontEnd. The tests at the end run the real front end operations on a
-   hidden copy of a notebook (no released front end makes snapshots yet). The tools' state and the stores that reading
-   writes to are Blocked in every test that changes them, so that nothing is left for other test files (CI runs them
-   all in one kernel). *)
+   hidden copy of a notebook (no released front end makes snapshots yet); the ones that show a comparison are skipped
+   before 16.0 (nbtShowsDiffQ). The tools' state and the stores that reading writes to are Blocked in every test that
+   changes them, so that nothing is left for other test files (CI runs them all in one kernel). *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -34,7 +34,7 @@ VerificationTest[
     (* CI runs every test file in one kernel and one context: these helpers are only defined here *)
     ClearAll[
         nbt, nbtFE, nbtList, nbtWrite, nbtWithFE, nbtCells, nbtStyles, nbtChat, nbtEvaluator, nbtRespond, nbtEdit,
-        nbtWriteCells, nbtEditCell, nbtRealFE
+        nbtWriteCells, nbtEditCell, nbtRealFE, nbtShowsDiffQ
     ];
 
     $nbtNames = {
@@ -177,6 +177,13 @@ VerificationTest[
             eval
         ]
     ];
+
+    (* Whether a test can show a comparison in a real notebook: its cells have ExpressionUUIDs, and the front end is
+       one of 16.0+, the only ones that the tools are enabled for (notebookToolsSupportedQ). A comparison gives the
+       notebook a private stylesheet, and the front end of 15.0 on Linux crashes or hangs at a later change of a
+       global option once notebooks that were given one have been closed. *)
+    nbtShowsDiffQ[ source_NotebookObject ] :=
+        Wolfram`Chatbook`Common`sufficientVersionQ[ 16.0 ] && MatchQ[ Cells @ source, { CellObject[ _String, ___ ].. } ];
 
     (* How a result that leaves edits in a snapshot ends, and what WriteCells gives if it changes nothing *)
     $nbtNotShown = "\n\nThe user does not see this yet: call ShowChanges when your edits are done, before you reply.";
@@ -1551,7 +1558,7 @@ VerificationTest[
         nbtRealFE[ copies,
             WithCleanup[
                 source = NotebookPut @ Notebook @ { Cell[ "A title", "Title" ], Cell[ "Some text", "Text" ] };
-                If[ ! MatchQ[ Cells @ source, { CellObject[ _String, ___ ].. } ],
+                If[ ! nbtShowsDiffQ @ source,
                     Missing[ "TestSkipped" ],
                     listed = SelectFirst[ Developer`ReadRawJSONString[ nbt[ "ListNotebooks" ] ][ "notebooks" ], StringStartsQ[ First @ source, #[ "id" ] ] & ];
                     id     = listed[ "id" ];
@@ -1608,7 +1615,7 @@ VerificationTest[
                     Cell[ "A title", "Title" ], Cell[ "First section", "Section" ], Cell[ "one", "Text" ], Cell[ "two", "Text" ],
                     Cell[ "three", "Text" ], Cell[ "Second section", "Section" ], Cell[ "four", "Text" ], Cell[ "five", "Text" ]
                 };
-                If[ ! MatchQ[ Cells @ source, { CellObject[ _String, ___ ].. } ],
+                If[ ! nbtShowsDiffQ @ source,
                     Missing[ "TestSkipped" ],
                     id = ToLowerCase @ StringTake[ First @ source, 8 ];
                     {
@@ -1648,7 +1655,7 @@ VerificationTest[
             WithCleanup[
                 source  = NotebookPut @ Notebook @ { Cell[ "A title", "Title" ], Cell[ "Some text", "Text", CellTags -> "old" ] };
                 options = Options[ source, { StyleDefinitions, NotebookDynamicExpression } ];
-                If[ ! MatchQ[ Cells @ source, { CellObject[ _String, ___ ].. } ],
+                If[ ! nbtShowsDiffQ @ source,
                     Missing[ "TestSkipped" ],
                     id = ToLowerCase @ StringTake[ First @ source, 8 ];
                     {
