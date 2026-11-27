@@ -2989,6 +2989,7 @@ initializeWorkspaceChat[ ] := LogChatTiming[
         settings = initializationStep[ initializeWorkspaceChatSettings[ ], "InitializeSettings" ];
         initializationStep[ initializeChatSubmit @ settings, "InitializeChatSubmit" ];
         initializationStep[ initializeRelatedDocumentation @ settings, "InitializeRelatedDocumentation" ];
+        initializationStep[ initializeCellSyntax[ ], "InitializeCellSyntax" ];
         $workspaceChatInitialized = True
     ],
     "InitializeWorkspaceChat"
@@ -3007,6 +3008,22 @@ initializationStep[ eval_, tag_String ] :=
     LogChatTiming[ Quiet @ catchAlways @ eval, tag ];
 
 initializationStep // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*initializeCellSyntax*)
+initializeCellSyntax // beginDefinition;
+
+(* A chat with the notebook tools gets the notebook context in the cell syntax (docs/cell-syntax.md), which reads code
+   with CodeParser (joinedQ in Serialization.wl). Its package and its library take about 0.8 s to load in a kernel that
+   does not have them, so one cell is read here, before the first chat. Whether the tools are supported is known by
+   now: resolving the settings has asked for it, which probes the front end once per session. *)
+initializeCellSyntax[ ] :=
+    If[ Wolfram`Chatbook`Tools`NotebookTools`notebookToolsSupportedQ[ ],
+        CellToString[ Cell[ BoxData @ RowBox @ { "a", "b" }, "Input" ], "IncludeXML" -> True, "PreserveBoxes" -> True ]
+    ];
+
+initializeCellSyntax // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

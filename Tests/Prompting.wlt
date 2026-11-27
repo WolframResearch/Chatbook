@@ -247,4 +247,56 @@ VerificationTest[
     TestID   -> "BasePrompt-FunctionRepositoryPreference"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Cell Syntax*)
+
+(* A chat that has the notebook tools gets notebooks in the cell syntax (docs/cell-syntax.md). It is told what it needs
+   to read cells and to name them, that it gets the user's notebooks this way, and that a change that the user asks for
+   is made with the tools and shown in the same turn. Every request of such a chat carries the text, so it stays short
+   (853 characters when this test was written). *)
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`$WorkspaceChat        = True,
+            Wolfram`Chatbook`Common`$selectedTools = KeyTake[ Wolfram`Chatbook`$DefaultTools, { "ReadCells" } ]
+        },
+        With[ { text = Wolfram`Chatbook`Common`$basePromptComponents[ "CellSyntax" ] },
+            {
+                StringContainsQ[ text, # ] & /@ {
+                    "<cell id='c3' style='Input'>", "The id names the cell in the notebook tools", "Markdown",
+                    "Wolfram Language", "<RawBoxes>...</RawBoxes>", "copy it unchanged, with its tags", "attachment://",
+                    "expression://", "Output cells", "truncated='true'", "NEVER write these tags in replies to the user",
+                    "show it with ShowChanges in the same turn, without asking first"
+                },
+                StringLength @ text <= 860,
+                StringContainsQ[ BasePrompt[ "CellSyntax" ], text ],
+                StringCases[ BasePrompt[ "NotebooksPreamble" ], "you will see it " ~~ format: Except[ "." ].. ~~ "." :> format ]
+            }
+        ]
+    ],
+    { { True.. }, True, True, { "as cells in tags (see below)" } },
+    SameTest -> MatchQ,
+    TestID   -> "BasePrompt-CellSyntax"
+]
+
+(* Other chats get neither: their base prompt is what it was, and the text does not count against their token budget *)
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`$WorkspaceChat        = True,
+            Wolfram`Chatbook`Common`$selectedTools = KeyTake[ Wolfram`Chatbook`$DefaultTools, { "NotebookReader" } ]
+        },
+        {
+            Wolfram`Chatbook`Common`$basePromptComponents[ "CellSyntax" ],
+            StringFreeQ[ BasePrompt[ { "Notebooks", "CellSyntax" } ], "<cell" | "RawBoxes" ],
+            StringCases[ BasePrompt[ "NotebooksPreamble" ], "you will see it " ~~ format: Except[ "." ].. ~~ "." :> format ],
+            StringFreeQ[ Wolfram`Chatbook`Common`$fullBasePrompt, "<cell" | "RawBoxes" ]
+        }
+    ],
+    { "", True, { "formatted as markdown" }, True },
+    SameTest -> MatchQ,
+    TestID   -> "BasePrompt-CellSyntax-OtherChats"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)

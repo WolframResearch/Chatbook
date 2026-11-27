@@ -3,6 +3,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$$attachmentURI;
 `$$generatedCellStyle;
 `$$ignoredBox;
+`$$plainStringStyle;
 `$absoluteCurrentSettingsCache;
 `$allowConnectionDialog;
 `$alwaysOpen;

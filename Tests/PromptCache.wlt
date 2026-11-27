@@ -381,6 +381,26 @@ VerificationTest[
     TestID   -> "BasePromptHints-SameSystemPrompt"
 ]
 
+(* The notebook tools are part of the settings, so a chat that has them is told how to read their cell syntax in its
+   system prompt, and not in a hint: *)
+VerificationTest[
+    Table[
+        withCacheSettings[
+            <| "LLMEvaluator" -> "CodeAssistant" |>,
+            Block[ { Wolfram`Chatbook`Common`$selectedTools = KeyTake[ Wolfram`Chatbook`$DefaultTools, tools ] },
+                With[ { messages = First @ constructWithData[ $settings, $firstCells ] },
+                    StringContainsQ[ #, "Notebook cells are shown as <cell id='c3' style='Input'>" ] & /@
+                        { systemContent @ messages, StringJoin[ contentString /@ Rest @ messages ] }
+                ]
+            ]
+        ],
+        { tools, { { "ReadCells" }, { "NotebookReader" } } }
+    ],
+    { { True, False }, { False, False } },
+    SameTest -> MatchQ,
+    TestID   -> "BasePromptHints-CellSyntaxInSystemPrompt"
+]
+
 (* A hint is sent once per conversation: *)
 VerificationTest[
     Module[ { extra, first, data, second },

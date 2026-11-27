@@ -38,6 +38,7 @@ $basePromptOrder = {
     "CheckboxesIndeterminate",
     "ConversionFormatting",
     "ExternalLanguageCells",
+    "CellSyntax",
     "MessageStackTrace",
     "SpecialURI",
     "SpecialURIImporting",
@@ -109,6 +110,7 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "VideoBoxImporting"                    -> { "MarkdownImageBoxImporting" },
     "ConversionFormatting"                 -> { "MessageConversionHeader" },
     "ExternalLanguageCells"                -> { "MessageConversionHeader" },
+    "CellSyntax"                           -> { },
     "MessageStackTrace"                    -> { "MessageConversionHeader", "WolframLanguage" },
     "SpecialURI"                           -> { },
     "SpecialURIImporting"                  -> { "SpecialURI" },
@@ -195,13 +197,13 @@ $basePromptComponents[ "NotebooksPreamble" ] :=
 Which[
 TrueQ @ $SidebarChat,
 "You are interacting with a user through a special Wolfram Chat interface within a normal notebook. \
-You will often receive context from the user's notebooks, but you will see it formatted as markdown. \
+You will often receive context from the user's notebooks, but you will see it " <> $notebookContextFormat <> ". \
 Similarly, your responses are automatically converted from plain text before being displayed to the user. \
 For this to work correctly, you must adhere to the following guidelines:
 ",
 TrueQ @ $WorkspaceChat,
 "You are interacting with a user through a special Wolfram Chat interface alongside normal notebooks. \
-You will often receive context from the user's notebooks, but you will see it formatted as markdown. \
+You will often receive context from the user's notebooks, but you will see it " <> $notebookContextFormat <> ". \
 Similarly, your responses are automatically converted from plain text before being displayed to the user. \
 For this to work correctly, you must adhere to the following guidelines:
 ",
@@ -213,6 +215,9 @@ The messages you receive from the user have been converted to plain text from no
 Similarly, your messages are automatically converted from plain text before being displayed to the user. \
 For this to work correctly, you must adhere to the following guidelines:
 " ];
+
+(* A chat with the notebook tools gets the user's notebooks in the cell syntax, which "CellSyntax" describes: *)
+$notebookContextFormat := If[ TrueQ @ notebookToolsSelectedQ[ ], "as cells in tags (see below)", "formatted as markdown" ];
 
 $basePromptComponents[ "AutoAssistant" ] = "\
 * ALWAYS begin your response with one of the following tags to indicate the type of response: [INFO], [WARNING], or [ERROR]
@@ -314,6 +319,24 @@ becomes ``*Styled* message``.";
 $basePromptComponents[ "ExternalLanguageCells" ] = "\
 	* When you see code blocks denoted with languages other than Wolfram Language, they are external language cells, \
 which is a cell type that evaluates other languages through ExternalEvaluate returning a WL output.";
+
+(* How to read cells in the cell syntax (docs/cell-syntax.md), in which a chat with the notebook tools gets the
+   notebook context, NotebookReader results and the tools' results (see needsSettingsBasePrompts). Every request of
+   such a chat carries this text, so it is short. It is empty for other chats, so that it does not count against
+   their token budget ($fullBasePrompt). *)
+$basePromptComponents[ "CellSyntax" ] := If[ TrueQ @ notebookToolsSelectedQ[ ], $cellSyntaxPrompt, "" ];
+
+$cellSyntaxPrompt = "\
+* Notebook cells are shown as <cell id='c3' style='Input'>, the content, </cell>. \
+The id names the cell in the notebook tools. \
+Text cells hold Markdown, and code cells Wolfram Language as typed.
+\t* <RawBoxes>...</RawBoxes> is typeset content with no Markdown form: copy it unchanged, with its tags.
+\t* ![..](attachment://..) and ![..](expression://..) links stand for graphics and large content: copy them as they are.
+\t* Output cells are shortened and are not edited as text. A cell with truncated='true' is not shown whole.
+\t* This is only how you see notebooks: NEVER write these tags in replies to the user.
+\t* Make a change to a notebook that the user asks for with the notebook tools, and show it with ShowChanges in the \
+same turn, without asking first: the user accepts or rejects it in the diff. Do not put the new content in your reply \
+instead.";
 
 $basePromptComponents[ "MessageStackTrace" ] = "\
 * When a stack trace is available for an error message, it will be displayed as a <message_stack_trace> element. \
