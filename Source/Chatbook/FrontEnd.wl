@@ -591,63 +591,6 @@ $cloudCellFixes := $cloudCellFixes = Dispatch @ {
 };
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*cellReference*)
-cellReference // beginDefinition;
-cellReference[ cell_CellObject ] := Lookup[ $cellReferences, cell, createCellReference @ cell ];
-cellReference[ ref_String      ] := Lookup[ $cellReferences, ref , findCellReference @ ref    ];
-cellReference // endDefinition;
-
-$cellReferences = <| |>;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*createCellReference*)
-createCellReference // beginDefinition;
-
-createCellReference[ cell_CellObject ] :=
-    With[ { ref = tinyHash @ cell },
-        $cellReferences[ cell ] = ref;
-        $cellReferences[ ref ] = cell;
-        ref
-    ];
-
-createCellReference // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*findCellReference*)
-findCellReference // beginDefinition;
-findCellReference[ ref_String ] /; StringLength @ ref > $tinyHashLength := findCellReferenceInString @ ref;
-findCellReference[ ref_String ] := Catch[ findNotebookCell[ ref ] /@ Notebooks[ ]; Missing[ "NotFound" ], $ref ];
-findCellReference // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*findCellReferenceInString*)
-findCellReferenceInString // beginDefinition;
-findCellReferenceInString[ s_String ] := findCellReferenceInString[ s, Select[ Keys @ $cellReferences, StringQ ] ];
-findCellReferenceInString[ s_String, refs: { ___String } ] := First[ StringCases[ s, refs, 1 ], Missing[ "NotFound" ] ];
-findCellReferenceInString // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*findNotebookCell*)
-findNotebookCell // beginDefinition;
-findNotebookCell[ ref_ ] := findNotebookCell[ ref, # ] &;
-findNotebookCell[ ref_, nbo_ ] := checkCellReference[ ref ] /@ Cells @ nbo;
-findNotebookCell // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*checkCellReference*)
-checkCellReference // beginDefinition;
-checkCellReference[ ref_ ] := checkCellReference[ ref, # ] &;
-checkCellReference[ ref_, cell_CellObject ] := With[ { r = cellReference @ cell }, Throw[ cell, $ref ] /; ref === r ];
-checkCellReference[ _, _ ] := Null;
-checkCellReference // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Notebooks*)
 
