@@ -1,8 +1,32 @@
 # Cell Syntax
 
+Chatbook shows notebook cells to an LLM, and reads cells back from an LLM, in one syntax: Markdown wherever Markdown can say it, and boxes inside XML tags where it cannot.
+
+```
+<cell id='c4' style='Input' CellLabel='In[1]:='>
+Solve[<RawBoxes>SuperscriptBox["x", "2"]</RawBoxes> + a x + 1 == 0, x]
+</cell>
+
+<cell id='c6' style='Text'>
+A [link](https://www.wolfram.com) in **bold** text with $$\lim_{x \to 2} f(x) = 5$$.
+</cell>
+```
+
 ## Who Calls It and What It Needs
 
+- The two files of `CellSyntax/` are loaded by `Serialization.wl` and share its private context.
 - `"PreserveBoxes"` is `True`, `False` or `Automatic` (exact for all but generated cells: `Output`, `Print`, `Echo`, `Message`, `MSG` and chat outputs, which keep the lossy Markdown and its length limit). Without `"IncludeXML"` it gives exact bodies inside the decoration of the default Markdown, for reading only. The defaults of the two options are `$includeCellXML` and `$preserveCellBoxes`, which a caller sets for the code that it calls.
+
+## Guarantees and Known Gaps
+
+Known gaps:
+
+- A model can't write a `TemplateBox`: not a quantity, not a template of the documentation. Only the ones that the notebook has are kept ([Originals](#originals)).
+- With a sandboxed evaluator, typeset results with a `TemplateBox`, graphics or dynamic content are refused. With `"Method" -> "Session"` results are written unchecked, since the model's code runs in the user's kernel anyway.
+- Data is evaluated once it has passed the rule, so an up-value of a ``System` `` symbol that it names runs. A value of the evaluator behind a URI is typeset in Chatbook's kernel.
+- A hyperlink can have any address, also a `file:` URL or a local path.
+- A table is made by the chat formatter and not by the writer's own rules, so some of what the writer reads elsewhere has no place in it: a URI, three backticks and an unreadable image link are refused in a table.
+- Markdown as in a chat reply is not read: only cell tags are ([What Is Refused](#what-is-refused)).
 
 ## The Syntax
 
@@ -65,7 +89,53 @@ Boxes with graphics (`GraphicsBox`, `Graphics3DBox`, `RasterBox`, `Raster3DBox`)
 - `$attachments` holds the boxes themselves for the URI. They are stored as they are and never interpreted. The evaluator tool reads them as input in its own kernel.
 - What exact reading adds to `$attachments` is bounded (`$notebookAttachments`): beyond 200 URIs or 2×10⁸ bytes the ones that were read longest ago are dropped. Reading a cell again brings its URIs back.
 
+## Writing
+
+`cellsFromString[text, "Cells" -> cells, "Originals" -> $cellOriginals, "ExtraAttributes" -> {names}]` gives a record for each cell tag, in the order of the text, or a `Failure` whose message tells the model what to fix:
+
+```wl
+<|"ID" -> id | None, "Cell" -> Cell[…] | Missing["Unchanged"], "Attributes" -> <|"Styles" -> {…}, "Options" -> {…}|>,
+  "Extra" -> <|name -> value, …|>, "Tag" -> n|>
+```
+
+- `"Cells"` gives the existing cell of an id: an association, or a function that gives the `Cell` or a `Missing` and is asked once for a tag. A tag with an `id` replaces that cell, and one without is a new cell. An id is read as models write it: `C3`, `#c3`, `#3` and `3` are `c3`, in the record, for `"Cells"` and for the records of the cell.
+- `"ExtraAttributes"` are attributes of the caller's own (the tools' `after`, `before`, `delete`). They are not read: `"Extra"` has the ones that the tag gives. `"Tag"` is the number of the cell tag in the text, by which a message names a new cell (`Cell tag 2 (a new cell)`).
+- Attributes that are left out keep their values, an empty one removes its value, and `options` replaces the options that the tag shows. `<cell id='c3' CellTags='x'/>` changes attributes only (`"Cell"` is `Missing["Unchanged"]`).
+- A cell tag is read wherever it starts outside of a body, so tags can follow one another on a line. A body ends at its first `</cell>`, wherever that is: in the middle of a line, in a string or a comment of code, inside of `<RawBoxes>`. A cell tag before it is content unless it starts a line: `<cell id='c1'>A <cell id='c2'>B</cell>` is c1 with the second tag in it. The names of tags are read without regard to case, a value can be in double quotes, and HTML entities are read in it.
+- The kind of a body is the kind of the existing cell's content, unless the tag gives the cell a style of another kind; the kind of a new cell is that of its style. A body is read as an exact one, so a lossy body must not be written back.
+- Nothing is written to a notebook, and no code of the text is run except in `<MakeBoxes>` and `<ToBoxes>`. A `Failure` with another tag than `"CellSyntax"` is an internal failure (no front end, a defect).
+
+| Body | Content |
+|---|---|
+| What the reader writes for the cell | The content of the cell, unchanged, whatever it holds |
+| Text | Plain text is read from left to right: `\` before one of ``\ ` $ * \| ] ~ _ #``, a long name, an HTML entity. Markdown: `**…**`, `*…*`, `~~…~~`, `__…__`, `_…_` (only where the markers are not inside of a word, so `2*3*4` is text), `[label](url)` and `![label](url)` (a link: nothing is fetched), ``` ``code`` ``` and `` `code` ``, `$$tex$$`, `\(tex\)` and `\[tex\]`, and a table (a header row with a row of dashes under it). A body is one cell: a `#` or a `-` at the start of a later line is text. |
+
+- An item of `TextData` is text: a string, an inline cell, or a `StyleBox` or a link that holds those. Other boxes go into an inline cell, since the front end corrupts a cell that has them directly in its text.
+- The content of a text cell is a string, `TextData` of one item or `TextData` of a list, as the cell had it. A body that is one piece gives `BoxData` for a cell that had boxes, and for a new `DisplayFormula`, `DisplayFormulaNumbered` or `Picture` cell.
+
+| Tag in a body | Meaning |
+|---|---|
+| `<RawBoxes>boxes</RawBoxes>` | The boxes as they are |
+| `![label](uri)`, `<!uri!>` | The boxes that the URI was read from, into any cell. Any other URI is a value of the evaluator, which is typeset in Chatbook's kernel. |
+| `<MakeBoxes>expr</MakeBoxes>`, `<ToBoxes>expr</ToBoxes>` | The boxes of the expression, unevaluated or evaluated, typeset in the kernel of the WolframLanguageEvaluator tool (30 seconds each, in the order of the text; `form='TraditionalForm'`). Without the tool they are refused. A tag has run when something after it in the text is refused. |
+
+## What Is Refused
+
+What a model writes is checked by two rules, and everything that is made of its text is checked after it is made. The user's own content is not checked ([Originals](#originals)). A refusal is `Failure["CellSyntax", <|"MessageTemplate" -> …, "MessageParameters" -> {…}|>]`; `TemplateApply` of the two gives the message, which names the cell and says what to write instead.
+
+| Written | Refused |
+|---|---|
+| Any text: a body, a new `CellLabel`, `CellTags` or `style`, the strings of what is made | Control characters (all but tab and line feed), and linear syntax: its characters and the opener `\!\(`, and in code and boxes also `\*` and the escapes of its characters (`\:f7c1`). A `\!` alone is text. (`requireInertText`) |
+| Data: `<RawBoxes>`, new `options`, and the results of a sandboxed evaluator | Anything but boxes and plain data, decided on the held expression before it is evaluated (`dataQ`). Heads are from a list: boxes that typeset, lists, rules, associations, colors, `Directive`, `URL`, `Cell`, `BoxData`, `TextData`, `Scaled`, `Offset`, and arithmetic on numbers and `Inherited`. Symbols are ``System` `` symbols that evaluate to themselves or to plain data (`Center`, `Red`, `Infinity`): no `$` variable, no `Now`. Not data: a `TemplateBox` (it does what its stylesheet style says; [Originals](#originals) has the one exception), a dynamic box, graphics, an option that holds code (`ButtonFunction`, `CellEventActions`, …, also named as a string) or `InitializationCell`, a string with linear syntax, a `TagBox` whose tag is not a string, and a `ButtonBox` that is more than a link (`BaseStyle -> "Hyperlink"` or `"Link"`, `ButtonData`, `ButtonNote`). No symbol is made to tell: the text may only name ``System` `` symbols that exist. |
+| `options` | Also the ones that a tag never shows |
+| What is made of text (emphasis, links, a formula, a table, tokens of code) | A dynamic box or an option that holds code in it (`requireInert`) |
+| The tags and their places | Text outside of cell tags: anything but white space and selection markers before the first cell tag, between a `</cell>` or a `/>` and the next cell tag, and after the last one. An unknown attribute or id; a body with `truncated`; a body that no `</cell>` ends; a cell tag that starts a line of a body; a `</cell>`, `<RawBoxes>`, `<MakeBoxes>` or `<ToBoxes>` without its other tag; LaTeX that can't be read; a URI that is not known any more |
+
 ## Originals
+
+Different boxes read as the same Markdown (`[link](url)` may be a `ButtonBox` or a `TemplateBox`), and a model can't write every box that it reads. So the reader records what each piece stands for, and the writer puts a piece that it finds back as it was, unchecked: it is the user's own content.
 
 - A caller that sets `$cellOriginals` to an association gets `<|id -> <|text -> boxes|>|>` in it: Markdown under its text (`**bold**`), `<RawBoxes>` under the text between its tags. Reading a cell again replaces its records, and nothing is recorded for a cell without an id.
 - In one cell a piece of Markdown stands for one thing: boxes that would read as Markdown that already stands for other boxes in the cell are `<RawBoxes>`.
+- The writer looks a piece up in the records of its cell first, then in those of the other cells, where a text that stands for different boxes is not used. A piece without a record is new: a link is a `ButtonBox`, a formula a `TeXAssistantTemplate` formula, inline code an `InlineCode` cell.
+- `<RawBoxes>` without a record are the model's, but a `TemplateBox` in them that the existing cell holds is not (`ownTemplates`): a table with a link template in one entry can have another entry changed. The template is found by its text as the cell was read, so one that is written in another way is refused like any template of the model's. A string stands for it while the rest is read and checked, and the template of the cell is written in its place, unchecked. A new cell, `options` and the results of a sandboxed evaluator have no such templates.
