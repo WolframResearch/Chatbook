@@ -38,6 +38,7 @@ A built-in tool can be version-gated through its `"Enabled"` and `"Hidden"` keys
 - Is not selected when `"AllowSelectionContext"` is not `True` (the user turned notebook content off, e.g. with the sidebar's "Ignore notebook content", which is checked by default). `selectTools` in `Tools/Common.wl` drops it in that case. If it is called anyway, it gives an explanation instead of notebook content, as it does when there is no notebook.
 - Leaves out the "user does not see the output of this tool call" notice that other tool results with images get (`checkMarkdownOutput` in `SendChat.wl`), since the content comes from the user's own notebook.
 - Does not change the chat's own notebook context state (`$contextPrompt`, `$selectionPrompt`, `$contextImages`, and so on).
+- In a chat that has the [notebook tools](#notebook-tools), gives the cells in the cell syntax with the cell ids of those tools, as the automatic notebook context does (see [The Context and the Prompt](../../notebook-tools.md#the-context-and-the-prompt)).
 
 #### Notebook Tools
 
@@ -47,6 +48,7 @@ The notebook tools (ListNotebooks, OpenNotebook, GetOutline, ReadCells, SearchNo
 - Are hidden from the tool manager UI, since they are enabled only in those chats.
 - Are dropped with NotebookReader when `"AllowSelectionContext"` is not `True`, since they read the user's notebooks. So the sidebar only offers them when "Ignore notebook content" is unchecked.
 - Raise `"MaxToolResponses"` to at least 20 when any of them is selected, since one edit takes several calls (read, edit, fix, show). A larger value is kept.
+- Put the notebook context and NotebookReader results of the chat into the cell syntax when any of them is selected (`notebookToolsSelectedQ`), and add the `"CellSyntax"` base prompt component, which tells the model how to read it (`needsSettingsBasePrompts` in `ChatMessages.wl`).
 
 The `getToolNames` function (`Tools/Common.wl`) determines the initial tool name list through a two-level dispatch:
 

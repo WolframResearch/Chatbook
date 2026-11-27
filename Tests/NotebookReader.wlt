@@ -387,4 +387,124 @@ VerificationTest[
     TestID   -> "SelectionContextDisabled"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Cell Syntax*)
+
+(* Evaluates eval for calls of the tool function (readerResult) as workspaceNotebookReader makes them, in a chat that
+   has the tools $readerTools. The tools are selected after the settings are resolved, which selects tools itself. The
+   selected tools, the table of cell ids and the stores that reading writes to are Blocked, so that nothing is left
+   for other tests. *)
+VerificationTest[
+    toolsNotebookReader // ClearAll;
+    toolsNotebookReader // Attributes = { HoldRest };
+    toolsNotebookReader[ nb_NotebookObject, eval_ ] := Block[
+        {
+            Wolfram`Chatbook`Tools`NotebookTools`Private`$cellTables = <| |>,
+            Wolfram`Chatbook`Common`$attachments                     = <| |>,
+            Wolfram`Chatbook`Common`$notebookAttachments             = <| |>,
+            Wolfram`Chatbook`Common`$selectedTools                   = <| |>,
+            Wolfram`Chatbook`$WorkspaceChat                          = True,
+            Wolfram`Chatbook`$SidebarChat                            = False,
+            $readerSettings,
+            $readerTools                                             = { "NotebookReader", "ReadCells" }
+        },
+        $readerSettings = <| AbsoluteCurrentChatSettings @ nb, "AllowSelectionContext" -> True, "FocusedNotebook" -> nb |>;
+        eval
+    ];
+    readerResult[ params_Association ] := Block[
+        {
+            Wolfram`Chatbook`Common`$selectedTools = KeyTake[ Wolfram`Chatbook`$DefaultTools, $readerTools ],
+            Wolfram`Chatbook`$ChatHandlerData      = <| "ChatNotebookSettings" -> $readerSettings |>
+        },
+        Wolfram`Chatbook`Tools`Private`notebookReader @ params
+    ];
+    readerCellIDs[ result_String ] := StringCases[ result, "<cell id='" ~~ id: WordCharacter.. ~~ "'" :> id ],
+    Null,
+    SameTest -> MatchQ,
+    TestID   -> "CellSyntax-Definitions"
+]
+
+(* In a chat that has the notebook tools, the reader gives the cells in the cell syntax (docs/cell-syntax.md) with the
+   cell ids of those tools, in both scopes. A cell that is excluded from chats has an id and is not shown, and the
+   pages count the cells that are shown. Without the tools the reader gives markdown as before. *)
+VerificationTest[
+    UsingFrontEnd @ Module[ { nb, selection, page1, page2 },
+        WithCleanup[
+            nb = CreateDocument @ {
+                Cell[ "CELL-1", "Text" ],
+                Cell[ "CELL-2", "Text" ],
+                Cell[ "EXCLUDED-CELL", { "Text", "ChatExcluded" } ],
+                Cell[ BoxData @ RowBox @ { "x", "=", FractionBox[ "1", "2" ] }, "Input" ],
+                Cell[ "CELL-5", "Text" ]
+            };
+            SelectionMove[ Cells[ nb ][[ 2 ]], All, Cell ];
+            toolsNotebookReader[
+                nb,
+                Block[ { Wolfram`Chatbook`ChatModes`Context`Private`$notebookReaderPageSize = 2 },
+                    selection = readerResult @ <| |>;
+                    page1     = readerResult @ <| "scope" -> "all" |>;
+                    page2     = readerResult @ <| "scope" -> "all", "offset" -> 3 |>;
+                    {
+                        readerCellIDs @ selection,
+                        StringContainsQ[ selection, "<selection>\n\n<cell id='c2' style='Text'>\nCELL-2\n</cell>\n\n</selection>" ],
+                        { readerCellIDs @ page1, StringContainsQ[ page1, "cells 1 to 2 of 4" ], StringContainsQ[ page1, "offset 3" ] },
+                        { readerCellIDs @ page2, StringContainsQ[ page2, "cells 3 to 4 of 4" ] },
+                        StringContainsQ[ page2, "<cell id='c4' style='Input'>\nx = <RawBoxes>FractionBox[\"1\", \"2\"]</RawBoxes>\n</cell>" ],
+                        StringFreeQ[ selection <> page1 <> page2, "EXCLUDED-CELL" | "```" ],
+                        Block[ { $readerTools = { "NotebookReader" } },
+                            With[ { markdown = readerResult @ <| |> },
+                                { readerCellIDs @ markdown, StringContainsQ[ markdown, "```wl\nx = (1/2)\n```" ] }
+                            ]
+                        ]
+                    }
+                ]
+            ],
+            NotebookClose @ nb
+        ]
+    ],
+    {
+        { "c1", "c2", "c4", "c5" },
+        True,
+        { { "c1", "c2" }, True, True },
+        { { "c4", "c5" }, True },
+        True,
+        True,
+        { { }, True }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "CellSyntax-SharedCellIDs"
+]
+
+(* A page in the cell syntax that does not fit in the token budget ends early as well, and the next page starts with
+   the cell after it: *)
+VerificationTest[
+    UsingFrontEnd @ Module[ { nb, page, last, next },
+        WithCleanup[
+            nb = CreateDocument @ Table[
+                Cell[ "CELL-" <> ToString @ i <> ": " <> StringRepeat[ "lorem ipsum dolor sit amet ", 40 ], "Text" ],
+                { i, 12 }
+            ];
+            toolsNotebookReader[
+                nb,
+                Block[ { $readerSettings = <| $readerSettings, "MaxContextTokens" -> 8000 |> },
+                    page = readerResult @ <| "scope" -> "all" |>;
+                    last = First[ StringCases[ page, "cells 1 to " ~~ n: DigitCharacter.. ~~ " of 12" :> FromDigits @ n ], 0 ];
+                    next = readerResult @ <| "scope" -> "all", "offset" -> last + 1 |>;
+                    {
+                        1 < last < 12,
+                        readerCellIDs @ page === Table[ "c" <> ToString @ i, { i, last } ],
+                        StringContainsQ[ page, "offset " <> ToString[ last + 1 ] ],
+                        First[ readerCellIDs @ next, None ] === "c" <> ToString[ last + 1 ]
+                    }
+                ]
+            ],
+            NotebookClose @ nb
+        ]
+    ],
+    { True, True, True, True },
+    SameTest -> MatchQ,
+    TestID   -> "CellSyntax-AllScope-TokenBudget"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)

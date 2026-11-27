@@ -3504,4 +3504,42 @@ VerificationTest[
     TestID   -> "RoundTrip-NewCells"
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Warm-up*)
+
+(* The warm-up of the assistant reads a cell of code exactly if the notebook tools are supported, which loads CodeParser
+   before the first chat needs it for the notebook context. Otherwise it reads nothing: *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Serialization`Private`$joinedTokens = <| |> },
+        Table[
+            Block[ { Wolfram`Chatbook`Tools`NotebookTools`notebookToolsSupportedQ = supported & },
+                Wolfram`Chatbook`ChatModes`UI`Private`initializeCellSyntax[ ];
+                Wolfram`Chatbook`Serialization`Private`$joinedTokens
+            ],
+            { supported, { False, True } }
+        ]
+    ],
+    { <| |>, <| { "a", "a" } -> True |> },
+    SameTest -> MatchQ,
+    TestID   -> "WarmUp-ReadsCodeWithTheTools"
+]
+
+(* It is a step of the warm-up (the steps themselves are not run here): *)
+VerificationTest[
+    Module[ { steps = { } },
+        Block[
+            {
+                Wolfram`Chatbook`ChatModes`UI`Private`initializationStep  = Function[ Null, AppendTo[ steps, #2 ], HoldFirst ],
+                Wolfram`Chatbook`ChatModes`UI`Private`$workspaceChatInitialized = False
+            },
+            Wolfram`Chatbook`ChatModes`UI`Private`initializeWorkspaceChat[ ]
+        ];
+        steps
+    ],
+    { __String, "InitializeCellSyntax" },
+    SameTest -> MatchQ,
+    TestID   -> "WarmUp-HasTheStep"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)
