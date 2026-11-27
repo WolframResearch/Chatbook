@@ -116,6 +116,10 @@ $toolNameAliases = <|
     "WebSearch"           -> "WebSearcher"
 |>;
 
+(* Removed tools that settings saved by older versions can still name (chat notebooks popped out from the history of
+   the Notebook Assistant got the window's "Tools"): *)
+$removedToolNames = { "NotebookEditor" };
+
 $installedToolExtraKeys = {
     "Description",
     "DocumentationLink",
@@ -486,8 +490,8 @@ selectTools0[ name_String, tool: HoldPattern[ _LLMTool ] ] := $selectedTools[ na
 
 (* Tool not found: *)
 selectTools0[ name_String, Missing[ "KeyAbsent", name_ ] ] :=
-    If[ TrueQ @ KeyExistsQ[ $defaultChatTools0, name ],
-        (* A default tool that was filtered for compatibility *)
+    If[ TrueQ @ KeyExistsQ[ $defaultChatTools0, name ] || MemberQ[ $removedToolNames, name ],
+        (* A default tool that was filtered for compatibility, or a removed tool *)
         Null,
         (* An unknown tool name *)
         messagePrint[ "ToolNotFound", name ]

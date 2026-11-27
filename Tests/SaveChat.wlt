@@ -608,7 +608,7 @@ VerificationTest[
         (* The settings of the assistant window, which has a different chat loaded: *)
         windowSettings = <|
             titleTestSettings @ windowUUID,
-            "Tools"          -> { "NotebookEditor" },
+            "Tools"          -> { "NotebookReader" },
             "SetCellDingbat" -> False,
             "Model"          -> <| "Service" -> "OpenAI", "Name" -> "gpt-4o" |>
         |>;
