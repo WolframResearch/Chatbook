@@ -361,4 +361,34 @@ If[ $localEvaluatorAvailable,
     ]
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Expression URIs of Boxes*)
+
+(* Code can hold several image links. Each one is the expression of its own URI: on one line, on several lines, as a
+   string and in Import. A label can have brackets in pairs (the head of an expression). *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Common`$attachments = <| |> },
+        With[
+            {
+                a = Wolfram`Chatbook`MakeExpressionURI[ "expression", "f[g[1]][x]", Hold[ 1, 2 ] ],
+                b = Wolfram`Chatbook`MakeExpressionURI[ "expression", "second", Hold[ 3 ] ]
+            },
+            {
+                StringMatchQ[ { a, b }, "![" ~~ ("f[g[1]][x]" | "second") ~~ "](expression://" ~~ Except[ ")" ].. ~~ ")" ],
+                Wolfram`Chatbook`WolframLanguageToolEvaluate[ "{Length[" <> a <> "], Length[" <> b <> "]}", "Result", "Method" -> "Session" ],
+                Wolfram`Chatbook`WolframLanguageToolEvaluate[
+                    "{Length[" <> b <> "],\n Length[\"" <> a <> "\"], Length[Import[\"" <> b <> "\"]], Length[" <> a <> "]}",
+                    "Result",
+                    "Method" -> "Session"
+                ]
+            }
+        ]
+    ],
+    { { True, True }, HoldCompleteForm[ { 2, 1 } ], HoldCompleteForm[ { 1, 2, 1, 2 } ] },
+    SameTest       -> MatchQ,
+    TimeConstraint -> 60,
+    TestID         -> "ExpressionURIs-SeveralLinks"
+]
+
 (* :!CodeAnalysis::EndBlock:: *)
