@@ -46,6 +46,7 @@ $searchTimeLimit  = 10;    (* seconds that one search may take *)
 $snippetLength    = 160;   (* characters of the line of a match that SearchNotebook shows *)
 $maxQuotedLength  = 80;    (* characters of an argument that an error message repeats *)
 $maxPlaces        = 12;    (* places of a text in a cell that an error message lists *)
+$outputLength     = 500;   (* characters of what the evaluator printed for one cell that a result shows *)
 $maxSnapshots     = 10;    (* snapshots open at a time (they are hidden notebooks in the front end) *)
 $maxCellTables    = 20;    (* tables of cell ids that are kept: one for each chat and notebook *)
 
@@ -179,7 +180,8 @@ cells, or at the end. <cell id='c5'/> changes nothing: it marks a place, or name
 <cell id='c7' before='c2'/> moves c7 as it is: never delete and rewrite a cell to move it. \
 <cell id='c9' delete='true'/> deletes it. In a text cell, math is $$...$$ (in a code cell it is code; a displayed \
 formula is <cell style='DisplayFormula'>$$...$$</cell>), <MakeBoxes>expr</MakeBoxes> typesets an expression in place \
-without evaluating it and <ToBoxes>expr</ToBoxes> evaluates it first. All of it applies or \
+without evaluating it and <ToBoxes>expr</ToBoxes> evaluates it first. Outputs are never written by hand: \
+evaluate: true evaluates the code cells this call writes or names and replaces their outputs. All of it applies or \
 nothing does. Gives the ids of the cells it wrote and where the new ones are.";
 
 $showChangesDescription = "\
@@ -211,6 +213,12 @@ $notebookParameter = parameter[
 $snapshotParameter = parameter[ "notebook", "String", "A snapshot handle, e.g. s1 (default: the open snapshot)" ];
 
 $cellsParameter = parameter[ "cells", "String", "Cell ids and ranges, e.g. \"c3, c10-c20\" (default: all cells)" ];
+
+$evaluateParameter = parameter[
+    "evaluate",
+    "Boolean",
+    "Evaluate the code cells this call writes and replace their outputs (default false)"
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -290,7 +298,8 @@ $notebookToolSpecs = <|
                 "A JSON array of {oldText, newText, count}, e.g. [{\"oldText\": \"x^2\", \"newText\": \"x^3\"}]",
                 True
             ],
-            $notebookParameter
+            $notebookParameter,
+            $evaluateParameter
         }
     |>,
     "WriteCells" -> <|
@@ -299,7 +308,8 @@ $notebookToolSpecs = <|
         "Function"    -> toolFunction[ "WriteCells", writeCells ],
         "Parameters"  -> {
             parameter[ "cells", "String", "The cells, as cell tags in the cell syntax", True ],
-            $notebookParameter
+            $notebookParameter,
+            $evaluateParameter
         }
     |>,
     "ShowChanges" -> <|
@@ -392,6 +402,11 @@ requireFrontEnd // endDefinition;
 (* The message of a Failure as plain text: its template with its parameters (Failure's own "Message" formats them as
    boxes). The first parameter of a failure of evaluateToBoxes is what it is about: name is put in its place. *)
 failureMessage // beginDefinition;
+
+failureMessage[ Failure[ tag_, data: KeyValuePattern[ "MessageParameters" -> { _, rest___ } ] ], name_String ] :=
+    failureMessage @ Failure[ tag, <| data, "MessageParameters" -> { name, rest } |> ];
+
+failureMessage[ failure_, _ ] := failureMessage @ failure;
 
 failureMessage[ Failure[ _, KeyValuePattern @ { "MessageTemplate" -> template_String, "MessageParameters" -> parameters: { __ } } ] ] :=
     Replace[ Quiet @ TemplateApply[ StringTemplate @ template, parameters ], Except[ _String ] -> template ];
@@ -498,6 +513,7 @@ editArgument // endDefinition;
      notebookFrontEnd[ "Excluded", nb ]                       whether the notebook's own settings exclude it from chats
                                                               (a snapshot of a file has the settings of the file)
      notebookFrontEnd[ "Cells", nb ]                          its cells in order: { CellObject[ uuid, ... ], ... }
+     notebookFrontEnd[ "Cells", nb, style ]                   those of them that have the style
      notebookFrontEnd[ "Read", nb, { cell, ... } ]            their Cell expressions
      notebookFrontEnd[ "Locks", nb, { cell, ... } ]           { Editable, Deletable } of each cell, as the front end
                                                               resolves them
@@ -532,6 +548,7 @@ notebookFrontEnd[ "Excluded", nb_NotebookObject ] :=
     chatExcludedQ @ Quiet @ AbsoluteCurrentValue[ nb, { TaggingRules, "ChatNotebookSettings" } ];
 
 notebookFrontEnd[ "Cells", nb_NotebookObject ] := Quiet @ Cells @ nb;
+notebookFrontEnd[ "Cells", nb_NotebookObject, style_ ] := Quiet @ Cells[ nb, CellStyle -> style ];
 notebookFrontEnd[ "Read", _NotebookObject, cells: { __CellObject } ] := Quiet @ NotebookRead @ cells;
 
 notebookFrontEnd[ "Locks", _NotebookObject, cells: { __CellObject } ] :=
@@ -1702,7 +1719,8 @@ cellMatches // endDefinition;
 editInCell // beginDefinition;
 
 editInCell[ args_Association ] := withSnapshot[ args[ "notebook" ], Function[ record,
-    Module[ { entry, id, uuid, body, cell },
+    Module[ { evaluate, entry, id, uuid, body, cell },
+        evaluate = booleanArgument[ args[ "evaluate" ], "evaluate" ];
         entry    = namedEntry[ record, notebookCells @ record, stringArgument[ args[ "cell" ], "cell" ] ];
         id       = entry[ "ID" ];
         uuid     = entry[ "UUID" ];
@@ -1718,6 +1736,7 @@ editInCell[ args_Association ] := withSnapshot[ args[ "notebook" ], Function[ re
         StringJoin[
             "Edited ", id, " of ", record[ "Name" ], ". It now reads:\n",
             StringRiffle[ readEntries[ record, Select[ notebookCells @ record, #[ "UUID" ] === uuid & ], $cellLength ][[ All, "Text" ]], "\n\n" ],
+            If[ evaluate, "\n\n" <> evaluationText @ evaluateCells[ record, { uuid } ], "" ],
             $notShownText
         ]
     ]
@@ -1830,7 +1849,8 @@ applyWrites // endDefinition;
 writeCells // beginDefinition;
 
 writeCells[ args_Association ] := withSnapshot[ args[ "notebook" ], Function[ record,
-    Module[ { plan, parts },
+    Module[ { evaluate, plan, parts, evaluated },
+        evaluate  = booleanArgument[ args[ "evaluate" ], "evaluate" ];
         plan      = writePlan[ record, notebookCells @ record, Replace[ args[ "cells" ], Except[ _String ] :> missingArgument[ "cells" ] ] ];
         requireUnlocked[ record, plan[ "Touched" ] ];
         applyWrites[ record, plan[ "Writes" ], plan[ "Edited" ] ];
@@ -1842,8 +1862,20 @@ writeCells[ args_Association ] := withSnapshot[ args[ "notebook" ], Function[ re
             Flatten @ { "changed" -> plan[ "Changed" ], "new" -> { # } & /@ newCellPlaces @ plan, "moved" -> plan[ "Moved" ], "deleted" -> plan[ "Deleted" ] },
             (name_ -> ids: { __ }) :> name <> " " <> StringRiffle[ ids, ", " ]
         ];
+        evaluated = If[ evaluate, evaluateCells[ record, plan[ "Written" ] ], None ];
         StringJoin[
-            If[ parts === { }, $nothingChangedText, "Wrote to " <> record[ "Name" ] <> ": " <> StringRiffle[ parts, "; " ] <> "." ],
+            StringRiffle[
+                {
+                    Which[
+                        parts =!= { }, "Wrote to " <> record[ "Name" ] <> ": " <> StringRiffle[ parts, "; " ] <> ".",
+                        (* cells that were only named to be evaluated: *)
+                        MatchQ[ evaluated, { __ } ], Nothing,
+                        True, $nothingChangedText
+                    ],
+                    If[ evaluate, evaluationText @ evaluated, Nothing ]
+                },
+                "\n\n"
+            ],
             If[ $snapshots[ record[ "Name" ], "Edits" ] === None, "", $notShownText ]
         ]
     ]
@@ -2121,10 +2153,227 @@ planAfter[ record_Association, cells_List, plan_Association, cell_Association, o
 
 planAfter // endDefinition;
 
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Evaluation*)
+
+(* evaluate: true evaluates the Input and Code cells among the cells that a call wrote or named, in their order in the
+   notebook, in the kernel of the evaluator tool, and replaces their outputs. Gives the text about each of them for
+   the result. *)
+evaluateCells // beginDefinition;
+
+evaluateCells[ record_Association, uuids_List ] := With[
+    { entries = Select[ readEntries[ record, Select[ notebookCells @ record, MemberQ[ uuids, #[ "UUID" ] ] & ], Infinity ], codeEntryQ ] },
+    Which[
+        entries === { },
+            { },
+        ! toolSelectedQ[ "WolframLanguageEvaluator" ],
+            { "Nothing was evaluated: evaluate needs the Wolfram Language evaluator tool, which this chat does not have." },
+        True,
+            evaluateCell[ record, # ] & /@ entries
+    ]
+];
+
+evaluateCells // endDefinition;
+
+
+(* True for the entry of a code cell that is not excluded from chats *)
+codeEntryQ // beginDefinition;
+codeEntryQ[ entry_Association ] := MatchQ[ entry[ "Cell" ], Cell[ __, "Input" | "Code", ___ ] ] && ! chatExcludedQ @ entry[ "Cell" ];
+codeEntryQ // endDefinition;
+
+
+evaluationText // beginDefinition;
+evaluationText[ { } ] := "Nothing was evaluated: the call wrote no Input or Code cell.";
+evaluationText[ texts: { __String } ] := StringRiffle[ texts, "\n\n" ];
+evaluationText // endDefinition;
+
+
+(* The names of the symbols that code assigns at the top level of its statements: x in x = 1, x := 1, x[i_] := i and
+   {x, y} = {1, 2}, also where several statements are separated by semicolons. CodeParser reads the code, so no
+   symbol is made and nothing is evaluated.
+   Not found: an assignment inside of another expression (Module, If, Do), a definition with a condition on its left
+   side or by a function (SetAttributes, Options[f] = ...), up-values (f /: ..., ^=), and what is written in typeset
+   boxes, which are read as a number here. *)
+assignedSymbols // beginDefinition;
+
+assignedSymbols[ code_String ] := Module[ { left },
+    Needs[ "CodeParser`" -> None ];
+    Select[
+        Cases[
+            (* left stands for the left side of an assignment while the symbols of it are found *)
+            Flatten @ ReplaceRepeated[
+                Replace[
+                    CodeParser`CodeParse @ StringReplace[ code, RegularExpression[ "(?s)" <> $rawBoxesTag ] -> "0" ],
+                    { _[ _, statements_List, ___ ] :> statements, _ -> { } }
+                ],
+                {
+                    CodeParser`CallNode[ CodeParser`LeafNode[ Symbol, "CompoundExpression", _ ], statements_List, _ ] :> statements,
+                    CodeParser`CallNode[ CodeParser`LeafNode[ Symbol, "Set" | "SetDelayed", _ ], { side_, _ }, _ ] :> left @ side,
+                    left[ CodeParser`CallNode[ CodeParser`LeafNode[ Symbol, "List", _ ], items_List, _ ] ] :> left /@ items,
+                    left[ CodeParser`CallNode[ head_, _, _ ] ] :> left @ head,
+                    left[ CodeParser`LeafNode[ Symbol, name_String, _ ] ] :> name
+                }
+            ],
+            _String
+        ],
+        StringMatchQ[ (LetterCharacter | DigitCharacter | "$" | "`").. ]
+    ]
+];
+
+assignedSymbols // endDefinition;
+
+
+(* Those of the names that are symbols without a value in the kernel although a code cell of the notebook assigns
+   them: <| name -> the id of the cell that defines it |>. The names are what the statements of the cell of entry
+   gave back: results that still hold such a symbol were made without the definitions of the notebook.
+   - A symbol of the system counts as defined, and so does any symbol with a value or a definition of some kind. No
+     symbol is made to tell, and nothing is evaluated.
+   - The notebook is only read if a name has nothing in the kernel: its other code cells, of which only those are
+     read as text that have such a name as a token and an assignment.
+   - The cell that defines a symbol is the nearest cell above that assigns it, else the first one below.
+   Not seen: a symbol that the results do not show (a plot of a function without a definition is an empty plot).
+   Known gap: a symbol that a result is meant to hold as it is (the variable of Solve) is taken for missing too if
+   another cell assigns it and the kernel has no value for it. *)
+undefinedSymbols // beginDefinition;
+
+undefinedSymbols[ record_Association, entry_Association, names: { ___String } ] := Module[ { missing, cells, above, code },
+    missing = Select[
+        DeleteDuplicates @ Select[ names, StringMatchQ[ $$symbolName ] ],
+        ! NameQ @ # || ! ToExpression[
+            #,
+            InputForm,
+            Function[ symbol, Context @ symbol === "System`" || ValueQ[ symbol, Method -> "SymbolDefinitionsPresent" ], HoldAllComplete ]
+        ] &
+    ];
+    If[ missing === { }, Return[ <| |>, Module ] ];
+    cells = notebookCells[ record, "Input" | "Code" ];
+    above = TakeWhile[ cells, #[ "UUID" ] =!= entry[ "UUID" ] & ];
+    code  = Select[
+        cellEntries[ record, Join[ Reverse @ above, Drop[ cells, UpTo[ Length @ above + 1 ] ] ] ],
+        Function[ cell,
+            codeEntryQ @ cell && With[ { tokens = Cases[ cell[ "Cell" ], _String, Infinity ] },
+                MatchQ[ cell[ "Cell" ], Cell[ _String, ___ ] ] || IntersectingQ[ tokens, missing ] && IntersectingQ[ tokens, { "=", ":=" } ]
+            ]
+        ]
+    ];
+    KeyTake[
+        Association @ Reverse @ Flatten[ Thread[ assignedSymbols @ cellBody @ cellText[ #[ "Cell" ], Infinity ] -> #[ "ID" ] ] & /@ code ],
+        missing
+    ]
+];
+
+undefinedSymbols // endDefinition;
+
+$$symbolName = (LetterCharacter | "$") ~~ (LetterCharacter | DigitCharacter | "$" | "`")...;
+
+
+(* What the result says about the symbols of undefinedSymbols for the cell with the id: which they are, the cells
+   that define them, and how those are evaluated first. A call evaluates its cells in the order of the notebook
+   (evaluateCells), so a defining cell that is below the cell is evaluated after it, which the text says. *)
+undefinedText // beginDefinition;
+
+undefinedText[ _String, <| |> ] := "";
+
+undefinedText[ id_String, missing_Association ] := StringJoin[
+    " Its result still has symbols that the kernel has no value for: ",
+    StringRiffle[ KeyValueMap[ #1 <> " (" <> #2 <> " defines it)" &, missing ], ", " ],
+    ". To evaluate those cells first, name them with this one in one call: ",
+    "<cell id='" <> # <> "'/>" & /@ Append[ DeleteDuplicates @ Values @ missing, id ],
+    ". Cells are evaluated in the order of the notebook, whatever the order of the tags is: a defining cell that is ",
+    "below this one only counts for the next call."
+];
+
+undefinedText // endDefinition;
+
+
+(* Evaluates a cell statement by statement, as the front end does. Its outputs (outputEntries) are replaced by an
+   Output cell for each statement that gives something, whatever that is: also a statement that is its own result
+   (Sin[x], a list of numbers). Unless the evaluator is the user's session, the new cells also have the style
+   "EvaluationUnmatched", the front end's graying of an output that its input did not give in that session. A new
+   output has the label of the output that it replaces if the cell has as many outputs as before.
+   The outputs stay as they are
+   - if a statement gives no boxes (it ran out of time, or a sandboxed evaluator gave boxes that are not plain data),
+   - if the evaluator is the user's session, which only has the definitions that the user has evaluated, and what
+     the statements gave still holds a symbol that a cell of the notebook defines and the kernel has no value for
+     (undefinedSymbols). The text then says once for the cell which cells to evaluate first. A sandboxed evaluator
+     never has the notebook's definitions, and what it gives is written.
+   Known gap: the statements have no In and Out line, so % is not the output before. *)
+evaluateCell // beginDefinition;
+
+evaluateCell[ record_Association, entry_Association ] := Module[
+    { id, outputs, results, failure, printed, missing, boxes, labels, new },
+    id      = entry[ "ID" ];
+    outputs = outputEntries[ record, entry ];
+    If[ lockedEntries[ record, outputs ] =!= { },
+        Return[ id <> " was not evaluated: an output of it is locked in the notebook (not deletable), so it can't be replaced.", Module ]
+    ];
+    results = { };
+    failure = None;
+    Do[
+        Replace[
+            evaluateToBoxes[ statement, "StandardForm", "ToBoxes" ],
+            {
+                result: KeyValuePattern[ "Boxes" -> _ ] :> AppendTo[ results, result ],
+                other_ :> (failure = other; Break[ ])
+            }
+        ],
+        { statement, sandboxStatements @ cellCode @ entry }
+    ];
+    printed = StringTrim @ StringRiffle[ printedOutput /@ Lookup[ results, "Output", { } ], "\n" ];
+    If[ StringLength @ printed > $outputLength, printed = StringTake[ printed, $outputLength ] <> "\[Ellipsis]" ];
+    boxes   = Lookup[ results, "Boxes", { } ];
+    missing = If[ useSessionQ[ ], undefinedSymbols[ record, entry, Cases[ boxes, _String, Infinity ] ], <| |> ];
+    If[ failure =!= None || missing =!= <| |>,
+        Return[
+            StringJoin[
+                id,
+                If[ failure === None,
+                    " was evaluated, but its outputs are as they were.",
+                    " was not evaluated to its end, and its outputs are as they were. " <>
+                        Replace[ failureMessage[ failure, "Cell " <> id ], "" -> "The evaluator gave no result." ]
+                ],
+                undefinedText[ id, missing ],
+                If[ printed === "", "", If[ failure === None, "\nIt printed:\n", "\nBefore that it printed:\n" ] <> printed ]
+            ],
+            Module
+        ]
+    ];
+    boxes  = DeleteCases[ boxes, "Null" ];
+    labels = Cases[ #, HoldPattern[ CellLabel -> _String ] ] & /@ Cases[ outputs[[ All, "Cell" ]], Cell[ __, "Output", ___ ] ];
+    new    = MapThread[
+        Cell[ BoxData @ #1, "Output", Sequence @@ If[ useSessionQ[ ], { }, { "EvaluationUnmatched" } ], Sequence @@ #2, ExpressionUUID -> CreateUUID[ ] ] &,
+        { boxes, If[ Length @ labels === Length @ boxes, labels, ConstantArray[ { }, Length @ boxes ] ] }
+    ];
+    applyWrites[
+        record,
+        Join[
+            If[ outputs === { }, { }, { { "Delete", outputs[[ All, "UUID" ]] } } ],
+            If[ new === { }, { }, { { "Insert", entry[ "UUID" ], "After", new } } ]
+        ],
+        { }
+    ];
+    StringJoin[
+        "Evaluated ", id,
+        If[ new === { },
+            ": it gives no output.",
+            ". Its output:\n" <> StringRiffle[
+                readEntries[ record, Select[ notebookCells @ record, MemberQ[ cellUUID /@ new, #[ "UUID" ] ] & ], $cellLength ][[ All, "Text" ]],
+                "\n\n"
+            ]
+        ],
+        If[ printed === "", "", "\nIt printed:\n" <> printed ]
+    ]
+];
+
+evaluateCell // endDefinition;
+
 
 (* The outputs of a cell: the generated cells right after it among the cells of the notebook, which are read one at a
    time. A cell that the user excluded from chats is not replaced, so the outputs end before it. *)
 outputEntries // beginDefinition;
+
+outputEntries[ record_Association, entry_Association ] := outputEntries[ record, entry, notebookCells @ record ];
 
 outputEntries[ record_Association, entry_Association, cells_List ] := Module[ { outputs, next },
     outputs = { };
@@ -2137,6 +2386,31 @@ outputEntries[ record_Association, entry_Association, cells_List ] := Module[ { 
 ];
 
 outputEntries // endDefinition;
+
+
+(* The code of a cell as the evaluator takes it: the body of the cell, with each box that it holds as an expression
+   URI of the box, which the evaluator reads as the expression that the box stands for. Known gap: a box that reading
+   did not record stays a tag, which is no code. *)
+cellCode // beginDefinition;
+
+cellCode[ entry_Association ] := StringReplace[
+    entry[ "Body" ],
+    RegularExpression[ "(?s)" <> $rawBoxesTag ] :> Replace[
+        Lookup[ Lookup[ $cellOriginals, entry[ "ID" ], <| |> ], "$1", None ],
+        { None :> "$0", boxes_ :> MakeExpressionURI[ "expression", "boxes", RawBoxes @ boxes ] }
+    ]
+];
+
+cellCode // endDefinition;
+
+
+(* What the evaluator printed for a statement: its output text is that, a blank line and the result *)
+printedOutput // beginDefinition;
+
+printedOutput[ output_String ] :=
+    Replace[ StringSplit[ output, "\n\n" ], { { printed__, _ } :> StringRiffle[ { printed }, "\n\n" ], _ -> "" } ];
+
+printedOutput // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

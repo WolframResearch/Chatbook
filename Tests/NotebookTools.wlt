@@ -91,6 +91,7 @@ VerificationTest[
     nbtFE[ "Excluded", _ ] := $nbtExcluded;
     nbtList[ nb_ ] := Lookup[ $nbtNotebooks, nb, Lookup[ $nbtSources, nb, { } ] ];
     nbtFE[ "Cells", nb_ ] := CellObject[ #, "instance" ] & /@ nbtList[ nb ][[ All, 1 ]];
+    nbtFE[ "Cells", nb_, style_ ] := CellObject[ First @ #, "instance" ] & /@ Select[ nbtList @ nb, MatchQ[ Last @ #, Cell[ __, style, ___ ] ] & ];
     nbtFE[ "Read", nb_, cells_List ] := Lookup[ Association[ Rule @@@ nbtList @ nb ], First /@ cells ];
     nbtFE[ "Locks", nb_, cells_List ] := { FreeQ[ #, Editable -> False ], FreeQ[ #, Deletable -> False ] } & /@ nbtFE[ "Read", nb, cells ];
     nbtFE[ "Write", nb_, writes_List ] := If[ TrueQ @ $nbtWriteFails, $Failed, AppendTo[ $nbtWrites, writes ]; Scan[ nbtWrite[ nb, # ] &, writes ] ];
@@ -147,11 +148,34 @@ VerificationTest[
     (* The cells of the n-th snapshot, and their styles *)
     nbtCells[ n_Integer ] := $nbtNotebooks[ NotebookObject[ "snapshot-" <> ToString @ n ] ][[ All, 2 ]];
     nbtCells[ ] := nbtCells[ 1 ];
+    nbtStyles[ n___ ] := Cases[ nbtCells @ n, Cell[ _, arguments___ ] :> Cases[ { arguments }, _String ] ];
 
     (* Evaluates as a tool call of the chat with this ConversationUUID *)
     nbtChat // Attributes = { HoldRest };
     nbtChat[ id_String, eval_ ] :=
         Block[ { Wolfram`Chatbook`$ChatHandlerData = <| "ChatNotebookSettings" -> <| "ConversationUUID" -> id |> |> }, eval ];
+
+    (* Evaluates with a made-up evaluator as the evaluator tool of the chat: evaluateToBoxes gives what results has for
+       a statement (the boxes "Null" if it has nothing), and the code is kept. Its other arguments are the form and
+       the tag. *)
+    nbtEvaluator // Attributes = { HoldRest };
+    nbtEvaluator[ results_Association, eval_ ] := Block[
+        {
+            $nbtEvaluated = { },
+            Wolfram`Chatbook`Common`$selectedTools  = <| "WolframLanguageEvaluator" -> True |>,
+            Wolfram`Chatbook`Common`evaluateToBoxes = Function[ { code },
+                AppendTo[ $nbtEvaluated, code ];
+                Lookup[ results, code, <| "Boxes" -> "Null", "Output" -> "\"Null\"" |> ]
+            ]
+        },
+        eval
+    ];
+
+    (* What Chatbook gives the model for a tool call that is written with the Simple tool method *)
+    nbtRespond[ text_String ] := Wolfram`Chatbook`SendChat`Private`toolResponseString @ GenerateLLMToolResponse[
+        LLMConfiguration @ <| "Tools" -> Values @ $nbtTools |>,
+        Last @ Wolfram`Chatbook`Common`simpleToolRequestParser @ text
+    ];
 
     (* The real front end with a hidden copy of the notebook as its snapshot. copies is a symbol that gets the copies,
        which the test closes. *)
@@ -244,8 +268,8 @@ VerificationTest[
         "GetOutline"     -> { { "notebook", "offset", "limit" }, { } },
         "ReadCells"      -> { { "notebook", "cells", "full" }, { } },
         "SearchNotebook" -> { { "query", "notebook", "regex", "cells", "styles", "limit" }, { "query" } },
-        "EditInCell"     -> { { "cell", "edits", "notebook" }, { "cell", "edits" } },
-        "WriteCells"     -> { { "cells", "notebook" }, { "cells" } },
+        "EditInCell"     -> { { "cell", "edits", "notebook", "evaluate" }, { "cell", "edits" } },
+        "WriteCells"     -> { { "cells", "notebook", "evaluate" }, { "cells" } },
         "ShowChanges"    -> { { "notebook" }, { } },
         "CloseNotebook"  -> { { "notebook" }, { } }
     |>,
@@ -1331,6 +1355,269 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Evaluation*)
+
+(* evaluate: true evaluates the Input and Code cells that the call wrote, and only those, statement by statement. The
+   generated cells right after such a cell are replaced by an Output cell for each statement that gives something.
+   The result shows the outputs and what the evaluator printed. *)
+VerificationTest[
+    nbtWithFE @ nbtEvaluator[
+        <|
+            "f[x] + 1" -> <| "Boxes" -> RowBox @ { "1", "+", RowBox @ { "f", "[", "x", "]" } }, "Output" -> "f::argx: bad\n\nRowBox[{\"1\", \"+\", RowBox[{\"f\", \"[\", \"x\", \"]\"}]}]" |>,
+            "y" -> <| "Boxes" -> "5", "Output" -> "\"5\"" |>
+        |>,
+        {
+            nbt[ "ReadCells" ];
+            nbtWriteCells[ "<cell id='c1'>\nA title\n</cell>\n<cell style='Text'>\nText\n</cell>\n<cell id='c3'>\nf[x] + 1\ny = 5;\ny\n</cell>", "evaluate" -> True ],
+            $nbtEvaluated,
+            nbtStyles[ ],
+            nbtCells[ ][[ { 5, 6 }, 1 ]]
+        }
+    ],
+    {
+        "Wrote to s1: changed c1, c3; new c7 (Text) after c1.\n\nEvaluated c3. Its output:\n<cell id='c8' style='Output, EvaluationUnmatched'>\n1 + f[x]\n</cell>\n\n<cell id='c9' style='Output, EvaluationUnmatched'>\n5\n</cell>\nIt printed:\nf::argx: bad",
+        { "f[x] + 1", "y = 5;", "y" },
+        { { "Title" }, { "Text" }, { "Text" }, { "Input" }, { "Output", "EvaluationUnmatched" }, { "Output", "EvaluationUnmatched" }, { "Section" }, { "Input" } },
+        { BoxData @ RowBox @ { "1", "+", RowBox @ { "f", "[", "x", "]" } }, BoxData[ "5" ] }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-Evaluate"
+]
+
+(* A cell is evaluated without being changed by naming it: the result then does not say that nothing was changed. A
+   cell that gives nothing loses its outputs. EditInCell evaluates the cell that it edits. *)
+VerificationTest[
+    nbtWithFE @ nbtEvaluator[
+        <| "g[x]" -> <| "Boxes" -> "7", "Output" -> "\"7\"" |> |>,
+        {
+            nbtWriteCells[ "<cell id='c3'/>", "evaluate" -> True ],
+            $nbtWrites,
+            nbtStyles[ ],
+            nbtWriteCells[ "<cell id='c5'/>", "evaluate" -> True ],
+            nbtEditCell[ "c6", "f" -> "g", "evaluate" -> True ]
+        }
+    ],
+    {
+        "Evaluated c3: it gives no output.",
+        { { { "Delete", { "u4" } } } },
+        { { "Title" }, { "Text" }, { "Input" }, { "Section" }, { "Input" } },
+        $nbtNothing <> "\n\nNothing was evaluated: the call wrote no Input or Code cell.",
+        "Edited c6 of s1. It now reads:\n<cell id='c6' style='Input'>\ng[x]\n</cell>\n\nEvaluated c6. Its output:\n<cell id='c7' style='Output, EvaluationUnmatched'>\n7\n</cell>"
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-Evaluate-Unchanged"
+]
+
+(* A statement that gives no boxes ends the evaluation of its cell, whose outputs stay as they were. So does an output
+   that is locked in the notebook: the cell is then not evaluated at all. *)
+VerificationTest[
+    nbtWithFE @ nbtEvaluator[
+        <|
+            "1" -> <| "Boxes" -> "1", "Output" -> "printed\n\n\"1\"" |>,
+            "Pause[100]" -> Failure[ "CellSyntax", <| "MessageTemplate" -> "`1` gave no boxes: `2`", "MessageParameters" -> { "The code", "it ran out of time" } |> ]
+        |>,
+        {
+            nbtEditCell[ "c3", $nbtBody3 -> "1\nPause[100]\n2", "evaluate" -> True ],
+            $nbtEvaluated,
+            nbtStyles[ ],
+            $nbtNotebooks[[ Key @ NotebookObject[ "snapshot-1" ], 4, 2 ]] = Cell[ BoxData @ "42", "Output", Deletable -> False ];
+            nbtWriteCells[ "<cell id='c3'/>", "evaluate" -> True ],
+            Length @ $nbtEvaluated
+        }
+    ],
+    {
+        "Edited c3 of s1. It now reads:\n<cell id='c3' style='Input' CellLabel='In[1]:='>\n1\nPause[100]\n2\n</cell>\n\nc3 was not evaluated to its end, and its outputs are as they were. Cell c3 gave no boxes: it ran out of time\nBefore that it printed:\nprinted",
+        { "1", "Pause[100]" },
+        { { "Title" }, { "Text" }, { "Input" }, { "Output" }, { "Section" }, { "Input" } },
+        "c3 was not evaluated: an output of it is locked in the notebook (not deletable), so it can't be replaced.",
+        2
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-Evaluate-Failure"
+]
+
+(* What a statement gives is written whatever it is: a cell with an output whose code is edited to something that
+   evaluates to itself gets that as its output, with the label of the old one. The evaluator is the user's session,
+   so the statement runs in this kernel. *)
+VerificationTest[
+    nbtWithFE @ Block[
+        {
+            Wolfram`Chatbook`Common`$selectedTools = <| "WolframLanguageEvaluator" -> True |>,
+            Wolfram`Chatbook`Common`$toolOptions   = <| "WolframLanguageEvaluator" -> <| $DefaultToolOptions[ "WolframLanguageEvaluator" ], "Method" -> "Session" |> |>
+        },
+        {
+            nbtEditCell[ "c3", $nbtBody3 -> "{1, 2, 3}", "evaluate" -> True ],
+            nbtCells[ ][[ 4 ]]
+        }
+    ],
+    {
+        "Edited c3 of s1. It now reads:\n<cell id='c3' style='Input' CellLabel='In[1]:='>\n{1, 2, 3}\n</cell>\n\nEvaluated c3. Its output:\n<cell id='c7' style='Output' CellLabel='Out[1]='>\n{1, 2, 3}\n</cell>",
+        Cell[ BoxData @ RowBox @ { "{", RowBox @ { "1", ",", "2", ",", "3" }, "}" }, "Output", CellLabel -> "Out[1]=" ]
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-Evaluate-OwnResult"
+]
+
+(* With the user's session as the evaluator, the kernel only has the definitions that the user has evaluated. A cell
+   is evaluated whatever it uses, and its result is looked at: if that still holds a symbol that a cell of the
+   notebook assigns and the kernel has no value for, the outputs stay, and the result says once which symbols those
+   are, which cells define them (the nearest one above the cell) and how to evaluate them first. Following that
+   replaces the output. A name that the cell binds itself (a pattern variable, an iterator, a rule, a local) and
+   that another cell assigns is not held by the result, and the cell is evaluated. A statement that comes back as it
+   is (MatrixForm of the symbol) holds the symbol, so its outputs stay too. *)
+VerificationTest[
+    nbtWithFE @ Block[
+        {
+            $nbtSources = <| $nbtSource -> {
+                { "u1", Cell[ "nbtProj = {1, 0}", "Input" ] },
+                { "u2", Cell[ BoxData @ "\"old\"", "Output" ] },
+                { "u3", Cell[ "nbtProj.nbtProj + 1", "Input" ] },
+                { "u4", Cell[ BoxData @ "2", "Output" ] },
+                { "u5", Cell[ "nbtF[nbtProj_] := 2 nbtProj\n{nbtF[2], Table[nbtProj^2, {nbtProj, 3}], 1 + 2 nbtProj /. nbtProj -> 3, Module[{nbtProj = 2}, nbtProj + 1]}", "Input" ] },
+                { "u6", Cell[ BoxData @ "\"old\"", "Output" ] },
+                { "u7", Cell[ "nbtProj = {0, 1};", "Input" ] },
+                { "u8", Cell[ "MatrixForm[nbtProj]", "Input" ] },
+                { "u9", Cell[ BoxData @ "\"old\"", "Output" ] }
+            } |>,
+            Wolfram`Chatbook`Common`$selectedTools = <| "WolframLanguageEvaluator" -> True |>,
+            Wolfram`Chatbook`Common`$toolOptions   = <| "WolframLanguageEvaluator" -> <| $DefaultToolOptions[ "WolframLanguageEvaluator" ], "Method" -> "Session" |> |>
+        },
+        WithCleanup[
+            {
+                nbtEditCell[ "c3", "+ 1" -> "+ 2", "evaluate" -> True ],
+                nbtCells[ ][[ 4 ]],
+                nbtWriteCells[ "<cell id='c5'/><cell id='c8'/>", "evaluate" -> True ],
+                nbtCells[ ][[ { 6, 9 } ]],
+                nbtWriteCells[ "<cell id='c1'/><cell id='c3'/>", "evaluate" -> True ],
+                nbtCells[ ][[ { 2, 4 } ]]
+            },
+            Quiet @ Remove[ "*`nbtProj", "*`nbtF" ]
+        ]
+    ],
+    {
+        "Edited c3 of s1. It now reads:\n<cell id='c3' style='Input'>\nnbtProj.nbtProj + 2\n</cell>\n\nc3 was evaluated, but its outputs are as they were. Its result still has symbols that the kernel has no value for: nbtProj (c1 defines it). To evaluate those cells first, name them with this one in one call: <cell id='c1'/><cell id='c3'/>. Cells are evaluated in the order of the notebook, whatever the order of the tags is: a defining cell that is below this one only counts for the next call.",
+        Cell[ BoxData @ "2", "Output" ],
+        "Evaluated c5. Its output:\n<cell id='c10' style='Output'>\n{4, {1, 4, 9}, 7, 3}\n</cell>\n\nc8 was evaluated, but its outputs are as they were. Its result still has symbols that the kernel has no value for: nbtProj (c7 defines it). To evaluate those cells first, name them with this one in one call: <cell id='c7'/><cell id='c8'/>. Cells are evaluated in the order of the notebook, whatever the order of the tags is: a defining cell that is below this one only counts for the next call.",
+        { Cell[ BoxData @ RowBox @ { "{", RowBox @ { "4", ",", _RowBox, ",", "7", ",", "3" }, "}" }, "Output" ], Cell[ BoxData @ "\"old\"", "Output" ] },
+        "Evaluated c1. Its output:\n<cell id='c11' style='Output'>\n{1, 0}\n</cell>\n\nEvaluated c3. Its output:\n<cell id='c12' style='Output'>\n3\n</cell>",
+        { Cell[ BoxData @ RowBox @ { "{", RowBox @ { "1", ",", "0" }, "}" }, "Output" ], Cell[ BoxData @ "3", "Output" ] }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-Evaluate-Definitions"
+]
+
+(* A sandboxed evaluator never has the definitions of the notebook: what it gives is written, also with a symbol that
+   a cell of the notebook assigns. Without the evaluator tool the edit is made, and the result says what evaluate
+   needs. *)
+VerificationTest[
+    nbtWithFE @ Block[
+        {
+            $nbtSources = <| $nbtSource -> {
+                { "u1", Cell[ "nbtProj = {1, 0}", "Input" ] },
+                { "u2", Cell[ "nbtProj.nbtProj + 1", "Input" ] },
+                { "u3", Cell[ BoxData @ "2", "Output" ] }
+            } |>
+        },
+        {
+            nbtEvaluator[
+                <| "nbtProj.nbtProj + 2" -> <| "Boxes" -> RowBox @ { "2", "+", RowBox @ { "nbtProj", ".", "nbtProj" } }, "Output" -> "\"x\"" |> |>,
+                nbtEditCell[ "c2", "+ 1" -> "+ 2", "evaluate" -> True ]
+            ],
+            Block[ { Wolfram`Chatbook`Common`$selectedTools = <| |> }, nbtEditCell[ "c2", "+ 2" -> "+ 3", "evaluate" -> True ] ],
+            nbtCells[ ][[ 2, 1 ]]
+        }
+    ],
+    {
+        "Edited c2 of s1. It now reads:\n<cell id='c2' style='Input'>\nnbtProj.nbtProj + 2\n</cell>\n\nEvaluated c2. Its output:\n<cell id='c4' style='Output, EvaluationUnmatched'>\n2 + nbtProj.nbtProj\n</cell>",
+        "Edited c2 of s1. It now reads:\n<cell id='c2' style='Input'>\nnbtProj.nbtProj + 3\n</cell>\n\nNothing was evaluated: evaluate needs the Wolfram Language evaluator tool, which this chat does not have.",
+        "nbtProj.nbtProj + 3"
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-Evaluate-Sandboxed"
+]
+
+(* An output that an evaluation replaces keeps the label of the output that it replaces if the cell has as many
+   outputs as before (what it printed does not count). Other new outputs have no label. *)
+VerificationTest[
+    nbtWithFE @ Block[
+        {
+            $nbtSources = <| $nbtSource -> {
+                { "u1", Cell[ "a\nb", "Input", CellLabel -> "In[12]:=" ] },
+                { "u2", Cell[ BoxData @ "1", "Output", CellLabel -> "Out[12]//MatrixForm=" ] },
+                { "u3", Cell[ "printed", "Print" ] },
+                { "u4", Cell[ BoxData @ "2", "Output", CellLabel -> "Out[13]=" ] }
+            } |>
+        },
+        {
+            nbtEvaluator[
+                <| "a" -> <| "Boxes" -> "10", "Output" -> "\"10\"" |>, "b" -> <| "Boxes" -> "20", "Output" -> "\"20\"" |> |>,
+                nbtWriteCells[ "<cell id='c1'/>", "evaluate" -> True ]
+            ],
+            nbtCells[ ],
+            nbtEvaluator[ <| "a" -> <| "Boxes" -> "10", "Output" -> "\"10\"" |> |>, nbtWriteCells[ "<cell id='c1'/>", "evaluate" -> True ] ],
+            Rest @ nbtCells[ ]
+        }
+    ],
+    {
+        "Evaluated c1. Its output:\n<cell id='c5' style='Output, EvaluationUnmatched' CellLabel='Out[12]//MatrixForm='>\n10\n</cell>\n\n<cell id='c6' style='Output, EvaluationUnmatched' CellLabel='Out[13]='>\n20\n</cell>",
+        {
+            Cell[ "a\nb", "Input", CellLabel -> "In[12]:=" ],
+            Cell[ BoxData @ "10", "Output", "EvaluationUnmatched", CellLabel -> "Out[12]//MatrixForm=" ],
+            Cell[ BoxData @ "20", "Output", "EvaluationUnmatched", CellLabel -> "Out[13]=" ]
+        },
+        "Evaluated c1. Its output:\n<cell id='c7' style='Output, EvaluationUnmatched'>\n10\n</cell>",
+        { Cell[ BoxData @ "10", "Output", "EvaluationUnmatched" ] }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-Evaluate-Labels"
+]
+
+(* A box in the code reaches the evaluator as an expression URI of the box, which the evaluator reads as the
+   expression that the box stands for *)
+VerificationTest[
+    nbtWithFE @ nbtEvaluator[
+        <| |>,
+        nbt[ "WriteCells", <| "cells" -> "<cell id='c3'/>", "evaluate" -> True |> ];
+        Replace[
+            DeleteDuplicates @ StringCases[ First @ $nbtEvaluated, "InlinedExpression[\"" ~~ uri: Except[ "\"" ].. ~~ "\"]" :> uri ],
+            { uri_String } :> {
+                First @ $nbtEvaluated === "H = InlinedExpression[\"" <> uri <> "\"] - g",
+                Wolfram`Chatbook`GetExpressionURI[ uri, HoldComplete ]
+            }
+        ]
+    ],
+    { True, HoldComplete[ RawBoxes[ FractionBox[ SuperscriptBox[ "p", "2" ], RowBox @ { "2", " ", "m" } ] ] ] },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-Evaluate-Boxes"
+]
+
+(* With the evaluator tool, the statements run in its kernel, one after another (the last one leaves nothing of the
+   test in the kernel). The evaluator is the user's session here, as in the AI Assistant, so the output is a plain
+   Output cell. A statement that comes back as it is (its function is not defined, and no cell of the notebook
+   assigns it) is the output of its cell. *)
+VerificationTest[
+    nbtWithFE @ Block[
+        {
+            Wolfram`Chatbook`Common`$selectedTools = <| "WolframLanguageEvaluator" -> True |>,
+            Wolfram`Chatbook`Common`$toolOptions   = <| "WolframLanguageEvaluator" -> <| $DefaultToolOptions[ "WolframLanguageEvaluator" ], "Method" -> "Session" |> |>
+        },
+        {
+            nbtWriteCells[ "<cell style='Input'>\nnbtValue = 20 + 1;\nPrint[\"twice\"]; 2 nbtValue\nClear[nbtValue]\n</cell>", "evaluate" -> True ],
+            Last @ nbtCells[ ],
+            nbtEditCell[ "c6", "f[x]" -> "nbtNotDefined[3, x]", "evaluate" -> True ]
+        }
+    ],
+    {
+        "Wrote to s1: new c7 (Input) at the end.\n\nEvaluated c7. Its output:\n<cell id='c8' style='Output'>\n42\n</cell>\nIt printed:\ntwice",
+        Cell[ BoxData[ "42" ], "Output" ],
+        "Edited c6 of s1. It now reads:\n<cell id='c6' style='Input'>\nnbtNotDefined[3, x]\n</cell>\n\nEvaluated c6. Its output:\n<cell id='c9' style='Output'>\nnbtNotDefined[3, x]\n</cell>"
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-Evaluate-Evaluator"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*ShowChanges*)
 
 (* ShowChanges shows the user their notebook as a comparison against the snapshot, of which CellDiff reads only the
@@ -1485,6 +1772,61 @@ VerificationTest[
     },
     SameTest -> MatchQ,
     TestID   -> "NotebookTools-UnresolvedDiff"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Tool Calls*)
+
+(* A WriteCells call written by a model with the Simple tool method: cells is text of several lines, and the
+   parameters that the call leaves out are "" *)
+VerificationTest[
+    nbtWithFE @ Internal`InheritedBlock[ { Wolfram`Chatbook`Tools`Private`$toolBox },
+        Block[ { Wolfram`Chatbook`Common`$selectedTools = $nbtTools },
+            {
+                nbtRespond[ "I'll add a cell.\n/nb_write\ncells: <cell id='c5'/>\n<cell style='Text'>\nA backslash \\\\ and \[Alpha]: done.\n</cell>\nevaluate: false" ],
+                nbtCells[ ][[ 6 ]],
+                nbtRespond[ "/nb_edit\nc6\n[{\"oldText\": \"f[x]\", \"newText\": \"g[\\\"y\\\"]\"}]" ],
+                Developer`ReadRawJSONString[ nbtRespond[ "/nb_list" ] ][ "snapshots" ][[ All, "edited" ]],
+                nbtRespond[ "/nb_show" ]
+            }
+        ]
+    ],
+    {
+        "Opened s1 (\"Hamiltonian Mechanics\"), a snapshot of the notebook.\n\nWrote to s1: new c7 (Text) after c5." <> $nbtNotShown,
+        Cell[ "A backslash \\ and \[Alpha]: done.", "Text" ],
+        "Edited c6 of s1. It now reads:\n<cell id='c6' style='Input'>\ng[\"y\"]\n</cell>" <> $nbtNotShown,
+        { True },
+        "The user now sees \"Hamiltonian Mechanics\" as a diff against your edits, and accepts or rejects each change there. s1 is closed."
+    },
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-SimpleToolCalls"
+]
+
+(* A native WriteCells call written as a Simple tool call (the hybrid tool method) is read back as the same call. A
+   parameter that the tool does not have (models give after as one) is left out, and is no text of the cells. *)
+VerificationTest[
+    Internal`InheritedBlock[ { Wolfram`Chatbook`Tools`Private`$toolBox },
+        Block[ { Wolfram`Chatbook`Common`$selectedTools = $nbtTools },
+            With[ { native = LLMToolRequest[ "write_cells", <| "cells" -> "<cell id='c5'/>\n<cell style='Input'>\nx = 1;\nx + 1\n</cell>", "after" -> "c26", "evaluate" -> True |> ] },
+                KeyTake[
+                    Association @ Last[
+                        Wolfram`Chatbook`Common`simpleToolRequestParser @ Block[
+                            {
+                                Wolfram`Chatbook`$ChatHandlerData         = <| "ChatNotebookSettings" -> <| "ToolMethod" -> "Simple" |> |>,
+                                Wolfram`Chatbook`Common`$receivedToolCall = False
+                            },
+                            Wolfram`Chatbook`LLMUtilities`Private`toolRequestToString @ native
+                        ]
+                    ][ "ParameterValues" ],
+                    { "cells", "notebook", "evaluate", "after" }
+                ]
+            ]
+        ]
+    ],
+    <| "cells" -> "<cell id='c5'/>\n<cell style='Input'>\nx = 1;\nx + 1\n</cell>", "notebook" -> "", "evaluate" -> "True" |>,
+    SameTest -> MatchQ,
+    TestID   -> "NotebookTools-HybridToolCall"
 ]
 
 (* ::**************************************************************************************************************:: *)

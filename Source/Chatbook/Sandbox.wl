@@ -1795,6 +1795,18 @@ toSandboxSegments // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*sandboxStatements*)
+sandboxStatements // beginDefinition;
+
+(* The top-level inputs of code as text, as the evaluator splits them (comments alone are no input). The notebook tools
+   evaluate a code cell statement by statement, as the front end does. *)
+sandboxStatements[ code_String ] :=
+    Cases[ toSandboxSegments[ code ][ "Segments" ], KeyValuePattern[ "InputString" -> statement_String ] :> statement ];
+
+sandboxStatements // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*heldSandboxSegments*)
 heldSandboxSegments // beginDefinition;
 
