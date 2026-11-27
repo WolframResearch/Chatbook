@@ -165,6 +165,6 @@ A chat has none of the tools outside of the sidebar and the Notebook Assistant w
 
 ## Tests
 
-- `Tests/NotebookTools.wlt`: the tools on a made-up front end, and the real front end operations on a hidden copy (`NotebookTools-FrontEnd-*`: CellDiff after a move, an edit that marks nothing, locked and excluded cells and notebooks, an excluded notebook by its file in another letter case).
+- `Tests/NotebookTools.wlt`: the tools on a made-up front end, and the real front end operations on a hidden copy (`NotebookTools-FrontEnd-*`: CellDiff after a move, an edit that marks nothing, locked and excluded cells and notebooks, an excluded notebook by its file in another letter case). The three of them that show a comparison (`-Tools`, `-Move`, `-NothingMarked`) are skipped before 16.0, where the tools are never enabled, so CI (15.0) does not run them.
 - `Tests/Context.wlt` ("Cell Syntax") and `Tests/NotebookReader.wlt` (`CellSyntax-SharedCellIDs`): the context of a chat that has the tools.
 - `Tests/CellSyntax.wlt`: the syntax. `Tests/Sandbox.wlt`, `Tests/ServiceToolCalls.wlt`, `Tests/ToolAvailability.wlt`, `Tests/Prompting.wlt`, `Tests/PromptCache.wlt`: the evaluator, tool calls, the selection of the tools and the prompt.
