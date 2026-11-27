@@ -14,10 +14,26 @@ A [link](https://www.wolfram.com) in **bold** text with $$\lim_{x \to 2} f(x) = 
 
 ## Who Calls It and What It Needs
 
+| Function | File | Called by | Needs |
+|---|---|---|---|
+| `CellToString` with `"IncludeXML"` (cell tags) and `"PreserveBoxes"` (exact bodies) | `Serialization.wl` (the tag), `CellSyntax/ExactBodies.wl` (the bodies) | The notebook tools (`cellText`), the notebook context of a chat that has the tools (`withNotebookCellSyntax`), the assistant's warm-up (`initializeCellSyntax`) | No front end. Code needs CodeParser, which the first read loads (about 0.8 s from the MX build; the warm-up does it). |
+| `cellsFromString` | `CellSyntax/CellsFromString.wl` | The notebook tools (WriteCells, EditInCell) | A front end for code, the chat formatter for a table, the TeX input assistant for a formula, the evaluator tool for `<MakeBoxes>` and `<ToBoxes>` |
+| `evaluateToBoxes` | same | The notebook tools (`evaluate`) | The evaluator tool |
+
 - The two files of `CellSyntax/` are loaded by `Serialization.wl` and share its private context.
 - `"PreserveBoxes"` is `True`, `False` or `Automatic` (exact for all but generated cells: `Output`, `Print`, `Echo`, `Message`, `MSG` and chat outputs, which keep the lossy Markdown and its length limit). Without `"IncludeXML"` it gives exact bodies inside the decoration of the default Markdown, for reading only. The defaults of the two options are `$includeCellXML` and `$preserveCellBoxes`, which a caller sets for the code that it calls.
+- What changes for chats without the notebook tools is listed in [notebook-tools.md](notebook-tools.md#what-changes-for-chats-without-the-tools).
 
 ## Guarantees and Known Gaps
+
+Measured over 87 notebooks (20 sample notebooks and 67 documentation pages): 29,600 cells, of which 21,574 are not generated and 8,734 are `Input` or `Code` cells with boxes. [Tests](#tests) says how to run it again.
+
+| Guarantee | Measured |
+|---|---|
+| Without the options, `CellToString` gives what it gave before | 0 differences in 29,600 cells against the previous version (also with length limits, with images, and for whole notebooks) |
+| A body that is written back as it was read gives the identical cell, with or without what reading recorded | 21,574 of 21,574 cells, both ways |
+| Code that is edited still parses, and what the edit left alone is read by the kernel as before | In this corpus no cell that parsed before parses no more; in another one, 1 of 8,459 cells does after a line is appended or when it is written as a new cell (see the known gaps). One identifier renamed: 8,360 cells are the cell with that change, and 9 are tokenized again and read as the same expression. One number changed: 5,452 and 9. A line appended: 8,703 read as before with the new statement, 27 as another expression. Written as a new cell: 5,750 identical, 2,859 the same expression, 24 another expression, 100 refused. |
+| Nothing that a model writes runs code when the cell is shown, read or evaluated as data, beyond what it could run with the evaluator tool | [What Is Refused](#what-is-refused); `Tests/CellSyntax.wlt`, "What Is Refused" |
 
 Known gaps:
 
@@ -26,7 +42,10 @@ Known gaps:
 - Data is evaluated once it has passed the rule, so an up-value of a ``System` `` symbol that it names runs. A value of the evaluator behind a URI is typeset in Chatbook's kernel.
 - A hyperlink can have any address, also a `file:` URL or a local path.
 - A table is made by the chat formatter and not by the writer's own rules, so some of what the writer reads elsewhere has no place in it: a URI, three backticks and an unreadable image link are refused in a table.
+- Code that is tokenized again is not always read as before. The 27 cells that read differently with a line appended are `~~` chains that the notebook had nested, `??name`, and statements in one row (which the kernel read as a product). A fourth kind is an operator in a box of its own, found in another corpus (1 of 6,600 code cells with boxes): `Tutorials/ImageProcessing.nb` has a `;` as `StyleBox[";", FontSize -> 9]`, and with a line appended its `smiley = m;` reads as `smiley = (m;)`, which assigns `Null`. Of the 100 cells that can't be written as a new cell, 76 have a `TemplateBox`.
+- Code whose tokens are each in a box of their own parses no more once it is tokenized again: in `Tutorials/NeuralNetworksAudioAnalysis.nb` (a corpus of 20 sample notebooks and about 80 other documentation pages, 8,459 code cells with boxes) one cell has every token in a `StyleBox[token, CellFrame -> True]`, so its brackets are single `<RawBoxes>` that the front end puts into a flat row. Written back unchanged, and with only names, numbers and strings changed, it is the cell that it was; with a line appended, or as a new cell, the kernel finds no opening bracket.
 - Markdown as in a chat reply is not read: only cell tags are ([What Is Refused](#what-is-refused)).
+- A `</cell>` that is content can't be written as it is, also not in a string or a comment of code, since the body ends there ([Writing](#writing)). It is written as the reader writes it: `&lt;/cell>` in text, and in code its token in `<RawBoxes>` with `\.3c` for the `<`. In a string of code `"</" <> "cell>"` also does.
 
 ## The Syntax
 
@@ -44,6 +63,7 @@ Known gaps:
 - The attributes are in this order, and one without a value is left out. Values are in single quotes, with `&amp;`, `&apos;`, `&lt;` and `&#10;` (a line break) for those characters.
 - InputForm is on one line and in printable ASCII, here and in `<RawBoxes>`. A symbol outside of ``System` `` is written with its context.
 - The opening tag is a line, the body follows, and `</cell>` is a line. Cells are separated by a blank line. No body has a cell tag or a `</cell>` in it: an exact body escapes every tag of this syntax that is text, and a lossy body escapes `<cell` and `</cell`.
+- Selected cells are between a `<selection>` line and a `</selection>` line, outside of the cell tags. A selection inside a cell is `<selection>…</selection>` in its body (the caller gives the markers as `Verbatim["<selection>"]` items). The markers are not content: the writer takes them out, except in a string or a comment of code.
 
 ### The Body
 
@@ -108,8 +128,11 @@ Boxes with graphics (`GraphicsBox`, `Graphics3DBox`, `RasterBox`, `Raster3DBox`)
 | Body | Content |
 |---|---|
 | What the reader writes for the cell | The content of the cell, unchanged, whatever it holds |
+| Code with the tokens of the cell one for one, in which only names, numbers and strings differ | Those tokens are changed in the cell's content: every `RowBox` and every box stays |
+| Other code | Tokenized again by the front end (`FrontEnd`ReparseBoxStructurePacket`). The grouping is then the front end's; operators are the characters (`\[Rule]`) only if the cell had no other form of them; the line break is the one the cell uses (`\[IndentingNewLine]` in a new cell, `"\n"` in a new `Code` cell); the spaces that the reader wrote are taken out, and in code with spacing of its own every typed space is kept. Lines outside of brackets are statements: `BoxData[{box, "\[IndentingNewLine]", box}]`, as the front end makes it of typed input. |
 | Text | Plain text is read from left to right: `\` before one of ``\ ` $ * \| ] ~ _ #``, a long name, an HTML entity. Markdown: `**…**`, `*…*`, `~~…~~`, `__…__`, `_…_` (only where the markers are not inside of a word, so `2*3*4` is text), `[label](url)` and `![label](url)` (a link: nothing is fetched), ``` ``code`` ``` and `` `code` ``, `$$tex$$`, `\(tex\)` and `\[tex\]`, and a table (a header row with a row of dashes under it). A body is one cell: a `#` or a `-` at the start of a later line is text. |
 
+- The boxes of tags and URIs are tokens of code. An operator with limits (`∫`, `∑`, `∂` in a script box) is that operator, so that it is grouped with its operand.
 - An item of `TextData` is text: a string, an inline cell, or a `StyleBox` or a link that holds those. Other boxes go into an inline cell, since the front end corrupts a cell that has them directly in its text.
 - The content of a text cell is a string, `TextData` of one item or `TextData` of a list, as the cell had it. A body that is one piece gives `BoxData` for a cell that had boxes, and for a new `DisplayFormula`, `DisplayFormulaNumbered` or `Picture` cell.
 
@@ -139,3 +162,23 @@ Different boxes read as the same Markdown (`[link](url)` may be a `ButtonBox` or
 - In one cell a piece of Markdown stands for one thing: boxes that would read as Markdown that already stands for other boxes in the cell are `<RawBoxes>`.
 - The writer looks a piece up in the records of its cell first, then in those of the other cells, where a text that stands for different boxes is not used. A piece without a record is new: a link is a `ButtonBox`, a formula a `TeXAssistantTemplate` formula, inline code an `InlineCode` cell.
 - `<RawBoxes>` without a record are the model's, but a `TemplateBox` in them that the existing cell holds is not (`ownTemplates`): a table with a link template in one entry can have another entry changed. The template is found by its text as the cell was read, so one that is written in another way is refused like any template of the model's. A string stands for it while the rest is read and checked, and the template of the cell is written in its place, unchecked. A new cell, `options` and the results of a sandboxed evaluator have no such templates.
+
+## In Chat Replies
+
+The tags are not read in chat replies, where a tag is the text that it is, and the `"CellSyntax"` prompt tells the model not to write them there.
+
+## Tests
+
+| File | Covers |
+|---|---|
+| `Tests/CellToString.wlt` | The default Markdown, which the options leave unchanged |
+| `Tests/CellSyntax.wlt` | The tag, exact bodies, the writer, the two tables of refusals, round trips |
+| `Tests/NotebookTools.wlt`, `Tests/Context.wlt`, `Tests/NotebookReader.wlt` | The callers |
+
+The corpus measures are `Developer/CellSyntaxCorpus.wls` (the sample notebooks are not in the repository; the documentation pages are listed in the script):
+
+```
+wolframscript -f Developer/CellSyntaxCorpus.wls roundtrip <notebooks or directories>
+wolframscript -f Developer/CellSyntaxCorpus.wls default out.wxf <notebooks or directories>   (in each of two checkouts)
+wolframscript -f Developer/CellSyntaxCorpus.wls compare a.wxf b.wxf
+```

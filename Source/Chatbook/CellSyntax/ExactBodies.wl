@@ -241,10 +241,15 @@ ownSpacingQ // beginDefinition;
 (* True for code whose spaces are content, which is read and written with exactly the spaces that it has: a Code cell,
    where the front end adds no spacing, and code that has a space token where reading would write a space (next to an
    infix operator or after a comma). cellsFromString asks this of the cell that it writes to. *)
+ownSpacingQ[ cell: Cell[ BoxData[ boxes_, ___ ], ___ ] ] :=
+    MemberQ[ cell, "Code" ] || Block[ { $cellOriginals = None }, ownSpacingQ @ Flatten @ { codePieces @ boxes } ];
+
 ownSpacingQ[ pieces_List ] := Or[
     MatchQ[ pieces, { ___, codeComma | _codeOperator, codeToken[ space_ ], ___ } /; StringMatchQ[ space, " ".. ] ],
     MatchQ[ pieces, { ___, codeToken[ space_ ], _codeOperator, ___ } /; StringMatchQ[ space, " ".. ] ]
 ];
+
+ownSpacingQ[ _ ] := False;
 
 ownSpacingQ // endDefinition;
 

@@ -39,6 +39,10 @@ $dataContext = "Wolfram`Chatbook`CellSyntax`Data`";
      $cellName            what a message calls the cell that it is about (it has a value outside of a tag too)
    Set by tagCell, while the content of a cell is made:
      $existingCell        the cell that the tag names, whose own templates a body can hold (None for a new cell)
+   Set by codeContent and codeBoxes, while the code of a cell is written:
+     $spaced              True if the spaces around operators are CellToString's, which are taken out
+     $lineBreak           the line break that the cell uses
+     $operatorCharacters  ASCII form -> character, for the operators that the cell only has as characters
    A refusal is thrown to $refused, which cellsFromString and evaluateToBoxes catch. *)
 $cellName = "The text";
 
@@ -66,6 +70,9 @@ $$cellTagLine = RegularExpression[ "(?mi)^<cell[\\s>/]" ];
 (* A <RawBoxes> tag as a regular expression, in which "$1" is the text between the tags. A tag holds no other tag, so
    that text with many opening tags is not searched to its end from each of them. *)
 $rawBoxesTag = "<RawBoxes>((?:(?!</?RawBoxes>).)*+)</RawBoxes>";
+
+(* A string or a comment of code, in which nothing is a tag *)
+$$stringOrComment = RegularExpression[ "\"[^\"\\\\]*+(?:\\\\[\\s\\S][^\"\\\\]*+)*+\"|\\(\\*(?s:.*?)\\*\\)" ];
 
 (* Boxes that run code when they are shown *)
 $$dynamicHead = Alternatives[
@@ -110,6 +117,15 @@ $$hyperlinkOptions = OrderlessPatternSequence[
 
 $$actingBox = TagBox[ _, Except[ _String ], ___ ] | Except[ ButtonBox[ _, $$hyperlinkOptions ], _ButtonBox ];
 
+(* An operator with limits or an index (an integral, a sum, a partial derivative): a script box whose base is one
+   character that is not of a name or a number *)
+$$scriptedOperator = Alternatives[
+    SubscriptBox, SuperscriptBox, SubsuperscriptBox, UnderscriptBox, OverscriptBox, UnderoverscriptBox
+][ _String? operatorCharacterQ, __ ];
+
+(* Stands for the boxes of a tag or a URI while the front end tokenizes the code around them *)
+$operand = TagBox[ "", "Operand" ];
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Pieces*)
@@ -125,6 +141,14 @@ $tagPieceRules := $tagPieceRules = {
 
 (* A tag of the syntax that the rules above did not read, since its other tag is missing *)
 $$strayTag = RegularExpression[ "(?i)<(/?)(RawBoxes|MakeBoxes|ToBoxes)\\b" ];
+
+(* The pieces of code. A string and a comment are text whatever they hold: no tag, URI or selection marker is read in
+   them. A marker of a selection is not content. *)
+$codePieceRules := $codePieceRules = Flatten @ {
+    text: $$stringOrComment :> literal @ text,
+    $$selectionMarker :> "",
+    $tagPieceRules
+};
 
 (* The pieces of text. A backslash and the character after it are never the start of a piece, except for math.
    - Math is $$...$$, \(...\) or \[...\] (which is not a long name, \[Alpha]).
@@ -174,6 +198,13 @@ $textEscapes := $textEscapes = {
     name: $$longName :> longNameCharacter @ name,
     entity: ("&" ~~ ("#" | "") ~~ WordCharacter.. ~~ ";") :> importHTMLEntities @ entity
 };
+
+(* Tokens that CellToString writes a space after, and those that it writes a space before *)
+$spaceBefore := $spaceBefore = AssociationThread[ List @@ $$spacedInfixOperator -> True ];
+$spaceAfter  := $spaceAfter  = Append[ $spaceBefore, "," -> True ];
+
+(* What a token is compared by: an operator character is its ASCII form, and a line break is a line break *)
+$tokenTexts := $tokenTexts = Append[ $operatorASCIIForms, "\[IndentingNewLine]" -> "\n" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -480,7 +511,7 @@ cellContent[ body_String, old_, styles_List ] :=
             Replace[
                 kind,
                 {
-                    "Code"  :> refuse[ "`1` is a cell of code, and a body of code that is new or changed is not read yet." ],
+                    "Code"  :> codeContent[ body, old, styles ],
                     "Plain" :> plainContent @ body,
                     "Text"  :> textContent[ body, old, styles ]
                 }
@@ -795,6 +826,358 @@ emphasized // endDefinition;
 linkLabel // beginDefinition;
 linkLabel[ label_String ] := Replace[ joinStrings @ textItems @ label, { { item_ } :> item, items_List :> RowBox @ items } ];
 linkLabel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Code*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*codeContent*)
+codeContent // beginDefinition;
+
+(* The front end tokenizes the code, with the boxes of tags and URIs in their places.
+   - New code that has the tokens of the existing code one for one, and differs only in names, numbers and strings,
+     changes those tokens in the content that the cell has, so that every box and every RowBox of the cell is kept.
+   - Other code is the boxes that the front end makes of it.
+   $spaced says whose spaces the code has: CellToString's around operators, which are taken out, or its own, which are
+   all kept (a Code cell and code with spacing of its own, as it is read). *)
+codeContent[ body_String, old_, styles_List ] :=
+    Module[ { parts, pieces, tokens, oldBoxes, oldTokens, changes },
+        parts = StringSplit[ body, $codePieceRules ];
+        Scan[ requireNoTag, Cases[ parts, _String ] ];
+        (* The front end reads linear syntax in what it tokenizes, so it does not get any: *)
+        Scan[ requireInertText[ #, $$linearSyntax ] &, Cases[ parts, text_String | literal[ text_String ] :> text ] ];
+        pieces = codePiece /@ DeleteCases[ parts, _String | _literal ];
+        tokens = codeTokens[ parts, pieces ];
+        (* The user's own content is not checked: a piece, or a template of the cell inside of one (see rawData) *)
+        requireInert @ BoxData @ { tokens, pieces /. _original -> "" };
+        pieces = pieces /. original[ boxes_ ] :> boxes;
+        oldBoxes = Replace[ old, { Cell[ BoxData[ boxes_, ___ ], ___ ] :> boxes, _ :> { } } ];
+        Block[ { $spaced = ! (MemberQ[ styles, "Code" ] || ownSpacingQ @ old) },
+            changes = If[ MatchQ[ old, Cell[ _BoxData, ___ ] ], changedLeaves[ oldBoxes, tokens, pieces ], $Failed ];
+            If[ ListQ @ changes,
+                (* ReplacePart does not replace a whole expression: *)
+                MapAt[ Replace[ changes, { { { } -> token_ } :> token, _ :> ReplacePart[ #, changes ] } ] &, First @ old, 1 ],
+                (* The tokens of the existing cell, without what is inside of its other boxes: *)
+                oldTokens = Cases[ Extract[ oldBoxes, leafPositions @ oldBoxes ], _String ];
+                Block[
+                    {
+                        $lineBreak          = Which[
+                            MemberQ[ oldTokens, "\[IndentingNewLine]" ], "\[IndentingNewLine]",
+                            MemberQ[ oldTokens, "\n" ] || MemberQ[ styles, "Code" ], "\n",
+                            True, "\[IndentingNewLine]"
+                        ],
+                        $operatorCharacters = Association @ KeyValueMap[
+                            If[ MemberQ[ oldTokens, #1 ] && ! MemberQ[ oldTokens, #2 ], #2 -> #1, Nothing ] &,
+                            $operatorASCIIForms
+                        ]
+                    },
+                    BoxData[ codeStatements @ tokens /. piece[ i_ ] :> pieces[[ i ]] ]
+                ]
+            ]
+        ]
+    ];
+
+codeContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*codePiece*)
+codePiece // beginDefinition;
+codePiece[ rawPiece[ text_String ] ] := rawData @ text;
+codePiece[ uriPiece[ uri_String ] ] := uriBoxes @ uri;
+codePiece[ evalPiece[ arguments__String ] ] := evaluatedBoxes @ arguments;
+codePiece // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*codeTokens*)
+codeTokens // beginDefinition;
+
+(* The boxes that the front end makes of the code, with piece[ i ] where the boxes of the i-th tag or URI go. The front
+   end keeps every token as it is typed and repairs nothing. With ShowStringCharacters it also keeps the escapes of a
+   string as they are. It gets a box in the place of each piece, which it keeps as one token: the boxes of the piece if
+   they are an operator with limits, so that it groups what follows as it does for that operator, and an operand
+   otherwise. The front end can change the boxes that it gets, so they are only found by their order. *)
+codeTokens[ parts_List, pieces_List ] := Enclose[
+    Module[ { i = 0, row, boxes, positions },
+        row = joinStrings @ Replace[ parts, { literal[ text_ ] :> text, Except[ _String ] :> standIn @ pieces[[ ++i ]] }, { 1 } ];
+        boxes = If[ MatchQ[ row, { } | { "" } ],
+            "",
+            Replace[
+                usingFrontEnd @ MathLink`CallFrontEnd @ FrontEnd`ReparseBoxStructurePacket @ StyleBox[
+                    RowBox @ row,
+                    ShowStringCharacters -> True
+                ],
+                StyleBox[ tokens_, ___ ] :> tokens
+            ]
+        ];
+        positions = If[ pieces === { }, { }, leafPositions @ boxes ];
+        positions = Pick[ positions, StringQ /@ Extract[ boxes, positions ], False ];
+        ConfirmAssert[ Length @ positions === Length @ pieces, "Pieces" ];
+        (* ReplacePart does not replace a whole expression: *)
+        If[ positions === { { } }, piece[ 1 ], ReplacePart[ boxes, Thread[ positions -> Array[ piece, Length @ positions ] ] ] ]
+    ],
+    throwInternalFailure
+];
+
+codeTokens // endDefinition;
+
+
+standIn // beginDefinition;
+standIn[ original[ boxes_ ] ] := standIn @ boxes;
+standIn[ boxes: $$scriptedOperator ] := boxes /. original[ box_ ] :> box;
+standIn[ _ ] := $operand;
+standIn // endDefinition;
+
+
+operatorCharacterQ // beginDefinition;
+operatorCharacterQ[ char_String ] := StringLength @ char === 1 && ! Internal`SymbolNameQ @ char && ! DigitQ @ char;
+operatorCharacterQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*leafPositions*)
+leafPositions // beginDefinition;
+
+(* The positions of the leaves of code in their order: the tokens, and the boxes that are not rows *)
+leafPositions[ boxes_ ] := leafPositions[ boxes, { } ];
+
+leafPositions[ RowBox[ items_List ], position_List ] :=
+    Join @@ MapIndexed[ leafPositions[ #1, Join[ position, { 1 }, #2 ] ] &, items ];
+
+leafPositions[ items_List, position_List ] := Join @@ MapIndexed[ leafPositions[ #1, Join[ position, #2 ] ] &, items ];
+leafPositions[ _, position_List ] := { position };
+
+leafPositions // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*Tokens*)
+spaceQ // beginDefinition;
+spaceQ[ token_String ] := StringMatchQ[ token, (" " | "\t").. ];
+spaceQ[ _ ] := False;
+spaceQ // endDefinition;
+
+
+operandQ // beginDefinition;
+
+(* True for a token that code can have another one of in its place without being grouped differently: a name, a
+   number, a string, a pattern, a slot or an output (%) *)
+operandQ[ token_String ] := Or[
+    StringStartsQ[ token, RegularExpression[ "[\\w$`#%\"]|\\.\\d" ] ],
+    token =!= "" && First @ ToCharacterCode @ token > 127 && Internal`SymbolNameQ @ StringTake[ token, 1 ]
+];
+
+operandQ[ _ ] := False;
+
+operandQ // endDefinition;
+
+
+tokenText // beginDefinition;
+tokenText[ token_String ] := Lookup[ $tokenTexts, token, token ];
+tokenText // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*changedLeaves*)
+changedLeaves // beginDefinition;
+
+(* The leaves of the existing code that the new code changes, as { position -> token, ... }, or $Failed if the new code
+   is not the existing code with other names, numbers and strings. A leaf can be several tokens of the new code ("[["
+   as one character, "x_:" of older versions). *)
+changedLeaves[ old_, new_, pieces_List ] :=
+    Module[ { positions, leaves, compared, tokens, count, j = 1, span, changes = { } },
+        positions = leafPositions @ old;
+        leaves    = Extract[ old, positions ];
+        compared  = comparedQ[ #, MemberQ[ leaves, "\[IndentingNewLine]" ] ] &;
+        tokens    = Replace[ Extract[ new, leafPositions @ new ], piece[ i_ ] :> piece @ pieces[[ i ]], { 1 } ];
+        tokens    = Pick[ tokens, compared @ tokens ];
+        count     = Length @ tokens;
+        MapThread[
+            Function[ { position, leaf },
+                Which[
+                    j > count,
+                        Return[ $Failed, Module ],
+                    tokens[[ j ]] === piece @ leaf,
+                        j++,
+                    StringQ @ leaf && (span = tokenSpan[ tokenText @ leaf, tokens, j ]) > 0,
+                        j += span,
+                    operandQ @ leaf && operandQ @ tokens[[ j ]],
+                        AppendTo[ changes, position -> tokens[[ j++ ]] ],
+                    True,
+                        Return[ $Failed, Module ]
+                ]
+            ],
+            Pick[ #, compared @ leaves ] & /@ { positions, leaves }
+        ];
+        If[ j === count + 1, changes, $Failed ]
+    ];
+
+changedLeaves // endDefinition;
+
+
+comparedQ // beginDefinition;
+
+(* Which tokens are compared. Spaces are not, except in code that keeps its own: there only the ones at the start of a
+   line are not if the code has \[IndentingNewLine], since reading writes the indentation after that. *)
+comparedQ[ { }, _ ] := { };
+
+comparedQ[ tokens_List, indented_ ] := MapThread[
+    ! spaceQ @ #1 || ! ($spaced || indented && MatchQ[ #2, "\n" | "\[IndentingNewLine]" ]) &,
+    { tokens, Prepend[ Most @ tokens, None ] }
+];
+
+comparedQ // endDefinition;
+
+
+tokenSpan // beginDefinition;
+
+(* How many tokens from the j-th on make the text together, or 0 *)
+tokenSpan[ text_String, tokens_List, j_Integer ] :=
+    Module[ { made = "", span = 0 },
+        While[ j + span <= Length @ tokens && StringQ @ tokens[[ j + span ]] && StringLength @ made < StringLength @ text,
+            made = made <> tokenText @ tokens[[ j + span++ ]]
+        ];
+        If[ made === text, span, 0 ]
+    ];
+
+tokenSpan // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*codeStatements*)
+codeStatements // beginDefinition;
+
+(* A line break outside of brackets separates statements. The front end gives it as an item of the outermost row, whose
+   other items are then whole expressions. (In a row with an operator the line break is in the middle of one
+   expression: a +, a line break, b.) The content is then the list that the front end makes of typed statements, with
+   the line breaks between them. In one RowBox the kernel would read \[IndentingNewLine] as a space, and the statements
+   as a product. *)
+codeStatements[ boxes_RowBox ] :=
+    With[ { items = statementItems @ boxes },
+        If[ MemberQ[ items, "\n" ] && NoneTrue[ items, operatorQ ],
+            Flatten[
+                Map[
+                    Function[ line,
+                        If[ MatchQ[ line, { "\n".. } ],
+                            line /. "\n" -> $lineBreak,
+                            Replace[
+                                codeBoxes @ RowBox @ If[ $lineBreak === "\n", line, Replace[ line, { _? spaceQ.., rest___ } :> { rest } ] ],
+                                { RowBox @ { } -> { }, RowBox @ { box_ } :> box }
+                            ]
+                        ]
+                    ],
+                    SplitBy[ items, # === "\n" & ]
+                ],
+                1
+            ],
+            codeBoxes @ boxes
+        ]
+    ];
+
+codeStatements[ boxes_ ] := codeBoxes @ boxes;
+
+codeStatements // endDefinition;
+
+
+statementItems // beginDefinition;
+
+(* The items of the outermost row. The front end puts what follows white space or a comment at the start of the code
+   into a row of its own. If that row is whole expressions on several lines, its items are in its place. *)
+statementItems[ RowBox[ items_List ] ] :=
+    Flatten @ Replace[
+        items,
+        row: RowBox[ inner_List ] /; MemberQ[ inner, "\n" ] && NoneTrue[ inner, operatorQ ] :> statementItems @ row,
+        { 1 }
+    ];
+
+statementItems // endDefinition;
+
+
+operatorQ // beginDefinition;
+operatorQ[ token_String ] := token =!= "\n" && ! spaceQ @ token && ! operandQ @ token;
+operatorQ[ _ ] := False;
+operatorQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*codeBoxes*)
+codeBoxes // beginDefinition;
+
+(* Code that is one token *)
+codeBoxes[ token_String ] := First[ codeRow @ { token }, "" ];
+
+(* A comment keeps its spaces, and its operators as they are written *)
+codeBoxes[ RowBox[ items: { "(*", ___, "*)" } ] ] :=
+    Block[ { $spaced = False, $operatorCharacters = <| |> }, RowBox @ codeRow @ items ];
+
+(* Part brackets are the characters if the cell used the characters *)
+codeBoxes[ RowBox[ items_List ] ] :=
+    Replace[
+        RowBox @ codeRow @ items,
+        RowBox @ { a___, "[", RowBox @ { "[", b___, "]" }, "]", c___ } /; KeyExistsQ[ $operatorCharacters, "[[" ] :>
+            RowBox @ { a, "\[LeftDoubleBracket]", b, "\[RightDoubleBracket]", c }
+    ];
+
+codeBoxes[ box_ ] := box;
+
+codeBoxes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*codeRow*)
+codeRow // beginDefinition;
+
+codeRow[ { } ] := { };
+
+(* A line break is the one that the cell uses. After a \[IndentingNewLine] the front end indents the line itself, so
+   the indentation that is written is left out. *)
+codeRow[ items_List ] :=
+    Module[ { indented = False },
+        DeleteCases[
+            MapThread[
+                Function[ { item, previous, next },
+                    Which[
+                        indented && spaceQ @ item,
+                            indented = False; "",
+                        item === "\n",
+                            indented = $lineBreak === "\[IndentingNewLine]"; $lineBreak,
+                        StringQ @ item,
+                            indented = False; cellToken[ item, previous, next ],
+                        True,
+                            indented = False; codeBoxes @ item
+                    ]
+                ],
+                { items, Prepend[ Most @ items, None ], Append[ Rest @ items, None ] }
+            ],
+            ""
+        ]
+    ];
+
+codeRow // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cellToken*)
+cellToken // beginDefinition;
+
+(* A token as the cell has it. The spaces that CellToString writes are taken out: one on each side of an infix operator
+   and one after a comma. A written space can be part of a longer token of spaces, so it is taken out of the token. *)
+cellToken[ token_String, previous_, next_ ] /; $spaced && (StringStartsQ[ token, " " ] || StringEndsQ[ token, " " ]) :=
+    StringDelete[
+        token,
+        {
+            If[ KeyExistsQ[ $spaceAfter, previous ], StartOfString ~~ " ", Nothing ],
+            If[ KeyExistsQ[ $spaceBefore, next ], " " ~~ EndOfString, Nothing ]
+        }
+    ];
+
+(* An operator is the character if the cell only used the character *)
+cellToken[ token_String, _, _ ] := Lookup[ $operatorCharacters, token, token ];
+
+cellToken // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1147,8 +1530,11 @@ uriBoxes // endDefinition;
 (*Package Footer*)
 addToMXInitialization[
     $tagPieceRules;
+    $codePieceRules;
     $textPieceRules;
     $textEscapes;
+    $spaceAfter;
+    $tokenTexts;
 ];
 
 End[ ];
