@@ -3316,12 +3316,24 @@ makeSegmentProgram[ segment_Association, opts_Association ] := Enclose[
                             }
                         ];
 
-                        (* Replace macro placeholders with their expanded expressions without evaluating them: *)
+                        (* Replace macro placeholders with their expanded expressions without evaluating them. A value
+                           that is boxes (the RawBoxes of an expression URI, e.g. a graphic that was read from a
+                           notebook) is the expression that the boxes stand for in this kernel, so that code can
+                           compute with it. Boxes without an interpretation stay RawBoxes: *)
                         If[ keys =!= { },
                             segmentHeld = ReplaceAll[
                                 segmentHeld,
                                 key: Alternatives @@ keys :>
-                                    With[ { e = Extract[ values, FirstPosition[ keys, key ], $ConditionHold ] },
+                                    With[
+                                        {
+                                            e = Replace[
+                                                Extract[ values, FirstPosition[ keys, key ], $ConditionHold ],
+                                                $ConditionHold[ RawBoxes[ boxes_ ] ] :> Replace[
+                                                    Quiet @ ToExpression[ boxes, StandardForm, $ConditionHold ],
+                                                    Except[ $ConditionHold[ _ ] ] :> $ConditionHold @ RawBoxes @ boxes
+                                                ]
+                                            ]
+                                        },
                                         RuleCondition[ e, True ]
                                     ]
                             ]

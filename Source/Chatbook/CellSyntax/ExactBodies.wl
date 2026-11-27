@@ -17,6 +17,18 @@ Needs[ "Wolfram`Chatbook`ErrorUtils`" ];
 (* ::Section::Closed:: *)
 (*Configuration*)
 
+(* While the text of an exact body is made (see exactText): the boxes that each piece of markdown stands for so far *)
+$cellPieces = <| |>;
+
+(* The keys of the URIs that exact bodies made in $attachments, oldest first, with the bytes of their boxes. The oldest
+   are dropped from $attachments beyond these limits, so that reading large notebooks does not keep them all. *)
+$notebookAttachments        = <| |>;
+$maxNotebookAttachments     = 200;
+$maxNotebookAttachmentBytes = 2*^8;
+
+(* Boxes that are longer than this as <RawBoxes> are written as an expression URI *)
+$maxRawBoxesLength = 2000;
+
 (* Styles of cells that hold code. A string in a cell of one of these styles (or in a Program or ExternalLanguage cell)
    is not markdown, so its exact body is the string as it is *)
 $codeCellStyles    = { "Input", "Code", "Output", "Print", "Echo", "Message", "MSG" };
@@ -45,6 +57,15 @@ $$linearSyntax       = RegularExpression[ $linearSyntaxInText <> "|\\*)" ];
 
 (* A \! alone is the start of linear syntax in a token of code, since its \( can be the next token *)
 $$linearSyntaxStart = RegularExpression[ $backslash <> "!" ];
+
+(* The options of bold, italic and struck through text, as cellsFromString writes them and in the other forms that the
+   front end has for them *)
+$emphasisOptions = { FontWeight -> Bold, FontSlant -> Italic, FontVariations -> { "StrikeThrough" -> True } };
+
+$$emphasisOption = Alternatives @@ Append[
+    $emphasisOptions /. { Bold -> Bold | "Bold", Italic -> Italic | "Italic" },
+    StripOnInput -> False
+];
 
 (* Characters in the private use area are written as long names in exact bodies *)
 $$privateUseCharacter = RegularExpression[ "[\\x{E000}-\\x{F8FF}]" ];
@@ -86,10 +107,53 @@ exactBody[ cell: Cell[ BoxData[ boxes_, ___ ], ___, $$plainStringStyle, ___ ] ] 
         If[ StringContainsQ[ code, $$cellTagStart, IgnoreCase -> True ], rawBoxes @ boxes, code ]
     ];
 
+(* Boxes in a cell of text (a DisplayFormula, a table) are written as the inline cell that they would be in text: *)
+exactBody[ Cell[ BoxData[ boxes_, ___ ], args___ ] ] :=
+    exactText @ { Cell[ BoxData @ boxes, Sequence @@ Cases[ { args }, "TextTableForm" ] ] };
+
 exactBody[ Cell[ text_String, ___, $$plainStringStyle, ___ ] ] := If[ unwritableTextQ @ text, rawBoxes @ text, text ];
+
+exactBody[ Cell[ text_String, args___ ] ] := textBody[ { text }, { args } ];
+
+(* The ExpressionUUID of an inline cell says nothing, and it would make every inline cell different from the next one
+   that reads the same (see recordOriginal): *)
+exactBody[ Cell[ TextData[ text_, ___ ], args___ ] ] :=
+    textBody[ DeleteCases[ Flatten @ { text }, ExpressionUUID -> _, Infinity ], { args } ];
 
 exactBody[ Cell[ content_, ___ ] ] := rawBoxes @ content;
 exactBody // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*textBody*)
+textBody // beginDefinition;
+
+(* cellsFromString drops what bodyMarker finds at the start of a body. Text of the cell that starts that way has its
+   first character as an entity, which is not a marker. (Most text starts with nothing that a marker starts with.) *)
+textBody[ items_List, args_List ] :=
+    With[ { body = exactText @ items },
+        If[ StringStartsQ[ body, "#" | "-" | "*" | DigitCharacter ] && StringStartsQ[ body, bodyMarker @ args ],
+            "&#" <> ToString @ First @ ToCharacterCode @ body <> ";" <> StringDrop[ body, 1 ],
+            body
+        ]
+    ];
+
+textBody // endDefinition;
+
+
+$$listItemStyle = Alternatives[
+    $$itemStyle, $$subItemStyle, $$subSubItemStyle, "ItemNumbered", "SubitemNumbered", "SubsubitemNumbered"
+];
+
+bodyMarker // beginDefinition;
+
+(* What models write at the start of the body of a heading or of an item, as the default markdown has it, although
+   the cell tag says it already. The argument is the styles and options of the cell. *)
+bodyMarker[ { ___, $$headingStyle, ___ } ] := RegularExpression[ "#{1,6} +" ];
+bodyMarker[ { ___, $$listItemStyle, ___ } ] := RegularExpression[ "(?:[*-]|\\d+\\.) +" ];
+bodyMarker[ _List ] := RegularExpression[ "(?!)" ];
+
+bodyMarker // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -302,12 +366,359 @@ $$specialCodeCharacter = RegularExpression[ "[" <> $controlCharacters <> "<\\x{E
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*Text*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*exactText*)
+exactText // beginDefinition;
+
+(* Adjacent strings are joined first, since the text can't tell where one ends and the next begins. Bold or italic
+   text and a table are written with what is before and after them in mind (see misplacedQ): *)
+exactText[ items_List ] :=
+    Block[ { $cellPieces = <| |> },
+        With[ { joined = joinStrings @ items },
+            StringJoin @ If[ FreeQ[ joined, $$starEmphasis | $$tableCell, { 1 } ],
+                textPiece /@ joined,
+                MapThread[
+                    If[ misplacedQ[ #2, #1, #3 ], rawBoxes @ #2, textPiece @ #2 ] &,
+                    { Prepend[ Most @ joined, None ], joined, Append[ Rest @ joined, None ] }
+                ]
+            ]
+        ]
+    ];
+
+exactText // endDefinition;
+
+
+joinStrings // beginDefinition;
+
+(* Adjacent strings as one string. The writer joins what it reads the same way. *)
+joinStrings[ items_List ] := Replace[
+    Split[ items, StringQ @ #1 && StringQ @ #2 & ],
+    { { strings__String } :> StringJoin @ strings, { item_ } :> item },
+    { 1 }
+];
+
+joinStrings // endDefinition;
+
+
+insideWordQ // beginDefinition;
+
+(* cellsFromString reads asterisks as emphasis only where they are not inside of a word, so that 2*3*4 is text: after
+   and before anything but a letter or a digit. Bold or italic text that touches one is written as boxes. *)
+insideWordQ[ before_, after_ ] := Or[
+    StringQ @ before && StringEndsQ[ before, RegularExpression[ "[A-Za-z0-9]" ] ],
+    StringQ @ after && StringStartsQ[ after, RegularExpression[ "[A-Za-z0-9]" ] ]
+];
+
+insideWordQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*textPiece*)
+(* Bold or italic text that is not struck through, whose markdown starts and ends with an asterisk *)
+$$starEmphasis = StyleBox[ _String, Except[ FontVariations -> _, $$emphasisOption ].. ];
+
+$$linkBox = Alternatives[
+    ButtonBox[ _, OrderlessPatternSequence[ BaseStyle -> "Link" | "Hyperlink", ButtonData -> _, ___ ] ],
+    TemplateBox[ { _, __ }, "HyperlinkURL" | "HyperlinkDefault" | "HyperlinkTemplate" | $$refLinkTemplate, ___ ]
+];
+
+(* A link that can be found again without knowing where its label ends. A backslash in the label escapes the character
+   after it, as in plain text. The address can hold parentheses in pairs: *)
+$$linkAddress  = Except[ "(" | ")" | WhitespaceCharacter ];
+$$markdownLink = StringExpression[
+    "[",
+    (("\\" ~~ _) | Except[ "[" | "]" | "\n" | "\\" ])..,
+    "](",
+    ($$linkAddress | ("(" ~~ $$linkAddress... ~~ ")"))..,
+    ")"
+];
+
+textGridQ // beginDefinition;
+
+(* True for a grid whose entries are all plain text on one line, also in the TagBoxes that Grid, TableForm and Column
+   put around it. Not handled: entries that are text in other boxes (the RowBox of a negative number). *)
+textGridQ[ TagBox[ grid_, ___ ] ] := textGridQ @ grid;
+
+textGridQ[ GridBox[ rows_? MatrixQ, ___ ] ] :=
+    AllTrue[ Flatten @ rows, MatchQ[ text_String | TagBox[ text_String, HoldForm ] /; StringFreeQ[ text, "\n" ] ] ];
+
+textGridQ[ _ ] := False;
+
+textGridQ // endDefinition;
+
+(* An inline cell that is written as a markdown table: the table that the chat formatter makes, and a grid of plain
+   text in a cell without a style of its own *)
+$$tableCell = Cell[ _BoxData, "TextTableForm", ___ ] | Cell[ BoxData[ _? textGridQ, ___ ], ___? OptionQ ];
+
+misplacedQ // beginDefinition;
+
+(* True for an item whose markdown cellsFromString would not find again between the items before and after it, so
+   that it is written as boxes: bold or italic text that touches a word, and a table that is not on lines of its own
+   (its last row would run on into the text after it). *)
+misplacedQ[ $$starEmphasis, before_, after_ ] := insideWordQ[ before, after ];
+
+misplacedQ[ $$tableCell, before_, after_ ] := ! And[
+    before === None || StringQ @ before && StringEndsQ[ before, "\n" ],
+    after === None || StringQ @ after && StringStartsQ[ after, "\n" ]
+];
+
+misplacedQ[ _, _, _ ] := False;
+
+misplacedQ // endDefinition;
+
+textPiece // beginDefinition;
+
+(* Plain text. The part of a string from its first to its last character that can't be written is a string in
+   <RawBoxes>: *)
+textPiece[ text_String ] := StringJoin @ Replace[
+    StringSplit[ text, raw: ($$unwritableCharacter ~~ ___ ~~ $$unwritableCharacter) | $$unwritableCharacter :> { raw } ],
+    { { raw_ } :> rawBoxes @ raw, plain_ :> escapeText @ plain },
+    { 1 }
+];
+
+textPiece[ Verbatim[ Verbatim ][ marker_String ] ] := marker;
+
+(* Bold, italic and struck through: *)
+textPiece[ box: StyleBox[ text_String, style: $$emphasisOption.. ] ] :=
+    With[ { marker = emphasisMarker @ { style } },
+        recordedMarkdown[ marker <> escapeText @ text <> StringReverse @ marker, box ] /;
+            marker =!= "" && emphasisTextQ[ text, marker ]
+    ];
+
+(* Links: *)
+textPiece[ box: (link: $$linkBox) | Cell[ BoxData[ link: $$linkBox, ___ ], ___ ] ] :=
+    With[ { markdown = linkMarkdown @ link },
+        recordedMarkdown[ markdown, box ] /;
+            StringQ @ markdown && StringMatchQ[ markdown, $$markdownLink ] && ! unwritableCodeQ @ markdown
+    ];
+
+(* Math, in an inline cell without a style of its own: *)
+textPiece[ box: Cell[ BoxData[ FormBox[ formula_, TraditionalForm, ___ ], ___ ], ___? OptionQ ] ] :=
+    With[ { tex = formulaTeX @ formula },
+        recordedMarkdown[ "$$" <> tex <> "$$", box ] /; StringQ @ tex && formulaTeXQ @ tex
+    ];
+
+(* Tables that the chat formatter made: *)
+textPiece[ box: Cell[ _BoxData, "TextTableForm", ___ ] ] :=
+    With[ { table = Block[ { $cellPageWidth = Infinity, $maxCellStringLength = Infinity }, boxToString @ box ] },
+        recordedMarkdown[ longNames @ table, box ] /; StringQ @ table && StringStartsQ[ table, "|" ] && ! unwritableCodeQ @ table
+    ];
+
+(* A grid of plain text is the table of the default markdown, also if it has one row or one column. It has to be a
+   table that cellsFromString reads as one, with a row of dashes (a grid of empty strings has none): *)
+textPiece[ box: Cell[ BoxData[ grid_? textGridQ, ___ ], ___? OptionQ ] ] :=
+    With[
+        {
+            table = Block[ { $cellPageWidth = Infinity, $maxCellStringLength = Infinity, $simplifyTables = False },
+                boxToString @ Cell[ BoxData @ grid, "TextTableForm" ]
+            ]
+        },
+        recordedMarkdown[ longNames @ table, box ] /; And[
+            StringQ @ table,
+            StringMatchQ[ table, RegularExpression[ "\\|[^\\n]*\\n\\|[ :|-]*-[ :|-]*\\|(?:\\n\\|[^\\n]*)+" ] ],
+            ! unwritableCodeQ @ table
+        ]
+    ];
+
+(* Inline code: *)
+textPiece[ box: _Cell | _StyleBox | _TemplateBox ] :=
+    With[ { code = inlineCode @ box },
+        recordedMarkdown[ "``" <> code <> "``", box ] /; StringQ @ code && inlineCodeQ @ code
+    ];
+
+textPiece[ box_ ] := rawBoxes @ box;
+
+textPiece // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*linkMarkdown*)
+linkMarkdown // beginDefinition;
+
+(* The link of the default markdown, which trims the label. The spaces at the ends of the label are put back: *)
+linkMarkdown[ link: ButtonBox[ label_, ___ ] | TemplateBox[ { label_, ___ }, ___ ] ] :=
+    Replace[
+        Block[ { $escapeMarkdown = True }, boxToString @ link ],
+        markdown_String :> longNames @ StringReplace[
+            markdown,
+            StartOfString ~~ "[" ~~ text__ ~~ "](" ~~ url__ ~~ EndOfString :>
+                "[" <> labelSpaces[ label, StartOfString ~~ " ".. ] <> text <> labelSpaces[ label, " ".. ~~ EndOfString ] <> "](" <> url
+        ]
+    ];
+
+linkMarkdown // endDefinition;
+
+
+labelSpaces // beginDefinition;
+labelSpaces[ label_String, spaces_ ] /; ! StringMatchQ[ label, " "... ] := StringJoin @ StringCases[ label, spaces ];
+labelSpaces[ _, _ ] := "";
+labelSpaces // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*escapeText*)
+escapeText // beginDefinition;
+
+(* Escapes what would be read as markdown, as one of the tags of the cell syntax, or as an HTML entity. Brackets are
+   not escaped: a "\[" would look like the start of a long name, and a "[" can only start a link with a "](" after
+   it. An underscore only marks emphasis next to a word boundary. *)
+escapeText[ text_String ] := StringReplace[
+    text,
+    {
+        "\\" -> "\\\\",
+        char: "`" | "$" | "*" | "|" :> "\\" <> char,
+        "](" -> "\\](",
+        tildes: Repeated[ "~", { 2, Infinity } ] :> StringReplace[ tildes, "~" -> "\\~" ],
+        (WordBoundary ~~ underscores: "_"..) | (underscores: "_".. ~~ WordBoundary) :>
+            StringReplace[ underscores, "_" -> "\\_" ],
+        "<" ~~ tag: ("!" | $$cellSyntaxTagName) :> "&lt;" <> tag,
+        "&" ~~ entity: (("#" ~~ (("x" ~~ HexadecimalCharacter..) | DigitCharacter..)) | WordCharacter..) ~~ ";" :>
+            "&amp;" <> entity <> ";",
+        char: $$privateUseCharacter :> longName @ char
+    },
+    IgnoreCase -> True
+];
+
+escapeText // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*emphasisMarker*)
+emphasisMarker // beginDefinition;
+
+emphasisMarker[ style_List ] := StringJoin[
+    If[ MemberQ[ style, FontVariations -> _ ], "~~", "" ],
+    If[ MemberQ[ style, FontWeight -> _ ], "**", "" ],
+    If[ MemberQ[ style, FontSlant -> _ ], "*", "" ]
+];
+
+emphasisMarker // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*emphasisTextQ*)
+emphasisTextQ // beginDefinition;
+
+(* Emphasis opens before and closes after a character that is not white space (2 * 3 * 4 is text). It ends at the next
+   marker, so struck through text can't hold a "~" (there is no escape for it alone): *)
+emphasisTextQ[ text_String, marker_String ] := And[
+    StringFreeQ[ text, "\n" | $$unwritableCharacter | If[ StringStartsQ[ marker, "~" ], "~", "\n" ] ],
+    StringMatchQ[ text, Except[ WhitespaceCharacter ] | (Except[ WhitespaceCharacter ] ~~ ___ ~~ Except[ WhitespaceCharacter ]) ]
+];
+
+emphasisTextQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formulaTeX*)
+formulaTeX // beginDefinition;
+
+(* The input of the TeX input assistant can be in dollars of its own ("$n$"), which are not part of the formula. The
+   original is recorded, so the formula is written back with them: *)
+formulaTeX[ TemplateBox[ KeyValuePattern[ "input" -> tex_String ], "TeXAssistantTemplate", ___ ] ] :=
+    StringReplace[ tex, RegularExpression[ "(?s)\\A(\\$\\$?)([^$]+)\\1\\z" ] :> "$2" ];
+
+(* A formula of layout boxes alone is converted. This converter also works without a front end, unlike exporting to
+   "TeXFragment": *)
+formulaTeX[ boxes_ ] /; FreeQ[ boxes, _TemplateBox | _TagBox | _InterpretationBox | _ButtonBox | $$uriBox ] :=
+    Quiet @ Check[ Convert`TeX`BoxesToTeX @ boxes, None ];
+
+formulaTeX[ _ ] := None;
+
+formulaTeX // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formulaTeXQ*)
+formulaTeXQ // beginDefinition;
+
+(* The formula ends at the next "$$", so the LaTeX can't hold one, or make one with the dollar signs around it: *)
+formulaTeXQ[ tex_String ] := And[
+    tex =!= "",
+    StringFreeQ[ tex, "$$" | $$privateUseCharacter ],
+    ! StringStartsQ[ tex, "$" ],
+    ! StringEndsQ[ tex, "$" ],
+    ! unwritableCodeQ @ tex
+];
+
+formulaTeXQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*inlineCode*)
+inlineCode // beginDefinition;
+inlineCode[ StyleBox[ code_String, "TI" | "InlineCode" ] ] := code;
+inlineCode[ Cell[ code_, "InlineCode" | "InlineFormula", ___ ] ] := inlineCodeText @ code;
+inlineCode[ Cell[ BoxData[ template_TemplateBox, ___ ], ___ ] ] := inlineCode @ template;
+inlineCode[ TemplateBox[ { Cell[ code_, ___ ] | code_ }, "ChatCodeInlineTemplate", ___ ] ] := inlineCodeText @ code;
+inlineCode[ _ ] := None;
+inlineCode // endDefinition;
+
+
+inlineCodeText // beginDefinition;
+inlineCodeText[ code_String ] := code;
+
+(* Only tokens are tried, and nothing is recorded for them: with anything else the inline cell is written as boxes *)
+inlineCodeText[ BoxData[ boxes_? codeTokensQ, ___ ] ] := Block[ { $cellOriginals = None }, exactCode @ boxes ];
+inlineCodeText[ _ ] := None;
+inlineCodeText // endDefinition;
+
+
+codeTokensQ // beginDefinition;
+codeTokensQ[ _String ] := True;
+codeTokensQ[ RowBox[ boxes_List ] ] := AllTrue[ boxes, codeTokensQ ];
+codeTokensQ[ _ ] := False;
+codeTokensQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*inlineCodeQ*)
+inlineCodeQ // beginDefinition;
+
+(* Nothing is escaped between the double backticks, so the code can't hold what would end it or be read as more than
+   code: *)
+inlineCodeQ[ code_String ] := And[
+    code =!= "",
+    StringFreeQ[ code, "``" | "\n" | $$privateUseCharacter ],
+    ! StringStartsQ[ code, "`" ],
+    ! StringEndsQ[ code, "`" ],
+    ! unwritableCodeQ @ code
+];
+
+inlineCodeQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*recordedMarkdown*)
+recordedMarkdown // beginDefinition;
+
+(* The markdown of a piece, with its boxes recorded. Markdown that already stands for other boxes in the cell (a
+   formula typed as "n" and one typed as "$n$") can't stand for these too, so they are written as boxes: *)
+recordedMarkdown[ markdown_String, box_ ] :=
+    If[ Lookup[ $cellPieces, markdown, box ] === box,
+        $cellPieces[ markdown ] = box;
+        recordOriginal[ markdown, box ];
+        markdown,
+        rawBoxes @ box
+    ];
+
+recordedMarkdown // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*Raw Boxes and URIs*)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*rawBoxes*)
 rawBoxes // beginDefinition;
+
+(* LeafCount is checked first, since it is a lower bound of the length that needs no string: *)
+rawBoxes[ boxes_ ] /; ! FreeQ[ boxes, $$uriBox ] || LeafCount @ boxes > $maxRawBoxesLength :=
+    boxesURI @ boxes;
 
 (* Text that looks like a tag or a URI can only be inside of a string here, where it can be written with an escape, so
    that nothing between the tags reads as either: *)
@@ -320,10 +731,73 @@ rawBoxes[ boxes_ ] :=
                 IgnoreCase -> True
             ]
         },
-        "<RawBoxes>" <> text <> "</RawBoxes>"
+        If[ StringLength @ text > $maxRawBoxesLength,
+            boxesURI @ boxes,
+            recordOriginal[ text, boxes ];
+            "<RawBoxes>" <> text <> "</RawBoxes>"
+        ]
     ];
 
 rawBoxes // endDefinition;
+
+(* Graphics and dynamic boxes are always written as a URI: *)
+$$uriBox = Alternatives[
+    _GraphicsBox, _Graphics3DBox, _RasterBox, _Raster3DBox, _DynamicBox, _DynamicModuleBox, _DynamicWrapperBox, _Dynamic
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*boxesURI*)
+boxesURI // beginDefinition;
+
+(* The URI stands for the boxes themselves in $attachments, from which cellsFromString writes them back. They are stored
+   as they are and not interpreted. A graphic (image: boxes that graphicsQ finds a graphic in, and
+   what a lossy body takes for one) is the image link ![Image](attachment://...), in the form that is made an image
+   for multimodal chats. The key is moved to the end of $notebookAttachments, and the oldest keys are dropped from
+   $attachments beyond the limits (the newest one is always kept). A key that something else also made is dropped with
+   them, which is not worth telling apart. *)
+boxesURI[ boxes_ ] := boxesURI[ boxes, graphicsQ @ RawBoxes @ boxes ];
+
+boxesURI[ boxes_, image_ ] :=
+    Module[ { uri, key },
+        uri = If[ TrueQ @ image,
+                  MakeExpressionURI[ "Image", RawBoxes @ StyleBox[ boxes, "GraphicsRawBoxes" ] ],
+                  MakeExpressionURI[ ToString @ Head @ boxes, RawBoxes @ boxes ]
+              ];
+        key = First @ StringCases[ uri, "://" ~~ k: Except[ ")" ].. ~~ ")" ~~ EndOfString :> k ];
+        KeyDropFrom[ $notebookAttachments, key ];
+        $notebookAttachments[ key ] = ByteCount @ boxes;
+        While[
+            And[
+                Length @ $notebookAttachments > 1,
+                Or[
+                    Length @ $notebookAttachments > $maxNotebookAttachments,
+                    Total @ $notebookAttachments > $maxNotebookAttachmentBytes
+                ]
+            ],
+            KeyDropFrom[ $attachments, First @ Keys @ $notebookAttachments ];
+            $notebookAttachments = Rest @ $notebookAttachments
+        ];
+        uri
+    ];
+
+boxesURI // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*recordOriginal*)
+recordOriginal // beginDefinition;
+
+(* Nothing is recorded for a cell without an id: *)
+recordOriginal[ text_String, boxes_ ] /; AssociationQ @ $cellOriginals && StringQ @ $cellOriginalsKey :=
+    With[ { key = $cellOriginalsKey },
+        If[ ! KeyExistsQ[ $cellOriginals, key ], $cellOriginals[ key ] = <| |> ];
+        $cellOriginals[[ Key @ key, Key @ text ]] = boxes
+    ];
+
+recordOriginal[ _String, _ ] := Null;
+
+recordOriginal // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

@@ -365,6 +365,29 @@ If[ $localEvaluatorAvailable,
 (* ::Section::Closed:: *)
 (*Expression URIs of Boxes*)
 
+(* An expression URI whose value is boxes (what typeset code and a graphic of a notebook are read as) is the expression
+   that the boxes stand for in code of the evaluator, which is not evaluated on the way. Boxes that stand for nothing
+   stay RawBoxes. *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Common`$attachments = <| |> },
+        With[
+            {
+                power  = Wolfram`Chatbook`MakeExpressionURI[ "expression", "boxes", RawBoxes @ SuperscriptBox[ "3", "2" ] ],
+                broken = Wolfram`Chatbook`MakeExpressionURI[ "expression", "boxes", RawBoxes @ RowBox @ { "f", "[" } ]
+            },
+            {
+                Wolfram`Chatbook`WolframLanguageToolEvaluate[ "Hold[" <> power <> "]", "Result", "Method" -> "Session" ],
+                Wolfram`Chatbook`WolframLanguageToolEvaluate[ power <> " + 1", "Result", "Method" -> "Session" ],
+                Wolfram`Chatbook`WolframLanguageToolEvaluate[ "Hold[" <> broken <> "]", "Result", "Method" -> "Session" ]
+            }
+        ]
+    ],
+    { HoldCompleteForm[ Hold[ 3^2 ] ], HoldCompleteForm[ 10 ], HoldCompleteForm[ Hold[ RawBoxes[ RowBox @ { "f", "[" } ] ] ] },
+    SameTest       -> MatchQ,
+    TimeConstraint -> 60,
+    TestID         -> "ExpressionURIs-Boxes"
+]
+
 (* Code can hold several image links. Each one is the expression of its own URI: on one line, on several lines, as a
    string and in Import. A label can have brackets in pairs (the head of an expression). *)
 VerificationTest[
@@ -389,6 +412,23 @@ VerificationTest[
     SameTest       -> MatchQ,
     TimeConstraint -> 60,
     TestID         -> "ExpressionURIs-SeveralLinks"
+]
+
+(* The boxes are read in the kernel that evaluates the code *)
+If[ $localEvaluatorAvailable,
+    VerificationTest[
+        Block[ { Wolfram`Chatbook`Common`$attachments = <| |> },
+            Wolfram`Chatbook`WolframLanguageToolEvaluate[
+                Wolfram`Chatbook`MakeExpressionURI[ "expression", "boxes", RawBoxes @ SuperscriptBox[ "3", "2" ] ] <> " + 1",
+                "Result",
+                "Method" -> "Local"
+            ]
+        ],
+        HoldCompleteForm[ 10 ],
+        SameTest       -> MatchQ,
+        TimeConstraint -> 60,
+        TestID         -> "ExpressionURIs-Boxes-Local"
+    ]
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)
