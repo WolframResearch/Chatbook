@@ -75,7 +75,6 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$nextTaskEvaluation;
 `$noSemanticSearch;
 `$notebookAssistanceExtraInstructions;
-`$notebookEditorEnabled;
 `$openToolCallBoxes;
 `$popOutSettings;
 `$preferencesScope;

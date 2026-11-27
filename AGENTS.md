@@ -116,7 +116,7 @@ PacletInfo.wl defines three kernel extensions loaded in order:
 - **ChatModes/** — Chat mode extensions (Evaluate, UI, Context, NotebookAssistance, ContentSuggestions)
 - **Formatting/** — LLM response formatting for notebook display (`Formatting.wl` loads the other files, which share its ``Wolfram`Chatbook`Formatting`Private` `` context)
 - **PromptGenerators/** — Prompt augmentation (RelatedDocumentation, WolframAlpha queries, VectorDatabases, NotebookChunking)
-- **Tools/** — LLM tool definitions (WolframLanguageEvaluator, WebSearcher, WebFetcher, DocumentationSearcher, WolframAlpha, NotebookEditor, etc.)
+- **Tools/** — LLM tool definitions (WolframLanguageEvaluator, WebSearcher, WebFetcher, DocumentationSearcher, WolframAlpha, NotebookReader, etc.)
 
 ### Error Handling Pattern
 
