@@ -156,6 +156,36 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Removed Tools*)
+
+(* Settings saved by older versions can still name the removed NotebookEditor tool. It's dropped without a message: *)
+VerificationTest[
+    Block[
+        {
+            Wolfram`Chatbook`$ChatHandlerData       = Wolfram`Chatbook`$ChatHandlerData,
+            Wolfram`Chatbook`Common`$lastCellObject = Wolfram`Chatbook`Common`$lastCellObject,
+            Wolfram`Chatbook`Common`$lastTask       = Wolfram`Chatbook`Common`$lastTask,
+            Wolfram`Chatbook`Common`$tokenBudgetLog = Wolfram`Chatbook`Common`$tokenBudgetLog
+        },
+        Map[
+            Function[
+                tools,
+                Sort[ #[ "Data" ][ "CanonicalName" ] & /@ Wolfram`Chatbook`Common`withChatState[
+                    Wolfram`Chatbook`Common`resolveAutoSettings[
+                        <| Wolfram`Chatbook`Common`$defaultChatSettings, "Tools" -> tools |>
+                    ][ "Tools" ]
+                ] ]
+            ],
+            { { "NotebookEditor", "WolframAlpha" }, { "WolframAlpha" } }
+        ]
+    ],
+    { names_, names_ } /; MemberQ[ names, "WolframAlpha" ],
+    SameTest -> MatchQ,
+    TestID   -> "NotebookEditor-RemovedToolName"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*NotebookReader*)
 VerificationTest[
     KeyExistsQ[ Wolfram`Chatbook`$DefaultTools, "NotebookReader" ],
