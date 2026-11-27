@@ -2250,14 +2250,19 @@ preprocessSandboxString[ s_String ] := sandboxStringNormalize[ s ] = StringRepla
             "\[FreeformPrompt][\"" <> query <> "\"]",
         ("Import"|"Get") ~~ "[\"<!" ~~ uri: Except[ "!" ].. ~~ "!>\"]" :>
             "InlinedExpression[\"" <> uri <> "\"]",
-        ("Import"|"Get") ~~ "[\"!["~~___~~"](" ~~ uri: (__ ~~ "://" ~~ key__) ~~ ")\"]" /; expressionURIKeyQ @ key :>
-            "InlinedExpression[\"" <> uri <> "\"]",
+        (* Code can hold several image links, and each one is its own: the label of a link has brackets only in
+           pairs ($$linkLabel) and its address no ")": *)
+        ("Import"|"Get") ~~ "[\"![" ~~ $$linkLabel ~~ "](" ~~ uri: (Except[ ")" ].. ~~ "://" ~~ key: Except[ ")" ]..) ~~ ")\"]" /;
+            expressionURIKeyQ @ key :>
+                "InlinedExpression[\"" <> uri <> "\"]",
         ("Import"|"Get") ~~ "[\"" ~~ key__ ~~ "\"]" /; expressionURIKeyQ @ key :>
             "InlinedExpression[\"attachment://" <> key <> "\"]",
-        "\"!["~~___~~"](" ~~ uri: (__ ~~ "://" ~~ key__) ~~ ")\"" /; expressionURIKeyQ @ key :>
-            "InlinedExpression[\"" <> uri <> "\"]",
-        "!["~~___~~"](" ~~ uri: (__ ~~ "://" ~~ key__) ~~ ")" /; expressionURIKeyQ @ key :>
-            "InlinedExpression[\"" <> uri <> "\"]",
+        "\"![" ~~ $$linkLabel ~~ "](" ~~ uri: (Except[ ")" ].. ~~ "://" ~~ key: Except[ ")" ]..) ~~ ")\"" /;
+            expressionURIKeyQ @ key :>
+                "InlinedExpression[\"" <> uri <> "\"]",
+        "![" ~~ $$linkLabel ~~ "](" ~~ uri: (Except[ ")" ].. ~~ "://" ~~ key: Except[ ")" ]..) ~~ ")" /;
+            expressionURIKeyQ @ key :>
+                "InlinedExpression[\"" <> uri <> "\"]",
         "<!" ~~ uri: Except[ "!" ].. ~~ "!>" :>
             "InlinedExpression[\"" <> uri <> "\"]",
         "\n/"~~EndOfString :> ""
@@ -2265,6 +2270,10 @@ preprocessSandboxString[ s_String ] := sandboxStringNormalize[ s ] = StringRepla
 ];
 
 preprocessSandboxString // endDefinition;
+
+(* The label of an image link: text without brackets, or with brackets in pairs, nested up to three deep, as in a
+   head like f[g[1]][x] (the label of an expression URI is the head of its expression): *)
+$$linkLabel = Nest[ (Except[ "[" | "]" ] | ("[" ~~ # ~~ "]"))... &, Except[ "[" | "]" ]..., 3 ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
