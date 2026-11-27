@@ -112,6 +112,13 @@ $defaultToolOrder = {
     "WolframLanguageEvaluator"
 };
 
+(* The notebook editing tools (Tools/NotebookTools.wl): *)
+$notebookTools := Keys @ Wolfram`Chatbook`Tools`NotebookTools`$notebookToolSpecs;
+
+(* One notebook edit takes several tool calls (read, edit, fix, show the changes), so a chat that has the notebook
+   tools allows at least this many tool responses per turn (the AI Assistant allows 5): *)
+$notebookToolResponses = 20;
+
 $toolNameAliases = <|
     "DocumentationSearch" -> "DocumentationSearcher",
     "ReadFile"            -> "FileReader",
@@ -401,6 +408,15 @@ toolSelectedQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*notebookToolsSelectedQ*)
+(* True if the chat has any of the notebook editing tools. Its notebook context and its NotebookReader results are then
+   in the cell syntax, with the cell ids of those tools (see withContextCellSyntax in ChatModes/Context.wl): *)
+notebookToolsSelectedQ // beginDefinition;
+notebookToolsSelectedQ[ ] := IntersectingQ[ Keys @ $selectedTools, $notebookTools ];
+notebookToolsSelectedQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*withToolBox*)
 withToolBox // beginDefinition;
 withToolBox // Attributes = { HoldFirst };
@@ -446,9 +462,12 @@ selectTools[ as_Association ] := Enclose[
 
         selectTools0 /@ selectedNames;
 
+        (* Don't offer the tools that read the user's notebooks when the user turned notebook content off (e.g.
+           "Ignore notebook content"). Dropped before the "Enabled" checks, which can call the front end: *)
+        If[ ! TrueQ @ as[ "AllowSelectionContext" ],
+            KeyDropFrom[ $selectedTools, Prepend[ $notebookTools, "NotebookReader" ] ]
+        ];
         $selectedTools = Select[ $selectedTools, toolEnabledQ ];
-        (* Don't offer NotebookReader when the user turned notebook content off (e.g. "Ignore notebook content"): *)
-        If[ ! TrueQ @ as[ "AllowSelectionContext" ], KeyDropFrom[ $selectedTools, "NotebookReader" ] ];
         selectSkillTool @ as;
         short = <| (toolShortName[ # ] -> # &) /@ Values[ $selectedTools ] |>;
 
@@ -676,12 +695,26 @@ resolveTools[ settings: KeyValuePattern[ "ToolsEnabled" -> True ] ] := (
     $lastSelectedTools = $selectedTools;
     $lastToolOptions = $toolOptions;
     If[ KeyExistsQ[ $selectedTools, "WolframLanguageEvaluator" ], needsBasePrompt[ "WolframLanguageEvaluatorTool" ] ];
-    Append[ settings, "Tools" -> Values @ $selectedTools ]
+    notebookToolResponses @ Append[ settings, "Tools" -> Values @ $selectedTools ]
 );
 
 resolveTools[ settings_Association ] := settings;
 
 resolveTools // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*notebookToolResponses*)
+(* Raises "MaxToolResponses" to $notebookToolResponses when notebook tools are selected (a larger value is kept): *)
+notebookToolResponses // beginDefinition;
+
+notebookToolResponses[ settings: KeyValuePattern[ "MaxToolResponses" -> n_Integer ] ] /;
+    n < $notebookToolResponses && notebookToolsSelectedQ[ ] :=
+        <| settings, "MaxToolResponses" -> $notebookToolResponses |>;
+
+notebookToolResponses[ settings_Association ] := settings;
+
+notebookToolResponses // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -881,6 +914,9 @@ readJSONParameter // endDefinition;
 $$argNameDelimiter = (":"|"="|"-") ~~ " "...;
 
 parseSimpleToolCallParameterStrings // beginDefinition;
+
+(* A tool without parameters, e.g. "/nb_list": *)
+parseSimpleToolCallParameterStrings[ { }, _String ] := <| |>;
 
 parseSimpleToolCallParameterStrings[ { param_String }, argString_String ] :=
     <| param -> StringDelete[ argString, StartOfString ~~ WhitespaceCharacter... ~~ param ~~ $$argNameDelimiter ] |>;
@@ -1180,7 +1216,7 @@ simpleToolSchema[ as_Association ] := Enclose[
         command     = ConfirmBy[ toolShortName @ data, StringQ, "ShortName" ];
         description = ConfirmBy[ data[ "Description" ], StringQ, "Description" ];
         args        = ConfirmMatch[ as[ "Parameters" ], KeyValuePattern @ { }, "Arguments" ];
-        argStrings  = ConfirmMatch[ simpleArgStrings @ args, { __String }, "ArgStrings" ];
+        argStrings  = ConfirmMatch[ simpleArgStrings @ args, { ___String }, "ArgStrings" ];
 
         StringReplace[
             TemplateApply[
@@ -1189,7 +1225,8 @@ simpleToolSchema[ as_Association ] := Enclose[
                     "DisplayName" -> name,
                     "ShortName"   -> command,
                     "Description" -> description,
-                    "Arguments"   -> StringRiffle[ argStrings, "\n" ]
+                    (* a tool without parameters, e.g. ListNotebooks: *)
+                    "Arguments"   -> If[ argStrings === { }, "\tnone", StringRiffle[ argStrings, "\n" ] ]
                 |>
             ],
         "\n\n" -> "\n"

@@ -26,6 +26,7 @@ Resolution only occurs when `ToolsEnabled` is `True`; otherwise the setting rema
    - Per-persona tool selections from `getToolSelections` (stored in `"ToolSelections"`)
    - Per-tool selection types from `getToolSelectionTypes` (stored in `"ToolSelectionType"`)
 3. The resolved `$selectedTools` association (filtered by `toolEnabledQ`, which checks each tool's `"Enabled"` key) is stored as `Values @ $selectedTools` (a list of `LLMTool` objects) back into the `"Tools"` key of the settings.
+4. If any of the [notebook tools](#notebook-tools) is selected, `"MaxToolResponses"` is raised to at least 20 (`notebookToolResponses`).
 
 A built-in tool can be version-gated through its `"Enabled"` and `"Hidden"` keys: `FileReader` wraps `FormatUtilities`LLM`ReadFile` and requires Wolfram 15.1, so on earlier versions it stays in `$DefaultTools` (persona tool lists that name it remain valid) but is filtered out by `toolEnabledQ` and hidden from the tool manager UI.
 
@@ -633,7 +634,7 @@ With the responses endpoint (`"RequestMethod" -> "Responses"`), the response to 
 
 ### Chat Mode Overrides
 
-NotebookAssistance mode explicitly sets this to `5` in `$notebookAssistanceBaseSettings`.
+NotebookAssistance mode explicitly sets this to `5` in `$notebookAssistanceBaseSettings`. When any of the [notebook tools](#notebook-tools) is selected, `resolveTools` raises it to at least `20` (`$notebookToolResponses` in `Tools/Common.wl`), since one notebook edit takes several tool calls; a larger value is kept.
 
 ### Integration Points
 
