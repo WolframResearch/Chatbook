@@ -78,6 +78,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$openToolCallBoxes;
 `$popOutSettings;
 `$preferencesScope;
+`$preserveCellBoxes;
 `$progressContainer;
 `$promptCacheTurnID;
 `$progressText;
