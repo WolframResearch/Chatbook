@@ -3985,6 +3985,7 @@ Wolfram`Chatbook`Serialization`CellToString = CellToString;
 (* The cell syntax beyond the cell tag (docs/cell-syntax.md): the exact bodies of cells, and cellsFromString, which
    reads the syntax. The files share this context, and use its patterns while they load: *)
 Get[ "Wolfram`Chatbook`CellSyntax`ExactBodies`"     ];
+Get[ "Wolfram`Chatbook`CellSyntax`CellsFromString`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

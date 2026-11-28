@@ -113,6 +113,7 @@ PacletInfo.wl defines three kernel extensions loaded in order:
 - **CreateChatNotebook.wl** / **ConvertChatNotebook.wl** — Notebook creation/conversion
 
 **Subdirectories:**
+- **CellSyntax/** — The syntax that shows cells to an LLM and reads them back (see [cell-syntax.md](docs/cell-syntax.md)): `ExactBodies.wl` (the cell bodies that `CellToString` writes with `"PreserveBoxes"`) and `CellsFromString.wl` (`cellsFromString`, which reads the syntax). `Serialization.wl` loads the two files, which share its ``Wolfram`Chatbook`Serialization`Private` `` context
 - **ChatModes/** — Chat mode extensions (Evaluate, UI, Context, NotebookAssistance, ContentSuggestions)
 - **Formatting/** — LLM response formatting for notebook display (`Formatting.wl` loads the other files, which share its ``Wolfram`Chatbook`Formatting`Private` `` context)
 - **PromptGenerators/** — Prompt augmentation (RelatedDocumentation, WolframAlpha queries, VectorDatabases, NotebookChunking)

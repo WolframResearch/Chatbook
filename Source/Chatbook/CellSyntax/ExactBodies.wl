@@ -42,6 +42,7 @@ $$cellSyntaxTag     = "<" ~~ $$cellSyntaxTagName;
 (* Control characters: all but tab and line feed. A carriage return is one, since the line breaks of the syntax are
    line feeds. Exact bodies write them in <RawBoxes>, and cellsFromString refuses them. *)
 $controlCharacters = "\\x00-\\x08\\x0b-\\x1f\\x7f";
+$$controlCharacter = RegularExpression[ "[" <> $controlCharacters <> "]" ];
 
 (* Characters that can't be written in the text of an exact body: control characters and the characters of linear
    syntax *)
@@ -53,6 +54,7 @@ $$unwritableCharacter = RegularExpression[ "[" <> $controlCharacters <> "\\x{F7C
    In code and in boxes \* is linear syntax too. In markdown it is the escape of an asterisk. *)
 $backslash           = "(?<!\\\\)(?:\\\\\\\\)*\\\\";
 $linearSyntaxInText  = "[\\x{F7C0}-\\x{F7CD}]|" <> $backslash <> "(?:!\\\\\\(|:[fF]7[cC][0-9a-dA-D]|\\|00[fF]7[cC][0-9a-dA-D]";
+$$linearSyntaxInText = RegularExpression[ $linearSyntaxInText <> ")" ];
 $$linearSyntax       = RegularExpression[ $linearSyntaxInText <> "|\\*)" ];
 
 (* A \! alone is the start of linear syntax in a token of code, since its \( can be the next token *)
