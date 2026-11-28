@@ -31,7 +31,7 @@ VerificationTest[
     (* CI runs every test file in one kernel and one context: these helpers are only defined here *)
     ClearAll[
         csTag, csExact, csBody, csExactBody, csCode, csText, csStores, csKey, csWrite, csCells, csFailureMessage, csMessage,
-        csRoundTrip, csFormula, csFrontEnd, csEvaluator, csRefusal, csNotRefused
+        csRoundTrip, csFormula, csFrontEnd, csEvaluator, csHeld, csRefusal, csNotRefused
     ];
 
     (* Cells in cell tags, with lossy and with exact bodies *)
@@ -76,6 +76,9 @@ VerificationTest[
     (* What a text is refused with, by where it is written: as the body of a new cell of a style, as the body of the
        existing cell c7, as the data of a <RawBoxes> tag in a cell of code or of text, or as an attribute of a new cell *)
     csRefusal[ style: "Input" | "Text" | "Program", body_String ] := csMessage[ "<cell style='" <> style <> "'>\n" <> body <> "\n</cell>" ];
+    csRefusal[ "Existing", body_String ] := csMessage[ "<cell id='c7'>\n" <> body <> "\n</cell>", "Cells" -> <| "c7" -> Cell[ "a", "Text" ] |> ];
+    csRefusal[ "RawBoxes", data_String ] := csRefusal[ "Input", "<RawBoxes>" <> data <> "</RawBoxes>" ];
+    csRefusal[ "RawBoxes in text", data_String ] := csRefusal[ "Text", "Some <RawBoxes>" <> data <> "</RawBoxes> text." ];
     csRefusal[ "style", value_String ] := csMessage[ "<cell style='" <> value <> "'>\nx\n</cell>" ];
     csRefusal[ name: "options" | "CellLabel" | "CellTags", value_String ] :=
         csMessage[ "<cell style='Text' " <> name <> "='" <> StringReplace[ value, { "&" -> "&amp;", "'" -> "&apos;" } ] <> "'>\nx\n</cell>" ];
@@ -127,6 +130,9 @@ VerificationTest[
         },
         eval
     ];
+
+    (* The expressions that the kernel reads from the content of a code cell, held: one for each statement *)
+    csHeld[ Cell[ content_BoxData, ___ ] ] := DeleteCases[ ToExpression[ content, StandardForm, HoldComplete ], Null ];
 
     True,
     True,
@@ -494,6 +500,27 @@ VerificationTest[
     { "Boole[a x < y]", "# Log + 2x + x 2 + 1 . 5 + x \\[FormalX] + f[x]\\[DifferentialD]x" },
     SameTest -> MatchQ,
     TestID   -> "Code-TokensKeptApart"
+]
+
+(* So do two tokens that would make another token or form together (x_., %2, %%, !!, &&, #1, x_y), and no others
+   (a::usage, typed linear syntax). The code reads the same from its text as from its boxes: *)
+VerificationTest[
+    With[
+        {
+            rows = {
+                RowBox @ { "x_", ".", "y_" }, RowBox @ { "%", "2" }, RowBox @ { "%", "%" }, RowBox @ { RowBox @ { "n", "!" }, "!" },
+                RowBox @ { RowBox @ { "f", "&" }, "&" }, RowBox @ { "#", "1" }, RowBox @ { "x_", "y" }, RowBox @ { "x", "_" },
+                RowBox @ { "a", "::", "usage" }, RowBox @ { "x_", ".." }, RowBox @ { "\\(", RowBox @ { "x", "\\^", "2" }, "\\)" }
+            }
+        },
+        {
+            csCode /@ rows,
+            Select[ rows, csHeld /@ csCells[ "<cell style='Input'>\n" <> csCode @ # <> "\n</cell>" ] =!= { csHeld @ Cell[ BoxData @ #, "Input" ] } & ]
+        }
+    ],
+    { { "x_ .y_", "% 2", "% %", "n! !", "f& &", "# 1", "x_ y", "x _", "a::usage", "x_ ..", "\\(x\\^2\\)" }, { } },
+    SameTest -> MatchQ,
+    TestID   -> "Code-TokensThatWouldJoin"
 ]
 
 (* In a Code cell the front end adds no spacing, so its spaces are content: the code is written with its tokens and
@@ -1080,6 +1107,34 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*Formulas in Cells of Code*)
+
+(* A cell with a code style is code whatever it holds. One whose whole content is a TraditionalForm box (input that
+   was typed in that form, such as the assignment of a matrix) is that box and not a formula, which a text cell with
+   the same content is. An edit then changes the boxes of the cell, and the kernel still reads the assignment. *)
+VerificationTest[
+    With[ { boxes = FormBox[ RowBox @ { "M", "=", RowBox @ { "(", GridBox @ { { "1", RowBox @ { "-", "b" } }, { "0", "d" } }, ")" } }, TraditionalForm ] },
+        {
+            csExactBody @ Cell[ BoxData @ boxes, "Input" ],
+            csExactBody @ Cell[ BoxData @ boxes, "Output" ] === csExactBody @ Cell[ BoxData @ boxes, "Input" ],
+            StringStartsQ[ csExactBody @ Cell[ BoxData @ boxes, "DisplayFormula" ], "$$M=\\left(" ],
+            csHeld @ csRoundTrip[ Cell[ BoxData @ boxes, "Input" ], StringReplace[ "RowBox[{\"-\", \"b\"}]" -> "\"b\"" ] ],
+            csCells[ "<cell style='Input'>\n$$x^2$$\n</cell>" ]
+        }
+    ],
+    {
+        "<RawBoxes>FormBox[RowBox[{\"M\", \"=\", RowBox[{\"(\", GridBox[{{\"1\", RowBox[{\"-\", \"b\"}]}, {\"0\", \"d\"}}], \")\"}]}], TraditionalForm]</RawBoxes>",
+        True,
+        True,
+        HoldComplete[ M = { { 1, b }, { 0, d } } ],
+        { Cell[ BoxData @ RowBox @ { RowBox @ { "$$x", "^", "2" }, "$$" }, "Input" ] }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Body-FormulaInCellOfCode"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*Grids of Text*)
 
 (* In a cell of text, a grid whose entries are all plain text is a markdown table, also in the wrappers that TableForm,
@@ -1630,6 +1685,58 @@ VerificationTest[
     TestID   -> "Write-SelectionMarkers"
 ]
 
+(* Cell tags are read wherever they start outside of a body, so several can be on one line, with and without bodies.
+   A body ends at the first </cell>, wherever that is. Text between the tags of a line is refused as any text outside
+   of cell tags is, also between two cells with bodies and after a </cell> that was meant as content. *)
+VerificationTest[
+    With[ { cells = <| "c1" -> Cell[ "one", "Text", CellTags -> "a" ], "c2" -> Cell[ "two", "Text", CellTags -> "a" ] |> },
+        {
+            Lookup[ csWrite[ "<cell id='c1' CellTags=''/><cell id='c2' CellTags=''/>", "Cells" -> cells ], "Attributes" ],
+            csCells[ "<cell id='c1'>ONE</cell><cell id='c2' CellTags=''/> <cell style='Item'>new</cell>\n<cell style='Text'>a b</cell>", "Cells" -> cells ],
+            csMessage[ "<cell id='c1' CellTags=''/> and <cell id='c2' CellTags=''/>", "Cells" -> cells ],
+            csMessage[ "<cell id='c1'>ONE</cell> and <cell id='c2'>TWO</cell>", "Cells" -> cells ],
+            csMessage[ "<cell style='Text'>a </cell> b</cell>" ],
+            csMessage[ "<cell style='Input'>\nx = \"</cell>\"\n</cell>" ]
+        }
+    ],
+    {
+        { <| "Styles" -> { "Text" }, "Options" -> { } |>, <| "Styles" -> { "Text" }, "Options" -> { } |> },
+        { Cell[ "ONE", "Text", CellTags -> "a" ], Missing[ "Unchanged" ], Cell[ "new", "Item" ], Cell[ "a b", "Text" ] },
+        _String? (StringStartsQ[ "The text outside of cell tags is not read (and)." ]),
+        _String? (StringStartsQ[ "The text outside of cell tags is not read (and)." ]),
+        _String? (StringStartsQ[ "A </cell> has no cell tag that it closes. The body of a cell ends at its first </cell>" ]),
+        _String? (StringStartsQ[ "A </cell> has no cell tag that it closes." ])
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Write-TagsOnOneLine"
+]
+
+(* In code, a string and a comment are text whatever they hold: a tag, a URI or a marker of a selection. Only a
+   </cell> can't be written in them, since it ends the body: in code it is a token in <RawBoxes> with an escape, and
+   in text an entity, which is what the reader writes. *)
+VerificationTest[
+    {
+        csHeld /@ csCells[ "<cell style='Input'>\nx = \"<cell>\" (* <cell> and <RawBoxes> *)\ny = \"<RawBoxes>\" <> \"</RawBoxes><selection>![a](attachment://content-abcde)\"\nz = <RawBoxes>\"\\\"\\.3c/cell>\\\"\"</RawBoxes>\n</cell>" ],
+        csCells[ "<cell style='Text'>The tag &lt;/cell> ends a body.</cell>" ],
+        csExactBody /@ { Cell[ BoxData @ RowBox @ { "z", "=", "\"</cell>\"" }, "Input" ], Cell[ "The tag </cell> ends a body.", "Text" ] }
+    },
+    {
+        { HoldComplete[ x = "<cell>", y = "<RawBoxes>" <> "</RawBoxes><selection>![a](attachment://content-abcde)", z = "</cell>" ] },
+        { Cell[ "The tag </cell> ends a body.", "Text" ] },
+        { "z = <RawBoxes>\"\\\"\\.3c/cell>\\\"\"</RawBoxes>", "The tag &lt;/cell> ends a body." }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Write-TagsInStringsAndComments"
+]
+
+(* The names of tags are read without regard to case, and a byte order mark at the start is not text: *)
+VerificationTest[
+    csCells[ "\:feff<Cell style='Input'>\n<rawboxes>SuperscriptBox[\"x\", \"2\"]</RAWBOXES>\n</CELL>" ],
+    { Cell[ BoxData @ SuperscriptBox[ "x", "2" ], "Input" ] },
+    SameTest -> MatchQ,
+    TestID   -> "Write-TagNamesAndByteOrderMark"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Existing Cells*)
@@ -1744,6 +1851,24 @@ VerificationTest[
     TestID   -> "Write-BodyKinds"
 ]
 
+(* A style that makes an existing cell one of another kind makes the body of that kind: *)
+VerificationTest[
+    {
+        csCells[ "<cell id='c1' style='Input'>\na*b*c + f[x_y]\n</cell>", "Cells" -> <| "c1" -> Cell[ "Some text.", "Text" ] |> ],
+        csCells[ "<cell id='c1' style='Text'>\nNow a **paragraph**, with a comma.\n</cell>", "Cells" -> <| "c1" -> Cell[ BoxData @ RowBox @ { "x", "=", "5" }, "Input" ] |> ],
+        csCells[ "<cell id='c1' style='Program'>\na*b*c\n</cell>", "Cells" -> <| "c1" -> Cell[ "x", "Text" ] |> ],
+        csCells[ "<cell id='c1' style='Text'>\nx = 5\n</cell>", "Cells" -> <| "c1" -> Cell[ BoxData @ RowBox @ { "x", "=", "5" }, "Input" ] |> ]
+    },
+    {
+        { Cell[ BoxData @ RowBox @ { RowBox @ { "a", "*", "b", "*", "c" }, "+", RowBox @ { "f", "[", "x_y", "]" } }, "Input" ] },
+        { Cell[ TextData @ { "Now a ", StyleBox[ "paragraph", FontWeight -> Bold ], ", with a comma." }, "Text" ] },
+        { Cell[ "a*b*c", "Program" ] },
+        { Cell[ "x = 5", "Text" ] }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Write-StyleOfAnotherKind"
+]
+
 (* The content of a delimiter is not in its body, so it is left alone: *)
 VerificationTest[
     csCells[ "<cell id='c1' style='Delimiter' CellTags='d'>\n\n</cell>", "Cells" -> <| "c1" -> Cell[ "\[HorizontalLine]", "Delimiter", CellFrame -> True ] |> ],
@@ -1811,6 +1936,311 @@ VerificationTest[
     },
     SameTest -> MatchQ,
     TestID   -> "Write-ExtraAttributesAndCellFunction"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Writing Code*)
+
+(* The spaces that reading adds are taken out: one on each side of an infix operator and one after a comma. Other
+   spaces are the cell's own, and so is everything in a string or a comment: *)
+VerificationTest[
+    csCells[ "<cell style='Input'>\nf[a, b -> 2 x] /. c :> \"s + t, u\"  (* a + b, c *)\n</cell>" ],
+    {
+        Cell[
+            BoxData @ RowBox @ {
+                RowBox @ { "f", "[", RowBox @ { "a", ",", RowBox @ { "b", "->", RowBox @ { "2", " ", "x" } } }, "]" },
+                "/.",
+                RowBox @ {
+                    "c",
+                    ":>",
+                    "\"s + t, u\"",
+                    "  ",
+                    RowBox @ { "(*", " ", RowBox @ { RowBox @ { "a", " ", "+", " ", "b" }, ",", " ", "c" }, " ", "*)" }
+                }
+            },
+            "Input"
+        ]
+    },
+    SameTest -> MatchQ,
+    TestID   -> "WriteCode-Spaces"
+]
+
+(* Code with spacing of its own is written with every typed space, and no other: a Code cell, new or not, and code
+   that was read with its own spaces. A change of names keeps the content of the cell, and a change of spaces alone
+   is a change. *)
+VerificationTest[
+    With[
+        {
+            code  = Cell[ BoxData @ RowBox @ { "a", " ", "=", RowBox @ { "f", "[", RowBox @ { "1", ",", "  ", "2" }, "]" } }, "Code" ],
+            input = Cell[ BoxData @ RowBox @ { "a", " ", "=", " ", RowBox @ { "f", "[", RowBox @ { "1", ",", "2" }, "]" } }, "Input" ]
+        },
+        {
+            csExactBody @ code,
+            csRoundTrip[ code, StringReplace[ "\n</cell>" -> "\nb=g[3, 4]\n</cell>" ] ],
+            csRoundTrip[ code, StringReplace[ "f[" -> "h[" ] ] === (code /. "f" -> "h"),
+            csRoundTrip[ code, StringReplace[ "a =f" -> "a = f" ] ],
+            csRoundTrip[ input, StringReplace[ "\n</cell>" -> "\nb=g[3, 4]\n</cell>" ] ],
+            csCells[ "<cell style='Code'>\nx=1\ny = {1,  2}\n</cell>" ]
+        }
+    ],
+    {
+        "a =f[1,  2]",
+        Cell[
+            BoxData @ {
+                RowBox @ { "a", " ", "=", RowBox @ { "f", "[", RowBox @ { "1", ",", "  ", "2" }, "]" } },
+                "\n",
+                RowBox @ { "b", "=", RowBox @ { "g", "[", RowBox @ { "3", ",", " ", "4" }, "]" } }
+            },
+            "Code"
+        ],
+        True,
+        Cell[ BoxData @ RowBox @ { "a", " ", "=", " ", RowBox @ { "f", "[", RowBox @ { "1", ",", "  ", "2" }, "]" } }, "Code" ],
+        Cell[
+            BoxData @ {
+                RowBox @ { "a", " ", "=", " ", RowBox @ { "f", "[", RowBox @ { "1", ",", "2" }, "]" } },
+                "\[IndentingNewLine]",
+                RowBox @ { "b", "=", RowBox @ { "g", "[", RowBox @ { "3", ",", " ", "4" }, "]" } }
+            },
+            "Input"
+        ],
+        { Cell[ BoxData @ { RowBox @ { "x", "=", "1" }, "\n", RowBox @ { "y", " ", "=", " ", RowBox @ { "{", RowBox @ { "1", ",", "  ", "2" }, "}" } } }, "Code" ] }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "WriteCode-OwnSpacing"
+]
+
+(* A new Input cell has \[IndentingNewLine], after which the front end indents the line itself. A new Code cell has
+   "\n" and the indentation that is written: *)
+VerificationTest[
+    csCells[ "<cell style='Input'>\nf[\n    a,\n    b\n]\n</cell>\n<cell style='Code'>\nf[\n    a,\n    b\n]\n</cell>" ],
+    {
+        Cell[ BoxData @ RowBox @ { "f", "[", "\[IndentingNewLine]", RowBox @ { "a", ",", "\[IndentingNewLine]", "b" }, "\[IndentingNewLine]", "]" }, "Input" ],
+        Cell[ BoxData @ RowBox @ { "f", "[", "\n", "    ", RowBox @ { "a", ",", "\n", "    ", "b" }, "\n", "]" }, "Code" ]
+    },
+    SameTest -> MatchQ,
+    TestID   -> "WriteCode-LineBreaksOfNewCells"
+]
+
+(* An existing cell that is not changed keeps each line break that it has. Changed code gets the line break that the
+   cell uses: *)
+VerificationTest[
+    With[
+        {
+            mixed = Cell[ BoxData @ RowBox @ { "f", "[", "\[IndentingNewLine]", RowBox @ { "a", ",", "\n", "  ", "b" }, "\[IndentingNewLine]", "]" }, "Input" ],
+            newlines = Cell[ BoxData @ RowBox @ { "f", "[", "\n", "  ", "a", "\n", "]" }, "Input" ]
+        },
+        {
+            csRoundTrip @ mixed === mixed,
+            csRoundTrip[ newlines, StringReplace[ "  a" -> "  a,\n  b" ] ]
+        }
+    ],
+    { True, Cell[ BoxData @ RowBox @ { "f", "[", "\n", "  ", RowBox @ { "a", ",", "\n", "  ", "b" }, "\n", "]" }, "Input" ] },
+    SameTest -> MatchQ,
+    TestID   -> "WriteCode-LineBreaksOfExistingCells"
+]
+
+(* Lines outside of brackets are statements. They are a list with the line breaks between them, as the front end makes
+   it of typed input: in one RowBox the kernel reads the statements of an Input cell as a product. A line break in
+   the middle of an expression stays in it. *)
+VerificationTest[
+    With[ { cells = csCells[ "<cell style='Input'>\nvfa = Range[10];\nTotal[vfa]\n</cell>\n<cell style='Code'>\nvfb = 3\n\nvfc = 4\n</cell>\n<cell style='Input'>\nvfy = vfa +\n    vfb\nvff[\n    vfy\n]\n</cell>\n<cell style='Input'>\n\n  vfa\n%\n</cell>" ] },
+        { cells, csHeld /@ cells }
+    ],
+    {
+        {
+            Cell[ BoxData @ { RowBox @ { RowBox @ { "vfa", "=", RowBox @ { "Range", "[", "10", "]" } }, ";" }, "\[IndentingNewLine]", RowBox @ { "Total", "[", "vfa", "]" } }, "Input" ],
+            Cell[ BoxData @ { RowBox @ { "vfb", " ", "=", " ", "3" }, "\n", "\n", RowBox @ { "vfc", " ", "=", " ", "4" } }, "Code" ],
+            Cell[
+                BoxData @ {
+                    RowBox @ { "vfy", "=", RowBox @ { "vfa", "+", "\[IndentingNewLine]", "vfb" } },
+                    "\[IndentingNewLine]",
+                    RowBox @ { "vff", "[", "\[IndentingNewLine]", "vfy", "\[IndentingNewLine]", "]" }
+                },
+                "Input"
+            ],
+            Cell[ BoxData @ { "\[IndentingNewLine]", "vfa", "\[IndentingNewLine]", "%" }, "Input" ]
+        },
+        {
+            HoldComplete[ vfa = Range[ 10 ];, Total[ vfa ] ],
+            HoldComplete[ vfb = 3, vfc = 4 ],
+            HoldComplete[ vfy = vfa + vfb, vff[ vfy ] ],
+            HoldComplete[ vfa, _ ]
+        }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "WriteCode-Statements"
+]
+
+(* The front end puts the statements after a comment into one row. They are statements of the list all the same: *)
+VerificationTest[
+    With[ { cell = First @ csCells[ "<cell style='Input'>\n(* squares *)\nvfa = Range[10];\nvfb = vfa^2\nTotal[vfb]\n</cell>" ] },
+        { Head /@ First @ First @ cell, csHeld @ cell }
+    ],
+    {
+        { RowBox, String, RowBox, String, RowBox, String, RowBox },
+        HoldComplete[ vfa = Range[ 10 ];, vfb = vfa^2, Total[ vfb ] ]
+    },
+    TestID -> "WriteCode-StatementsAfterComment"
+]
+
+(* A line that is added to an existing cell of one statement makes it a list of two: *)
+VerificationTest[
+    With[ { new = csRoundTrip[ Cell[ BoxData @ RowBox @ { "vfx", "=", "5" }, "Input" ], StringReplace[ "vfx = 5" -> "vfx = 5\nvfy = vfx^2" ] ] },
+        { new, csHeld @ new }
+    ],
+    {
+        Cell[ BoxData @ { RowBox @ { "vfx", "=", "5" }, "\[IndentingNewLine]", RowBox @ { "vfy", "=", RowBox @ { "vfx", "^", "2" } } }, "Input" ],
+        HoldComplete[ vfx = 5, vfy = vfx^2 ]
+    },
+    SameTest -> MatchQ,
+    TestID   -> "WriteCode-LineAddedToExistingCell"
+]
+
+(* Operators are the characters in a cell that only has the characters, and what is written in other cells: *)
+VerificationTest[
+    {
+        csRoundTrip[
+            Cell[ BoxData @ RowBox @ { "a", "\[Rule]", RowBox @ { "b", "\[LeftDoubleBracket]", "1", "\[RightDoubleBracket]" } }, "Input" ],
+            StringReplace[ "a -> " -> "{c[[2]] -> d, a -> " ] @* StringReplace[ "]]\n" -> "]]}\n" ]
+        ],
+        csCells[ "<cell style='Input'>\na -> b[[1]]\n</cell>" ]
+    },
+    {
+        Cell[
+            BoxData @ RowBox @ {
+                "{",
+                RowBox @ {
+                    RowBox @ { RowBox @ { "c", "\[LeftDoubleBracket]", "2", "\[RightDoubleBracket]" }, "\[Rule]", "d" },
+                    ",",
+                    RowBox @ { "a", "\[Rule]", RowBox @ { "b", "\[LeftDoubleBracket]", "1", "\[RightDoubleBracket]" } }
+                },
+                "}"
+            },
+            "Input"
+        ],
+        { Cell[ BoxData @ RowBox @ { "a", "->", RowBox @ { "b", "[", RowBox @ { "[", "1", "]" }, "]" } }, "Input" ] }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "WriteCode-OperatorCharacters"
+]
+
+(* Long names are the characters, also in a string and in a comment. An escaped backslash is not the start of one: *)
+VerificationTest[
+    csCells[ "<cell style='Input'>\n\\[FormalX] + \"\\[FormalX] \\\\[Alpha] a\\nb\" (* \\[Rule] *)\n</cell>" ],
+    {
+        Cell[
+            BoxData @ RowBox @ { "\[FormalX]", "+", "\"\[FormalX] \\\\[Alpha] a\\nb\"", " ", RowBox @ { "(*", " ", "\[Rule]", " ", "*)" } },
+            "Input"
+        ]
+    },
+    SameTest -> MatchQ,
+    TestID   -> "WriteCode-LongNames"
+]
+
+(* Boxes take the place of their tag as one token, whatever is next to them, and are not read as text: *)
+VerificationTest[
+    csCells[ "<cell style='Input'>\nx<RawBoxes>SuperscriptBox[\"y\", \"2\"]</RawBoxes> + f[<RawBoxes>\"\\\"a, b + c\\\"\"</RawBoxes>, <RawBoxes>FractionBox[\"1\", \"2\"]</RawBoxes>]\n</cell>" ],
+    {
+        Cell[
+            BoxData @ RowBox @ {
+                RowBox @ { "x", SuperscriptBox[ "y", "2" ] },
+                "+",
+                RowBox @ { "f", "[", RowBox @ { "\"a, b + c\"", ",", FractionBox[ "1", "2" ] }, "]" }
+            },
+            "Input"
+        ]
+    },
+    SameTest -> MatchQ,
+    TestID   -> "WriteCode-RawBoxes"
+]
+
+(* Code that is changed in one place keeps every box that it has, also boxes that would not be written if the model
+   had made them: *)
+VerificationTest[
+    Module[ { table, dynamic, cell, new },
+        table   = TagBox[ GridBox[ { { "1", "2" } } ], Function[ BoxForm`e$, MatrixForm[ BoxForm`e$ ] ] ];
+        dynamic = DynamicModuleBox[ { $csX = 1 }, SliderBox[ Dynamic[ $csX ] ], DynamicModuleValues :> { } ];
+        cell    = Cell[
+            BoxData @ RowBox @ {
+                "f", "[",
+                RowBox @ {
+                    table, ",", dynamic, ",", SuperscriptBox[ "x", "2" ], ",", TemplateBox[ { "5", "\"m\"", "meters", "\"Meters\"" }, "Quantity" ], ",",
+                    RowBox @ { "100", "+", "\"</cell>\"" }
+                },
+                "]"
+            },
+            "Input"
+        ];
+        new = csRoundTrip[ cell, StringReplace[ "100" -> "250 a" ] ];
+        { csRoundTrip @ cell === cell, new === ( cell /. "100" -> RowBox @ { "250", " ", "a" } ) }
+    ],
+    { True, True },
+    SameTest -> MatchQ,
+    TestID   -> "WriteCode-EditKeepsBoxes"
+]
+
+(* New code that only has other names, numbers and strings changes those tokens in the content of the cell. Every
+   RowBox stays, also grouping that the front end does not make of the text, with the cell's own spaces and operator
+   characters. Spaces of the text are not compared. *)
+VerificationTest[
+    With[
+        {
+            cell = Cell[
+                BoxData @ RowBox @ {
+                    "f", "[",
+                    RowBox @ {
+                        RowBox @ { "abc", "x" }, "+", RowBox @ { "m", "\[LeftDoubleBracket]", "10", "\[RightDoubleBracket]" }, "+",
+                        RowBox @ { "\"s\"", "<>", RowBox @ { "t", "+" }, "u" }, "\[Rule]", SuperscriptBox[ "x", "2" ]
+                    },
+                    "]"
+                },
+                "Input"
+            ]
+        },
+        {
+            csExactBody @ cell,
+            csRoundTrip[ cell, StringReplace[ { "abc" -> "ab", "10" -> "25", "\"s\"" -> "\"new string\"", " + m" -> "+m" } ] ] ===
+                (cell /. { "abc" -> "ab", "10" -> "25", "\"s\"" -> "\"new string\"" })
+        }
+    ],
+    { "f[abc x + m[[10]] + \"s\" <> t + u -> <RawBoxes>SuperscriptBox[\"x\", \"2\"]</RawBoxes>]", True },
+    SameTest -> MatchQ,
+    TestID   -> "WriteCode-ChangedTokensKeepStructure"
+]
+
+(* An operator that is changed can change how the code is grouped, so that code is tokenized again: *)
+VerificationTest[
+    csRoundTrip[ Cell[ BoxData @ RowBox @ { "a", "+", RowBox @ { "b", "*", "c" } }, "Input" ], StringReplace[ "a + b * c" -> "a * b + c" ] ],
+    Cell[ BoxData @ RowBox @ { RowBox @ { "a", "*", "b" }, "+", "c" }, "Input" ],
+    SameTest -> MatchQ,
+    TestID   -> "WriteCode-ChangedOperatorsRegroup"
+]
+
+(* The boxes of an operator with limits stand in the code as that operator, so that the front end groups what follows
+   as its operand, and the kernel reads the integral and the sum again: *)
+VerificationTest[
+    {
+        csHeld @ csRoundTrip[
+            Cell[ BoxData @ RowBox @ { SubsuperscriptBox[ "\[Integral]", "0", "\[Pi]" ], RowBox @ { RowBox @ { "Cos", "[", "x", "]" }, RowBox @ { "\[DifferentialD]", "x" } } }, "Input" ],
+            StringReplace[ "Cos[x]" -> "Cos[2 x]" ]
+        ],
+        csHeld @ csRoundTrip[
+            Cell[ BoxData @ RowBox @ { UnderoverscriptBox[ "\[Sum]", RowBox @ { "i", "=", "1" }, "n" ], RowBox @ { "a", " ", SuperscriptBox[ "i", "2" ] } }, "Input" ],
+            StringReplace[ "</RawBoxes>a " -> "</RawBoxes>a b " ]
+        ],
+        csRoundTrip[
+            Cell[ BoxData @ RowBox @ { RowBox @ { SubscriptBox[ "\[PartialD]", "x" ], RowBox @ { "f", "[", "x", "]" } }, "+", "1" }, "Input" ],
+            StringReplace[ " + 1" -> " + g[1]" ]
+        ]
+    },
+    {
+        HoldComplete[ Integrate[ Cos[ 2 x ], { x, 0, Pi } ] ],
+        HoldComplete[ Sum[ a b i^2, { i, 1, n } ] ],
+        Cell[ BoxData @ RowBox @ { RowBox @ { SubscriptBox[ "\[PartialD]", "x" ], RowBox @ { "f", "[", "x", "]" } }, "+", RowBox @ { "g", "[", "1", "]" } }, "Input" ]
+    },
+    SameTest -> MatchQ,
+    TestID   -> "WriteCode-OperatorsWithLimits"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -2307,7 +2737,233 @@ VerificationTest[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*URIs*)
+
+(* The boxes that a URI was read from are written back, into any cell. A URI that is the whole body of a new Picture
+   cell is its content: *)
+VerificationTest[
+    csStores @ Module[ { dynamic, uri },
+        dynamic = DynamicModuleBox[ { $csX = 1 }, SliderBox[ Dynamic[ $csX ] ], DynamicModuleValues :> { } ];
+        uri = csCode @ dynamic;
+        {
+            StringMatchQ[ uri, "![DynamicModuleBox](expression://content-" ~~ WordCharacter.. ~~ ")" ],
+            csCells[ "<cell style='Input'>\nf[" <> uri <> "]\n</cell>\n<cell style='Text'>\nsee <!expression://" <> csKey @ uri <> "!>\n</cell>\n<cell style='Picture'>\n" <> uri <> "\n</cell>" ] ===
+                {
+                    Cell[ BoxData @ RowBox @ { "f", "[", dynamic, "]" }, "Input" ],
+                    Cell[ TextData @ { "see ", Cell @ BoxData @ dynamic }, "Text" ],
+                    Cell[ BoxData @ dynamic, "Picture" ]
+                }
+        }
+    ],
+    { True, True },
+    SameTest -> MatchQ,
+    TestID   -> "WriteURI-BoxesThatWereRead"
+]
+
+(* A URI that reading did not make is a value of the evaluator, which is typeset without evaluating it: *)
+VerificationTest[
+    csStores @ Block[ { $csRan = False },
+        {
+            csEvaluator[
+                "Session",
+                csCells[ "<cell style='Output'>\n" <> MakeExpressionURI[ Unevaluated[ $csRan = True; Graphics[ Disk[ ] ] ] ] <> "\n</cell>" ]
+            ],
+            $csRan
+        }
+    ],
+    { { Cell[ BoxData @ RowBox @ { RowBox @ { "$csRan", "=", "True" }, ";", _GraphicsBox }, "Output" ] }, False },
+    SameTest -> MatchQ,
+    TestID   -> "WriteURI-EvaluatorValue"
+]
+
+(* With a sandboxed evaluator the boxes of a notebook are still written from their URI, and the same boxes as a value
+   of the evaluator are not: *)
+VerificationTest[
+    csStores @ csEvaluator[
+        "Local",
+        Module[ { dynamic, uri },
+            dynamic = DynamicModuleBox[ { $csX = 1 }, SliderBox[ Dynamic[ $csX ] ], DynamicModuleValues :> { } ];
+            uri = csCode @ dynamic;
+            {
+                csCells[ "<cell style='Input'>\n" <> uri <> "\n</cell>" ] === { Cell[ BoxData @ dynamic, "Input" ] },
+                csMessage[ "<cell style='Input'>\n" <> MakeExpressionURI[ RawBoxes @ DynamicBox[ ToBoxes[ $csX ] ] ] <> "\n</cell>" ]
+            }
+        ]
+    ],
+    { True, _String? (StringContainsQ[ "The evaluator runs in a sandbox" ]) },
+    SameTest -> MatchQ,
+    TestID   -> "WriteURI-NotebookBoxesAndEvaluatorValues"
+]
+
+(* Dynamic content of the evaluator is only written if the evaluator runs in the user's kernel: *)
+VerificationTest[
+    csStores @ With[ { text = "<cell style='Output'>\n" <> MakeExpressionURI[ Unevaluated @ Slider[ Dynamic[ $csX ] ] ] <> "\n</cell>" },
+        { csEvaluator[ "Session", csCells @ text ], csEvaluator[ "Local", csMessage @ text ] }
+    ],
+    {
+        { Cell[ BoxData @ SliderBox[ Dynamic[ $csX ], ___ ], "Output" ] },
+        _String? (StringContainsQ[ "dynamic content" ])
+    },
+    SameTest -> MatchQ,
+    TestID   -> "WriteURI-DynamicEvaluatorValue"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Evaluated Tags*)
+
+(* <ToBoxes> evaluates and <MakeBoxes> does not. Both are typeset in the kernel of the evaluator tool: *)
+VerificationTest[
+    csEvaluator[
+        "Session",
+        csCells[ "<cell style='Input'>\nf[<ToBoxes>2^10</ToBoxes>, <MakeBoxes>Sum[i^2, {i, 1, n}]</MakeBoxes>]\n</cell>\n<cell style='Text'>\nIt is <ToBoxes form='TraditionalForm'>Sin[x]^2</ToBoxes> or <MakeBoxes>1/2</MakeBoxes>.\n</cell>" ]
+    ],
+    {
+        Cell[
+            BoxData @ RowBox @ {
+                "f", "[",
+                RowBox @ { "1024", ",", RowBox @ { UnderoverscriptBox[ "\[Sum]", RowBox @ { "i", "=", "1" }, "n" ], SuperscriptBox[ "i", "2" ] } },
+                "]"
+            },
+            "Input"
+        ],
+        Cell[
+            TextData @ {
+                "It is ",
+                Cell @ BoxData @ FormBox[ RowBox @ { SuperscriptBox[ "sin", "2" ], "(", "x", ")" }, TraditionalForm ],
+                " or ",
+                Cell @ BoxData @ FractionBox[ "1", "2" ],
+                "."
+            },
+            "Text"
+        ]
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Evaluated-ToBoxesAndMakeBoxes"
+]
+
+(* The tags are evaluated in the order of the text, in the user's kernel if that is where the evaluator runs. Dynamic
+   content is written from there: *)
+VerificationTest[
+    Block[ { $csOrder = { } },
+        csEvaluator[
+            "Session",
+            {
+                csCells[ "<cell style='Text'>\n<ToBoxes>AppendTo[$csOrder, 1]; 1</ToBoxes>\n</cell>\n<cell style='Input'>\n<ToBoxes>AppendTo[$csOrder, 2]; Slider[Dynamic[$csOrder]]</ToBoxes>\n</cell>" ],
+                $csOrder
+            }
+        ]
+    ],
+    {
+        { Cell[ TextData @ { Cell[ BoxData[ "1" ] ] }, "Text" ], Cell[ BoxData @ SliderBox[ Dynamic[ $csOrder ], ___ ], "Input" ] },
+        { 1, 2 }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Evaluated-SessionOrder"
+]
+
+(* A URI in the expression is filled in as for the evaluator tool: *)
+VerificationTest[
+    csStores @ csEvaluator[
+        "Session",
+        csCells[ "<cell style='Input'>\n<ToBoxes>Head[" <> MakeExpressionURI[ Graphics[ Disk[ ] ] ] <> "]</ToBoxes>\n</cell>" ]
+    ],
+    { Cell[ BoxData[ "Graphics" ], "Input" ] },
+    SameTest -> MatchQ,
+    TestID   -> "Evaluated-URIInExpression"
+]
+
+(* A tag that gives no boxes fails the call, with what the evaluator said: *)
+VerificationTest[
+    csEvaluator[
+        "Session",
+        {
+            csMessage[ "<cell style='Input'>\n<ToBoxes>a, b</ToBoxes>\n</cell>" ],
+            csMessage[ "<cell style='Input'>\n<ToBoxes form='OutputForm'>1</ToBoxes>\n</cell>" ]
+        }
+    ],
+    {
+        _String? (StringContainsQ[ "<ToBoxes> gave no boxes for a, b." ~~ ___ ~~ "ToBoxes::argt" ]),
+        _String? (StringContainsQ[ "form='StandardForm' or form='TraditionalForm'" ])
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Evaluated-Failures"
+]
+
+(* Without the evaluator tool the tags are refused: *)
+VerificationTest[
+    Block[ { Wolfram`Chatbook`Common`$selectedTools = <| |> },
+        csMessage[ "<cell style='Input'>\n<MakeBoxes>x^2</MakeBoxes>\n</cell>" ]
+    ],
+    _String? (StringContainsQ[ "needs the Wolfram Language evaluator tool" ]),
+    SameTest -> MatchQ,
+    TestID   -> "Evaluated-NeedsEvaluatorTool"
+]
+
+(* The next two tests launch a separate sandbox kernel, which isn't possible in every test environment: *)
+VerificationTest[
+    $localEvaluatorAvailable = MatchQ[
+        Quiet @ Wolfram`Chatbook`WolframLanguageToolEvaluate[ "1 + 1", "Result", "Method" -> "Local" ],
+        HoldCompleteForm[ 2 ]
+    ],
+    True|False,
+    SameTest -> MatchQ,
+    TestID   -> "Evaluated-SandboxAvailable"
+]
+
+(* In the sandbox the code is parsed and typeset in the sandbox kernel, with the definitions of the user's kernel. A
+   result is only written if it is boxes and plain data: dynamic content, graphics and templates are refused, as they
+   are in what a model writes itself. *)
+If[ $localEvaluatorAvailable,
+    VerificationTest[
+        csEvaluator[
+            "Local",
+            Block[ { CellSyntaxTest`csDefined },
+                CellSyntaxTest`csDefined[ x_ ] := x^2;
+                {
+                    csCells[ "<cell style='Input'>\n<ToBoxes>CellSyntaxTest`csDefined[3]</ToBoxes> + <MakeBoxes>csOnlyInTheSandbox[1/2]</MakeBoxes>\n</cell>" ],
+                    Names[ "*`csOnlyInTheSandbox" ],
+                    csMessage[ "<cell style='Input'>\n<ToBoxes>Slider[Dynamic[x]]</ToBoxes>\n</cell>" ],
+                    csMessage[ "<cell style='Input'>\n<MakeBoxes>Button[\"go\", Beep[]]</MakeBoxes>\n</cell>" ],
+                    csMessage[ "<cell style='Input'>\n<ToBoxes>Graphics[Disk[]]</ToBoxes>\n</cell>" ],
+                    csMessage[ "<cell style='Input'>\n<ToBoxes>RawBoxes[TemplateBox[{\"2 + 2\"}, \"Evaluate\"]]</ToBoxes>\n</cell>" ],
+                    csMessage[ "<cell style='Input'>\n<ToBoxes>1, 2</ToBoxes>\n</cell>" ]
+                }
+            ]
+        ],
+        {
+            { Cell[ BoxData @ RowBox @ { "9", "+", RowBox @ { "csOnlyInTheSandbox", "[", FractionBox[ "1", "2" ], "]" } }, "Input" ] },
+            { },
+            _String? (StringContainsQ[ "The evaluator runs in a sandbox" ~~ __ ~~ "dynamic content" ]),
+            _String? (StringContainsQ[ "The evaluator runs in a sandbox" ]),
+            _String? (StringContainsQ[ "The evaluator runs in a sandbox" ]),
+            _String? (StringContainsQ[ "The evaluator runs in a sandbox" ~~ __ ~~ "a TemplateBox" ]),
+            _String? (StringContainsQ[ "<ToBoxes> gave no boxes for 1, 2." ])
+        },
+        SameTest -> MatchQ,
+        TestID   -> "Evaluated-Sandbox"
+    ]
+]
+
+(* The result of a sandboxed evaluator is checked before it is evaluated in this kernel: a symbol that only has a
+   value here is not read into the cell. With "Session" the result is written as it is. *)
+If[ $localEvaluatorAvailable,
+    VerificationTest[
+        Block[ { CellSyntaxTest`$csRan = False, CellSyntaxTest`csValue },
+            CellSyntaxTest`csValue := (CellSyntaxTest`$csRan = True; "\"secret\"");
+            With[ { text = "<cell style='Input'>\n<ToBoxes>RawBoxes[RowBox[{Symbol[\"CellSyntaxTest`csVal\" <> \"ue\"]}]]</ToBoxes>\n</cell>" },
+                {
+                    csEvaluator[ "Local", csMessage @ text ],
+                    CellSyntaxTest`$csRan,
+                    csEvaluator[ "Session", csCells[ "<cell style='Input'>\n<ToBoxes>Graphics[Disk[]]</ToBoxes>\n</cell>" ] ]
+                }
+            ]
+        ],
+        { _String? (StringContainsQ[ "The evaluator runs in a sandbox" ]), False, { Cell[ BoxData[ _GraphicsBox ], "Input" ] } },
+        SameTest -> MatchQ,
+        TestID   -> "Evaluated-SandboxResultNotEvaluated"
+    ]
+]
 
 (* The notebook tools get what a tag does from evaluateToBoxes: the boxes and what the evaluator printed, or the
    failure *)
@@ -2341,6 +2997,39 @@ VerificationTest[
 (* ::Subsection::Closed:: *)
 (*The Rule for Text*)
 
+(* Text has no linear syntax and no control characters, as it is typed in a body. The front end reads linear syntax in
+   code, and the kernel in the text of <RawBoxes>, so it is refused before either gets the text: *)
+VerificationTest[
+    Block[ { CellSyntaxTest`$csRan = False },
+        {
+            csNotRefused @ {
+                { "Input", "x = \"\\!\\(\\*SuperscriptBox[x, 2]\\)\"", "Cell tag 1 (a new cell) has linear syntax (\\!\\(), which is not written. Write boxes as <RawBoxes> and a backslash that is text as \\\\." },
+                { "Existing", "a \\!\\(x\\) b", "Cell c7 has linear syntax (\\!\\()" },
+                { "Text", "a \\:f7c1 b", "Cell tag 1 (a new cell) has linear syntax (\\:f7c1)" },
+                { "Text", "``\\!\\(x\\)``", "has linear syntax (\\!\\()" },
+                { "Program", "a" <> FromCharacterCode[ 7 ] <> "b", "Cell tag 1 (a new cell) has control characters, likely from broken escapes. Write the characters as they are." },
+                { "Input", "s = \"a" <> FromCharacterCode[ 127 ] <> "b\"", "has control characters" },
+                {
+                    "Input",
+                    StringJoin[
+                        "f[",
+                        FromCharacterCode @ { 16^^F7C1, 16^^F7C9, 16^^F7C8 },
+                        "SuperscriptBox[x, 2]",
+                        FromCharacterCode[ 16^^F7C0 ],
+                        "]"
+                    ],
+                    "has linear syntax (\\:f7c1)"
+                },
+                { "RawBoxes", "RowBox[{\"\\!\\(\\*DynamicBox[CellSyntaxTest`$csRan = True]\\)\"}]", "has linear syntax (\\!\\()" }
+            },
+            CellSyntaxTest`$csRan
+        }
+    ],
+    { { }, False },
+    SameTest -> MatchQ,
+    TestID   -> "Refused-Text-AsItIsTyped"
+]
+
 (* What is made of the text is checked, not only what is typed: linear syntax that a table, a pipe, inline code,
    emphasis or an entity would carry into the cell is refused there too, in any spelling: *)
 VerificationTest[
@@ -2372,9 +3061,133 @@ VerificationTest[
     TestID   -> "Refused-Text-InAttributes"
 ]
 
+(* What is no linear syntax is written: in markdown \* is the escape of an asterisk, a \! without \( opens nothing,
+   and an escaped backslash is text. Entities are read in the values of attributes, and what the cell has is kept as
+   it is: *)
+VerificationTest[
+    {
+        csCells[ "<cell style='Text'>\na\\*b \\\\!c\n</cell>\n<cell style='Input'>\ns = \"a\\\\*b\"\n</cell>\n<cell style='Program'>\nre.sub(r\"\\*\", \"\\!\")\n</cell>" ],
+        csCells[ "<cell style='Text' CellLabel='two&#10;lines &amp; &copy;' CellTags='a,b'>\nx\n</cell>" ],
+        With[ { cell = Cell[ "x", "Text", CellLabel -> "a" <> FromCharacterCode[ 16^^F7C1 ] <> "b" ] },
+            csCells[ StringReplace[ csTag @ cell, ">\nx" -> " CellTags='t'>\ny" ], "Cells" -> <| "c1" -> cell |> ] === { Append[ ReplacePart[ cell, 1 -> "y" ], CellTags -> "t" ] }
+        ]
+    },
+    {
+        {
+            Cell[ "a*b \\!c", "Text" ],
+            Cell[ BoxData @ RowBox @ { "s", "=", "\"a\\\\*b\"" }, "Input" ],
+            Cell[ "re.sub(r\"\\*\", \"\\!\")", "Program" ]
+        },
+        { Cell[ "x", "Text", CellLabel -> "two\nlines & \[Copyright]", CellTags -> { "a", "b" } ] },
+        True
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Refused-Text-WhatIsWritten"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*The Rule for Data*)
+
+(* Data that the model writes (<RawBoxes> in a cell, new options) is only boxes and plain data.
+   Heads are from a list: a function whose name ends in Box is not a box. Text that is no expression, or no options,
+   says so: *)
+VerificationTest[
+    csNotRefused @ {
+        { "RawBoxes", "TagBox[\"x\", Sin[1]]", "Cell tag 1 (a new cell) has <RawBoxes> that are not only boxes and plain data, so they are not written. Allowed: boxes that typeset" },
+        { "RawBoxes", "TagBox[\"x\", Sin[1]]", "What was written: TagBox[\"x\", Sin[1]]" },
+        { "RawBoxes", "RowBox[{UnitBox[0], CoordinateBoundingBox[{{1, 2}, {3, 4}}]}]", "not only boxes and plain data" },
+        { "RawBoxes", "StyleBox[\"x\", FontSize -> (Print[1]; 12)]", "not only boxes and plain data" },
+        { "RawBoxes", "\"DynamicBox\"[1]", "not only boxes and plain data" },
+        { "RawBoxes", "GraphicsBox[{DiskBox[{0, 0}]}]", "not only boxes and plain data" },
+        { "options", "FontSize -> 9^9^9", "Cell tag 1 (a new cell) has options that are not only boxes and plain data" },
+        { "RawBoxes", "RowBox[{\"f\", \"[\"", "Cell tag 1 (a new cell) has <RawBoxes> that are not a Wolfram Language expression: RowBox[{\"f\", \"[\"" },
+        { "RawBoxes", StringRepeat[ "List[", 60 ], "expression: " <> StringRepeat[ "List[", 16 ] <> "..." },
+        { "options", "CellFrame, True", "Cell tag 1 (a new cell) has options that are not name -> value rules with commas between them: CellFrame, True" }
+    },
+    { },
+    SameTest -> MatchQ,
+    TestID   -> "Refused-Data-NotPlainData"
+]
+
+(* No symbol is made and nothing is evaluated before data is accepted: a name with a context and a name that System`
+   does not have are refused before the kernel reads the text. A variable of the system and a symbol with a value are
+   not plain data, so the model can't read them into a cell. *)
+VerificationTest[
+    Block[ { $csRan, $Assumptions },
+        (* The kernel evaluates the assumptions once when they are set: *)
+        $Assumptions := ($csRan = True; True);
+        $csRan = False;
+        {
+            csNotRefused @ {
+                { "RawBoxes", "CellSyntaxTest`csMadeByRawBoxes", "has <RawBoxes> with the symbol CellSyntaxTest`csMadeByRawBoxes, which is not written" },
+                { "options", "CellTags -> csMadeByOptions", "has options with the symbol csMadeByOptions, which is not written" },
+                { "RawBoxes", "RowBox[{\\:0044ynamicBox[1], Sin}]", "with the symbol \\:0044ynamicBox, which is not written" },
+                { "RawBoxes", "StyleBox[\"x\", Editable -> $Assumptions]", "not only boxes and plain data" },
+                { "options", "Editable :> $Assumptions", "not only boxes and plain data" },
+                { "RawBoxes in text", "RowBox[{\"session \", $SessionID}]", "not only boxes and plain data" },
+                { "RawBoxes in text", "RowBox[{Now, Infinity}]", "not only boxes and plain data" }
+            },
+            Names[ "*`csMadeBy*" ],
+            $csRan
+        }
+    ],
+    { { }, { }, False },
+    SameTest -> MatchQ,
+    TestID   -> "Refused-Data-Symbols"
+]
+
+(* Nothing in the data runs code when the cell is shown, evaluated or clicked: no dynamic box, no option that holds
+   code (by its name, as a symbol or as a string) or that makes the cell evaluate by itself, no linear syntax in a
+   string, a TagBox only with a string as its tag (the kernel reads another tag as a function of the content), and a
+   button only as a hyperlink: one link style, its address and its note. *)
+VerificationTest[
+    csNotRefused @ {
+        { "RawBoxes", "DynamicBox[\"x\"]", "not only boxes and plain data" },
+        { "RawBoxes in text", "ButtonBox[\"x\", ButtonFunction :> \"y\"]", "not only boxes and plain data" },
+        { "RawBoxes in text", "ButtonBox[\"x\", \"ButtonFunction\" :> \"y\"]", "not only boxes and plain data" },
+        { "RawBoxes in text", "StyleBox[\"x\", ContextMenu -> {\"y\"}]", "not only boxes and plain data" },
+        { "RawBoxes in text", "Cell[BoxData[\"x\"], CellEventActions -> {\"MouseClicked\" :> \"y\"}]", "not only boxes and plain data" },
+        { "RawBoxes in text", "Cell[BoxData[\"x\"], \"Input\", InitializationCell -> True]", "not only boxes and plain data" },
+        { "options", "CellEventActions -> {\"MouseClicked\" :> \"y\"}", "has options that are not only boxes and plain data" },
+        { "options", "InitializationCell -> True", "has options that are not only boxes and plain data" },
+        { "RawBoxes", "RowBox[{\"f\", \"\\\\!\\\\(\\\\*DynamicBox[1]\\\\)\"}]", "not only boxes and plain data" },
+        { "RawBoxes", "RowBox[{\"f\", \"\\.5c!\\.5c(\\.5c*DynamicBox[1]\\.5c)\"}]", "not only boxes and plain data" },
+        { "RawBoxes", "TagBox[\"\\\"file\\\"\", DeleteFile]", "not only boxes and plain data" },
+        { "RawBoxes in text", "ButtonBox[\"2 + 2\", BaseStyle -> \"Evaluate\"]", "not only boxes and plain data" },
+        { "RawBoxes in text", "ButtonBox[\"2 + 2\", BaseStyle -> \"Evaluate\", BaseStyle -> \"Hyperlink\", ButtonData -> \"paclet:ref/Plot\"]", "not only boxes and plain data" },
+        { "RawBoxes in text", "ButtonBox[\"2 + 2\", BaseStyle -> \"Link\", ButtonData -> \"paclet:ref/Plot\", DefaultBaseStyle -> \"Evaluate\"]", "not only boxes and plain data" }
+    },
+    { },
+    SameTest -> MatchQ,
+    TestID   -> "Refused-Data-WhatRunsOrActs"
+]
+
+(* A TemplateBox is not plain data: it shows and does what the stylesheet style of its name says, which for some
+   styles is to evaluate or to open something on a click. The model can't write one in a cell or in options,
+   whatever its style is. One that the notebook has is the user's own, and is written back (see
+   WriteCode-EditKeepsBoxes and WriteText-EditKeepsItems). *)
+VerificationTest[
+    csNotRefused @ Append[
+        Tuples @ {
+            { "RawBoxes", "RawBoxes in text" },
+            {
+                "TemplateBox[{\"2 + 2\"}, \"Evaluate\"]",
+                "TemplateBox[{\"click me\", \"x\"}, \"TextExpressionLink\"]",
+                "TemplateBox[{\"x\"}, \"FileArgument\"]",
+                "TemplateBox[{}, \"ChatWidgetButton\"]",
+                "TemplateBox[{\"x\", {URL[\"file:///C:/x.exe\"], None}, \"note\"}, \"HyperlinkDefault\"]",
+                "TemplateBox[{\"x\", \"https://example.com\"}, \"HyperlinkURL\"]",
+                "RowBox[{\"f\", \"[\", TemplateBox[{\"5\", \"\\\"m\\\"\"}, \"Quantity\", InterpretationFunction -> \"x\"], \"]\"}]"
+            },
+            { "with a TemplateBox, which is not written: a template shows and does what its stylesheet style says" }
+        },
+        { "options", "CellFrameLabels -> {{TemplateBox[{\"2 + 2\"}, \"Evaluate\"], None}, {None, None}}", "has options with a TemplateBox, which is not written" }
+    ],
+    { },
+    SameTest -> MatchQ,
+    TestID   -> "Refused-Data-Templates"
+]
 
 (* A template that the existing cell holds is not the model's: boxes of the cell that the model changed around it are
    written with the template as the cell has it, also a template with an association (a TeX formula), with linear
@@ -2421,6 +3234,85 @@ VerificationTest[
     { },
     SameTest -> MatchQ,
     TestID   -> "Refused-Data-HiddenOptions"
+]
+
+(* What the rule lets through is written as it is: a TagBox with a string as its tag, and a hyperlink with its options
+   in any order. The values of options can be colors (also by name), Scaled, Offset, Infinity and arithmetic on numbers
+   and Inherited, which is not evaluated before it is known to be that. An option of the cell itself is kept, also one
+   that a new option could not be. *)
+VerificationTest[
+    {
+        csCells[ "<cell style='Input'>\n<RawBoxes>TagBox[GridBox[{{\"1\"}}], \"Grid\"]</RawBoxes>\n</cell>" ],
+        csCells[ "<cell style='Text'>\n<RawBoxes>ButtonBox[\"x\", ButtonNote -> \"n\", ButtonData -> \"paclet:ref/Plot\", BaseStyle -> \"Link\"]</RawBoxes>\n</cell>" ],
+        csCells[ "<cell style='Text'>\n<RawBoxes>ButtonBox[\"x\", BaseStyle -> \"Hyperlink\", ButtonData -> {URL[\"https://example.com\"], None}]</RawBoxes>\n</cell>" ],
+        csCells[ "<cell style='Text' options='Background -> LightBlue, CellMargins -> {{10, 10}, {5, 5}}, TaggingRules -> <|\"a\" -> {1, 2.5}|>'>\nx\n</cell>" ],
+        csCells[ "<cell style='Text' options='FontSize -> 1.5*Inherited, CellSize -> {Scaled[0.5], Automatic}, LineSpacing -> {1/2, 1 + 1}, CellMargins -> {{Offset[2], -Inherited}, {0, 0}}, CellFrameColor -> Opacity[0.5, Red], PageWidth -> Infinity'>\nx\n</cell>" ],
+        With[ { cell = Cell[ "x", "Input", InitializationCell -> True, CellID -> 5 ] },
+            csCells[ StringReplace[ csTag @ cell, "True'>" -> "True, CellFrame -> True'>" ], "Cells" -> <| "c1" -> cell |> ]
+        ]
+    },
+    {
+        { Cell[ BoxData @ TagBox[ GridBox @ { { "1" } }, "Grid" ], "Input" ] },
+        { Cell[ TextData @ { ButtonBox[ "x", ButtonNote -> "n", ButtonData -> "paclet:ref/Plot", BaseStyle -> "Link" ] }, "Text" ] },
+        { Cell[ TextData @ { ButtonBox[ "x", BaseStyle -> "Hyperlink", ButtonData -> { URL[ "https://example.com" ], None } ] }, "Text" ] },
+        { Cell[ "x", "Text", Background -> RGBColor[ 0.87, 0.94, 1 ], CellMargins -> { { 10, 10 }, { 5, 5 } }, TaggingRules -> <| "a" -> { 1, 2.5 } |> ] },
+        { Cell[ "x", "Text", FontSize -> 1.5 Inherited, CellSize -> { Scaled[ 0.5 ], Automatic }, LineSpacing -> { 1/2, 2 }, CellMargins -> { { Offset[ 2 ], -Inherited }, { 0, 0 } }, CellFrameColor -> Opacity[ 0.5, RGBColor[ 1, 0, 0 ] ], PageWidth -> Infinity ] },
+        { Cell[ "x", "Input", InitializationCell -> True, CellID -> 5, CellFrame -> True ] }
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Refused-Data-WhatIsWritten"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Tags and Ids*)
+
+(* What a message says to write is what the body reads: a line of code that starts with a cell tag gets no advice
+   about entities alone, and what follows a </cell> inside of a string is not called text outside of cell tags. *)
+VerificationTest[
+    {
+        csMessage[ "<cell style='Input'>\ns = \"\n<cell style='Text'>\n\"\n</cell>" ],
+        csMessage[ "<cell style='Input'>\ns = \"line one </cell>\nline two\"\n</cell>" ]
+    },
+    {
+        _String? (StringStartsQ[ #, "Cell tag 1 (a new cell) has a line in its body that starts with <cell." ] && StringEndsQ[ #, "in code the line break before it is written as \\n inside of the string." ] &),
+        _String? (StringStartsQ[ #, "A </cell> has no cell tag that it closes. The body of a cell ends at its first </cell>, also inside of code or of a string." ] && StringFreeQ[ #, "outside of cell tags" ] &)
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Refused-CellTagMessages"
+]
+
+(* Tags and ids that can't be read, a tag without its other tag and a cell tag that is not closed say what to write
+   instead: *)
+VerificationTest[
+    {
+        csMessage[ "<cell id='c9'>\nx\n</cell>", "Cells" -> <| "c1" -> Cell[ "a", "Text" ] |> ],
+        csMessage[ "<cell style='Text' label='x'>\nx\n</cell>" ],
+        csMessage[ "<cell id='c1' truncated='true'>\nabc ... xyz\n</cell>", "Cells" -> <| "c1" -> Cell[ "a", "Text" ] |> ],
+        csMessage[ "<cell style=Text>\nx\n</cell>" ],
+        csMessage[ "<cell style='Text'>\nx\n\n<cell style='Text'>\ny\n</cell>" ],
+        csMessage[ "<cell style='Text'>\n![Image](attachment://content-zzzzz)\n</cell>" ],
+        csMessage[ "<cell style='Text'>\n$$\\frac{1}{$$\n</cell>" ],
+        csMessage[ "<cell style='Input'>\nf[<RawBoxes>SuperscriptBox[\"x\", \"2\"]]\n</cell>" ],
+        csMessage[ "<cell style='Text'>\nThe tag </RawBoxes> ends boxes.\n</cell>" ],
+        csMessage[ "<cell style='Text'>\nhello\n</cell>\n</cell>" ],
+        csMessage[ "<cell style='Text'>\nhello" ]
+    },
+    {
+        "Cell c9 does not exist. Use the id of a cell that was read, or leave the id out to write a new cell.",
+        "Cell tag 1 (a new cell) has the attribute label, which is not one of id, style, CellLabel, CellTags and options.",
+        _String? (StringStartsQ[ "Cell c1 has the attribute truncated, so its body was cut when it was read" ]),
+        _String? (StringStartsQ[ "The text outside of cell tags has a cell tag that could not be read. Write <cell name='value' ...>" ]),
+        _String? (StringStartsQ[ "Cell tag 1 (a new cell) has a line in its body that starts with <cell. Close every cell tag with </cell>" ]),
+        _String? (StringStartsQ[ "Cell tag 1 (a new cell) has the URI ![Image](attachment://content-zzzzz), which is not available any more" ]),
+        _String? (StringStartsQ[ "Cell tag 1 (a new cell) has LaTeX that could not be read: \\frac{1}{" ]),
+        _String? (StringStartsQ[ "Cell tag 1 (a new cell) has the tag <RawBoxes> without the tag that closes it." ]),
+        _String? (StringStartsQ[ "Cell tag 1 (a new cell) has the tag </RawBoxes> without the tag that opens it." ]),
+        _String? (StringStartsQ[ "A </cell> has no cell tag that it closes." ]),
+        _String? (StringStartsQ[ "The text outside of cell tags has a cell tag that could not be read." ])
+    },
+    SameTest -> MatchQ,
+    TestID   -> "Refused-TagsIdsAndURIs"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -2554,6 +3446,31 @@ VerificationTest[
     { },
     SameTest -> MatchQ,
     TestID   -> "RoundTrip-Unchanged"
+]
+
+(* Code that is changed in more than its names, numbers and strings is tokenized again, and text that is changed is
+   put together again. What comes back differs from the cell with that change in ways that change neither what it
+   means nor how it looks: adjacent strings are one, an inline cell has no ExpressionUUID, tokens are grouped as the
+   front end groups them, and an operator is the character only if the cell has no other form of it. The cell's own
+   spaces next to operators and commas are kept in code with spacing of its own. *)
+VerificationTest[
+    {
+        csRoundTrip[
+            Cell[ TextData @ { "adjacent ", "strings ", Cell[ BoxData @ RowBox @ { "f", "[", "x", "]" }, "InlineFormula", ExpressionUUID -> "5ec7a6f0-4a9d-4b62-8d0c-0d4f4a3c2b1a" ] }, "Text" ],
+            StringReplace[ "strings" -> "words" ]
+        ],
+        csRoundTrip[ Cell[ BoxData @ RowBox @ { "a", " ", "+", " ", "b", ",", " ", "c" }, "Input" ], StringReplace[ ", c" -> ", c, d" ] ],
+        csRoundTrip[ Cell[ BoxData @ RowBox @ { "a", "\[Rule]", "b", "->", "c" }, "Input" ], StringReplace[ "-> c" -> "-> c d" ] ],
+        csRoundTrip[ Cell[ BoxData[ "f[x_]:=x^2+1" ], "Input" ], StringReplace[ "+1" -> "+1+y" ] ]
+    },
+    {
+        Cell[ TextData @ { "adjacent words ", Cell[ BoxData @ RowBox @ { "f", "[", "x", "]" }, "InlineFormula" ] }, "Text" ],
+        Cell[ BoxData @ RowBox @ { RowBox @ { "a", " ", "+", " ", "b" }, ",", " ", "c", ",", " ", "d" }, "Input" ],
+        Cell[ BoxData @ RowBox @ { "a", "->", RowBox @ { "b", "->", RowBox @ { "c", " ", "d" } } }, "Input" ],
+        Cell[ BoxData @ RowBox @ { RowBox @ { "f", "[", "x_", "]" }, ":=", RowBox @ { RowBox @ { "x", "^", "2" }, "+", "1", "+", "y" } }, "Input" ]
+    },
+    SameTest -> MatchQ,
+    TestID   -> "RoundTrip-Changed"
 ]
 
 (* Written as a new cell without what reading recorded, markdown is new: it stands for the link, the formula and the
